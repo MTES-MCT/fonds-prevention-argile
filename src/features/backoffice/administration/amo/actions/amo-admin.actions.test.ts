@@ -179,6 +179,23 @@ describe("amo-admin.actions", () => {
       await importAmoFromExcel(formData, true);
 
       expect(importAmosFromExcel).toHaveBeenCalledWith(formData, true);
+      expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.AMO_DELETE);
+    });
+
+    it("devrait refuser la suppression préalable sans la permission de suppression", async () => {
+      vi.mocked(checkBackofficePermission)
+        .mockResolvedValueOnce({ hasAccess: true, user: createMockAuthUser(UserRole.ADMINISTRATEUR) })
+        .mockResolvedValueOnce({
+          hasAccess: false,
+          reason: "Permission insuffisante",
+          errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
+        });
+
+      const result = await importAmoFromExcel(new FormData(), true);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe("Permission insuffisante pour supprimer des AMO");
+      expect(importAmosFromExcel).not.toHaveBeenCalled();
     });
 
     it("devrait gérer les exceptions inattendues", async () => {

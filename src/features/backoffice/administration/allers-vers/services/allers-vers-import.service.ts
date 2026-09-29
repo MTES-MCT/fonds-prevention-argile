@@ -1,7 +1,13 @@
 import ExcelJS from "exceljs";
 import { allersVersRepository } from "@/shared/database/repositories";
-import { AllersVersImportResult, AllersVersImportRow } from "../domain";
-import { deleteAllAllersVers } from "../actions";
+import { parseListe } from "@/shared/utils/liste.utils";
+import { decrireBilanPurge } from "../../shared/domain";
+import {
+  AllersVersImportResult,
+  AllersVersImportRow,
+  StructureAllersVersConnue,
+  trouverCorrespondanceAllersVers,
+} from "../domain";
 
 /**
  * Service d'import des Allers Vers depuis Excel
@@ -112,36 +118,15 @@ function validateRow(row: AllersVersImportRow, index: number): string | null {
   return null;
 }
 
-function parseEmails(emailsStr: string): string[] {
-  return emailsStr
-    .split(",")
-    .map((e) => e.trim())
-    .filter((e) => e.length > 0);
-}
-
 function parseDepartements(departementsStr: string): string[] {
-  return departementsStr
-    .split(",")
-    .map((d) => {
-      const trimmed = d.trim();
-      const match = trimmed.match(/(\d{2,3}[AB]?)\s*$/);
-      return match ? match[1] : trimmed;
-    })
-    .filter((d) => d.length > 0);
-}
-
-function parseEpci(epciStr: string): string[] {
-  if (!epciStr || epciStr.trim() === "") {
-    return [];
-  }
-  return epciStr
-    .split(",")
-    .map((e) => e.trim())
-    .filter((e) => e.length > 0);
+  return parseListe(departementsStr).map((d) => {
+    const match = d.match(/(\d{2,3}[AB]?)\s*$/);
+    return match ? match[1] : d;
+  });
 }
 
 /**
- * Importe des Allers Vers depuis un fichier Excel
+ * Importe des Allers Vers depuis un fichier Excel : crée ou met à jour selon la clé naturelle
  * @param buffer - ArrayBuffer du fichier Excel
  */
 export async function importAllersVersFromExcel(
@@ -150,6 +135,8 @@ export async function importAllersVersFromExcel(
 ): Promise<AllersVersImportResult> {
   const errors: string[] = [];
   let created = 0;
+  let updated = 0;
+  let purge: string | undefined;
 
   try {
     const rows = await parseExcelFile(buffer);
@@ -158,16 +145,26 @@ export async function importAllersVersFromExcel(
       return {
         success: false,
         created: 0,
+        updated: 0,
         errors: ["Le fichier est vide ou mal formaté"],
       };
     }
 
     if (clearExisting) {
-      await deleteAllAllersVers();
+      purge = decrireBilanPurge(await allersVersRepository.supprimerNonRattaches(), "rattachées à un agent");
     }
+
+    const connues: StructureAllersVersConnue[] = (await allersVersRepository.findAllWithRelations()).map((av) => ({
+      id: av.id,
+      nom: av.nom,
+      departements: av.departements.map((d) => d.codeDepartement),
+    }));
+    // Ligne du fichier ayant déjà écrit chaque structure, pour signaler les doublons internes au fichier
+    const ecritesParLigne = new Map<string, number>();
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      const ligne = i + 2;
       const validationError = validateRow(row, i);
       if (validationError) {
         errors.push(validationError);
@@ -175,30 +172,57 @@ export async function importAllersVersFromExcel(
       }
 
       try {
-        const emails = parseEmails(row.emails);
+        const nom = row.nom.trim();
+        const emails = parseListe(row.emails);
         const departements = parseDepartements(row.departements);
-        const epciList = parseEpci(row.epci);
+        const epciList = parseListe(row.epci);
+        const correspondance = trouverCorrespondanceAllersVers(nom, departements, connues);
 
-        const allersVers = await allersVersRepository.create({
-          nom: row.nom.trim(),
-          emails: emails,
+        if (correspondance.type === "ambigue") {
+          const details = correspondance.structures
+            .map((s) => `« ${s.nom} » (${s.departements.join(", ")})`)
+            .join(", ");
+          errors.push(
+            `Ligne ${ligne}: « ${nom} » correspond à plusieurs structures existantes (${details}), ligne ignorée. Modifiez-les depuis la liste.`
+          );
+          continue;
+        }
+
+        if (correspondance.type === "mise_a_jour" && ecritesParLigne.has(correspondance.id)) {
+          errors.push(
+            `Ligne ${ligne}: « ${nom} » désigne la même structure que la ligne ${ecritesParLigne.get(correspondance.id)}, ligne ignorée.`
+          );
+          continue;
+        }
+
+        const donnees = {
+          nom,
+          emails,
           telephone: row.telephone?.trim() || "",
           adresse: row.adresse?.trim() || "",
           horaires: row.horaires?.trim() || null,
-        });
+        };
 
-        if (departements.length > 0) {
-          await allersVersRepository.updateDepartementsRelations(allersVers.id, departements);
+        let id: string;
+        if (correspondance.type === "mise_a_jour") {
+          id = correspondance.id;
+          await allersVersRepository.update(id, donnees);
+          const connue = connues.find((c) => c.id === id);
+          if (connue) connue.departements = departements;
+          updated++;
+        } else {
+          id = (await allersVersRepository.create(donnees)).id;
+          connues.push({ id, nom, departements });
+          created++;
         }
+        ecritesParLigne.set(id, ligne);
 
-        if (epciList.length > 0) {
-          await allersVersRepository.updateEpciRelations(allersVers.id, epciList);
-        }
-
-        created++;
+        // Le fichier fait foi : un territoire retiré du fichier est retiré de la structure
+        await allersVersRepository.updateDepartementsRelations(id, departements);
+        await allersVersRepository.updateEpciRelations(id, epciList);
       } catch (error) {
         errors.push(
-          `Ligne ${i + 2}: Erreur lors de la création - ${error instanceof Error ? error.message : "Erreur inconnue"}`
+          `Ligne ${ligne}: Erreur lors de l'enregistrement - ${error instanceof Error ? error.message : "Erreur inconnue"}`
         );
       }
     }
@@ -206,13 +230,17 @@ export async function importAllersVersFromExcel(
     return {
       success: errors.length === 0,
       created,
+      updated,
       errors,
+      purge,
     };
   } catch (error) {
     return {
       success: false,
-      created: 0,
+      created,
+      updated,
       errors: [`Erreur lors du traitement du fichier: ${error instanceof Error ? error.message : "Erreur inconnue"}`],
+      purge,
     };
   }
 }

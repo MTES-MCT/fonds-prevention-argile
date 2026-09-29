@@ -1,6 +1,6 @@
-import { eq, SQL, sql } from "drizzle-orm";
+import { eq, notExists, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import { allersVers, allersVersDepartements, allersVersEpci } from "../schema";
+import { agents, allersVers, allersVersDepartements, allersVersEpci } from "../schema";
 import type { NewAllersVers } from "../schema/allers-vers";
 import { BaseRepository } from "./base.repository";
 
@@ -139,6 +139,21 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
 
       return result.length > 0;
     });
+  }
+
+  /**
+   * Supprime les structures qu'aucun agent ne référence (désactivés compris)
+   */
+  async supprimerNonRattaches(): Promise<{ supprimees: string[]; conservees: string[] }> {
+    // Un seul DELETE : un agent rattaché entre-temps ne peut pas se retrouver orphelin.
+    const supprimees = await db
+      .delete(allersVers)
+      .where(notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.allersVersId, allersVers.id))))
+      .returning({ nom: allersVers.nom });
+
+    const conservees = await db.select({ nom: allersVers.nom }).from(allersVers).orderBy(allersVers.nom);
+
+    return { supprimees: supprimees.map((s) => s.nom), conservees: conservees.map((s) => s.nom) };
   }
 
   /**

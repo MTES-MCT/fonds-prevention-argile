@@ -10,12 +10,13 @@ d'architecture.
 
 ## J'ai besoin de…
 
-| Besoin                                                    | Fichier                                        |
-| --------------------------------------------------------- | ---------------------------------------------- |
-| Me connecter à staging/prod, lire les logs, ouvrir `psql` | [`scalingo.md`](./scalingo.md)                 |
-| Restaurer un backup en local, changer de rôle agent       | [`db-local.md`](./db-local.md)                 |
-| Savoir où en est un demandeur (support, QA)               | [`requetes-support.md`](./requetes-support.md) |
-| Tester les webhooks Brevo                                 | [`webhooks-brevo.md`](./webhooks-brevo.md)     |
+| Besoin                                                    | Fichier                                          |
+| --------------------------------------------------------- | ------------------------------------------------ |
+| Me connecter à staging/prod, lire les logs, ouvrir `psql` | [`scalingo.md`](./scalingo.md)                   |
+| Restaurer un backup en local, changer de rôle agent       | [`db-local.md`](./db-local.md)                   |
+| Savoir où en est un demandeur (support, QA)               | [`requetes-support.md`](./requetes-support.md)   |
+| Tester les webhooks Brevo                                 | [`webhooks-brevo.md`](./webhooks-brevo.md)       |
+| Importer ou réimporter des structures AMO / Allers-Vers   | [`import-structures.md`](./import-structures.md) |
 
 ## Deux règles pour tout ce dossier
 

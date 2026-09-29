@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { importAllersVersAction, updateAllersVersAction, deleteAllAllersVers } from "./allers-vers-admin.actions";
+import { importAllersVersAction, updateAllersVersAction } from "./allers-vers-admin.actions";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import { AccessErrorCode } from "@/features/auth/permissions/domain";
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
@@ -18,8 +18,6 @@ vi.mock("@/shared/database/repositories", () => ({
     update: vi.fn(),
     updateDepartementsRelations: vi.fn(),
     updateEpciRelations: vi.fn(),
-    findAll: vi.fn(),
-    delete: vi.fn(),
   },
 }));
 
@@ -87,7 +85,6 @@ describe("allers-vers-admin.actions", () => {
       const mockResult = {
         success: true,
         created: 10,
-        imported: 10,
         updated: 2,
         errors: [],
       };
@@ -122,7 +119,6 @@ describe("allers-vers-admin.actions", () => {
       const mockResult = {
         success: true,
         created: 5,
-        imported: 5,
         updated: 0,
         errors: [],
       };
@@ -210,7 +206,6 @@ describe("allers-vers-admin.actions", () => {
       const mockResult = {
         success: true,
         created: 10,
-        imported: 10,
         updated: 0,
         errors: [],
       };
@@ -233,6 +228,52 @@ describe("allers-vers-admin.actions", () => {
       expect(callArgs[1]).toBe(true);
     });
 
+    it("devrait refuser la suppression préalable sans la permission de suppression", async () => {
+      const mockUser = createMockAuthUser(UserRole.ADMINISTRATEUR);
+      vi.mocked(checkBackofficePermission)
+        .mockResolvedValueOnce({ hasAccess: true, user: mockUser })
+        .mockResolvedValueOnce({
+          hasAccess: false,
+          reason: "Permission insuffisante",
+          errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
+        });
+
+      const formData = new FormData();
+      formData.append("file", createMockFile("test", "test.xlsx"));
+      formData.append("clearExisting", "true");
+
+      const result = await importAllersVersAction(formData);
+
+      expect(result.success).toBe(false);
+      expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.ALLERS_VERS_DELETE);
+      expect(importAllersVersFromExcel).not.toHaveBeenCalled();
+    });
+
+    it("devrait renvoyer un succès partiel quand une partie des lignes est passée", async () => {
+      vi.mocked(checkBackofficePermission).mockResolvedValue({
+        hasAccess: true,
+        user: createMockAuthUser(UserRole.ADMINISTRATEUR),
+      });
+      const mockResult = {
+        success: false,
+        created: 1,
+        updated: 2,
+        errors: ["Ligne 5: Le nom est obligatoire"],
+        purge: "Suppression préalable : 0 structure supprimée.",
+      };
+      vi.mocked(importAllersVersFromExcel).mockResolvedValue(mockResult);
+
+      const formData = new FormData();
+      formData.append("file", createMockFile("test", "test.xlsx"));
+
+      const result = await importAllersVersAction(formData);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual(mockResult);
+      }
+    });
+
     it("devrait gérer les erreurs d'import", async () => {
       const mockUser = createMockAuthUser(UserRole.ADMINISTRATEUR);
       vi.mocked(checkBackofficePermission).mockResolvedValue({
@@ -243,7 +284,6 @@ describe("allers-vers-admin.actions", () => {
       const mockResult = {
         success: false,
         created: 0,
-        imported: 0,
         updated: 0,
         errors: ["Ligne 3: Email invalide", "Ligne 5: Nom manquant"],
       };
@@ -437,127 +477,6 @@ describe("allers-vers-admin.actions", () => {
     });
   });
 
-  describe("deleteAllAllersVers", () => {
-    it("devrait autoriser la suppression pour SUPER_ADMINISTRATEUR", async () => {
-      const mockUser = createMockAuthUser(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: true,
-        user: mockUser,
-      });
-
-      const mockAllersVers = [
-        createMockAllersVers(),
-        createMockAllersVers({ id: "av-456" }),
-        createMockAllersVers({ id: "av-789" }),
-      ];
-
-      vi.mocked(allersVersRepository.findAll).mockResolvedValue(mockAllersVers);
-      vi.mocked(allersVersRepository.delete).mockResolvedValue(true);
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toBeUndefined();
-      }
-      expect(checkBackofficePermission).toHaveBeenCalledWith(BackofficePermission.ALLERS_VERS_DELETE);
-      expect(allersVersRepository.findAll).toHaveBeenCalled();
-      expect(allersVersRepository.delete).toHaveBeenCalledTimes(3);
-    });
-
-    it("devrait autoriser la suppression pour ADMINISTRATEUR", async () => {
-      const mockUser = createMockAuthUser(UserRole.ADMINISTRATEUR);
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: true,
-        user: mockUser,
-      });
-
-      vi.mocked(allersVersRepository.findAll).mockResolvedValue([]);
-      vi.mocked(allersVersRepository.delete).mockResolvedValue(true);
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(true);
-      expect(checkBackofficePermission).toHaveBeenCalled();
-    });
-
-    it("devrait refuser la suppression pour ANALYSTE", async () => {
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: false,
-        reason: "Permission insuffisante pour supprimer des Allers Vers",
-        errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
-      });
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Permission insuffisante pour supprimer des Allers Vers");
-      }
-      expect(allersVersRepository.findAll).not.toHaveBeenCalled();
-      expect(allersVersRepository.delete).not.toHaveBeenCalled();
-    });
-
-    it("devrait refuser la suppression pour AMO", async () => {
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: false,
-        reason: "Permission insuffisante pour supprimer des Allers Vers",
-        errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
-      });
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(false);
-      expect(allersVersRepository.findAll).not.toHaveBeenCalled();
-    });
-
-    it("devrait refuser la suppression pour PARTICULIER", async () => {
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: false,
-        reason: "Permission insuffisante pour supprimer des Allers Vers",
-        errorCode: AccessErrorCode.INSUFFICIENT_PERMISSIONS,
-      });
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(false);
-    });
-
-    it("devrait gérer une liste vide", async () => {
-      const mockUser = createMockAuthUser(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: true,
-        user: mockUser,
-      });
-
-      vi.mocked(allersVersRepository.findAll).mockResolvedValue([]);
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(true);
-      expect(allersVersRepository.delete).not.toHaveBeenCalled();
-    });
-
-    it("devrait gérer les erreurs de suppression", async () => {
-      const mockUser = createMockAuthUser(UserRole.ADMINISTRATEUR);
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: true,
-        user: mockUser,
-      });
-
-      const mockAllersVers = [createMockAllersVers()];
-      vi.mocked(allersVersRepository.findAll).mockResolvedValue(mockAllersVers);
-      vi.mocked(allersVersRepository.delete).mockRejectedValue(new Error("Erreur de contrainte"));
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Impossible de supprimer les Allers Vers");
-      }
-    });
-  });
-
   describe("Sécurité et cas limites", () => {
     it("devrait empêcher l'import sans authentification", async () => {
       vi.mocked(checkBackofficePermission).mockResolvedValue({
@@ -591,19 +510,6 @@ describe("allers-vers-admin.actions", () => {
 
       expect(result.success).toBe(false);
       expect(allersVersRepository.update).not.toHaveBeenCalled();
-    });
-
-    it("devrait empêcher la suppression sans authentification", async () => {
-      vi.mocked(checkBackofficePermission).mockResolvedValue({
-        hasAccess: false,
-        reason: "Utilisateur non authentifié",
-        errorCode: AccessErrorCode.NOT_AUTHENTICATED,
-      });
-
-      const result = await deleteAllAllersVers();
-
-      expect(result.success).toBe(false);
-      expect(allersVersRepository.findAll).not.toHaveBeenCalled();
     });
   });
 });

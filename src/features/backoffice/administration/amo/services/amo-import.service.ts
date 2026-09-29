@@ -1,6 +1,9 @@
 import ExcelJS from "exceljs";
 import { db } from "@/shared/database/client";
 import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database/schema";
+import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
+import { parseListe } from "@/shared/utils/liste.utils";
+import { decrireBilanPurge } from "../../shared/domain";
 import { eq } from "drizzle-orm";
 
 interface AmoRow {
@@ -147,11 +150,13 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
     };
   }
 
-  if (clearExisting) {
-    await db.delete(entreprisesAmoEpci);
-    await db.delete(entreprisesAmoCommunes);
-    await db.delete(entreprisesAmo);
-  }
+  // Ne touche ni aux entreprises d'un agent (compte inexploitable) ni à celles d'une validation (FK restrict)
+  const purge = clearExisting
+    ? decrireBilanPurge(
+        await entreprisesAmoRepository.supprimerNonRattachees(),
+        "rattachées à un agent ou à un dossier"
+      )
+    : undefined;
 
   let entreprisesCreated = 0;
   let entreprisesUpdated = 0;
@@ -177,10 +182,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
         continue;
       }
 
-      const emailsList = row.emails
-        .split(";")
-        .map((e) => e.trim())
-        .filter((e) => e.includes("@"));
+      const emailsList = parseListe(row.emails).filter((e) => e.includes("@"));
 
       if (emailsList.length === 0) {
         errors.push(`${row.nom} : aucun email valide trouvé`);
@@ -192,11 +194,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
         continue;
       }
 
-      const departementsFormatted = row.departements
-        .split(",")
-        .map((dep) => dep.trim())
-        .filter((dep) => dep.length > 0)
-        .join(", ");
+      const departementsFormatted = parseListe(row.departements).join(", ");
 
       const existingAmo = await db
         .select({ id: entreprisesAmo.id })
@@ -242,10 +240,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
       await db.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, entreprise.id));
 
       if (row.epci?.trim()) {
-        const codesEpci = row.epci
-          .split(";")
-          .map((code) => code.trim())
-          .filter((code) => /^\d{9}$/.test(code));
+        const codesEpci = parseListe(row.epci).filter((code) => /^\d{9}$/.test(code));
 
         if (codesEpci.length > 0) {
           const epciData = codesEpci.map((codeEpci) => ({
@@ -258,10 +253,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
       }
 
       if (row.codes_insee?.trim()) {
-        const codesInsee = row.codes_insee
-          .split(",")
-          .map((code) => code.trim())
-          .filter((code) => /^\d{5}$/.test(code));
+        const codesInsee = parseListe(row.codes_insee).filter((code) => /^\d{5}$/.test(code));
 
         if (codesInsee.length > 0) {
           const communesData = codesInsee.map((codeInsee) => ({
@@ -288,7 +280,12 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
 
   return {
     success: true,
-    message: `Import réussi : ${totalEntreprises} entreprises ${actionVerb}, ${epciCreated} EPCI et ${communesCreated} communes associées`,
+    message: [
+      purge,
+      `Import réussi : ${totalEntreprises} entreprises ${actionVerb}, ${epciCreated} EPCI et ${communesCreated} communes associées`,
+    ]
+      .filter(Boolean)
+      .join(" "),
     stats: {
       entreprisesCreated,
       entreprisesUpdated,

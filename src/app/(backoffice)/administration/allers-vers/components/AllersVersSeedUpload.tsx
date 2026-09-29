@@ -85,6 +85,11 @@ export function AllersVersSeedUpload({ onImportSuccess }: AllersVersSeedUploadPr
         </div>
       </div>
 
+      <p className="fr-text--sm">
+        Une structure déjà présente (même nom, au moins un département en commun) est mise à jour au lieu d'être
+        dupliquée. Dans les colonnes à plusieurs valeurs, séparez-les par des virgules ou des points-virgules.
+      </p>
+
       <form action={formAction}>
         <div
           className={`
@@ -134,8 +139,10 @@ export function AllersVersSeedUpload({ onImportSuccess }: AllersVersSeedUploadPr
             disabled={isPending}
           />
           <label className="fr-label" htmlFor="clear-existing-allers-vers">
-            Supprimer toutes les structures Allers Vers existantes avant l'import
-            <span className="fr-hint-text">Attention : cette action est irréversible</span>
+            Supprimer les structures Allers Vers non rattachées avant l'import
+            <span className="fr-hint-text">
+              Les structures rattachées à un agent sont conservées. Attention : la suppression est irréversible
+            </span>
           </label>
         </div>
 
@@ -151,10 +158,15 @@ export function AllersVersSeedUpload({ onImportSuccess }: AllersVersSeedUploadPr
           {state.success && (
             <div className="fr-mt-2w">
               <p className="fr-text--bold">Résultat :</p>
+              {state.data.purge && <p>{state.data.purge}</p>}
               <ul>
                 <li>
                   {state.data.created} structure{state.data.created > 1 ? "s" : ""} créée
                   {state.data.created > 1 ? "s" : ""}
+                </li>
+                <li>
+                  {state.data.updated} structure{state.data.updated > 1 ? "s" : ""} mise
+                  {state.data.updated > 1 ? "s" : ""} à jour
                 </li>
               </ul>
 
