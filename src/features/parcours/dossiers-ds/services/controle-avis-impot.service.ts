@@ -9,8 +9,7 @@ import {
 import { getAnnotationControleAvisImpot } from "../domain/value-objects/ds-annotations";
 import { lireAvisImpotDossier } from "./avis-impot.service";
 
-export type IssueAnnotationControle =
-  "ecrite" | "inchangee" | "simulation" | "annotation_non_configuree" | "instructeur_non_configure";
+export type IssueAnnotationControle = "ecrite" | "inchangee" | "simulation" | "annotation_non_configuree";
 
 export interface ControleAvisImpotDossier {
   numero: number;
@@ -47,12 +46,9 @@ export async function controlerEtAnnoterAvisImpot(
   }
   if (!options.appliquer) return { ...controle, issue: "simulation" };
 
-  const instructeurId = getServerEnv().DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID;
-  if (!instructeurId) return { ...controle, issue: "instructeur_non_configure" };
-
   await graphqlClient.modifierAnnotations({
     dossierId: donnees.dossierId,
-    instructeurId,
+    instructeurId: getServerEnv().DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID,
     annotations: [{ id: annotationId, value: { textarea: texte } }],
   });
   return { ...controle, issue: "ecrite" };

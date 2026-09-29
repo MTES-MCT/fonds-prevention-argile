@@ -27,7 +27,6 @@ const LIBELLES_ISSUE: Record<IssueAnnotationControle, string> = {
   inchangee: "annotation déjà à jour, rien à écrire",
   simulation: "DRY-RUN, annotation non écrite (ajouter --apply)",
   annotation_non_configuree: "démarche sans id d'annotation connu, rien écrit",
-  instructeur_non_configure: "DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID absent, rien écrit",
 };
 
 async function main(): Promise<void> {

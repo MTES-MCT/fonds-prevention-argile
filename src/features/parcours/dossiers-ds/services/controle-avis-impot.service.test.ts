@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const env = vi.hoisted(() => ({ DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID: "SW5zdHJ1Y3RldXItMQ==" as string | undefined }));
+const env = vi.hoisted(() => ({ DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID: "SW5zdHJ1Y3RldXItMQ==" }));
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: vi.fn(() => env) }));
 
 const client = vi.hoisted(() => ({ getDossierAvisImpot: vi.fn(), modifierAnnotations: vi.fn() }));
@@ -17,7 +17,6 @@ const options = { codeRegion: "32", appliquer: true, maintenant: MAINTENANT };
 describe("controlerEtAnnoterAvisImpot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    env.DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID = "SW5zdHJ1Y3RldXItMQ==";
     client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
   });
 
@@ -50,13 +49,6 @@ describe("controlerEtAnnoterAvisImpot", () => {
     const controle = await controlerEtAnnoterAvisImpot(1, options);
 
     expect(controle?.issue).toBe("inchangee");
-    expect(client.modifierAnnotations).not.toHaveBeenCalled();
-  });
-
-  it("n'écrit pas sans instructeur configuré", async () => {
-    env.DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID = undefined;
-
-    expect((await controlerEtAnnoterAvisImpot(1, options))?.issue).toBe("instructeur_non_configure");
     expect(client.modifierAnnotations).not.toHaveBeenCalled();
   });
 
