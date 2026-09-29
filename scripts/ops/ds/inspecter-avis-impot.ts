@@ -2,20 +2,29 @@
  * Inspecte, en LECTURE SEULE, ce que DN a extrait des avis d'imposition d'un dossier
  * d'éligibilité (2D-Doc lu par DocumentIA), à côté des déclaratifs du foyer.
  *
- * Valeurs MASQUÉES par défaut (« renseigné » / « vide ») : ce sont des données fiscales.
+ * Affiche aussi le verdict du contrôle de cohérence ; son détail (montants) seulement avec
+ * --afficher-valeurs. Valeurs MASQUÉES par défaut : ce sont des données fiscales.
+ * --region=<code INSEE> permet de calculer l'effet d'un écart de revenu sur la tranche.
  *
  * Usage :
  *   pnpm ds:inspecter-avis-impot --dossier=33301642
  *   pnpm ds:inspecter-avis-impot --dossier=33301642,33306423 --afficher-valeurs
- *   pnpm ds:inspecter-avis-impot --fixture=doublon      (réponse DN fictive, sans appel réseau)
+ *   pnpm ds:inspecter-avis-impot --fixture=ecart-revenu --region=32 --afficher-valeurs
+ *   (fixture = réponse DN fictive, sans appel réseau)
  *
- * Fixtures : lu, doublon, deux-foyers, non-lu, sans-avis.
+ * Fixtures : lu, doublon, deux-foyers, ecart-revenu, non-lu, sans-avis.
  * Prérequis (mode --dossier) : .env.local avec DEMARCHES_SIMPLIFIEES_GRAPHQL_API_*.
  */
 
 import "../lib/env";
 import { getArg, hasFlag } from "../lib/args";
-import type { AvisImpotExtrait, DonneesAvisImpotDossier } from "@/features/parcours/dossiers-ds/domain/avis-impot";
+import {
+  LIBELLES_STATUT_CONTROLE,
+  controlerAvisImpot,
+  formaterDetailControle,
+  type AvisImpotExtrait,
+  type DonneesAvisImpotDossier,
+} from "@/features/parcours/dossiers-ds/domain/avis-impot";
 import { mapDossierAvisImpot } from "@/features/parcours/dossiers-ds/mappers/avis-impot.mapper";
 import {
   FIXTURES_AVIS_IMPOT,
@@ -25,6 +34,7 @@ import {
 const DOSSIERS_ARG = getArg("dossier");
 const FIXTURE_ARG = getArg("fixture");
 const AFFICHER_VALEURS = hasFlag("afficher-valeurs");
+const REGION = getArg("region") ?? null;
 
 function valeur(v: string | number | null): string {
   if (v === null) return "vide";
@@ -63,14 +73,32 @@ function afficher(donnees: DonneesAvisImpotDossier): void {
 
   if (donnees.avis.length === 0) {
     console.log("Avis d'imposition : aucune pièce de nature AVIS_IMPOT sur ce dossier");
+  } else {
+    console.log(`Avis d'imposition : ${donnees.avis.length} pièce(s) de nature AVIS_IMPOT`);
+    donnees.avis.forEach(afficherAvis);
+  }
+
+  afficherControle(donnees);
+}
+
+function afficherControle(donnees: DonneesAvisImpotDossier): void {
+  const resultat = controlerAvisImpot(donnees, { codeRegion: REGION, maintenant: new Date() });
+  console.log(`Contrôle : ${LIBELLES_STATUT_CONTROLE[resultat.statut]}`);
+  if (AFFICHER_VALEURS) {
+    console.log(formaterDetailControle(resultat).replace(/^/gm, "      "));
     return;
   }
-  console.log(`Avis d'imposition : ${donnees.avis.length} pièce(s) de nature AVIS_IMPOT`);
-  donnees.avis.forEach(afficherAvis);
-
-  const references = donnees.avis.map((a) => a.referenceAvis).filter((r): r is string => r !== null);
-  const doublons = references.length - new Set(references).size;
-  if (doublons > 0) console.log(`  ! ${doublons} avis déposé(s) en double (même référence)`);
+  const criteres = [
+    ["Revenu fiscal de référence", resultat.revenu.statut],
+    ["Personnes du ménage", resultat.foyer.statut],
+    ["Année des revenus", resultat.annee.statut],
+  ] as const;
+  for (const [libelle, statut] of criteres) {
+    console.log(`      ${libelle.padEnd(30)} ${LIBELLES_STATUT_CONTROLE[statut]}`);
+  }
+  console.log(
+    `      ${resultat.avisLus} avis lu(s), ${resultat.avisNonLus} non lu(s), ${resultat.doublonsIgnores} doublon(s)`
+  );
 }
 
 async function main(): Promise<void> {
