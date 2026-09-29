@@ -34,7 +34,7 @@ const REPONSES_PIRES: PartialVulnerabiliteReponses = {
   eaux: {
     pente_terrain: "vers_facade",
     reseaux_enterres: "sous_fondations",
-    gravier_proprete: "present",
+    gravier_proprete: "present_tout_pourtour",
     gouttieres: "absentes_ou_debordantes",
   },
   vegetation: {
@@ -87,6 +87,18 @@ describe("computeScoreResult", () => {
     const result = computeScoreResult({});
     expect(result.scoreGlobal).toBe(0);
   });
+
+  it("cumuler plusieurs mauvaises réponses pèse plus qu'une moyenne simple (RMS)", () => {
+    // 2 critères au pire score (100) sur les 10 répondus, le reste idéal (0).
+    const deuxSourcesDeVulnerabilite: PartialVulnerabiliteReponses = {
+      ...REPONSES_IDEALES,
+      eaux: { ...REPONSES_IDEALES.eaux, pente_terrain: "vers_facade", gouttieres: "absentes_ou_debordantes" },
+    };
+    const result = computeScoreResult(deuxSourcesDeVulnerabilite);
+    // Moyenne simple : 200/10 = 20. RMS : racine((2×100² + 8×0²)/10) ≈ 45.
+    expect(result.scoreGlobal).toBeGreaterThan(20);
+    expect(result.scoreGlobal).toBe(45);
+  });
 });
 
 describe("getImpactScore", () => {
@@ -109,12 +121,10 @@ describe("getImpactScore", () => {
 describe("getNiveauVulnerabilite", () => {
   it("classe correctement aux bornes des seuils", () => {
     expect(getNiveauVulnerabilite(0)).toBe("faible");
-    expect(getNiveauVulnerabilite(24)).toBe("faible");
-    expect(getNiveauVulnerabilite(25)).toBe("modere");
-    expect(getNiveauVulnerabilite(49)).toBe("modere");
-    expect(getNiveauVulnerabilite(50)).toBe("eleve");
-    expect(getNiveauVulnerabilite(74)).toBe("eleve");
-    expect(getNiveauVulnerabilite(75)).toBe("tres_eleve");
-    expect(getNiveauVulnerabilite(100)).toBe("tres_eleve");
+    expect(getNiveauVulnerabilite(33)).toBe("faible");
+    expect(getNiveauVulnerabilite(34)).toBe("moyen");
+    expect(getNiveauVulnerabilite(66)).toBe("moyen");
+    expect(getNiveauVulnerabilite(67)).toBe("fort");
+    expect(getNiveauVulnerabilite(100)).toBe("fort");
   });
 });

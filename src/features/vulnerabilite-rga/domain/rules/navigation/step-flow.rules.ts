@@ -11,6 +11,7 @@ const STEP_ORDER: VulnerabiliteStep[] = [
   VulnerabiliteStep.RESEAUX_ENTERRES,
   VulnerabiliteStep.GRAVIER_PROPRETE,
   VulnerabiliteStep.GOUTTIERES,
+  VulnerabiliteStep.RECUPERATEUR_EAU,
   VulnerabiliteStep.ARBRE_PROXIMITE,
   VulnerabiliteStep.ARBRE_ESSENCE,
   VulnerabiliteStep.HAIES,

@@ -27,6 +27,7 @@ export const MATOMO_EVENTS = {
   VULNERABILITE_STEP_RESEAUX_ENTERRES: "vulnerabilite_step_reseaux_enterres",
   VULNERABILITE_STEP_GRAVIER_PROPRETE: "vulnerabilite_step_gravier_proprete",
   VULNERABILITE_STEP_GOUTTIERES: "vulnerabilite_step_gouttieres",
+  VULNERABILITE_STEP_RECUPERATEUR_EAU: "vulnerabilite_step_recuperateur_eau",
   VULNERABILITE_STEP_ARBRE_PROXIMITE: "vulnerabilite_step_arbre_proximite",
   VULNERABILITE_STEP_ARBRE_ESSENCE: "vulnerabilite_step_arbre_essence",
   VULNERABILITE_STEP_HAIES: "vulnerabilite_step_haies",

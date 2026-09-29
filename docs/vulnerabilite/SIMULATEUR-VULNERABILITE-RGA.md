@@ -26,7 +26,7 @@ moindre coût. Ce n'est **pas** un diagnostic, et ce n'est **pas** le simulateur
 | Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                           |
 
 Le questionnaire ne porte volontairement **ni sur le bâti** (année, niveaux, fondations) **ni sur les
-revenus** : 11 questions, toutes observables depuis le jardin.
+revenus** : 12 questions, toutes observables depuis le jardin.
 
 ---
 
@@ -93,7 +93,7 @@ domain/
   value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
   value-objects/niveau-badge.const.ts      ← labels/couleurs des badges de niveau, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 13 étapes, 9 illustrations SVG, jauge, recommandations
+components/                                ← 14 étapes, 10 illustrations SVG, jauge, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
@@ -101,25 +101,44 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 
 ### Parcours
 
-`intro → adresse → 4 questions eaux → arbre (+ essence si arbre proche) → haies → végétation en
-pied de façade → mitoyenneté → ensoleillement → résultat`
+`intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (+ essence si arbre proche) →
+haies → végétation en pied de façade → mitoyenneté → ensoleillement → résultat`
 
 Seule bifurcation : `arbre_essence` n'est posée que si `arbre_proximite === "oui"`. Le compteur
-d'étapes passe donc de 10 à 11 selon la réponse.
+d'étapes passe donc de 11 à 12 selon la réponse.
 
 ### Calcul du score
 
-Deux niveaux de pondération, tous deux dans `grille-ponderation.ts` :
+Une seule pondération : le barème par réponse (0 = idéal, 100 = risque maximal),
+`grille-ponderation.ts`. Il n'y a **plus** de poids de catégorie ni de poids de critère — la
+cascade catégorie → critère → réponse rendait impossible de savoir si un mauvais score « eaux »
+était plus grave qu'un mauvais score « végétation », donc arbitraire à calibrer. Chaque critère
+répondu compte désormais à égalité.
 
-- **catégorie** dans le score global — sol 30, eaux 25, végétation 25, divers 20 ;
-- **critère** dans sa catégorie — la somme fait 100 par catégorie (vérifié par test).
+Le score global n'est pas une moyenne arithmétique simple, mais une **moyenne quadratique
+(RMS)** : `racine(moyenne(score²))`, renormalisée sur les seuls critères répondus/applicables
+(un critère non répondu ou non applicable — ex. `arbre_essence` sans arbre proche — est exclu du
+dénominateur, jamais compté comme « bon »). Une moyenne simple dilue le risque quand quelques
+mauvaises réponses sont noyées parmi beaucoup de bonnes (2 critères au pire score sur 12 ne
+donnent que 17/100 en moyenne simple) ; la RMS fait mécaniquement peser plus lourd les scores
+élevés, donc cumuler plusieurs sources de vulnérabilité fait monter le score plus vite que si
+elles étaient isolées (même exemple : 41/100 en RMS). `scoring.service.test.ts` verrouille ce
+comportement.
 
-Chaque réponse vaut un score 0 (idéal) à 100 (risque maximal). Le score global est une moyenne
-pondérée **renormalisée** : un critère non répondu ou non applicable est exclu du dénominateur,
-jamais compté comme « bon ».
+La catégorie `sol` (aléa RGA) compte comme n'importe quel autre critère dans le score (elle
+pesait 30 % via le poids de catégorie, elle pèse désormais 1 critère parmi les ~12). Elle reste
+en revanche marquée `actionnable: false` : elle entre dans le score mais ne génère **jamais**
+de recommandation — on ne demande pas à un ménage de changer son sol.
 
-La catégorie `sol` (aléa RGA) est marquée `actionnable: false` : elle pèse dans le score mais ne
-génère **jamais** de recommandation — on ne demande pas à un ménage de changer son sol.
+`CATEGORIES_CONFIG` (sol/eaux/végétation/divers) survit comme simple regroupement d'affichage
+(filtre `actionnable` des recommandations, cartes « score moyen par catégorie » de
+`/administration/vulnerabilite`) — ces scores par catégorie sont recalculés en RMS non
+pondérée sur les seuls critères de la catégorie, purement informatifs, sans effet sur le score
+global.
+
+3 niveaux de vulnérabilité (`faible` / `moyen` / `fort`, `scoring.service.ts`), coupures à
+34 et 67 (tiers égaux de l'échelle 0-100) — remplacent les 4 niveaux précédents
+(`faible`/`modérée`/`élevée`/`très élevée`, coupures 25/50/75).
 
 ---
 
@@ -160,7 +179,7 @@ rendus ne puissent pas diverger. Aucune illustration dans le PDF (non demandé, 
 du dossier `illustrations/` ne sont pas conçus pour ce second moteur de rendu).
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
-que tout le reste de la page, alors que le bouton n'apparaît qu'à la 13e étape. `ResultVulnerabilite`
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 14e étape. `ResultVulnerabilite`
 la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
 l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
 compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
@@ -202,25 +221,22 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 - Trou de contenu : `arbre_proximite = "ne_sais_pas"` vaut 50 mais ne déclenche aucune fiche du
   catalogue — l'utilisateur est pénalisé sans piste d'action. Ajouter une fiche « faire identifier
   l'arbre / mesurer la distance aux fondations ».
-- Vérifier avec le métier la décision « gravier de propreté présent = risque maximal » et
-  « végétation en pied de façade = à supprimer d'office », aujourd'hui binaires.
+- Vérifier avec le métier la décision « végétation en pied de façade = à supprimer d'office »,
+  aujourd'hui binaire. Le gravier de propreté distingue désormais présence localisée (60) et
+  présence sur tout le pourtour (100), mais ces deux valeurs restent, comme le reste de la
+  grille, des poids de départ non validés par un expert RGA.
 
 ### Cohérence produit
 
-- Le badge des cartes de recommandation affiche « Gain potentiel » à partir du **score de la
-  réponse**, alors que la liste est triée par `poidsGlobal × score`. Deux recommandations de même
-  score mais de poids différents affichent donc le même gain. Aucune inversion visible avec la
-  grille actuelle, mais l'incohérence deviendra visible dès que les poids bougeront : badger sur la
-  priorité normalisée, ou renommer le libellé.
 - Les bandes de la jauge (5 × 36°, coupures à 20/40/60/80) ne correspondent pas aux seuils de
-  niveau (25/50/75) : un score de 45 est annoncé « modérée » avec l'aiguille dans la bande du
-  milieu. Passer à 4 bandes alignées sur les vrais seuils.
+  niveau (34/67) : un score de 60 est annoncé « moyenne » avec l'aiguille dans une bande de
+  couleur différente. Passer à 3 bandes alignées sur les vrais seuils.
 - Une seconde simulation dans la même session écrase le pointeur du parcours (dernière simulation
   connue). Voulu, mais à revoir si l'espace agent doit un jour montrer une évolution dans le temps.
 
 ### Technique
 
-- Déplacer `SEUILS_NIVEAU` (25/50/75) de `scoring.service.ts` vers la grille : ces seuils font
+- Déplacer `SEUILS_NIVEAU` (34/67) de `scoring.service.ts` vers la grille : ces seuils font
   partie de la méthode, ils pilotent la jauge et tous les badges.
 - Supprimer le cas particulier `arbre_essence` (`bareme: []` + `if (critere.id === "arbre_essence")`
   dans `scoring.service.ts`, `getReponseLabel` et `simulation-payload.ts`) en générant son barème
@@ -255,7 +271,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Calcul du score                               | `vulnerabilite-rga/domain/services/scoring.service.ts`                                        |
 | Priorisation des recommandations              | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
 | Navigation et branchement                     | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
-| Orchestrateur des 13 étapes                   | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
+| Orchestrateur des 14 étapes                   | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
 | Écriture anonyme                              | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
 | Table anonyme                                 | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
 | PDF téléchargeable                            | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |
