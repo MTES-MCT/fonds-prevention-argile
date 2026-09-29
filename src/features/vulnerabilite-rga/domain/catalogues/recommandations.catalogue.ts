@@ -49,16 +49,30 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     illustrationId: "reseaux",
   },
   {
-    id: "eaux-gravier",
+    id: "eaux-gravier-tout-pourtour",
     critereId: "gravier_proprete",
-    reponsesDeclenchantes: ["present"],
-    titre: "Revoir le gravier de propreté en pied de façade",
+    reponsesDeclenchantes: ["present_tout_pourtour"],
+    titre: "Revoir le gravier de propreté sur tout le pourtour de la maison",
     problemes: [
       "Sans membrane étanche dessous, le gravier laisse l'eau s'infiltrer directement au pied du mur",
-      "Ces infiltrations répétées provoquent des cycles gonflement/retrait du sol contre les fondations",
+      "Sur tout le pourtour, ces infiltrations répétées provoquent des cycles gonflement/retrait sur l'ensemble des fondations; le risque d'un tassement différentiel généralisé est plus élevé qu'un point localisé",
     ],
     ameliorations: [
-      "Faire vérifier la présence d'une membrane étanche, ou remplacer par un dispositif qui éloigne l'eau du mur",
+      "Faire vérifier la présence d'une membrane étanche sur tout le tour, ou remplacer par un dispositif qui éloigne l'eau du mur",
+    ],
+    illustrationId: "gravier",
+  },
+  {
+    id: "eaux-gravier-localise",
+    critereId: "gravier_proprete",
+    reponsesDeclenchantes: ["present_localise"],
+    titre: "Revoir le gravier de propreté aux endroits concernés",
+    problemes: [
+      "Sans membrane étanche dessous, le gravier laisse l'eau s'infiltrer directement au pied du mur",
+      "Limitées à quelques endroits, ces infiltrations créent un risque localisé de tassement différentiel à ces points précis",
+    ],
+    ameliorations: [
+      "Faire vérifier la présence d'une membrane étanche aux endroits concernés, ou remplacer par un dispositif qui éloigne l'eau du mur",
     ],
     illustrationId: "gravier",
   },
@@ -73,6 +87,21 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
       "Vérifier que la descente évacue l'eau loin des fondations (regard, drain, ou raccordement)",
     ],
     illustrationId: "gouttieres",
+  },
+  {
+    id: "eaux-recuperateur",
+    critereId: "recuperateur_eau",
+    reponsesDeclenchantes: ["present_fuite_ou_mal_raccorde", "ne_sais_pas"],
+    titre: "Vérifier le raccordement et l'étanchéité du récupérateur d'eau",
+    problemes: [
+      "Collé à la descente de gouttière, un récupérateur d'eau est presque toujours en pied de façade",
+      "S'il fuit ou est mal raccordé, il déverse l'eau directement contre le mur, avec le même effet qu'une gouttière défaillante",
+    ],
+    ameliorations: [
+      "Vérifier régulièrement l'étanchéité de la cuve et du raccordement à la descente de gouttière",
+      "En cas de trop-plein, s'assurer qu'il évacue loin des fondations plutôt que de déborder au pied du mur",
+    ],
+    illustrationId: "recuperateur-eau",
   },
   {
     id: "veg-arbre",

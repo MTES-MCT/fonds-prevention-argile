@@ -18,6 +18,7 @@ import {
   StepReseauxEnterres,
   StepGravierProprete,
   StepGouttieres,
+  StepRecuperateurEau,
   StepArbreProximite,
   StepArbreEssence,
   StepHaies,
@@ -144,6 +145,9 @@ export function VulnerabiliteFormulaire() {
 
     case VulnerabiliteStep.GOUTTIERES:
       return <StepGouttieres {...stepProps} initialValue={answers.eaux?.gouttieres} />;
+
+    case VulnerabiliteStep.RECUPERATEUR_EAU:
+      return <StepRecuperateurEau {...stepProps} initialValue={answers.eaux?.recuperateur_eau} />;
 
     case VulnerabiliteStep.ARBRE_PROXIMITE:
       return <StepArbreProximite {...stepProps} initialValue={answers.vegetation?.arbre_proximite} />;

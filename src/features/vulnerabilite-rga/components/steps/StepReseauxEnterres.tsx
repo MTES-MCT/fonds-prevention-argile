@@ -36,9 +36,9 @@ export function StepReseauxEnterres({
       illustration={<Image src={schemaReseauxEnterres} alt="" className="w-full h-auto" />}
       description="Repérez les réseaux enterrés (eau potable, évacuation, descente de gouttière). Une fuite près des fondations humidifie le sol et fait gonfler l'argile localement : c'est l'une des causes les plus fréquentes de sinistre RGA. Une estimation du tracé suffit."
       options={[
-        { value: "sous_fondations", label: "Les réseaux passent sous les fondations" },
-        { value: "proches", label: "Les réseaux sont proches, mais pas sous les fondations" },
-        { value: "eloignes", label: "Les réseaux sont éloignés des fondations" },
+        { value: "sous_fondations", label: "Les réseaux passent sous la maison" },
+        { value: "proches", label: "Les réseaux sont proches, mais pas sous la maison" },
+        { value: "eloignes", label: "Les réseaux sont éloignés de la maison" },
         { value: "ne_sais_pas", label: "Je ne sais pas" },
       ]}
       selected={selected}

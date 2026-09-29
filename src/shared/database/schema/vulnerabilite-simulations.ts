@@ -23,6 +23,7 @@ export const vulnerabiliteSimulations = pgTable(
     reseauxEnterres: varchar("reseaux_enterres", { length: 32 }),
     gravierProprete: varchar("gravier_proprete", { length: 32 }),
     gouttieres: varchar("gouttieres", { length: 32 }),
+    recuperateurEau: varchar("recuperateur_eau", { length: 32 }),
     arbreProximite: varchar("arbre_proximite", { length: 32 }),
     arbreEssence: varchar("arbre_essence", { length: 32 }),
     haies: varchar("haies", { length: 32 }),

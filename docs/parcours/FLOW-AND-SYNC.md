@@ -261,7 +261,7 @@ depuis `choix_amo`) : c'est `validateInvitation` qui route, au claim, selon la v
 > contredisait l'évènement `amo_reponse` déjà parti quand une AMO avait validé avant le claim.
 > Il est désormais dérivé de l'état réel (`aUneAmoValidee`).
 
-#### 2.3.6 Plusieurs AMO sur le territoire : quelqu'un choisit, jamais l'application (ADR-0041)
+#### 2.3.6 Plusieurs AMO sur le territoire : quelqu'un choisit, jamais l'application (ADR-0042)
 
 La couverture d'une AMO se calcule en un point unique (`couverture-amo.ts` +
 `amo-couverture.service.ts`) : **commune, puis EPCI, puis département**, sans jamais mélanger
@@ -1608,7 +1608,7 @@ retrouvé déposé.
 | Autonomie décidée par un agent                 | `amo/services/amo-selection.service.ts` (`passerEnAutonomie`)                                               |
 | Ouverture d'étape après validation AMO         | `amo/services/ouverture-eligibilite.service.ts` (`ouvrirEligibiliteApresValidationAmo`, `aUneAmoValidee`)   |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
-| Couverture territoriale des AMO (ADR-0041)     | `amo/domain/value-objects/couverture-amo.ts`, `amo/services/amo-couverture.service.ts`                      |
+| Couverture territoriale des AMO (ADR-0042)     | `amo/domain/value-objects/couverture-amo.ts`, `amo/services/amo-couverture.service.ts`                      |
 | Choix de l'AMO parmi plusieurs (demandeur)     | `amo/components/steps/ChoixAmoListe.tsx`                                                                    |
 | Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |

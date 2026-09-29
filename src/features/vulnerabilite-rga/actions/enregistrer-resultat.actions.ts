@@ -45,6 +45,7 @@ export async function enregistrerResultatVulnerabiliteAction(payload: unknown): 
       reseauxEnterres: reponses.reseaux_enterres ?? null,
       gravierProprete: reponses.gravier_proprete ?? null,
       gouttieres: reponses.gouttieres ?? null,
+      recuperateurEau: reponses.recuperateur_eau ?? null,
       arbreProximite: reponses.arbre_proximite ?? null,
       arbreEssence: reponses.arbre_essence ?? null,
       haies: reponses.haies ?? null,

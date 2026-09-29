@@ -1,4 +1,4 @@
-# ADR-0041 : Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un
+# ADR-0042 : Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un
 
 **Date** : 2026-09-29
 **Statut** : Accepté
@@ -34,7 +34,7 @@ Toutes les surfaces lisent cette source : liste proposée au demandeur et à l'A
 `selectAmoForUser`, attribution (`assignAmoAutomatiqueForUser`, `demanderAccompagnementDemandeur`),
 garde « qualification vaut validation AMO », rattachement, acteurs locaux, départements non couverts.
 
-Le mode d'attribution distingue désormais qui a désigné l'AMO (migration `0050`) :
+Le mode d'attribution distingue désormais qui a désigné l'AMO (migration `0051`) :
 
 | Mode               | Quand                                                                              |
 | ------------------ | ---------------------------------------------------------------------------------- |
@@ -91,7 +91,7 @@ Le mode d'attribution distingue désormais qui a désigné l'AMO (migration `005
 
 ### Migration
 
-- `0050_attribution_amo_mode_new_values.sql` ajoute `auto_unique` et `choix_agent` à l'enum
+- `0051_attribution_amo_mode_new_values.sql` ajoute `auto_unique` et `choix_agent` à l'enum
   `attribution_amo_mode` (non suivi par drizzle-kit, migration écrite à la main comme `0041`).
 - Les validations existantes gardent leur mode : un `manuel` antérieur à cette décision peut
   désigner une AMO attribuée par défaut.

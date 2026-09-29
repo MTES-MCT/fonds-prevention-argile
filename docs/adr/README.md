@@ -68,6 +68,7 @@ purement cosmétique.
 | 0038 | [La qualification de l'Aller-vers décide de l'accompagnement](0038-qualification-aller-vers-pivot-accompagnement.md)                    | Accepté |
 | 0039 | [Classer les pièces justificatives d'après leur libellé DN](0039-classement-pieces-justificatives-par-libelle.md)                       | Accepté |
 | 0040 | [Un tunnel sans navigation pour le simulateur, et l'adresse en deux écrans](0040-tunnel-simulateur-adresse-en-deux-ecrans.md)           | Accepté |
-| 0041 | [Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un](0041-choix-amo-parmi-plusieurs.md)                                 | Accepté |
+| 0041 | [Calcul de vulnérabilité sans pondération en cascade, moyenne quadratique](0041-calcul-vulnerabilite-sans-ponderation-cascade.md)       | Accepté |
+| 0042 | [Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un](0042-choix-amo-parmi-plusieurs.md)                                 | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

@@ -1,0 +1,1 @@
+ALTER TABLE "vulnerabilite_simulations" ADD COLUMN "recuperateur_eau" varchar(32);

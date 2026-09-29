@@ -389,7 +389,7 @@ s'ajoute à celle de la qualification (rôle, structure, responsable du dossier)
 casquette AMO **par son rôle** (`AMO` / `AMO_ET_ALLERS_VERS`), et entreprise de l'agent
 parmi les AMO proposées pour le territoire. L'entreprise rattachée est celle de l'agent, issue du contexte serveur.
 
-> **AMO désignée par l'agent (ADR-0041).** Quand plusieurs AMO couvrent le territoire, l'agent
+> **AMO désignée par l'agent (ADR-0042).** Quand plusieurs AMO couvrent le territoire, l'agent
 > choisit celle à solliciter (`entrepriseAmoIdChoisie`, uuid validé par Zod). Le choix n'élargit
 > rien : il doit figurer parmi les AMO proposées pour le territoire du dossier, revérifié côté
 > service, et il passe après les gardes de qualification. Le rattachement super-admin, lui, est

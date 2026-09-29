@@ -30,6 +30,7 @@ const STEP_SPECIFIC_KEYS: Partial<
   [VulnerabiliteStep.RESEAUX_ENTERRES]: { section: "eaux", keys: ["reseaux_enterres"] },
   [VulnerabiliteStep.GRAVIER_PROPRETE]: { section: "eaux", keys: ["gravier_proprete"] },
   [VulnerabiliteStep.GOUTTIERES]: { section: "eaux", keys: ["gouttieres"] },
+  [VulnerabiliteStep.RECUPERATEUR_EAU]: { section: "eaux", keys: ["recuperateur_eau"] },
   [VulnerabiliteStep.ARBRE_PROXIMITE]: { section: "vegetation", keys: ["arbre_proximite"] },
   [VulnerabiliteStep.ARBRE_ESSENCE]: { section: "vegetation", keys: ["arbre_essence"] },
   [VulnerabiliteStep.HAIES]: { section: "vegetation", keys: ["haies"] },

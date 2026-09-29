@@ -236,7 +236,7 @@ les dossiers réels du périmètre du compte **avec leur URL complète** : colle
 le bloc « Données », pas sous les étapes.
 
 **Territoires à plusieurs AMO.** `pnpm qa:cas-de-test --multi-amo` liste les EPCI et les
-départements couverts par au moins deux AMO, où le demandeur doit choisir la sienne (ADR-0041).
+départements couverts par au moins deux AMO, où le demandeur doit choisir la sienne (ADR-0042).
 Le seed pose la CA de Cambrai (200068500, deux AMO fictives) : l'adresse du bloc « Données » se
 prend dans cet EPCI.
 

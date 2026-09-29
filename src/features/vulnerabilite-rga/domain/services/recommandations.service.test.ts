@@ -16,7 +16,7 @@ const REPONSES_PIRES: PartialVulnerabiliteReponses = {
   eaux: {
     pente_terrain: "vers_facade",
     reseaux_enterres: "sous_fondations",
-    gravier_proprete: "present",
+    gravier_proprete: "present_tout_pourtour",
     gouttieres: "absentes_ou_debordantes",
   },
   vegetation: {
@@ -38,11 +38,11 @@ describe("getRecommandationsPrioritaires", () => {
     expect(recos.some((r) => r.critereId === "aleaRga")).toBe(false);
   });
 
-  it("trie par priorité décroissante (poidsGlobal × score)", () => {
+  it("trie par score décroissant", () => {
     const result = computeScoreResult(REPONSES_PIRES);
     const recos = getRecommandationsPrioritaires(result, { limit: 20 });
     for (let i = 1; i < recos.length; i++) {
-      expect(recos[i - 1].priorite).toBeGreaterThanOrEqual(recos[i].priorite);
+      expect(recos[i - 1].score).toBeGreaterThanOrEqual(recos[i].score);
     }
   });
 
