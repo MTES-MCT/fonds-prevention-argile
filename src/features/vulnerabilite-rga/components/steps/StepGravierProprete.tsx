@@ -34,9 +34,10 @@ export function StepGravierProprete({
       critereId="gravier_proprete"
       title="Y a-t-il un lit de gravier en pied de façade ?"
       illustration={<Image src={schemaGravierProprete} alt="" className="w-full h-auto" />}
-      description="Une bande de graviers posée à même la terre, au ras du mur favorise l'infiltration au pied des fondations. Le mur aura tendance à s'enfoncer dans une argile plus molle."
+      description="Une bande de graviers posée à même la terre, au ras du mur favorise l'infiltration au pied des fondations. Le mur aura tendance à s'enfoncer dans une argile plus molle — un lit continu sur tout le pourtour expose l'ensemble des fondations, contrairement à quelques endroits isolés."
       options={[
-        { value: "present", label: "Oui, il y a un lit de gravier en pied de façade" },
+        { value: "present_tout_pourtour", label: "Oui, sur tout le pourtour de la maison" },
+        { value: "present_localise", label: "Oui, mais seulement à certains endroits" },
         { value: "absent", label: "Non, il n'y en a pas" },
       ]}
       selected={selected}

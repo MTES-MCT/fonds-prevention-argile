@@ -202,8 +202,10 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 - Trou de contenu : `arbre_proximite = "ne_sais_pas"` vaut 50 mais ne déclenche aucune fiche du
   catalogue — l'utilisateur est pénalisé sans piste d'action. Ajouter une fiche « faire identifier
   l'arbre / mesurer la distance aux fondations ».
-- Vérifier avec le métier la décision « gravier de propreté présent = risque maximal » et
-  « végétation en pied de façade = à supprimer d'office », aujourd'hui binaires.
+- Vérifier avec le métier la décision « végétation en pied de façade = à supprimer d'office »,
+  aujourd'hui binaire. Le gravier de propreté distingue désormais présence localisée (60) et
+  présence sur tout le pourtour (100), mais ces deux valeurs restent, comme le reste de la
+  grille, des poids de départ non validés par un expert RGA.
 
 ### Cohérence produit
 

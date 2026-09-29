@@ -110,8 +110,10 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     categorie: "eaux",
     poids: 15,
     bareme: [
-      // Décision validée : présence = risque (favorise l'infiltration / le tassement hydro-mécanique).
-      { reponse: "present", score: 100, label: "Présent en pied de façade" },
+      // Sur tout le pourtour : l'ensemble du contour des fondations subit les mêmes cycles
+      // d'infiltration, donc un tassement différentiel généralisé — pire qu'un point localisé.
+      { reponse: "present_tout_pourtour", score: 100, label: "Sur tout le pourtour de la maison" },
+      { reponse: "present_localise", score: 60, label: "Seulement à certains endroits" },
       { reponse: "absent", score: 0, label: "Absent" },
     ] satisfies BaremeReponse<ReponseGravierProprete>[],
   },

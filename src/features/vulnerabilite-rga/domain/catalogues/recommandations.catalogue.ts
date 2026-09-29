@@ -49,16 +49,30 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     illustrationId: "reseaux",
   },
   {
-    id: "eaux-gravier",
+    id: "eaux-gravier-tout-pourtour",
     critereId: "gravier_proprete",
-    reponsesDeclenchantes: ["present"],
-    titre: "Revoir le gravier de propreté en pied de façade",
+    reponsesDeclenchantes: ["present_tout_pourtour"],
+    titre: "Revoir le gravier de propreté sur tout le pourtour de la maison",
     problemes: [
       "Sans membrane étanche dessous, le gravier laisse l'eau s'infiltrer directement au pied du mur",
-      "Ces infiltrations répétées provoquent des cycles gonflement/retrait du sol contre les fondations",
+      "Sur tout le pourtour, ces infiltrations répétées provoquent des cycles gonflement/retrait sur l'ensemble des fondations — le risque d'un tassement différentiel généralisé est plus élevé qu'un point localisé",
     ],
     ameliorations: [
-      "Faire vérifier la présence d'une membrane étanche, ou remplacer par un dispositif qui éloigne l'eau du mur",
+      "Faire vérifier la présence d'une membrane étanche sur tout le tour, ou remplacer par un dispositif qui éloigne l'eau du mur",
+    ],
+    illustrationId: "gravier",
+  },
+  {
+    id: "eaux-gravier-localise",
+    critereId: "gravier_proprete",
+    reponsesDeclenchantes: ["present_localise"],
+    titre: "Revoir le gravier de propreté aux endroits concernés",
+    problemes: [
+      "Sans membrane étanche dessous, le gravier laisse l'eau s'infiltrer directement au pied du mur",
+      "Limitées à quelques endroits, ces infiltrations créent un risque localisé de tassement différentiel à ces points précis",
+    ],
+    ameliorations: [
+      "Faire vérifier la présence d'une membrane étanche aux endroits concernés, ou remplacer par un dispositif qui éloigne l'eau du mur",
     ],
     illustrationId: "gravier",
   },

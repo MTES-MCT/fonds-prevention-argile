@@ -34,7 +34,7 @@ const REPONSES_PIRES: PartialVulnerabiliteReponses = {
   eaux: {
     pente_terrain: "vers_facade",
     reseaux_enterres: "sous_fondations",
-    gravier_proprete: "present",
+    gravier_proprete: "present_tout_pourtour",
     gouttieres: "absentes_ou_debordantes",
   },
   vegetation: {
