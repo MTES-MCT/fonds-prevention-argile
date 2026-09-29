@@ -52,13 +52,22 @@ describe("getNombreDossiersAction — périmètre du compteur", () => {
     expect(countMock).not.toHaveBeenCalled();
   });
 
+  // Badge national pour un AMO sans entreprise : même trou que le listing.
+  it("retourne 0 pour un AMO sans territoire (droit par entreprise seul)", async () => {
+    mockAgent(UserRole.AMO);
+    mockScope({ ...baseScope, canViewDossiersByEntreprise: true });
+    const count = await getNombreDossiersAction();
+    expect(count).toBe(0);
+    expect(countMock).not.toHaveBeenCalled();
+  });
+
   it("compte le territoire d'un analyste départemental", async () => {
     mockAgent(UserRole.ANALYSTE);
     mockScope({ ...baseScope, departements: ["35"] });
     countMock.mockResolvedValue(7);
     const count = await getNombreDossiersAction();
     expect(count).toBe(7);
-    expect(countMock).toHaveBeenCalledWith(["35"], []);
+    expect(countMock).toHaveBeenCalledWith({ kind: "territoire", departements: ["35"], epcis: [] });
   });
 
   it("compte tous les dossiers pour un rôle à accès global (canViewAllDossiers)", async () => {
@@ -67,6 +76,6 @@ describe("getNombreDossiersAction — périmètre du compteur", () => {
     countMock.mockResolvedValue(170);
     const count = await getNombreDossiersAction();
     expect(count).toBe(170);
-    expect(countMock).toHaveBeenCalledWith([], []);
+    expect(countMock).toHaveBeenCalledWith({ kind: "national" });
   });
 });

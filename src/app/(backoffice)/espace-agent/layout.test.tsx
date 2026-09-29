@@ -8,22 +8,8 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("@/features/auth", () => ({
-  checkProConnectAccess: vi.fn(),
-  checkRoleAccess: vi.fn(),
-  ROUTES: {
-    connexion: { agent: "/connexion/agent" },
-    backoffice: { administration: { root: "/administration" } },
-  },
-}));
-
-vi.mock("@/features/backoffice", () => ({
-  getCurrentAgent: vi.fn(),
-  isCurrentUserSuperAdmin: vi.fn(),
-}));
-
-vi.mock("@/shared/database", () => ({
-  agentPermissionsRepository: { getDepartementsByAgentId: vi.fn() },
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  evaluerAccesEspaceAgent: vi.fn(),
 }));
 
 // Stubs identifiables pour les écrans de refus
@@ -35,90 +21,68 @@ vi.mock("@/shared/components", () => ({
     return null;
   },
 }));
-vi.mock("./components/SuperAdminReadOnlyBanner", () => ({ default: () => null }));
+vi.mock("./components/SuperAdminReadOnlyBanner", () => ({
+  default: function SuperAdminReadOnlyBanner() {
+    return null;
+  },
+}));
 
 import EspaceAgentLayout from "./layout";
-import { checkProConnectAccess, checkRoleAccess } from "@/features/auth";
-import { getCurrentAgent, isCurrentUserSuperAdmin } from "@/features/backoffice";
-import { agentPermissionsRepository } from "@/shared/database";
+import { evaluerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { AccesNonAutoriseAmo, AccesNonAutoriseAgentNonEnregistre } from "@/shared/components";
+import SuperAdminReadOnlyBanner from "./components/SuperAdminReadOnlyBanner";
 
-const render = () => EspaceAgentLayout({ children: null });
+const render = () => EspaceAgentLayout({ children: "contenu" });
 
-describe("EspaceAgentLayout — gardes d'accès (§7)", () => {
+function acces(value: unknown) {
+  vi.mocked(evaluerAccesEspaceAgent).mockResolvedValue(value as never);
+}
+
+describe("EspaceAgentLayout — affichage selon le verdict d'accès (§7)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("non authentifié → redirige vers la connexion agent", async () => {
-    vi.mocked(checkProConnectAccess).mockResolvedValue({
-      hasAccess: false,
-      errorCode: "NOT_AUTHENTICATED",
-    } as never);
-
+    acces({ statut: "non_connecte" });
     await expect(render()).rejects.toThrow("REDIRECT:/connexion/agent");
   });
 
-  it("connecté en FranceConnect (mauvaise méthode) → écran accès non autorisé, pas de redirect", async () => {
-    // hasAccess false mais errorCode != NOT_AUTHENTICATED (ex. méthode FranceConnect)
-    vi.mocked(checkProConnectAccess).mockResolvedValue({
-      hasAccess: false,
-      errorCode: "WRONG_AUTH_METHOD",
-    } as never);
-
-    const result = await render();
-
-    expect(result.type).toBe(AccesNonAutoriseAmo);
-    expect(getCurrentAgent).not.toHaveBeenCalled();
-  });
-
-  it("agent non enregistré en BDD → écran agent non enregistré", async () => {
-    vi.mocked(checkProConnectAccess).mockResolvedValue({ hasAccess: true } as never);
-    vi.mocked(getCurrentAgent).mockResolvedValue({ success: false, error: "x" } as never);
-
-    const result = await render();
-
-    expect(result.type).toBe(AccesNonAutoriseAgentNonEnregistre);
-  });
-
-  it("rôle non habilité → écran accès non autorisé", async () => {
-    vi.mocked(checkProConnectAccess).mockResolvedValue({ hasAccess: true } as never);
-    vi.mocked(getCurrentAgent).mockResolvedValue({
-      success: true,
-      data: { id: "agent-1", role: UserRole.PARTICULIER },
-    } as never);
-    vi.mocked(checkRoleAccess).mockResolvedValue({ hasAccess: false } as never);
-
-    const result = await render();
-
-    expect(result.type).toBe(AccesNonAutoriseAmo);
-  });
-
-  it("ANALYSTE national (sans département) → redirige vers /administration", async () => {
-    vi.mocked(checkProConnectAccess).mockResolvedValue({ hasAccess: true } as never);
-    vi.mocked(getCurrentAgent).mockResolvedValue({
-      success: true,
-      data: { id: "agent-1", role: UserRole.ANALYSTE },
-    } as never);
-    vi.mocked(checkRoleAccess).mockResolvedValue({ hasAccess: true } as never);
-    vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue([]);
-
+  it("ANALYSTE national → redirige vers /administration", async () => {
+    acces({ statut: "analyste_national" });
     await expect(render()).rejects.toThrow("REDIRECT:/administration");
   });
 
-  it("ANALYSTE départemental → accès autorisé (rend le contenu)", async () => {
-    vi.mocked(checkProConnectAccess).mockResolvedValue({ hasAccess: true } as never);
-    vi.mocked(getCurrentAgent).mockResolvedValue({
-      success: true,
-      data: { id: "agent-1", role: UserRole.ANALYSTE },
-    } as never);
-    vi.mocked(checkRoleAccess).mockResolvedValue({ hasAccess: true } as never);
-    vi.mocked(agentPermissionsRepository.getDepartementsByAgentId).mockResolvedValue(["30"]);
-    vi.mocked(isCurrentUserSuperAdmin).mockResolvedValue(false);
+  it("connecté en FranceConnect → écran accès non autorisé", async () => {
+    acces({ statut: "methode_invalide" });
+    expect((await render()).type).toBe(AccesNonAutoriseAmo);
+  });
+
+  it("agent non enregistré en BDD → écran agent non enregistré", async () => {
+    acces({ statut: "agent_inconnu" });
+    expect((await render()).type).toBe(AccesNonAutoriseAgentNonEnregistre);
+  });
+
+  it("rôle non habilité → écran accès non autorisé", async () => {
+    acces({ statut: "role_refuse" });
+    expect((await render()).type).toBe(AccesNonAutoriseAmo);
+  });
+
+  it("agent autorisé → rend le contenu, sans bandeau lecture seule", async () => {
+    acces({ statut: "autorise", agent: { id: "agent-1", role: UserRole.AMO } });
 
     const result = await render();
 
-    // Élément <div> conteneur du layout (pas un écran de refus)
     expect(result.type).toBe("div");
+    expect(result.props.children[0]).toBe(false);
+    expect(result.props.children[1]).toBe("contenu");
+  });
+
+  it("super-admin → bandeau lecture seule", async () => {
+    acces({ statut: "autorise", agent: { id: "agent-1", role: UserRole.SUPER_ADMINISTRATEUR } });
+
+    const result = await render();
+
+    expect(result.props.children[0].type).toBe(SuperAdminReadOnlyBanner);
   });
 });

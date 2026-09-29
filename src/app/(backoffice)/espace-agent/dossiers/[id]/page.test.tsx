@@ -9,7 +9,9 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("@/features/auth/services/user.service", () => ({ getCurrentUser: vi.fn() }));
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  exigerAccesEspaceAgent: vi.fn(),
+}));
 vi.mock("@/features/backoffice/espace-agent/dossiers/services/dossier-detail.service", () => ({
   getDossierDetail: vi.fn(),
 }));
@@ -32,7 +34,7 @@ vi.mock("@/shared/database/repositories/agents.repository", () => ({ agentsRepos
 vi.mock("@/shared/database/repositories/allers-vers.repository", () => ({ allersVersRepository: {} }));
 
 import DossierDetailPage from "./page";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { getDossierDetail } from "@/features/backoffice/espace-agent/dossiers/services/dossier-detail.service";
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 
@@ -49,15 +51,23 @@ const render = (id: string) => DossierDetailPage({ params: Promise.resolve({ id 
 describe("DossierDetailPage — résolution du permalien", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: "u1" } as never);
+    vi.mocked(exigerAccesEspaceAgent).mockResolvedValue({ id: "agent-1" } as never);
   });
 
   it("non authentifié → redirige vers la connexion agent, sans rien résoudre", async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue(null as never);
+    vi.mocked(exigerAccesEspaceAgent).mockRejectedValue(new Error("REDIRECT:/connexion/agent"));
 
     await expect(render(PARCOURS_ID)).rejects.toThrow("REDIRECT:/connexion/agent");
     expect(getDossierDetail).not.toHaveBeenCalled();
     expect(resolveEspaceAgentPath).not.toHaveBeenCalled();
+  });
+
+  // Next rend la page même quand le layout affiche un refus : elle ne doit charger aucune donnée.
+  it("rôle refusé par l'espace agent (ex. ADMINISTRATEUR) → 404 sans lire le dossier", async () => {
+    vi.mocked(exigerAccesEspaceAgent).mockRejectedValue(new Error("NOT_FOUND"));
+
+    await expect(render(VALIDATION_ID)).rejects.toThrow("NOT_FOUND");
+    expect(getDossierDetail).not.toHaveBeenCalled();
   });
 
   it("id de validation valide → aucune résolution déclenchée", async () => {

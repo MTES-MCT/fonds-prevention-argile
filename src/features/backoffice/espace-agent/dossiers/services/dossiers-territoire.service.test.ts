@@ -121,12 +121,15 @@ describe("getDossiersByAgent", () => {
       entrepriseAmoId: "amo-1",
     });
 
-    expect(getParcoursByTerritoire).toHaveBeenCalledWith(["36"], ["EPCI_36"], undefined);
+    expect(getParcoursByTerritoire).toHaveBeenCalledWith(
+      { kind: "territoire", departements: ["36"], epcis: ["EPCI_36"] },
+      undefined
+    );
     expect(result.total).toBe(1);
     expect(result.territoiresCouverts).toEqual({ departements: ["36"], epcis: ["EPCI_36"] });
   });
 
-  it("passe des territoires vides quand le scope est national (admin)", async () => {
+  it("demande explicitement le périmètre national (admin)", async () => {
     calculateAgentScope.mockResolvedValue(
       makeScope({ isNational: true, canViewAllDossiers: true, canViewDossiersByEntreprise: true })
     );
@@ -138,7 +141,7 @@ describe("getDossiersByAgent", () => {
       entrepriseAmoId: null,
     });
 
-    expect(getParcoursByTerritoire).toHaveBeenCalledWith([], [], undefined);
+    expect(getParcoursByTerritoire).toHaveBeenCalledWith({ kind: "national" }, undefined);
   });
 
   it("retourne un résultat vide pour un scope sans aucun droit (analyste sans dept)", async () => {
@@ -165,7 +168,10 @@ describe("getDossiersByAgent", () => {
       entrepriseAmoId: null,
     });
 
-    expect(getParcoursByTerritoire).toHaveBeenCalledWith(["36"], [], undefined);
+    expect(getParcoursByTerritoire).toHaveBeenCalledWith(
+      { kind: "territoire", departements: ["36"], epcis: [] },
+      undefined
+    );
     expect(result.total).toBe(1);
   });
 
@@ -177,6 +183,27 @@ describe("getDossiersByAgent", () => {
       role: UserRole.ANALYSTE,
       entrepriseAmoId: null,
     });
+
+    expect(result.dossiers).toEqual([]);
+    expect(getParcoursByTerritoire).not.toHaveBeenCalled();
+  });
+
+  // Constaté en dev : un AMO sans entreprise recevait les 247 dossiers de la base, PII comprises.
+  it("ne fuit aucun dossier pour un AMO sans entreprise (droit par entreprise, aucun territoire)", async () => {
+    calculateAgentScope.mockResolvedValue(makeScope({ canViewDossiersByEntreprise: true }));
+
+    const result = await getDossiersByAgent({ id: "amo-orphelin", role: UserRole.AMO, entrepriseAmoId: null });
+
+    expect(result.dossiers).toEqual([]);
+    expect(getParcoursByTerritoire).not.toHaveBeenCalled();
+  });
+
+  it("ne fuit aucun dossier pour un AMO dont l'entreprise n'a aucun territoire", async () => {
+    calculateAgentScope.mockResolvedValue(
+      makeScope({ entrepriseAmoIds: ["amo-1"], canViewDossiersByEntreprise: true })
+    );
+
+    const result = await getDossiersByAgent({ id: "amo-1-agent", role: UserRole.AMO, entrepriseAmoId: "amo-1" });
 
     expect(result.dossiers).toEqual([]);
     expect(getParcoursByTerritoire).not.toHaveBeenCalled();

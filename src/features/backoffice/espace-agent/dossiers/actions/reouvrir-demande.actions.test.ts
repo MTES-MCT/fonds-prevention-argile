@@ -1,4 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// La garde d'accès a sa propre suite (acces-espace-agent.service.test.ts) : ici l'agent est admis.
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  refusAccesEspaceAgent: vi.fn().mockResolvedValue(null),
+}));
 import { UserRole } from "@/shared/domain/value-objects";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getValidationDataByToken } from "@/features/parcours/amo/actions";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 interface ValidationAmoPageProps {
   params: Promise<{
@@ -14,10 +15,9 @@ interface ValidationAmoPageProps {
  *
  * Cette page redirige vers la page de détail de demande /espace-agent/demandes/[id]
  * qui offre une meilleure expérience utilisateur avec carte et informations complètes.
- *
- * L'accès AMO est vérifié par le layout parent (layout.tsx)
  */
 export default async function ValidationAmoPage({ params }: ValidationAmoPageProps) {
+  await exigerAccesEspaceAgent();
   const { token } = await params;
 
   // Récupérer et vérifier le token côté serveur
@@ -38,7 +38,7 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
             </ul>
             <p className="fr-mt-4w">
               Vous pouvez consulter vos demandes d&apos;accompagnement depuis{" "}
-              <Link href={ROUTES.backoffice.espaceAmo.root}>votre espace AMO</Link>.
+              <Link href={ROUTES.backoffice.espaceAgent.root}>votre espace AMO</Link>.
             </p>
           </div>
         </div>
@@ -47,5 +47,5 @@ export default async function ValidationAmoPage({ params }: ValidationAmoPagePro
   }
 
   // Rediriger vers la page de détail de la demande
-  redirect(ROUTES.backoffice.espaceAmo.demande(result.data.validationId));
+  redirect(ROUTES.backoffice.espaceAgent.demande(result.data.validationId));
 }

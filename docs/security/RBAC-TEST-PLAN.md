@@ -90,10 +90,41 @@ backlog prioritaire.
 
 ## 5. Garde-fou anti-régression
 
-Une nouvelle surface non testée = fuite potentielle. Ajouter un **test méta** qui
-échoue si une `*.actions.ts` lisant des données ne présente ni garde reconnue
-(`checkBackofficePermission` / `verifyProspectTerritoryAccess` / `verifyAmoOwnership`)
-ni test d'accès associé. Heuristique imparfaite mais qui attrape les oublis.
+Une nouvelle surface non gardée = fuite potentielle. Deux tests méta l'attrapent :
+
+- **`auth/permissions/garde-server-actions.test.ts`** : toute fonction exportée d'un fichier
+  `"use server"` de `src/` (le nom du fichier ne compte pas, il y a des `*.action.ts`) doit
+  contenir une garde reconnue. Sous `features/backoffice/`, il faut une garde
+  **d'autorisation** (rôle, permission, périmètre, propriété) : une session seule laisse
+  passer n'importe quel agent. Ailleurs, la session suffit, l'action ne lisant que le
+  parcours du demandeur connecté.
+- **`espace-agent/garde-actions.test.ts`**, plus strict : dans l'espace agent, la garde doit
+  être la **première instruction**, et l'instruction suivante doit **tester son résultat**
+  (un `await refusAccesEspaceAgent()` jeté ne refuse rien).
+- **`espace-agent/garde-pages.test.ts`** : même exigence pour le composant de chaque page
+  **et pour son `generateMetadata`**, rendu séparément.
+
+Les trois lisent le code par l'**AST TypeScript** (`shared/testing/server-exports.ts`) : une
+regex manquait les exports fléchés (`export const x = async …`) et les fichiers dont la
+directive `"use server"` suit un commentaire. Une réexportation, dont le corps n'est pas
+lisible, échoue au lieu de passer.
+
+Les exceptions vivent dans une `ALLOWLIST` justifiée entrée par entrée (référentiels publics,
+jeton de validation AMO, chiffrement du simulateur en iframe). Une entrée devenue inutile
+fait échouer le test, pour que la liste ne s'élargisse pas en silence.
+
+Heuristique assumée pour le test global : il reconnaît un **nom** de garde dans le corps, il ne prouve pas
+qu'elle est correcte, ni qu'elle est appliquée à la bonne ressource. Une garde déléguée à
+un service n'est pas vue : la remonter dans l'action, ou justifier l'exception. La présence
+d'un fichier de test frère n'est **pas** acceptée comme alternative : elle ne dit rien de ce
+que le test vérifie.
+
+> Première trouvaille (septembre 2026) : les quatre helpers d'envoi d'email de
+> `shared/email/actions/` étaient des fichiers `"use server"`, donc des endpoints POST
+> acceptant destinataire et contenu en paramètres, sans aucune garde. Next 15 ne publie pas
+> l'identifiant d'une action qu'aucun composant client n'importe, ce qui rendait l'appel
+> difficile en pratique, mais rien ne l'interdisait. La directive est retirée : ce sont des
+> fonctions serveur appelées par des services.
 
 ---
 
@@ -139,8 +170,8 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 > `/administration`, layout espace-agent dont rejet FranceConnect, middleware,
 > autres demandes archivées). Reste en **PARTIEL** : les gardes des sous-pages
 > `/administration/*` (pattern `/administration` testé, à décliner) et les gardes
-> _page_ super-admin synchronisations. Le garde-fou meta (§5) reste à implémenter
-> pour attraper les futures `*.actions.ts` non gardées/non testées.
+> _page_ super-admin synchronisations. Le garde-fou meta (§5) est en place depuis septembre 2026,
+> il attrape les futures server actions non gardées.
 
 > Mise au point post-audit (2026-06-23) : la fuite nominative
 > `getAutresDemandesArchiveesAction` est **corrigée** (scope territorial + test,
@@ -154,27 +185,30 @@ cellules négatives** recensées. Les agrégats nationaux consultables par l'`AN
 
 ### HIGH — PII/individuel non scopé ou DENY de route non testé
 
-| Surface                                                                   | Fichier                                                                                        | Sensibilité | Cellules négatives                                                                         | Couvert ?                                                        |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Détail demande AMO (lecture) + Accepter/Refuser (écriture)                | `espace-agent/demandes/{services/demande-detail.service.ts,actions/demande-detail.actions.ts}` | individual  | ANALYSTE → lecture SCOPE:territoire, écriture DENY ; ALLERS_VERS → DENY                    | OUI (action + service)                                           |
-| Détail demande AMO (propriété)                                            | `espace-agent/demandes/actions/demande-detail.actions.ts:54`                                   | individual  | AMO mauvais entrepriseAmoId → SCOPE:owner                                                  | OUI (testé)                                                      |
-| Création dossier                                                          | `espace-agent/creation-dossier/actions/create-dossier-aller-vers.action.ts`                    | individual  | ANALYSTE / SUPER_ADMIN(RO) / AMO_ET_AV(av sans allersVersId) → DENY                        | OUI (testé)                                                      |
-| Édition simulation (dossier sans AMO)                                     | `espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)      | individual  | AV hors territoire / autre entreprise / analyste → DENY ; AV territoire → SCOPE:territoire | OUI (`edition-simulation.service.test.ts`)                       |
-| Listing demandes AMO (page)                                               | `espace-agent/demandes/page.tsx`                                                               | individual  | ANALYSTE / ALLERS_VERS → DENY                                                              | INDIRECT (wrapper : garde layout + action détail testées)        |
-| Autres demandes archivées détail (nominatif)                              | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:113`                        | individual  | ANALYSTE-départemental → SCOPE:territoire ; ANALYSTE national → DENY                       | OUI (corrigé + testé)                                            |
-| ~~Stats éligibilité~~ (agrégat, pas un gap)                               | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:200`                        | aggregate   | agrégat national ouvert à l'ANALYSTE (ADR-0014) → hors gaps                                | N/A                                                              |
-| Diagnostics List/Detail                                                   | `administration/diagnostics/actions/diagnostics.actions.ts`                                    | individual  | ADMINISTRATEUR / ANALYSTE / non-auth → DENY                                                | OUI (testé)                                                      |
-| Activité (nombre d'actions par type)                                      | `administration/activite/actions/activite.actions.ts`                                          | aggregate   | ADMINISTRATEUR / ANALYSTE / AMO / ALLERS_VERS / AMO_ET_AV / non-auth → DENY                | OUI (testé)                                                      |
-| Route /administration (guard)                                             | `app/(backoffice)/administration/page.tsx`                                                     | none        | non-auth / PARTICULIER / AMO / ALLERS_VERS / AMO_ET_AV → DENY                              | OUI (testé)                                                      |
-| Routes admin (agents/commentaires/amo/allers-vers/acquisition/demandeurs) | `app/(backoffice)/administration/*/page.tsx`                                                   | none        | ANALYSTE/ADMINISTRATEUR/AMO selon page → DENY                                              | PARTIEL (pattern /administration testé ; sous-pages à compléter) |
-| Routes super-admin (synchronisations/diagnostics/activite) guard          | `app/(backoffice)/administration/{synchronisations,diagnostics,activite}/page.tsx`             | none        | ADMINISTRATEUR / ANALYSTE → DENY                                                           | PARTIEL (actions testées ; gardes page à compléter)              |
-| EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                                     | individual  | FranceConnect (mauvaise méthode) → DENY                                                    | OUI (testé)                                                      |
-| Middleware auth & redirection                                             | `src/middleware.ts`                                                                            | none        | AMO→/espace-amo ; non-auth→/connexion/agent → DENY                                         | OUI (testé)                                                      |
-| Ré-ouverture demande refusée                                              | `dossiers/actions/reouvrir-demande.actions.ts`                                                 | individual  | ANALYSTE / non-auth / AMO autre entreprise / AV hors territoire → DENY                     | OUI (action + prédicat `canReopenRefusedDemande`)                |
-| Permalien parcours sur le détail dossier (ADR-0025)                       | `espace-agent/dossiers/[id]/page.tsx` + `services/admin-url-resolver.service.ts`               | none        | non-auth → DENY ; accès refusé sur un id de validation → 404, jamais de redirection        | OUI (`page.test.tsx`, `admin-url-resolver.service.test.ts`)      |
-| Coupure d'accès agent désactivé (ADR-0029)                                | `auth/services/user.service.ts`, `agents.repository.ts` (`authenticateFromProConnect`)         | individual  | agent désactivé → DENY même session ouverte ; connexion ProConnect → DENY sans écriture    | OUI (`user.service.test.ts`, `agents.repository.test.ts`)        |
-| Désactivation / réactivation / comptage de traces (ADR-0029)              | `administration/agents/actions/agents.actions.ts`                                              | individual  | ADMINISTRATEUR / non-auth → DENY ; super-admin sur lui-même → DENY                         | OUI (`agents.actions.test.ts`)                                   |
-| Suppression d'agent avec historique (ADR-0029)                            | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`)                       | individual  | ≥ 1 trace → DENY (bascule désactivation), `repository.delete` jamais appelé                | OUI (`agents-admin.service.test.ts`)                             |
+| Surface                                                                   | Fichier                                                                                        | Sensibilité | Cellules négatives                                                                         | Couvert ?                                                                                     |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Détail demande AMO (lecture) + Accepter/Refuser (écriture)                | `espace-agent/demandes/{services/demande-detail.service.ts,actions/demande-detail.actions.ts}` | individual  | ANALYSTE → lecture SCOPE:territoire, écriture DENY ; ALLERS_VERS → DENY                    | OUI (action + service)                                                                        |
+| Détail demande AMO (propriété)                                            | `espace-agent/demandes/actions/demande-detail.actions.ts:54`                                   | individual  | AMO mauvais entrepriseAmoId → SCOPE:owner                                                  | OUI (testé)                                                                                   |
+| Création dossier                                                          | `espace-agent/creation-dossier/actions/create-dossier-aller-vers.action.ts`                    | individual  | ANALYSTE / SUPER_ADMIN(RO) / AMO_ET_AV(av sans allersVersId) → DENY                        | OUI (testé)                                                                                   |
+| Édition simulation (dossier sans AMO)                                     | `espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)      | individual  | AV hors territoire / autre entreprise / analyste → DENY ; AV territoire → SCOPE:territoire | OUI (`edition-simulation.service.test.ts`)                                                    |
+| Listing demandes AMO (page)                                               | `espace-agent/demandes/page.tsx`                                                               | individual  | ANALYSTE / ALLERS_VERS → DENY                                                              | INDIRECT (wrapper : garde layout + action détail testées)                                     |
+| Autres demandes archivées détail (nominatif)                              | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:113`                        | individual  | ANALYSTE-départemental → SCOPE:territoire ; ANALYSTE national → DENY                       | OUI (corrigé + testé)                                                                         |
+| ~~Stats éligibilité~~ (agrégat, pas un gap)                               | `administration/tableau-de-bord/actions/tableau-de-bord.actions.ts:200`                        | aggregate   | agrégat national ouvert à l'ANALYSTE (ADR-0014) → hors gaps                                | N/A                                                                                           |
+| Diagnostics List/Detail                                                   | `administration/diagnostics/actions/diagnostics.actions.ts`                                    | individual  | ADMINISTRATEUR / ANALYSTE / non-auth → DENY                                                | OUI (testé)                                                                                   |
+| Activité (nombre d'actions par type)                                      | `administration/activite/actions/activite.actions.ts`                                          | aggregate   | ADMINISTRATEUR / ANALYSTE / AMO / ALLERS_VERS / AMO_ET_AV / non-auth → DENY                | OUI (testé)                                                                                   |
+| Route /administration (guard)                                             | `app/(backoffice)/administration/page.tsx`                                                     | none        | non-auth / PARTICULIER / AMO / ALLERS_VERS / AMO_ET_AV → DENY                              | OUI (testé)                                                                                   |
+| Routes admin (agents/commentaires/amo/allers-vers/acquisition/demandeurs) | `app/(backoffice)/administration/*/page.tsx`                                                   | none        | ANALYSTE/ADMINISTRATEUR/AMO selon page → DENY                                              | PARTIEL (pattern /administration testé ; sous-pages à compléter)                              |
+| Routes super-admin (synchronisations/diagnostics/activite) guard          | `app/(backoffice)/administration/{synchronisations,diagnostics,activite}/page.tsx`             | none        | ADMINISTRATEUR / ANALYSTE → DENY                                                           | PARTIEL (actions testées ; gardes page à compléter)                                           |
+| EspaceAgent Layout — rejet FranceConnect                                  | `app/(backoffice)/espace-agent/layout.tsx`                                                     | individual  | FranceConnect (mauvaise méthode) → DENY                                                    | OUI (testé)                                                                                   |
+| Pages espace agent — garde propre (hors layout)                           | `app/(backoffice)/espace-agent/**/page.tsx` + `acces-espace-agent.service.ts`                  | individual  | ADMINISTRATEUR / FranceConnect / agent inconnu → 404 sans charger de donnée                | OUI (service + `garde-pages.test.ts` méta + `dossiers/[id]/page.test.tsx`)                    |
+| Server actions espace agent — verdict d'accès                             | `espace-agent/**/actions/*.ts` + `resolveEspaceAgentAccess`                                    | individual  | ADMINISTRATEUR / ANALYSTE national / non-auth → refus avant toute lecture                  | OUI (service, `super-admin-access.test.ts`, `garde-actions.test.ts` méta, actions de lecture) |
+| Listing / compteur dossiers — AMO sans territoire                         | `dossiers-territoire.service.ts`, `get-nombre-dossiers.action.ts`, `getParcoursByTerritoire`   | individual  | AMO sans entreprise / entreprise sans territoire → liste vide, badge 0, aucune requête     | OUI (`perimetre-listing.test.ts`, service, compteur, repository, garde `amo_non_configure`)   |
+| Middleware auth & redirection                                             | `src/middleware.ts`                                                                            | none        | AMO→/espace-agent ; non-auth→/connexion/agent → DENY                                       | OUI (testé)                                                                                   |
+| Ré-ouverture demande refusée                                              | `dossiers/actions/reouvrir-demande.actions.ts`                                                 | individual  | ANALYSTE / non-auth / AMO autre entreprise / AV hors territoire → DENY                     | OUI (action + prédicat `canReopenRefusedDemande`)                                             |
+| Permalien parcours sur le détail dossier (ADR-0025)                       | `espace-agent/dossiers/[id]/page.tsx` + `services/admin-url-resolver.service.ts`               | none        | non-auth → DENY ; accès refusé sur un id de validation → 404, jamais de redirection        | OUI (`page.test.tsx`, `admin-url-resolver.service.test.ts`)                                   |
+| Coupure d'accès agent désactivé (ADR-0029)                                | `auth/services/user.service.ts`, `agents.repository.ts` (`authenticateFromProConnect`)         | individual  | agent désactivé → DENY même session ouverte ; connexion ProConnect → DENY sans écriture    | OUI (`user.service.test.ts`, `agents.repository.test.ts`)                                     |
+| Désactivation / réactivation / comptage de traces (ADR-0029)              | `administration/agents/actions/agents.actions.ts`                                              | individual  | ADMINISTRATEUR / non-auth → DENY ; super-admin sur lui-même → DENY                         | OUI (`agents.actions.test.ts`)                                                                |
+| Suppression d'agent avec historique (ADR-0029)                            | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`)                       | individual  | ≥ 1 trace → DENY (bascule désactivation), `repository.delete` jamais appelé                | OUI (`agents-admin.service.test.ts`)                                                          |
 
 ### MEDIUM — scope individuel partiel / DENY admin partiel
 

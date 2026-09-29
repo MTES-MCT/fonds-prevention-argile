@@ -58,7 +58,7 @@ export function GererDossierMenu({
   function backToListing() {
     setIsArchiveOpen(false);
     setIsArretOpen(false);
-    router.push(ROUTES.backoffice.espaceAmo.dossiers);
+    router.push(ROUTES.backoffice.espaceAgent.dossiers);
   }
 
   return (

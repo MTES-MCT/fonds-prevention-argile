@@ -95,7 +95,7 @@ export function ConfirmationReponseModal({
           },
           secondaryButton: {
             label: "Voir le dossier",
-            href: ROUTES.backoffice.espaceAmo.dossier(demandeId),
+            href: ROUTES.backoffice.espaceAgent.dossier(demandeId),
             icon: "fr-icon-eye-line",
           },
         };
@@ -108,7 +108,7 @@ export function ConfirmationReponseModal({
           hint: "N'hésitez pas à prendre le temps de l'appeler pour lui expliquer les raisons de l'inéligibilité.",
           secondaryButton: {
             label: "Retour à l'accueil",
-            href: ROUTES.backoffice.espaceAmo.root,
+            href: ROUTES.backoffice.espaceAgent.root,
             icon: "fr-icon-arrow-left-line",
             isSecondary: true,
           },
@@ -123,7 +123,7 @@ export function ConfirmationReponseModal({
           hint: "L'aller-vers de son territoire pourra reprendre le dossier si le demandeur souhaite poursuivre.",
           secondaryButton: {
             label: "Retour à l'accueil",
-            href: ROUTES.backoffice.espaceAmo.root,
+            href: ROUTES.backoffice.espaceAgent.root,
             icon: "fr-icon-arrow-left-line",
             isSecondary: true,
           },
@@ -178,7 +178,7 @@ export function ConfirmationReponseModal({
                     <li>
                       <button
                         type="button"
-                        onClick={() => handleNavigate(ROUTES.backoffice.espaceAmo.demande(nextDemandeId))}
+                        onClick={() => handleNavigate(ROUTES.backoffice.espaceAgent.demande(nextDemandeId))}
                         className="fr-btn fr-icon-arrow-right-line fr-btn--icon-right">
                         Demandeur suivant
                       </button>

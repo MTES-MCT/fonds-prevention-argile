@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getProspectDetail } from "@/features/backoffice/espace-agent/prospects/services/prospect-detail.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet, formatDateShort } from "@/shared/utils";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { InfoDemandeur, InfoLogement, InfoVulnerabilite, ParcoursDemandeur, AFaire } from "../../shared";
 import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
@@ -34,11 +34,7 @@ export const dynamic = "force-dynamic";
  * Page détail d'un prospect (Espace Allers-Vers)
  */
 export default async function ProspectDetailPage({ params, searchParams }: PageProps) {
-  // Vérifier l'authentification
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(ROUTES.connexion.agent);
-  }
+  await exigerAccesEspaceAgent();
 
   const { id } = await params;
   const { action } = await searchParams;
@@ -259,6 +255,8 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
  * Génération des métadonnées de la page
  */
 export async function generateMetadata({ params }: PageProps) {
+  // Rendue à part de la page : sans sa propre garde, le titre livrait le nom du demandeur.
+  await exigerAccesEspaceAgent();
   const { id } = await params;
   const result = await getProspectDetail(id);
 

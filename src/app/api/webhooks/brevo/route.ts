@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
+import { bearerCorrespond } from "@/shared/utils/crypto.utils";
 import { isValidBrevoPayload, processBrevoWebhook } from "@/features/parcours/amo/services/brevo-webhook.service";
 
 /**
@@ -11,31 +12,10 @@ import { isValidBrevoPayload, processBrevoWebhook } from "@/features/parcours/am
  * Brevo envoie des événements : delivered, opened, click, soft_bounce, hard_bounce, etc.
  */
 
-/**
- * Vérifie le token d'authentification Bearer
- */
 function verifyBearerToken(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-
-  if (!authHeader) {
-    return false;
-  }
-
-  // Format attendu : "Bearer {token}"
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return false;
-  }
-
-  const token = parts[1];
   const expectedToken = getServerEnv().BREVO_WEBHOOK_SECRET;
-
-  if (!expectedToken) {
-    console.error("[Brevo Webhook] BREVO_WEBHOOK_SECRET non configuré");
-    return false;
-  }
-
-  return token === expectedToken;
+  if (!expectedToken) console.error("[Brevo Webhook] BREVO_WEBHOOK_SECRET non configuré");
+  return bearerCorrespond(request.headers.get("authorization"), expectedToken);
 }
 
 /**

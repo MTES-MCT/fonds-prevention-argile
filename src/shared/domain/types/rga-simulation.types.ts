@@ -1,3 +1,5 @@
+import type { EtatSinistre, TypeLogement, ZoneExposition } from "@/shared/domain/value-objects/rga-simulation.enum";
+
 /**
  * Données RGA stockées en JSONB dans la base de données
  */
@@ -15,8 +17,8 @@ export interface RGASimulationData {
     annee_de_construction: string;
     rnb: string;
     niveaux: number;
-    zone_dexposition: "faible" | "moyen" | "fort" | null;
-    type: "maison" | "appartement";
+    zone_dexposition: ZoneExposition | null;
+    type: TypeLogement;
     mitoyen: boolean;
     proprietaire_occupant: boolean;
   };
@@ -31,7 +33,7 @@ export interface RGASimulationData {
     indemnise_avant_juillet_2025?: boolean;
     indemnise_avant_juillet_2015?: boolean;
     indemnise_montant_indemnite?: number;
-    sinistres: "saine" | "très peu endommagée" | "endommagée" | "très endommagée";
+    sinistres: EtatSinistre;
     demande_catnat_en_cours?: boolean;
   };
 

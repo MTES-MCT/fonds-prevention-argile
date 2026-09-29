@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
   if (isProtected && !session) {
     // Détecter si c'est une route backoffice (agents) ou particulier
     const isBackofficeRoute =
-      path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAmo.root);
+      path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAgent.root);
 
     const loginUrl = isBackofficeRoute
       ? ROUTES.connexion.agent // /connexion/agent
@@ -100,7 +100,7 @@ export async function middleware(request: NextRequest) {
 
         if (isAmoRole && isAdminRoute) {
           // AMO tentant d'accéder à /administration -> rediriger vers espace-amo
-          const response = NextResponse.redirect(new URL(ROUTES.backoffice.espaceAmo.root, request.url));
+          const response = NextResponse.redirect(new URL(ROUTES.backoffice.espaceAgent.root, request.url));
           response.cookies.delete(COOKIE_NAMES.REDIRECT_TO);
           return response;
         }

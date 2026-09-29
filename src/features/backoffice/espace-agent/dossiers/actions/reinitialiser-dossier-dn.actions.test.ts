@@ -1,4 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// La garde d'accès a sa propre suite (acces-espace-agent.service.test.ts) : ici l'agent est admis.
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  refusAccesEspaceAgent: vi.fn().mockResolvedValue(null),
+}));
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
@@ -32,7 +37,10 @@ describe("reinitialiserDossierDnAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(verifierAccesDossierDn).mockResolvedValue(null);
-    vi.mocked(reinitialiserDossierEtape).mockResolvedValue({ success: true, data: { statut: "a_recreer", ancienDsNumber: "32872663" } });
+    vi.mocked(reinitialiserDossierEtape).mockResolvedValue({
+      success: true,
+      data: { statut: "a_recreer", ancienDsNumber: "32872663" },
+    });
   });
 
   it("refuse quand la garde de périmètre refuse, sans rien réinitialiser", async () => {

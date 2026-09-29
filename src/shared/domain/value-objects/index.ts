@@ -8,3 +8,4 @@ export * from "./situation-particulier.enum";
 export * from "./source-acquisition.enum";
 export * from "./sync-run-status.enum";
 export * from "./accompagnement-souhaite.enum";
+export * from "./rga-simulation.enum";

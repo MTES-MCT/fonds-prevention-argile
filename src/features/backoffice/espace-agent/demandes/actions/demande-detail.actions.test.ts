@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// La garde d'accès a sa propre suite (acces-espace-agent.service.test.ts) : ici l'agent est admis.
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  refusAccesEspaceAgent: vi.fn().mockResolvedValue(null),
+}));
 import {
   getDemandeDetailAction,
   accepterAccompagnement,
   refuserDemandeNonEligible,
   refuserAccompagnementEligible,
 } from "./demande-detail.actions";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { getDemandeDetail } from "../services/demande-detail.service";
 import {
   approveValidation,
@@ -114,6 +120,16 @@ describe("demande-detail.actions", () => {
   });
 
   describe("getDemandeDetailAction", () => {
+    // ADMINISTRATEUR / analyste national : exclus de l'espace agent, même en POST direct.
+    it("verdict d'accès refusé → erreur, sans lire la demande", async () => {
+      vi.mocked(refusAccesEspaceAgent).mockResolvedValueOnce("Accès réservé aux agents de l'espace agent");
+
+      const result = await getDemandeDetailAction("demande-123");
+
+      expect(result).toEqual({ success: false, error: "Accès réservé aux agents de l'espace agent" });
+      expect(getDemandeDetail).not.toHaveBeenCalled();
+    });
+
     it("devrait récupérer les détails d'une demande", async () => {
       const mockDemande = {
         id: "demande-123",

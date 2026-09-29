@@ -4,7 +4,7 @@ import { getDossierDetail } from "@/features/backoffice/espace-agent/dossiers/se
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers/domain";
 import {
   InfoDemandeur,
@@ -48,11 +48,7 @@ interface PageProps {
  * Page détail d'un dossier suivi (Espace AMO)
  */
 export default async function DossierDetailPage({ params }: PageProps) {
-  // Vérifier l'authentification
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(ROUTES.connexion.agent);
-  }
+  await exigerAccesEspaceAgent();
 
   const { id } = await params;
 
@@ -152,12 +148,12 @@ export default async function DossierDetailPage({ params }: PageProps) {
           <div className="fr-collapse" id="breadcrumb-1">
             <ol className="fr-breadcrumb__list">
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
                   Accueil
                 </Link>
               </li>
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.dossiers}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.dossiers}>
                   Vos dossiers
                 </Link>
               </li>
@@ -237,7 +233,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                     ? { nom: dossier.amoNom, estMandataireFinancier: dossier.estMandataireFinancier }
                     : null
                 }
-                editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
+                editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.id)}
               />
             </div>
           </div>
@@ -275,7 +271,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   logement={dossier.logement}
                   adresse={dossier.demandeur.adresse}
                   dateIndemnisation={dossier.dateIndemnisation}
-                  editSimulationHref={ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.id)}
+                  editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.id)}
                   agentEditInfo={dossier.agentEditInfo}
                 />
               </div>
@@ -328,6 +324,8 @@ export default async function DossierDetailPage({ params }: PageProps) {
  * Génération des métadonnées de la page
  */
 export async function generateMetadata({ params }: PageProps) {
+  // Rendue à part de la page : sans sa propre garde, le titre livrait le nom du demandeur.
+  await exigerAccesEspaceAgent();
   const { id } = await params;
   const result = await getDossierDetail(id);
 

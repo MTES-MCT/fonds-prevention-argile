@@ -19,6 +19,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
 import { ROLES_ARRET_ACCOMPAGNEMENT } from "../domain/arret-accompagnement";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * L'AMO cesse d'accompagner le demandeur, qui poursuit en autonomie.
@@ -29,6 +30,9 @@ import { ROLES_ARRET_ACCOMPAGNEMENT } from "../domain/arret-accompagnement";
  */
 export async function arreterAccompagnementAction(parcoursId: string, raisons: string[]): Promise<ActionResult<void>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
@@ -98,6 +102,9 @@ export async function arreterAccompagnementAction(parcoursId: string, raisons: s
  */
 export async function refuserArretAccompagnementAction(parcoursId: string): Promise<ActionResult<void>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 

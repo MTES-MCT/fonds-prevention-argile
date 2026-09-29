@@ -1,5 +1,4 @@
-"use server";
-
+// Pas de "use server" : un helper d'envoi prenant destinataire et contenu en paramètres ne doit pas être un endpoint POST.
 import { getServerEnv } from "@/shared/config/env.config";
 import { ActionResult } from "@/shared/types";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
@@ -27,7 +26,7 @@ export async function sendArretAccompagnementInfoEmail(
 ): Promise<ActionResult<{ messageId?: string }>> {
   try {
     const { amoEmail, demandeurPrenom, demandeurNom } = params;
-    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAmo.dossiers}`;
+    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAgent.dossiers}`;
 
     const html = await renderEmailTemplate(
       ArretAccompagnementInfoTemplate({ demandeurPrenom, demandeurNom, lienDossier })
@@ -53,7 +52,7 @@ export async function sendArretAccompagnementValidationEmail(
 ): Promise<ActionResult<{ messageId?: string }>> {
   try {
     const { amoEmail, demandeurPrenom, demandeurNom, validationId } = params;
-    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAmo.dossier(validationId)}`;
+    const lienDossier = `${getServerEnv().BASE_URL}${ROUTES.backoffice.espaceAgent.dossier(validationId)}`;
 
     const html = await renderEmailTemplate(
       ArretAccompagnementValidationTemplate({ demandeurPrenom, demandeurNom, lienDossier })

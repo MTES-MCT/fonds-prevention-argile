@@ -8,6 +8,7 @@ import type {
   AgentEditInfo,
 } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import { formatDate, formatDateTime, formatMontant } from "@/shared/utils";
+import type { ZoneExposition } from "@/shared/domain/value-objects/rga-simulation.enum";
 import { ALEA_COLORS } from "@/features/rga-map/domain/config";
 import { RgaMapLegend } from "@/features/rga-map/components/RgaMapLegend";
 
@@ -108,7 +109,7 @@ export function InfoLogement({
   };
 
   // Déterminer la couleur du badge de risque argile (selon ALEA_COLORS)
-  const getRisqueArgileColor = (zone: "faible" | "moyen" | "fort"): string => {
+  const getRisqueArgileColor = (zone: ZoneExposition): string => {
     switch (zone) {
       case "fort":
         return ALEA_COLORS.fort;

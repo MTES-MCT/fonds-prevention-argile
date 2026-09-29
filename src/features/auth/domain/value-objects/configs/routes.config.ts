@@ -33,30 +33,9 @@ export const ROUTES = {
     // Administration (Administrateurs)
     administration: {
       root: "/administration",
-      utilisateurs: "/administration/utilisateurs",
-      agents: "/administration/agents", // Gestion des agents (super admin only)
-      commentaires: "/administration/commentaires",
-      statistiques: "/administration/statistiques",
-      amos: "/administration/amos",
-      eligibilite: "/administration/eligibilite",
-      diagnostic: "/administration/diagnostic",
-      devis: "/administration/devis",
-      factures: "/administration/factures",
     },
 
-    // Espace AMO (Agents AMO)
-    espaceAmo: {
-      root: "/espace-agent",
-      dossiers: "/espace-agent/dossiers",
-      dossier: (id: string) => `/espace-agent/dossiers/${id}` as const,
-      demande: (id: string) => `/espace-agent/demandes/${id}` as const,
-      validation: (token: string) => `/espace-agent/validation/${token}` as const,
-      prospects: "/espace-agent/prospects",
-      prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
-      editionDonneesSimulation: (dossierId: string) => `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
-    },
-
-    // Alias pour espaceAgent (pour compatibilité)
+    // Espace agent (AMO, Aller-vers, analyste départemental, super-admin)
     espaceAgent: {
       root: "/espace-agent",
       dossiers: "/espace-agent/dossiers",
@@ -102,14 +81,14 @@ export const ROUTES = {
 // Routes protégées par rôle
 export const PROTECTED_ROUTES = {
   // Routes agents (ProConnect) - tous les rôles agents peuvent accéder
-  admin: [ROUTES.backoffice.administration.root, ROUTES.backoffice.espaceAmo.root, "/api/private", "/test"],
+  admin: [ROUTES.backoffice.administration.root, ROUTES.backoffice.espaceAgent.root],
   // Routes particuliers (FranceConnect)
   particulier: [ROUTES.particulier.monCompte, ROUTES.particulier.mesDossiers, ROUTES.particulier.mesDemandes],
 } as const;
 
 // Routes publiques
 export const PUBLIC_ROUTES = {
-  auth: [ROUTES.connexion.particulier, ROUTES.connexion.agent, "/inscription"],
+  auth: [ROUTES.connexion.particulier, ROUTES.connexion.agent],
   franceConnectApi: [
     ROUTES.api.auth.fc.callback,
     ROUTES.api.auth.fc.login,
@@ -136,9 +115,9 @@ export const DEFAULT_REDIRECTS = {
   administrateur: ROUTES.backoffice.administration.root,
   analyste: ROUTES.backoffice.administration.root,
   // Agents terrain : atterrissage direct sur la page dossiers (espace-agent → /espace-agent/dossiers).
-  amo: ROUTES.backoffice.espaceAmo.root,
-  allers_vers: ROUTES.backoffice.espaceAmo.root,
-  amo_et_allers_vers: ROUTES.backoffice.espaceAmo.root,
+  amo: ROUTES.backoffice.espaceAgent.root,
+  allers_vers: ROUTES.backoffice.espaceAgent.root,
+  amo_et_allers_vers: ROUTES.backoffice.espaceAgent.root,
 
   // Particulier
   particulier: ROUTES.particulier.monCompte,

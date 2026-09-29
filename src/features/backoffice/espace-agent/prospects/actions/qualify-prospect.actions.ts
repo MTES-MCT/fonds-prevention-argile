@@ -15,6 +15,7 @@ import { assertCanActAsResponsable } from "@/features/auth/permissions/services/
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import type { ProspectQualification } from "@/shared/database/schema/prospect-qualifications";
 import type { ActionResult } from "@/shared/types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 // --- Validation Zod ---
 
@@ -82,6 +83,9 @@ export async function qualifyProspectAction(
   input: QualifyProspectInput
 ): Promise<ActionResult<QualifyProspectResult & { redirectTo: string | null }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const readOnlyError = await assertNotSuperAdminReadOnly();
     if (readOnlyError) return { success: false, error: readOnlyError };
 
@@ -167,6 +171,9 @@ export async function getProspectQualificationAction(
   parcoursId: string
 ): Promise<ActionResult<ProspectQualification | null>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     // 1. Authentification
     const user = await getCurrentUser();
     if (!user) {

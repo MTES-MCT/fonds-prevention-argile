@@ -376,7 +376,7 @@ export function ReponseAccompagnement({
           // Le détachement retire l'entreprise : cette page devient inaccessible à l'AMO et se
           // re-rend en 404. Navigation dure vers le listing, comme « Ne plus accompagner ».
           if (poursuiteAutonomeRef.current) {
-            window.location.href = ROUTES.backoffice.espaceAmo.dossiers;
+            window.location.href = ROUTES.backoffice.espaceAgent.dossiers;
             return;
           }
           const nextResult = await getNextDemandeurEnAttente(demandeId);

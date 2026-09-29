@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// La garde d'accès a sa propre suite (acces-espace-agent.service.test.ts) : ici l'agent est admis.
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  refusAccesEspaceAgent: vi.fn().mockResolvedValue(null),
+}));
 import {
   getActionsAction,
   createActionAction,
   updateActionAction,
   deleteActionAction,
 } from "./dossier-actions.actions";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { actionsService } from "../services/actions.service";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
@@ -78,6 +84,16 @@ describe("dossier-actions.actions", () => {
   });
 
   describe("getActionsAction", () => {
+    // ADMINISTRATEUR / analyste national : exclus de l'espace agent, même en POST direct.
+    it("verdict d'accès refusé → liste vide, sans lire l'historique", async () => {
+      vi.mocked(refusAccesEspaceAgent).mockResolvedValueOnce("Accès réservé aux agents de l'espace agent");
+
+      const result = await getActionsAction("parcours-1");
+
+      expect(result).toEqual({ actions: [], totalCount: 0 });
+      expect(actionsService.getActionsForParcours).not.toHaveBeenCalled();
+    });
+
     it("retourne une liste vide si l'agent n'est pas connecté", async () => {
       vi.mocked(getCurrentAgent).mockResolvedValue({ success: false, error: "Non connecté" });
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { resolveEspaceAgentAccess } from "@/features/backoffice/shared/actions/super-admin-access";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { CreationDossierWizard } from "@/features/backoffice/espace-agent/creation-dossier/components/CreationDossierWizard";
 
@@ -18,15 +18,9 @@ interface CreationDossierPageProps {
  *   post-création → /prospects.
  */
 export default async function CreationDossierPage({ searchParams }: CreationDossierPageProps) {
-  const access = await resolveEspaceAgentAccess();
-
-  if (access.kind === "error") {
-    redirect("/espace-agent/dossiers");
-  }
-
-  const role = access.agent.role as UserRole;
-  const canCreate =
-    role === UserRole.AMO || role === UserRole.ALLERS_VERS || role === UserRole.AMO_ET_ALLERS_VERS;
+  const agent = await exigerAccesEspaceAgent();
+  const role = agent.role as UserRole;
+  const canCreate = role === UserRole.AMO || role === UserRole.ALLERS_VERS || role === UserRole.AMO_ET_ALLERS_VERS;
 
   if (!canCreate) {
     redirect("/espace-agent/dossiers");

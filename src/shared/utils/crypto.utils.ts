@@ -13,3 +13,10 @@ export function safeTokenEquals(received: string, expected: string): boolean {
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
 }
+
+// Schéma insensible à la casse (RFC 7235), token comparé en temps constant ; sans secret configuré, toujours refusé.
+export function bearerCorrespond(authHeader: string | null, expected: string | undefined): boolean {
+  if (!authHeader || !expected) return false;
+  const token = authHeader.trim().match(/^Bearer +(\S+)$/i)?.[1];
+  return !!token && safeTokenEquals(token, expected);
+}

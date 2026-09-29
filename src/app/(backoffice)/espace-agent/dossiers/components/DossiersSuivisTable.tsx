@@ -209,8 +209,8 @@ export function DossiersSuivisTable({
                         ? statutValidation === StatutValidationAmo.EN_ATTENTE &&
                           dossier.canActAsResponsable &&
                           !isArchived
-                          ? ROUTES.backoffice.espaceAmo.demande(dossier.validation.id)
-                          : ROUTES.backoffice.espaceAmo.dossier(dossier.validation.id)
+                          ? ROUTES.backoffice.espaceAgent.demande(dossier.validation.id)
+                          : ROUTES.backoffice.espaceAgent.dossier(dossier.validation.id)
                         : `/espace-agent/prospects/${dossier.parcoursId}`;
 
                       const actionItems = [
@@ -218,7 +218,7 @@ export function DossiersSuivisTable({
                           label: "Voir sa simulation d'éligibilité",
                           icon: "fr-icon-eye-line",
                           onClick: () =>
-                            router.push(ROUTES.backoffice.espaceAmo.editionDonneesSimulation(dossier.parcoursId)),
+                            router.push(ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.parcoursId)),
                         },
                         // Archiver / Désarchiver : réservé au responsable courant.
                         ...(!isRefuse && dossier.canActAsResponsable

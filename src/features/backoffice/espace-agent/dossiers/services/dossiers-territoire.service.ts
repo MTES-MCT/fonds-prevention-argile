@@ -1,6 +1,7 @@
 import { parcoursActionsRepo, parcoursRepo } from "@/shared/database";
 import { ACTION_LABELS_BY_VALUE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
+import { perimetreListing } from "@/features/auth/permissions/domain/perimetre-listing";
 import {
   canActAsResponsable,
   getActorContext,
@@ -27,19 +28,13 @@ export async function getDossiersByAgent(
 ): Promise<DossiersTerritoireResult> {
   const scope = await calculateAgentScope(agent);
 
-  // « Voir tous les dossiers » = accès national aux dossiers (admins via
-  // canViewAllDossiers), distinct de isNational qui ne vaut que pour les stats
-  // (un analyste national voit les stats nationales mais aucun dossier ici).
-  const hasTerritorialScope = scope.canViewAllDossiers || scope.departements.length > 0 || scope.epcis.length > 0;
-  if (!hasTerritorialScope && !scope.canViewDossiersByEntreprise) {
+  // canViewAllDossiers et non isNational : un analyste national voit les stats nationales, aucun dossier.
+  const perimetre = perimetreListing(scope);
+  if (perimetre.kind === "aucun") {
     return emptyResult([], []);
   }
 
-  // Accès national aux dossiers : pas de filtre territorial (le repo retourne tout).
-  const departements = scope.canViewAllDossiers ? [] : scope.departements;
-  const epcis = scope.canViewAllDossiers ? [] : scope.epcis;
-
-  const rows = await parcoursRepo.getParcoursByTerritoire(departements, epcis, filters);
+  const rows = await parcoursRepo.getParcoursByTerritoire(perimetre, filters);
   const bareItems = rows.map(toDossierItemSansResponsable);
 
   const resolverInput: ResolverDossier[] = bareItems.map((item) => ({
@@ -82,7 +77,10 @@ export async function getDossiersByAgent(
   return {
     dossiers,
     total: dossiers.length,
-    territoiresCouverts: { departements, epcis },
+    territoiresCouverts:
+      perimetre.kind === "territoire"
+        ? { departements: perimetre.departements, epcis: perimetre.epcis }
+        : { departements: [], epcis: [] },
     epcisDisponibles: buildEpciChoices(dossiers),
   };
 }

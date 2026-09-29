@@ -1,4 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// La garde d'accès a sa propre suite (acces-espace-agent.service.test.ts) : ici l'agent est admis.
+vi.mock("@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service", () => ({
+  refusAccesEspaceAgent: vi.fn().mockResolvedValue(null),
+}));
 import { UserRole } from "@/shared/domain/value-objects";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -17,6 +22,7 @@ vi.mock("@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver
   resolveEspaceAgentPath: vi.fn(async () => "/espace-agent/dossiers/validation-1"),
 }));
 
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { qualifyProspectAction } from "./qualify-prospect.actions";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
@@ -58,6 +64,17 @@ describe("qualifyProspectAction", () => {
   });
 
   describe("gardes", () => {
+    // ADMINISTRATEUR / analyste national : exclus de l'espace agent, même en POST direct.
+    it("verdict d'accès refusé → erreur, avant toute autre vérification", async () => {
+      vi.mocked(refusAccesEspaceAgent).mockResolvedValueOnce("Accès réservé aux agents de l'espace agent");
+
+      const result = await qualifyProspectAction(payloadEligible);
+
+      expect(result).toEqual({ success: false, error: "Accès réservé aux agents de l'espace agent" });
+      expect(getCurrentUser).not.toHaveBeenCalled();
+      expect(qualificationService.qualifyProspect).not.toHaveBeenCalled();
+    });
+
     it("refuse un super-administrateur en lecture seule", async () => {
       vi.mocked(assertNotSuperAdminReadOnly).mockResolvedValue("Lecture seule");
 

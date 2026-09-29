@@ -1,9 +1,9 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDossierSimulationData } from "@/features/backoffice/espace-agent/shared/services/edition-simulation.service";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { formatNomComplet } from "@/shared/utils";
-import { getCurrentUser } from "@/features/auth/services/user.service";
+import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { SimulateurEditionAgent } from "@/features/backoffice/espace-agent/shared/components/SimulateurEditionAgent";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
@@ -28,16 +28,16 @@ function getBreadcrumbInfo(id: string, statut: string | null) {
   if (statut === StatutValidationAmo.EN_ATTENTE) {
     return {
       sectionLabel: "Demandes d\u2019accompagnement",
-      sectionHref: ROUTES.backoffice.espaceAmo.root,
-      detailHref: ROUTES.backoffice.espaceAmo.demande(id),
+      sectionHref: ROUTES.backoffice.espaceAgent.root,
+      detailHref: ROUTES.backoffice.espaceAgent.demande(id),
     };
   }
 
   // Toute autre validation (\u00e9ligible, sans AMO, refus\u00e9e) : espace dossiers.
   return {
     sectionLabel: "Vos dossiers",
-    sectionHref: ROUTES.backoffice.espaceAmo.dossiers,
-    detailHref: ROUTES.backoffice.espaceAmo.dossier(id),
+    sectionHref: ROUTES.backoffice.espaceAgent.dossiers,
+    detailHref: ROUTES.backoffice.espaceAgent.dossier(id),
   };
 }
 
@@ -46,10 +46,7 @@ function getBreadcrumbInfo(id: string, statut: string | null) {
  * Utilisée depuis les pages demandes, dossiers et prospects.
  */
 export default async function EditionDonneesSimulationPage({ params }: PageProps) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(ROUTES.connexion.agent);
-  }
+  await exigerAccesEspaceAgent();
 
   const { id } = await params;
 
@@ -89,7 +86,7 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
           <div className="fr-collapse" id="breadcrumb-edition">
             <ol className="fr-breadcrumb__list">
               <li>
-                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAmo.root}>
+                <Link className="fr-breadcrumb__link" href={ROUTES.backoffice.espaceAgent.root}>
                   Accueil
                 </Link>
               </li>
@@ -129,6 +126,8 @@ export default async function EditionDonneesSimulationPage({ params }: PageProps
  * Génération des métadonnées de la page
  */
 export async function generateMetadata({ params }: PageProps) {
+  // Rendue à part de la page : sans sa propre garde, le titre livrait le nom du demandeur.
+  await exigerAccesEspaceAgent();
   const { id } = await params;
   const result = await getDossierSimulationData(id);
 

@@ -1,3 +1,4 @@
+import type { TypeLogement, ZoneExposition } from "@/shared/domain/value-objects/rga-simulation.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { SourceAcquisition } from "@/shared/domain/value-objects/source-acquisition.enum";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
@@ -27,7 +28,7 @@ export interface InfoDemandeur {
  */
 export interface InfoLogement {
   /** Type de logement */
-  typeLogement: "maison" | "appartement" | null;
+  typeLogement: TypeLogement | null;
   /** Année de construction */
   anneeConstruction: string | null;
   /** Nombre de niveaux */
@@ -41,7 +42,7 @@ export interface InfoLogement {
   /** État de la maison */
   etatMaison: string | null;
   /** Zone d'exposition au risque argile */
-  zoneExposition: "faible" | "moyen" | "fort" | null;
+  zoneExposition: ZoneExposition | null;
   /** Indemnisation passée liée au RGA */
   indemnisationPasseeRGA: boolean | null;
   /** Indemnisation avant juillet 2025 */

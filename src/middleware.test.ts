@@ -20,7 +20,6 @@ vi.mock("@/features/auth/edge", () => ({
   ROUTES: {
     backoffice: {
       administration: { root: "/administration" },
-      espaceAmo: { root: "/espace-amo" },
       espaceAgent: { root: "/espace-agent" },
     },
     connexion: { agent: "/connexion/agent", particulier: "/connexion" },
@@ -76,7 +75,7 @@ describe("middleware — authentification & redirection (§7)", () => {
       })
     );
 
-    expect(res.headers.get("location")).toContain("/espace-amo");
+    expect(res.headers.get("location")).toContain("/espace-agent");
   });
 
   it("route publique sans session → laisse passer (pas de redirection)", async () => {

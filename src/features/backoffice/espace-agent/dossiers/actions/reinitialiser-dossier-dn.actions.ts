@@ -8,6 +8,7 @@ import { verifierAccesDossierDn } from "@/features/backoffice/espace-agent/share
 import { ACTION_TYPE_DOSSIER_DN_REINITIALISE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { STEP_LABELS, type Step } from "@/shared/domain/value-objects/step.enum";
 import type { ActionResult } from "@/shared/types";
+import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 /**
  * Rend au demandeur un lien de formulaire neuf pour une étape (ADR-0026, ADR-0027).
@@ -25,6 +26,9 @@ export async function reinitialiserDossierDnAction(
   step: Step
 ): Promise<ActionResult<{ statut: "rattache" | "a_recreer"; dsNumber?: string }>> {
   try {
+    const refusEspaceAgent = await refusAccesEspaceAgent();
+    if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
+
     const agentResult = await getCurrentAgent();
     if (!agentResult.success) return { success: false, error: agentResult.error };
     const agent = agentResult.data;
