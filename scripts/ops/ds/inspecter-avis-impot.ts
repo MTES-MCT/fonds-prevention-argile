@@ -82,10 +82,11 @@ function afficher(donnees: DonneesAvisImpotDossier): void {
 }
 
 function afficherControle(donnees: DonneesAvisImpotDossier): void {
-  const resultat = controlerAvisImpot(donnees, { codeRegion: REGION, maintenant: new Date() });
+  const maintenant = new Date();
+  const resultat = controlerAvisImpot(donnees, { codeRegion: REGION, maintenant });
   console.log(`Contrôle : ${LIBELLES_STATUT_CONTROLE[resultat.statut]}`);
   if (AFFICHER_VALEURS) {
-    console.log(formaterDetailControle(resultat).replace(/^/gm, "      "));
+    console.log(formaterDetailControle(resultat, maintenant).replace(/^/gm, "      "));
     return;
   }
   const criteres = [
