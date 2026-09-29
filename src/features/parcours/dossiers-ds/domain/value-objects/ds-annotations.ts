@@ -43,6 +43,11 @@ export const DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE: Record<number, strin
   146377: "Q2hhbXAtNzAyMDIwNw==", // préprod
 };
 
+/** Sans avertissement : une démarche sans annotation n'est simplement pas encore activée. */
+export function estControleAvisImpotActive(demarcheNumber: number): boolean {
+  return Boolean(DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[demarcheNumber]);
+}
+
 export function getAnnotationControleAvisImpot(demarcheNumber: number): string | null {
   const champId = DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[demarcheNumber];
   if (!champId) {

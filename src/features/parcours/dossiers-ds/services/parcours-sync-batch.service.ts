@@ -1,12 +1,13 @@
 import { parcoursRepo, syncRunRepo } from "@/shared/database/repositories";
 import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
-import type { Step } from "@/shared/domain/value-objects/step.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import type { DsStatusChange } from "@/shared/database/schema/sync-run-entries";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
+import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
 
 /**
  * Synchronisation batch des parcours (CRON et déclenchement manuel super-admin).
@@ -200,6 +201,20 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       // Échec de sync d'un dossier (ex: unauthorized côté DS) : on le collecte au lieu
       // de l'ignorer silencieusement, pour le tracer dans l'historique du run.
       dossierErrors.push(`${dossier.step}: ${result.error}`);
+    }
+
+    if (dossier.step === Step.ELIGIBILITE && result.success && !result.data?.notObserved) {
+      // Best-effort : un échec est tracé dans le run sans bloquer la sync, et retenté au suivant.
+      try {
+        await controlerAvisImpotApresSync({
+          parcours: before,
+          dossier,
+          dsStatus: (result.data?.newStatus as DSStatus | undefined) ?? null,
+          champsModifiesAt: result.data?.champsModifiesAt,
+        });
+      } catch (error) {
+        dossierErrors.push(`avis-impot: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 

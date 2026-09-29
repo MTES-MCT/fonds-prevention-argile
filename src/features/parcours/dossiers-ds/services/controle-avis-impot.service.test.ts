@@ -6,7 +6,16 @@ vi.mock("@/shared/config/env.config", () => ({ getServerEnv: vi.fn(() => env) })
 const client = vi.hoisted(() => ({ getDossierAvisImpot: vi.fn(), modifierAnnotations: vi.fn() }));
 vi.mock("../adapters/graphql/client", () => ({ graphqlClient: client }));
 
-import { controlerEtAnnoterAvisImpot } from "./controle-avis-impot.service";
+const enregistrerControleAvisImpot = vi.hoisted(() => vi.fn());
+vi.mock("./dossier-ds.service", () => ({ enregistrerControleAvisImpot }));
+
+import { Step } from "@/shared/domain/value-objects/step.enum";
+import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import {
+  controlerAvisImpotApresSync,
+  controlerEtAnnoterAvisImpot,
+  type DossierApresSync,
+} from "./controle-avis-impot.service";
 import { FIXTURES_AVIS_IMPOT } from "../mappers/avis-impot.fixtures";
 import { STATUTS_CONTROLE } from "../domain/avis-impot";
 
@@ -70,5 +79,110 @@ describe("controlerEtAnnoterAvisImpot", () => {
     client.modifierAnnotations.mockRejectedValue(new Error("Annotations refusées : non autorisé"));
 
     await expect(controlerEtAnnoterAvisImpot(1, options)).rejects.toThrow("non autorisé");
+  });
+});
+
+describe("controlerAvisImpotApresSync", () => {
+  const CHAMPS_MODIFIES_AT = "2026-09-29T15:41:02+02:00";
+  const parcours = {
+    rgaSimulationData: { logement: { code_region: "32" } },
+    rgaSimulationDataAgent: null,
+  } as unknown as Parameters<typeof controlerAvisImpotApresSync>[0]["parcours"];
+
+  function dossier(valeurs: Partial<DossierApresSync> = {}): DossierApresSync {
+    return {
+      id: "d1",
+      step: Step.ELIGIBILITE,
+      dsNumber: "33301642",
+      dsDemarcheId: "146377",
+      avisImpotControleAt: null,
+      avisImpotChampsModifiesAt: null,
+      ...valeurs,
+    };
+  }
+
+  const appeler = (valeurs: Partial<DossierApresSync> = {}, dsStatus: DSStatus | null = DSStatus.EN_CONSTRUCTION) =>
+    controlerAvisImpotApresSync({
+      parcours,
+      dossier: dossier(valeurs),
+      dsStatus,
+      champsModifiesAt: CHAMPS_MODIFIES_AT,
+      maintenant: MAINTENANT,
+    });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT["ecart-revenu"]);
+    client.modifierAnnotations.mockResolvedValue(undefined);
+  });
+
+  it("contrôle un dossier déposé jamais contrôlé, écrit l'annotation et enregistre le verdict", async () => {
+    await expect(appeler()).resolves.toBe("ecrite");
+
+    expect(client.getDossierAvisImpot).toHaveBeenCalledWith(33301642);
+    expect(enregistrerControleAvisImpot).toHaveBeenCalledWith("d1", {
+      statut: STATUTS_CONTROLE.A_VERIFIER,
+      controleAt: MAINTENANT,
+      champsModifiesAt: new Date(CHAMPS_MODIFIES_AT),
+    });
+  });
+
+  it("calcule la tranche avec la région de la simulation du parcours", async () => {
+    await appeler();
+
+    const texte = client.modifierAnnotations.mock.calls[0][0].annotations[0].value.textarea;
+    expect(texte).toContain("tranche très modeste → modeste");
+  });
+
+  it("ne relit pas DN quand les champs n'ont pas bougé depuis le dernier contrôle", async () => {
+    const resultat = await appeler({
+      avisImpotControleAt: new Date("2026-09-29T14:00:00Z"),
+      avisImpotChampsModifiesAt: new Date(CHAMPS_MODIFIES_AT),
+    });
+
+    expect(resultat).toBeNull();
+    expect(client.getDossierAvisImpot).not.toHaveBeenCalled();
+  });
+
+  it("ne touche pas un dossier dont la décision est rendue", async () => {
+    await expect(appeler({}, DSStatus.ACCEPTE)).resolves.toBeNull();
+    expect(client.getDossierAvisImpot).not.toHaveBeenCalled();
+  });
+
+  it("ne fait rien, sans bruit, sur une démarche où le contrôle n'est pas activé", async () => {
+    const warn = vi.spyOn(console, "warn");
+
+    await expect(appeler({ dsDemarcheId: "126061" })).resolves.toBeNull();
+    expect(client.getDossierAvisImpot).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("n'enregistre rien pour un dossier devenu invisible", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(null);
+
+    await expect(appeler()).resolves.toBeNull();
+    expect(enregistrerControleAvisImpot).not.toHaveBeenCalled();
+  });
+
+  it("laisse remonter un refus de DN sans enregistrer, pour retenter au prochain run", async () => {
+    client.modifierAnnotations.mockRejectedValue(new Error("L'instructeur n'a pas les droits d'accès à ce dossier"));
+
+    await expect(appeler()).rejects.toThrow("droits d'accès");
+    expect(enregistrerControleAvisImpot).not.toHaveBeenCalled();
+  });
+
+  it("enregistre aussi un contrôle dont l'annotation était déjà à jour", async () => {
+    const premier = await controlerEtAnnoterAvisImpot(1, {
+      codeRegion: "32",
+      appliquer: false,
+      maintenant: MAINTENANT,
+    });
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...FIXTURES_AVIS_IMPOT["ecart-revenu"],
+      annotations: [{ champDescriptorId: ANNOTATION_PREPROD, stringValue: premier?.texte }],
+    });
+
+    await expect(appeler()).resolves.toBe("inchangee");
+    expect(enregistrerControleAvisImpot).toHaveBeenCalledOnce();
   });
 });
