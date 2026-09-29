@@ -55,7 +55,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     titre: "Revoir le gravier de propreté sur tout le pourtour de la maison",
     problemes: [
       "Sans membrane étanche dessous, le gravier laisse l'eau s'infiltrer directement au pied du mur",
-      "Sur tout le pourtour, ces infiltrations répétées provoquent des cycles gonflement/retrait sur l'ensemble des fondations — le risque d'un tassement différentiel généralisé est plus élevé qu'un point localisé",
+      "Sur tout le pourtour, ces infiltrations répétées provoquent des cycles gonflement/retrait sur l'ensemble des fondations; le risque d'un tassement différentiel généralisé est plus élevé qu'un point localisé",
     ],
     ameliorations: [
       "Faire vérifier la présence d'une membrane étanche sur tout le tour, ou remplacer par un dispositif qui éloigne l'eau du mur",
