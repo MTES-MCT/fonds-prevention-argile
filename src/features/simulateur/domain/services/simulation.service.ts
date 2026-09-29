@@ -212,11 +212,10 @@ const STEP_SPECIFIC_KEYS: Partial<Record<SimulateurStep, Record<string, string[]
       "coordonnees",
       "clef_ban",
       "zone_dexposition",
-      "annee_de_construction",
-      "niveaux",
       "rnb",
     ],
   },
+  [SimulateurStep.CARACTERISTIQUES]: { logement: ["annee_de_construction", "niveaux"] },
   [SimulateurStep.ETAT_MAISON]: { rga: ["sinistres"] },
   [SimulateurStep.MITOYENNETE]: { logement: ["mitoyen"] },
   [SimulateurStep.INDEMNISATION]: {

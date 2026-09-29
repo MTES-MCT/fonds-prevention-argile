@@ -58,6 +58,7 @@ const STEP_ORDER = [
   "simulateur_start",
   "simulateur_step_type_logement",
   "simulateur_step_adresse",
+  "simulateur_step_caracteristiques",
   "simulateur_step_etat_maison",
   "simulateur_step_mitoyennete",
   "simulateur_step_indemnisation",

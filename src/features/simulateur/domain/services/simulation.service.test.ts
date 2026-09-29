@@ -63,10 +63,9 @@ describe("SimulationService", () => {
         logement: {
           code_departement: "47",
           zone_dexposition: "fort",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
         },
       });
+      state = SimulationService.submitAnswer(state, { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } });
 
       expect(state.answers.logement?.type).toBe("maison");
       expect(state.answers.logement?.code_departement).toBe("47");
@@ -94,10 +93,9 @@ describe("SimulationService", () => {
         logement: {
           code_departement: "47",
           zone_dexposition: "faible",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
         },
       });
+      state = SimulationService.submitAnswer(state, { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } });
 
       expect(state.currentStep).toBe(SimulateurStep.RESULTAT);
       expect(state.result?.eligible).toBe(false);
@@ -117,10 +115,9 @@ describe("SimulationService", () => {
           code_departement: "47",
           zone_dexposition: "fort",
           code_region: "75",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
         },
       });
+      state = SimulationService.submitAnswer(state, { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } });
 
       // Étape 3 - État maison
       state = SimulationService.submitAnswer(state, {
@@ -183,10 +180,13 @@ describe("SimulationService", () => {
           logement: {
             code_departement: "47",
             zone_dexposition: "faible",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
           },
         },
+        SKIP_EARLY_EXIT
+      );
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } },
         SKIP_EARLY_EXIT
       );
 
@@ -208,10 +208,13 @@ describe("SimulationService", () => {
             code_departement: "47",
             zone_dexposition: "moyen",
             code_region: "75",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
           },
         },
+        SKIP_EARLY_EXIT
+      );
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } },
         SKIP_EARLY_EXIT
       );
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
@@ -250,10 +253,13 @@ describe("SimulationService", () => {
             code_departement: "47",
             zone_dexposition: "moyen",
             code_region: "75",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
           },
         },
+        SKIP_EARLY_EXIT
+      );
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } },
         SKIP_EARLY_EXIT
       );
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
@@ -282,10 +288,13 @@ describe("SimulationService", () => {
             code_departement: "47",
             zone_dexposition: "fort",
             code_region: "75",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
           },
         },
+        SKIP_EARLY_EXIT
+      );
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } },
         SKIP_EARLY_EXIT
       );
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } }, SKIP_EARLY_EXIT);
@@ -400,16 +409,17 @@ describe("SimulationService", () => {
         logement: {
           code_departement: "47",
           zone_dexposition: "fort",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
         },
       });
+      state = SimulationService.submitAnswer(state, { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } });
 
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
 
-      // Retour avec preserveAnswers — les données adresse restent
-      const backed = SimulationService.goBack(state, PRESERVE);
+      // Retour avec preserveAnswers — les données adresse et bâtiment restent
+      let backed = SimulationService.goBack(state, PRESERVE);
+      expect(backed.currentStep).toBe(SimulateurStep.CARACTERISTIQUES);
 
+      backed = SimulationService.goBack(backed, PRESERVE);
       expect(backed.currentStep).toBe(SimulateurStep.ADRESSE);
       expect(backed.answers.logement?.code_departement).toBe("47");
       expect(backed.answers.logement?.zone_dexposition).toBe("fort");
@@ -425,10 +435,9 @@ describe("SimulationService", () => {
         logement: {
           code_departement: "47",
           zone_dexposition: "fort",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
         },
       });
+      state = SimulationService.submitAnswer(state, { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } });
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } });
 
       expect(state.currentStep).toBe(SimulateurStep.MITOYENNETE);
@@ -439,8 +448,15 @@ describe("SimulationService", () => {
       expect(backed.currentStep).toBe(SimulateurStep.ETAT_MAISON);
 
       backed = SimulationService.goBack(backed);
-      expect(backed.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(backed.currentStep).toBe(SimulateurStep.CARACTERISTIQUES);
       expect(backed.answers.rga?.sinistres).toBeUndefined();
+
+      // Quitter l'écran des caractéristiques efface l'année et les niveaux, pas l'adresse
+      backed = SimulationService.goBack(backed);
+      expect(backed.currentStep).toBe(SimulateurStep.ADRESSE);
+      expect(backed.answers.logement?.annee_de_construction).toBeUndefined();
+      expect(backed.answers.logement?.niveaux).toBeUndefined();
+      expect(backed.answers.logement?.code_departement).toBe("47");
     });
 
     it("permet d'aller-retour sans perdre les données pré-remplies", () => {
@@ -473,16 +489,19 @@ describe("SimulationService", () => {
           logement: {
             code_departement: "47",
             zone_dexposition: "moyen",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
           },
         },
+        SKIP
+      );
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } },
         SKIP
       );
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
 
       // Retour avec preserve
-      state = SimulationService.goBack(state, PRESERVE);
+      state = SimulationService.goBack(SimulationService.goBack(state, PRESERVE), PRESERVE);
       expect(state.currentStep).toBe(SimulateurStep.ADRESSE);
       expect(state.answers.rga?.sinistres).toBe("endommagée");
 
@@ -493,10 +512,13 @@ describe("SimulationService", () => {
           logement: {
             code_departement: "47",
             zone_dexposition: "fort",
-            annee_de_construction: anneeAncienne,
-            niveaux: 2,
           },
         },
+        SKIP
+      );
+      state = SimulationService.submitAnswer(
+        state,
+        { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } },
         SKIP
       );
       expect(state.currentStep).toBe(SimulateurStep.ETAT_MAISON);
@@ -580,10 +602,9 @@ describe("SimulationService", () => {
           code_departement: "47",
           zone_dexposition: "fort",
           code_region: "75",
-          annee_de_construction: anneeAncienne,
-          niveaux: 2,
         },
       });
+      state = SimulationService.submitAnswer(state, { logement: { annee_de_construction: anneeAncienne, niveaux: 2 } });
       state = SimulationService.submitAnswer(state, { rga: { sinistres: "saine" } });
       state = SimulationService.submitAnswer(state, { logement: { mitoyen: false } });
       state = SimulationService.submitAnswer(state, { rga: { indemnise_indemnise_rga: false } });

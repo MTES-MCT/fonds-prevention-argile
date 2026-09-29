@@ -111,7 +111,7 @@ export function StepRevenus({ initialValue, numeroEtape, totalEtapes, canGoBack,
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       {/* Nombre de personnes */}
-      <div className="md:w-1/2">
+      <div className="md:w-1/2 fr-mb-2w">
         <div className="fr-input-wrap fr-input-wrap--addon">
           <input
             className="fr-input md:w-1/2"

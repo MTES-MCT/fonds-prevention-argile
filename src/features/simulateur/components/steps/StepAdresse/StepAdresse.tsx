@@ -19,7 +19,6 @@ import { asString } from "@/shared/utils";
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
 import { NavigationButtons } from "../../shared/NavigationButtons";
 import { peutReprendreAdresseExistante } from "./adresse-reprise";
-import { BuildingDataForm, type BuildingFormData } from "./BuildingDataForm";
 import { useSimulateurStore, selectEditMode } from "../../../stores/simulateur.store";
 
 interface StepAdresseProps {
@@ -42,13 +41,13 @@ const SEARCH_DEBOUNCE_DELAY = 300;
  * 2. Sélection d'une adresse parmi les résultats (RadioButtons)
  * 3. Carte affichée, centrée sur l'adresse
  * 4. Clic sur un bâtiment (point bleu) pour le sélectionner
- * 5. Vérification/complétion des informations du bâtiment
- * 6. Validation avec le bouton "Suivant"
+ * 5. Validation avec le bouton "Suivant" : année et niveaux se vérifient à l'écran suivant
  */
 export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack, onSubmit, onBack }: StepAdresseProps) {
   // Mode édition agent : verrouiller l'adresse
   const editMode = useSimulateurStore(selectEditMode);
   const isAddressLocked = editMode && peutReprendreAdresseExistante(initialValue);
+  const setPrefillBatiment = useSimulateurStore((state) => state.setPrefillBatiment);
 
   // IDs uniques pour l'accessibilité
   const inputId = useId();
@@ -127,13 +126,6 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     } as BuildingData;
   });
 
-  // Données du formulaire (potentiellement éditées par l'utilisateur)
-  const [formData, setFormData] = useState<BuildingFormData>({
-    anneeConstruction:
-      isAddressLocked && initialValue?.annee_de_construction ? Number(initialValue.annee_de_construction) : null,
-    nombreNiveaux: isAddressLocked && initialValue?.niveaux != null ? Number(initialValue.niveaux) : null,
-  });
-
   // Debounce de l'input pour éviter trop d'appels API
   const debouncedInput = useDebounce(addressInput, SEARCH_DEBOUNCE_DELAY);
 
@@ -177,7 +169,6 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     setAddressResults(null);
     // Reset du bâtiment sélectionné car nouvelle adresse
     setBuildingData(null);
-    setFormData({ anneeConstruction: null, nombreNiveaux: null });
     // Reset du code EPCI
     setCodeEpci(null);
 
@@ -201,7 +192,6 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
       if (selectedAddress && value !== selectedAddress.properties.label) {
         setSelectedAddress(null);
         setBuildingData(null);
-        setFormData({ anneeConstruction: null, nombreNiveaux: null });
         setCodeEpci(null);
       }
     },
@@ -211,20 +201,6 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   // Gestionnaire de sélection de bâtiment sur la carte
   const handleBuildingSelect = useCallback((data: BuildingData | null) => {
     setBuildingData(data);
-    // Reset formData pour que BuildingDataForm réinitialise avec les nouvelles données
-    if (data) {
-      setFormData({
-        anneeConstruction: data.anneeConstruction,
-        nombreNiveaux: data.nombreNiveaux,
-      });
-    } else {
-      setFormData({ anneeConstruction: null, nombreNiveaux: null });
-    }
-  }, []);
-
-  // Gestionnaire de changement du formulaire
-  const handleFormChange = useCallback((data: BuildingFormData) => {
-    setFormData(data);
   }, []);
 
   // Échappatoire manuelle si la carte ne répond pas (réseau lent, tuiles RNB non chargées) :
@@ -254,8 +230,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     return () => clearTimeout(timeout);
   }, [selectedAddress, buildingData, isAddressLocked]);
 
-  const handleManualFallback = useCallback(async () => {
-    if (!selectedAddress) return;
+  const chargerBatimentSansCarte = useCallback(async (): Promise<BuildingData | null> => {
+    if (!selectedAddress) return null;
     setIsFallbackLoading(true);
     try {
       const coordonnees = buildingData
@@ -266,54 +242,63 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
       const data = buildingData?.rnbId
         ? await getBuildingDataByRnbId(buildingData.rnbId, coordonnees)
         : await getBuildingDataFallback(coordonnees);
-      handleBuildingSelect({
-        ...data,
-        // Ce que l'usager a déjà saisi prime : le réessai ne vise que l'aléa.
-        anneeConstruction: formData.anneeConstruction ?? data.anneeConstruction,
-        nombreNiveaux: formData.nombreNiveaux ?? data.nombreNiveaux,
-      });
+      handleBuildingSelect(data);
+      return data;
     } finally {
       setIsFallbackLoading(false);
     }
-  }, [selectedAddress, buildingData, formData, handleBuildingSelect]);
+  }, [selectedAddress, buildingData, handleBuildingSelect]);
 
-  // Soumission du formulaire
+  const soumettreBatiment = useCallback(
+    (batiment: BuildingData) => {
+      if (!selectedAddress) return;
+
+      const addressData = mapBanFeatureToAddressData(selectedAddress, { codeEpci: codeEpci ?? undefined });
+      // Autre bâtiment qu'à l'arrivée : l'année et les niveaux déjà répondus ne le décrivent plus.
+      const memeBatiment = isAddressLocked || (!!initialRnbId && batiment.rnbId === initialRnbId);
+
+      setPrefillBatiment({
+        anneeConstruction: batiment.anneeConstruction,
+        nombreNiveaux: batiment.nombreNiveaux,
+        donneesIndisponibles: Boolean(batiment.donneesIndisponibles),
+      });
+
+      onSubmit({
+        logement: {
+          adresse: batiment.adresse || addressData.label,
+          commune: addressData.codeCommune,
+          commune_nom: addressData.nomCommune,
+          code_departement: addressData.codeDepartement,
+          code_region: addressData.codeRegion,
+          epci: addressData.codeEpci,
+          // Utiliser les coordonnées du bâtiment sélectionné
+          coordonnees: formatCoordinatesString({ lat: batiment.lat, lon: batiment.lon }),
+          clef_ban: addressData.clefBan,
+          // Données du bâtiment (BDNB + potentiellement éditées)
+          // null = hors zone argileuse (réponse à part entière, distincte de "non répondu")
+          zone_dexposition: batiment.aleaArgiles,
+          rnb: batiment.rnbId,
+          ...(memeBatiment ? {} : { annee_de_construction: undefined, niveaux: undefined }),
+        },
+      });
+    },
+    [selectedAddress, codeEpci, onSubmit, isAddressLocked, initialRnbId, setPrefillBatiment]
+  );
+
   const handleSubmit = useCallback(() => {
-    if (!selectedAddress || !buildingData) return;
+    if (buildingData) soumettreBatiment(buildingData);
+  }, [buildingData, soumettreBatiment]);
 
-    const addressData = mapBanFeatureToAddressData(selectedAddress, { codeEpci: codeEpci ?? undefined });
+  // Proposer de « renseigner soi-même » puis rester sur la carte serait incohérent : on passe à l'écran de saisie.
+  const handleSaisieManuelle = useCallback(async () => {
+    const batiment = await chargerBatimentSansCarte();
+    if (batiment && !batiment.aleaIndetermine) soumettreBatiment(batiment);
+  }, [chargerBatimentSansCarte, soumettreBatiment]);
 
-    onSubmit({
-      logement: {
-        adresse: buildingData.adresse || addressData.label,
-        commune: addressData.codeCommune,
-        commune_nom: addressData.nomCommune,
-        code_departement: addressData.codeDepartement,
-        code_region: addressData.codeRegion,
-        epci: addressData.codeEpci,
-        // Utiliser les coordonnées du bâtiment sélectionné
-        coordonnees: formatCoordinatesString({ lat: buildingData.lat, lon: buildingData.lon }),
-        clef_ban: addressData.clefBan,
-        // Données du bâtiment (BDNB + potentiellement éditées)
-        // null = hors zone argileuse (réponse à part entière, distincte de "non répondu")
-        zone_dexposition: buildingData.aleaArgiles,
-        annee_de_construction: formData.anneeConstruction?.toString(),
-        niveaux: formData.nombreNiveaux ?? undefined,
-        rnb: buildingData.rnbId,
-      },
-    });
-  }, [selectedAddress, buildingData, formData, codeEpci, onSubmit]);
-
-  // Validation : peut passer à l'étape suivante ?
-  // aleaIndetermine bloque : contrairement à anneeConstruction/nombreNiveaux, l'aléa RGA
-  // n'est pas saisissable par l'utilisateur et null y a un sens métier propre ("hors zone",
-  // cf. checkZoneForte) qu'on ne peut pas laisser masquer un échec de récupération.
-  const isValid =
-    selectedAddress !== null &&
-    buildingData !== null &&
-    !buildingData.aleaIndetermine &&
-    formData.anneeConstruction !== null &&
-    formData.nombreNiveaux !== null;
+  // aleaIndetermine bloque : l'aléa RGA n'est pas saisissable par l'utilisateur et null y a un
+  // sens métier propre ("hors zone", cf. checkZoneForte) qu'un échec de récupération ne doit pas masquer.
+  const aleaIndetermine = Boolean(buildingData?.aleaIndetermine);
+  const isValid = selectedAddress !== null && buildingData !== null && !aleaIndetermine;
 
   // Coordonnées pour centrer la carte
   const mapCenter = selectedAddress
@@ -342,131 +327,139 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
       subtitle="Recherchez votre adresse puis sélectionnez votre logement sur la carte"
       currentStep={numeroEtape}
       totalSteps={totalEtapes}>
-      <div className="container ">
-        {/* Recherche d'adresse */}
-        <div className="fr-mb-4w">
-          <div className={getInputGroupClass()} id={`input-group-${inputId}`}>
-            <input
-              className="fr-input"
-              aria-describedby={`input-${inputId}-messages`}
-              id={`input-${inputId}`}
-              type="text"
-              value={addressInput}
-              onChange={handleInputChange}
-              name="adresse"
-              placeholder="Ex: 97 rue de Notz, Châteauroux"
-              autoComplete="street-address"
-              autoFocus={!isAddressLocked}
-              readOnly={isAddressLocked}
-            />
-            <div className="fr-messages-group" id={`input-${inputId}-messages`} aria-live="polite">
-              {searchError && <p className="fr-message fr-message--error">{searchError}</p>}
-              {selectedAddress && !buildingData && <p className="fr-message fr-message--valid">Adresse valide.</p>}
-              {isSearching && <p className="fr-message fr-message--info">Recherche en cours...</p>}
-              {addressInput.length > 0 && addressInput.length < MIN_QUERY_LENGTH && !selectedAddress && (
-                <p className="fr-message fr-message--info">Saisissez au moins {MIN_QUERY_LENGTH} caractères</p>
-              )}
-              {showNoResults && (
-                <p className="fr-message fr-message--error">Aucune adresse trouvée. Vérifiez votre saisie.</p>
-              )}
-            </div>
+      {/* Recherche d'adresse */}
+      <div className="fr-mb-3w">
+        <div className={getInputGroupClass()} id={`input-group-${inputId}`}>
+          <label className="fr-label fr-sr-only" htmlFor={`input-${inputId}`}>
+            Adresse du logement
+          </label>
+          <input
+            className="fr-input"
+            aria-describedby={`input-${inputId}-messages`}
+            id={`input-${inputId}`}
+            type="text"
+            value={addressInput}
+            onChange={handleInputChange}
+            name="adresse"
+            placeholder="Ex: 97 rue de Notz, Châteauroux"
+            autoComplete="street-address"
+            autoFocus={!isAddressLocked}
+            readOnly={isAddressLocked}
+          />
+          <div className="fr-messages-group" id={`input-${inputId}-messages`} aria-live="polite">
+            {searchError && <p className="fr-message fr-message--error">{searchError}</p>}
+            {selectedAddress && <p className="fr-message fr-message--valid">Adresse validée</p>}
+            {isSearching && <p className="fr-message fr-message--info">Recherche en cours...</p>}
+            {addressInput.length > 0 && addressInput.length < MIN_QUERY_LENGTH && !selectedAddress && (
+              <p className="fr-message fr-message--info">Saisissez au moins {MIN_QUERY_LENGTH} caractères</p>
+            )}
+            {showNoResults && (
+              <p className="fr-message fr-message--error">Aucune adresse trouvée. Vérifiez votre saisie.</p>
+            )}
           </div>
-
-          {/* Liste des résultats (RadioButtons) */}
-          {showResults && (
-            <fieldset
-              className="fr-fieldset fr-mt-2w"
-              id={`fieldset-${radioGroupId}`}
-              aria-labelledby={`fieldset-${radioGroupId}-legend`}>
-              <legend
-                className="fr-fieldset__legend--regular fr-fieldset__legend italic"
-                id={`fieldset-${radioGroupId}-legend`}>
-                Sélectionnez votre adresse parmi les résultats suivants :
-              </legend>
-              {addressResults.map((feature, index) => (
-                <div className="fr-fieldset__element" key={feature.properties.id}>
-                  <div className="fr-radio-group">
-                    <input
-                      type="radio"
-                      id={`radio-${radioGroupId}-${index}`}
-                      name={`radios-group-${radioGroupId}`}
-                      value={feature.properties.id}
-                      onChange={() => handleAddressSelect(feature)}
-                    />
-                    <label className="fr-label" htmlFor={`radio-${radioGroupId}-${index}`}>
-                      {feature.properties.label}
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </fieldset>
-          )}
         </div>
 
-        {/* Container carte + formulaire */}
-        {selectedAddress && mapCenter && (
-          <div
-            className="fr-mb-4w border-solid border border-(--border-default-grey)"
-            style={{
-              backgroundColor: "var(--background-default-grey)",
-              borderRadius: "0.5rem",
-              padding: "0.5rem",
-            }}>
-            {/* Message d'instruction (visible tant que pas de bâtiment sélectionné) */}
-            {!buildingData && !carteIndisponible && (
-              <p className="fr-text--sm fr-text--bold fr-mb-2w">
-                Cliquez sur votre bâtiment (point bleu) pour le sélectionner :
-              </p>
-            )}
-
-            {/* Carte */}
-            <RgaMapContainer
-              center={mapCenter}
-              initialRnbId={isAddressLocked ? undefined : initialRnbId}
-              locked={isAddressLocked}
-              showMarker={true}
-              showLegend={true}
-              variant="minimal"
-              onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
-              onEmptyClick={isAddressLocked ? undefined : handleEmptyClick}
-              onCarteIndisponible={handleCarteIndisponible}
-            />
-
-            {/* Échappatoire si la carte ne répond pas (délai écoulé, clic à vide, ou pas de WebGL2) */}
-            {!buildingData && !isAddressLocked && proposerSaisieManuelle && (
-              <p className="fr-text--sm fr-mt-2w fr-mb-0">
-                <button
-                  type="button"
-                  className={carteIndisponible ? "fr-btn fr-btn--secondary fr-btn--sm" : "fr-link fr-link--sm"}
-                  onClick={handleManualFallback}
-                  disabled={isFallbackLoading}>
-                  {isFallbackLoading
-                    ? "Vérification en cours..."
-                    : carteIndisponible
-                      ? "Renseigner les informations de mon logement"
-                      : "Vous ne trouvez pas votre bâtiment, ou la carte ne répond pas ? Renseignez les informations vous-même"}
-                </button>
-              </p>
-            )}
-
-            {/* Formulaire (visible après sélection d'un bâtiment) */}
-            {buildingData && (
-              <div className="px-2 py-1">
-                <BuildingDataForm
-                  address={selectedAddress.properties.label}
-                  buildingData={buildingData}
-                  onChange={handleFormChange}
-                  editMode={isAddressLocked}
-                  onRetryAlea={isAddressLocked ? undefined : handleManualFallback}
-                  isRetryingAlea={isFallbackLoading}
-                />
+        {/* Liste des résultats (RadioButtons) */}
+        {showResults && (
+          <fieldset
+            className="fr-fieldset fr-mt-2w"
+            id={`fieldset-${radioGroupId}`}
+            aria-labelledby={`fieldset-${radioGroupId}-legend`}>
+            <legend
+              className="fr-fieldset__legend--regular fr-fieldset__legend italic"
+              id={`fieldset-${radioGroupId}-legend`}>
+              Sélectionnez votre adresse parmi les résultats suivants :
+            </legend>
+            {addressResults.map((feature, index) => (
+              <div className="fr-fieldset__element" key={feature.properties.id}>
+                <div className="fr-radio-group">
+                  <input
+                    type="radio"
+                    id={`radio-${radioGroupId}-${index}`}
+                    name={`radios-group-${radioGroupId}`}
+                    value={feature.properties.id}
+                    onChange={() => handleAddressSelect(feature)}
+                  />
+                  <label className="fr-label" htmlFor={`radio-${radioGroupId}-${index}`}>
+                    {feature.properties.label}
+                  </label>
+                </div>
               </div>
-            )}
-          </div>
+            ))}
+          </fieldset>
         )}
       </div>
 
-      <NavigationButtons onPrevious={onBack} onNext={handleSubmit} canGoBack={canGoBack} isNextDisabled={!isValid} />
+      {/* Carte */}
+      {selectedAddress && mapCenter && (
+        <div className="bg-(--background-default-grey) border border-(--border-default-grey) rounded-lg p-3 md:p-5 fr-mb-2w">
+          <h2 className="fr-h5 fr-mb-1w">Sélectionnez votre logement sur la carte</h2>
+          {!buildingData && !carteIndisponible && (
+            <p className="fr-text--sm fr-mb-2w text-(--text-mention-grey)">
+              Cliquez sur votre bâtiment (point bleu) pour le sélectionner.
+            </p>
+          )}
+
+          <RgaMapContainer
+            center={mapCenter}
+            initialRnbId={isAddressLocked ? undefined : initialRnbId}
+            locked={isAddressLocked}
+            showMarker={true}
+            showLegend={true}
+            variant="minimal"
+            height="clamp(240px, 45vh, 420px)"
+            onBuildingSelect={isAddressLocked ? undefined : handleBuildingSelect}
+            onEmptyClick={isAddressLocked ? undefined : handleEmptyClick}
+            onCarteIndisponible={handleCarteIndisponible}
+          />
+
+          {aleaIndetermine && (
+            <div className="fr-alert fr-alert--error fr-alert--sm fr-mt-2w" role="alert">
+              <p>
+                Nous n&apos;avons pas pu vérifier si votre logement est situé en zone à risque (problème de connexion).
+              </p>
+              {!isAddressLocked && (
+                <p className="fr-mt-1w fr-mb-0">
+                  <button
+                    type="button"
+                    className="fr-link fr-link--sm"
+                    onClick={chargerBatimentSansCarte}
+                    disabled={isFallbackLoading}>
+                    {isFallbackLoading ? "Vérification en cours..." : "Réessayer la vérification"}
+                  </button>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Échappatoire si la carte ne répond pas (délai écoulé, clic à vide, ou pas de WebGL2) */}
+          {!buildingData && !isAddressLocked && proposerSaisieManuelle && (
+            <p className="fr-text--sm fr-mt-2w fr-mb-0">
+              <button
+                type="button"
+                className={carteIndisponible ? "fr-btn fr-btn--secondary fr-btn--sm" : "fr-link fr-link--sm"}
+                onClick={handleSaisieManuelle}
+                disabled={isFallbackLoading}>
+                {isFallbackLoading
+                  ? "Vérification en cours..."
+                  : carteIndisponible
+                    ? "Renseigner les informations de mon logement"
+                    : "Vous ne trouvez pas votre bâtiment, ou la carte ne répond pas ? Renseignez les informations vous-même"}
+              </button>
+            </p>
+          )}
+        </div>
+      )}
+
+      <NavigationButtons
+        onPrevious={onBack}
+        onNext={handleSubmit}
+        canGoBack={canGoBack}
+        isNextDisabled={!isValid}
+        aideDesactive={
+          selectedAddress && !aleaIndetermine ? "Sélectionnez votre logement sur la carte pour continuer." : undefined
+        }
+      />
     </SimulateurLayout>
   );
 }

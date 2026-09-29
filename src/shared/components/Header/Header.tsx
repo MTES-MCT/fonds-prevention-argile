@@ -5,6 +5,7 @@ import { useIsAgent, useCanAccessAdministration, useCanAccessEspaceAgent } from 
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import Link from "next/link";
 import { BackofficeNavigation } from "@/shared/components/BackofficeNavigation";
+import { HeaderMarque } from "./HeaderMarque";
 
 /**
  * Liens de navigation agent (desktop, haut de header).
@@ -67,41 +68,19 @@ const Header = () => {
       <div className="fr-header__body">
         <div className="fr-container">
           <div className="fr-header__body-row">
-            <div className="fr-header__brand fr-enlarge-link">
-              <div className="fr-header__brand-top">
-                <div className="fr-header__logo">
-                  <p className="fr-logo">
-                    Ministère
-                    <br />
-                    de la transition
-                    <br />
-                    écologique
-                  </p>
-                </div>
-                <div className="fr-header__navbar">
-                  <button
-                    data-fr-opened="false"
-                    aria-controls="menu-modal-mobile"
-                    title="Menu"
-                    type="button"
-                    id="menu-mobile"
-                    className="fr-btn--menu fr-btn">
-                    Menu
-                  </button>
-                </div>
-              </div>
-              <div className="fr-header__service">
-                <Link
-                  href={ROUTES.home}
-                  title={`Retour à l'accueil du site - Fonds prévention argile - République Française`}>
-                  <span className="flex flex-row items-center">
-                    <p className="fr-header__service-title mr-4!">Fonds prévention argile</p>
-                    <p className="fr-badge fr-badge--success fr-badge--no-icon">BETA</p>
-                  </span>
-                </Link>
-                <p className="fr-header__service-tagline">Retrait Gonflement des Argiles - Aides aux ménages</p>
-              </div>
-            </div>
+            <HeaderMarque
+              navbar={
+                <button
+                  data-fr-opened="false"
+                  aria-controls="menu-modal-mobile"
+                  title="Menu"
+                  type="button"
+                  id="menu-mobile"
+                  className="fr-btn--menu fr-btn">
+                  Menu
+                </button>
+              }
+            />
             <div className="fr-header__tools">
               <div className="fr-header__tools-links">
                 <ul className="fr-btns-group">

@@ -119,6 +119,10 @@ export default function DocumentationIntegrationPage() {
           <li>
             La hauteur minimale recommandée est de <strong>800px</strong> pour afficher correctement le simulateur
           </li>
+          <li>
+            Gardez une <strong>hauteur fixe</strong> : le bouton « Suivant » reste alors visible en bas du cadre. Un
+            cadre étiré à la hauteur du contenu obligerait l&apos;usager à faire défiler votre page pour le trouver.
+          </li>
           <li>L'iframe est responsive et s'adapte automatiquement à la largeur disponible</li>
           <li>
             À la fin de la simulation, une nouvelle fenêtre s'ouvre automatiquement vers la page de connexion
