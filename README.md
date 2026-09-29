@@ -64,7 +64,7 @@ Le mode d'AMO appliqué à chaque demandeur dépend de son département. La conf
 | `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`  | CSV codes dept | `03,04,36,47,54,63,81` | Départements où l'AMO est obligatoire (1 AMO auto-affecté à l'arrivée sur `/mon-compte`).   |
 | `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES` | CSV codes dept | `03,04,32,54,63`       | Départements où l'aller-vers local est aussi l'AMO. N'implique pas l'obligation. Optionnel. |
 
-**Les deux listes sont indépendantes** : un département peut cumuler AV et AMO sans imposer l'AMO (cas du Gers), et inversement. Seule `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE` retire le choix au demandeur ; hors d'elle, il décide lui-même ("Oui" → 1er AMO du territoire, "Non" → skip vers Éligibilité).
+**Les deux listes sont indépendantes** : un département peut cumuler AV et AMO sans imposer l'AMO (cas du Gers), et inversement. Seule `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE` retire le choix au demandeur ; hors d'elle, il décide lui-même ("Oui" → l'AMO du territoire, ou celle qu'il choisit quand plusieurs le couvrent ; "Non" → skip vers Éligibilité).
 
 **Format** : codes département séparés par virgules. Le zéro initial est optionnel (`03` et `3` sont équivalents). Exemples valides :
 

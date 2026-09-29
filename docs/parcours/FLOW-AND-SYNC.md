@@ -147,6 +147,9 @@ Deux déclencheurs :
   branche `ELIGIBLE`) : le dossier est mis **directement** en lien avec l'AMO, sans attendre
   que le ménage fasse sa demande d'accompagnement.
 
+> « L'AMO du territoire » suppose qu'il n'y en a qu'une : sinon rien n'est attribué d'office,
+> le demandeur ou l'Aller-vers la désigne (§2.3.6).
+
 > **L'étape `invitation` est acceptée, et c'est le correctif central d'ADR-0038.** Un dossier
 > créé par un agent démarre à `invitation` (`findOrCreateForUser`) et y reste jusqu'au claim.
 > `assignAmoAutomatiqueForUser` **et** `selectAmoForUser` exigeaient `choix_amo` : la
@@ -187,8 +190,7 @@ Deux déclencheurs :
 Là où l'aller-vers **est** l'AMO du territoire, lui envoyer une demande de validation revient
 à lui demander de confirmer ce qu'il vient d'établir. `donnerSuiteAQualificationEligible`
 écrit donc directement `logement_eligible` + `validee_at`, **sans email ni token**, avec
-l'entreprise AMO **de l'agent** (jamais « la première AMO du territoire » :
-`findFirstAmoForTerritory` ignore le rattachement communal et n'a pas d'ordre déterministe).
+l'entreprise AMO **de l'agent**, jamais « la première AMO du territoire ».
 
 Trois conditions **cumulatives** (`peutValiderCommeAmo`) :
 
@@ -196,7 +198,8 @@ Trois conditions **cumulatives** (`peutValiderCommeAmo`) :
 2. l'agent porte la **casquette AMO par son rôle** (`AMO` ou `AMO_ET_ALLERS_VERS`) — la seule
    présence d'un `entreprise_amo_id` en base ne suffit pas, sinon un Aller-vers pur validerait
    au nom d'une AMO qui n'a rien dit ;
-3. son entreprise **couvre la commune** (`checkAmoCoversCodeInsee`).
+3. son entreprise figure parmi les **AMO proposées pour le territoire** (`amoCouvreTerritoire`,
+   §2.3.6) — et l'agent ne désigne pas une autre AMO que la sienne.
 
 Sinon, la sollicitation normale de l'AMO s'applique. L'engagement « mandataire financier »
 saisi au même formulaire est repris dans la validation (§2.6), et `estMandataireFinancier`
@@ -257,6 +260,34 @@ depuis `choix_amo`) : c'est `validateInvitation` qui route, au claim, selon la v
 > **Corollaire Brevo** : l'attribut `A_AMO` de `demandeur_cree` était forcé à `false`, ce qui
 > contredisait l'évènement `amo_reponse` déjà parti quand une AMO avait validé avant le claim.
 > Il est désormais dérivé de l'état réel (`aUneAmoValidee`).
+
+#### 2.3.6 Plusieurs AMO sur le territoire : quelqu'un choisit, jamais l'application (ADR-0041)
+
+La couverture d'une AMO se calcule en un point unique (`couverture-amo.ts` +
+`amo-couverture.service.ts`) : **commune, puis EPCI, puis département**, sans jamais mélanger
+deux niveaux, le département étant lu en codes (`parseCodesDepartement`, plus de `LIKE`). Les
+AMO retenues sont triées par nom. Liste proposée, garde de `selectAmoForUser`, attribution,
+validation par l'Aller-vers et rattachement lisent tous cette source.
+
+Une attribution sans choix explicite n'aboutit qu'avec **une seule** AMO. Au-delà :
+
+| Surface                                        | Qui désigne l'AMO                           | Mode tracé    |
+| ---------------------------------------------- | ------------------------------------------- | ------------- |
+| « Oui » au choix d'accompagnement (facultatif) | le demandeur, dans une liste                | `manuel`      |
+| Arrivée sur `/mon-compte` (AMO imposée)        | le demandeur, dans une liste                | `manuel`      |
+| « Demander à être accompagné » après autonomie | le demandeur, dans la modale                | `manuel`      |
+| Qualification éligible par l'Aller-vers        | l'agent, dans le formulaire                 | `choix_agent` |
+| Rattachement super-admin / `fix:rattacher-amo` | personne : refusé, avec les AMO en présence | —             |
+
+Avec une seule AMO, rien ne change à l'écran ; le mode devient `auto_unique` là où l'AMO est
+facultative (`auto_obligatoire` / `auto_av_amo` inchangés ailleurs). Le choix est revérifié côté
+serveur contre la couverture : une AMO absente de la liste est refusée.
+
+> **Le département reste un niveau de repli.** Une AMO qui déclare « Nord 59 » en plus de ses
+> EPCI couvre les communes du Nord dont l'EPCI n'a pas d'AMO. Là où plusieurs AMO déclarent le
+> même département, ces communes font donc choisir, y compris là où l'AMO est imposée : le
+> demandeur choisit laquelle, pas s'il en a une. `pnpm qa:cas-de-test --multi-amo` liste les EPCI
+> et les départements concernés.
 
 ### 2.4 Ré-ouverture d'une demande refusée (changement d'avis)
 
@@ -464,7 +495,7 @@ en conséquence, la barrière restant la server action.
 > (dry-run par défaut, `--apply`, `--parcours-id`). Ne traite que les parcours actifs en
 > `sans_amo` sans entreprise **en département à attribution automatique** — ailleurs
 > l'autonomie est le résultat voulu. Remet l'AMO d'origine (agent de la dernière action
-> `accompagnement_arrete`, repli territorial) en `en_attente` : `validee_at` ayant été purgé
+> `accompagnement_arrete`, repli sur l'AMO du territoire si elle est seule, §2.3.6) en `en_attente` : `validee_at` ayant été purgé
 > au détachement, on ne sait plus si elle avait validé, elle re-confirme. Ni email, ni token,
 > et `current_step` / `current_status` inchangés.
 
@@ -623,11 +654,8 @@ Symétrique de l'arrêt d'accompagnement (§2.7) : un demandeur passé en autono
 depuis « Ma liste » sur `/mon-compte` (bouton « Demander à être accompagné », affiché à la
 place de « Annuler » sous l'item « Choix de l'accompagnement »).
 
-Contrairement au choix initial (`selectAmoForUser` / `CalloutAmoTodo`), **aucun écran de
-sélection manuelle d'AMO n'est proposé** — ce composant est du code mort en pratique (voir
-`CalloutChoixAccompagnement`, dont le « Oui » appelle déjà `assignAmoAutomatiqueForUser` sans
-liste). La demande attribue donc directement le **1er AMO du territoire**, exactement comme le
-« Oui » du choix initial en mode FACULTATIF.
+La demande suit exactement le « Oui » du choix initial en mode FACULTATIF : l'AMO du territoire
+si elle est seule, sinon celle que le demandeur choisit dans la modale (§2.3.6).
 
 Service `demanderAccompagnementDemandeur` (`amo-selection.service.ts`), symétrique de
 `skipAmoStepForUser` :
@@ -641,8 +669,8 @@ Service `demanderAccompagnementDemandeur` (`amo-selection.service.ts`), symétri
   `skipStatusUpdate` (**ne pas** écrire `parcours.currentStatus = EN_INSTRUCTION` : ce champ
   n'a de sens que rattaché à l'étape courante — cf. §3.2 — et resterait piloté par la sync DS
   de l'étape éligibilité, pas par la validation AMO).
-- Extraction commune avec `assignAmoAutomatiqueForUser` : `resolveAmoAndContactForTerritory`
-  (1er AMO du territoire + coordonnées de contact du demandeur).
+- Extraction commune avec `assignAmoAutomatiqueForUser` : `designerAmo` (AMO unique ou choisie,
+  et mode d'attribution) et `coordonneesDemandeur`.
 
 **Correction du dossier d'éligibilité déjà créé sans AMO.** Un demandeur en autonomie a pu
 avancer jusqu'à l'étape éligibilité avant de changer d'avis : son dossier DN existant a alors
@@ -1580,6 +1608,8 @@ retrouvé déposé.
 | Autonomie décidée par un agent                 | `amo/services/amo-selection.service.ts` (`passerEnAutonomie`)                                               |
 | Ouverture d'étape après validation AMO         | `amo/services/ouverture-eligibilite.service.ts` (`ouvrirEligibiliteApresValidationAmo`, `aUneAmoValidee`)   |
 | Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
+| Couverture territoriale des AMO (ADR-0041)     | `amo/domain/value-objects/couverture-amo.ts`, `amo/services/amo-couverture.service.ts`                      |
+| Choix de l'AMO parmi plusieurs (demandeur)     | `amo/components/steps/ChoixAmoListe.tsx`                                                                    |
 | Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |
 | Demande d'accompagnement après autonomie       | `amo-selection.service.ts` (`demanderAccompagnementDemandeur`), `demande-accompagnement.actions.ts`         |

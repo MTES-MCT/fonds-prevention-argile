@@ -387,7 +387,13 @@ directement `logement_eligible` sans repasser par le lien email de validation. L
 s'ajoute à celle de la qualification (rôle, structure, responsable du dossier) et exige
 **trois** conditions cumulatives : département reconnaissant le cumul, agent portant la
 casquette AMO **par son rôle** (`AMO` / `AMO_ET_ALLERS_VERS`), et entreprise de l'agent
-couvrant la commune. L'entreprise rattachée est celle de l'agent, issue du contexte serveur.
+parmi les AMO proposées pour le territoire. L'entreprise rattachée est celle de l'agent, issue du contexte serveur.
+
+> **AMO désignée par l'agent (ADR-0041).** Quand plusieurs AMO couvrent le territoire, l'agent
+> choisit celle à solliciter (`entrepriseAmoIdChoisie`, uuid validé par Zod). Le choix n'élargit
+> rien : il doit figurer parmi les AMO proposées pour le territoire du dossier, revérifié côté
+> service, et il passe après les gardes de qualification. Le rattachement super-admin, lui, est
+> refusé dans ce cas plutôt que de choisir à la place du demandeur.
 
 > La seule présence d'un `entreprise_amo_id` en base **ne suffit pas** : sans le contrôle de
 > rôle, un `ALLERS_VERS` rattaché à une entreprise validerait au nom d'une AMO qui n'a rien
