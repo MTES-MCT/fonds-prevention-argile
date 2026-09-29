@@ -19,7 +19,7 @@ export function StepIntro({ onStart }: StepIntroProps) {
       currentStep={null}
       totalSteps={TOTAL_ETAPES}
       showProgress={false}>
-      <p className="fr-text--lg fr-mb-0">
+      <p className="fr-text--lg fr-mb-3w">
         En quelques étapes, découvrez si votre logement et votre situation correspondent aux critères d&apos;éligibilité
         définis par l&apos;État pour bénéficier des aides du fonds prévention{" "}
         <Link

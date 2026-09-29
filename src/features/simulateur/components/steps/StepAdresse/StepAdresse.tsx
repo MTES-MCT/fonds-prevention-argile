@@ -392,7 +392,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
       {/* Carte */}
       {selectedAddress && mapCenter && (
-        <div className="bg-(--background-default-grey) border border-(--border-default-grey) rounded-lg p-3 md:p-5">
+        <div className="bg-(--background-default-grey) border border-(--border-default-grey) rounded-lg p-3 md:p-5 fr-mb-3w">
           <h2 className="fr-h5 fr-mb-1w">Sélectionnez votre logement sur la carte</h2>
           {!buildingData && !carteIndisponible && (
             <p className="fr-text--sm fr-mb-2w text-(--text-mention-grey)">
