@@ -162,6 +162,37 @@ describe("DemarchesSimplifieesClient", () => {
     });
   });
 
+  describe("modifierAnnotations", () => {
+    const input = {
+      dossierId: "RG9zc2llci0x",
+      instructeurId: "SW5zdHJ1Y3RldXItMQ==",
+      annotations: [{ id: "Q2hhbXAtMQ==", value: { textarea: "Cohérent" } }],
+    };
+    const repondre = (body: unknown) =>
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: new Headers({ "Content-Type": "application/json" }),
+        })
+      );
+
+    it("envoie la mutation dossierModifierAnnotations", async () => {
+      repondre({ data: { dossierModifierAnnotations: { errors: null } } });
+
+      await client.modifierAnnotations(input);
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.query).toContain("dossierModifierAnnotations(input: $input)");
+      expect(body.variables).toEqual({ input });
+    });
+
+    it("lève une erreur quand DN refuse dans le payload", async () => {
+      repondre({ data: { dossierModifierAnnotations: { errors: [{ message: "Instructeur inconnu" }] } } });
+
+      await expect(client.modifierAnnotations(input)).rejects.toThrow("Annotations refusées : Instructeur inconnu");
+    });
+  });
+
   describe("error handling", () => {
     it("devrait gérer les erreurs GraphQL", async () => {
       const mockResponse = {

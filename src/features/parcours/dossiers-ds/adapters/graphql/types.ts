@@ -222,6 +222,16 @@ export interface DossierAvisImpot {
   dateDerniereModification?: string | null;
   demarche?: { number: number } | null;
   champs: ChampAvisImpotDn[];
+  annotations: Array<{ champDescriptorId: string; stringValue?: string | null }>;
+}
+
+/** Valeur d'annotation, un seul type de champ à la fois (`AnnotationValueInput @oneOf`). */
+export type ValeurAnnotationDn = { text: string } | { textarea: string };
+
+export interface ModificationAnnotationsDn {
+  dossierId: string;
+  instructeurId: string;
+  annotations: Array<{ id: string; value: ValeurAnnotationDn }>;
 }
 
 export interface DossiersConnection {

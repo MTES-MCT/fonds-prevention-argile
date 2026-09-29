@@ -10,6 +10,7 @@ import type {
   DossiersReconciliationConnection,
   DossierInspection,
   DossierAvisImpot,
+  ModificationAnnotationsDn,
 } from "./types";
 
 /**
@@ -329,6 +330,7 @@ export class DemarchesSimplifieesClient {
           dateDepot
           dateDerniereModification
           demarche { number }
+          annotations { champDescriptorId stringValue }
           champs {
             __typename
             champDescriptorId
@@ -368,6 +370,28 @@ export class DemarchesSimplifieesClient {
 
     const data = await this.executeQuery<{ dossier: DossierAvisImpot | null }>(query, { number: dossierNumber });
     return data.dossier ?? null;
+  }
+
+  /**
+   * Écrit des annotations privées. Exige un token en écriture et un instructeur de la démarche ;
+   * DN renvoie ses refus dans `errors` du payload, pas en erreur GraphQL.
+   */
+  async modifierAnnotations(input: ModificationAnnotationsDn): Promise<void> {
+    const query = `
+      mutation ModifierAnnotations($input: DossierModifierAnnotationsInput!) {
+        dossierModifierAnnotations(input: $input) {
+          errors { message }
+        }
+      }
+    `;
+
+    const data = await this.executeQuery<{
+      dossierModifierAnnotations: { errors?: Array<{ message: string }> | null } | null;
+    }>(query, { input });
+    const erreurs = data.dossierModifierAnnotations?.errors ?? [];
+    if (erreurs.length > 0) {
+      throw new DsGraphQLError(`Annotations refusées : ${erreurs.map((e) => e.message).join(", ")}`);
+    }
   }
 
   /**

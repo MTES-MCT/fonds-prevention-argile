@@ -135,6 +135,7 @@ export function dossierAvisFictif(options: {
     dateDerniereModification: MIS_A_JOUR,
     demarche: { number: 146377 },
     champs,
+    annotations: [{ champDescriptorId: "Q2hhbXAtNzAyMDIwNw==", stringValue: null }],
   };
 }
 

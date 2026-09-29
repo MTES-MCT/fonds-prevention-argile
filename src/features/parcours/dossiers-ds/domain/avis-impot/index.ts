@@ -9,4 +9,9 @@ export {
   type ControleFoyer,
   type ControleAnnee,
 } from "./controle-avis-impot";
-export { LIBELLES_STATUT_CONTROLE, formaterDetailControle } from "./detail-controle-avis-impot";
+export {
+  LIBELLES_STATUT_CONTROLE,
+  LIMITE_ANNOTATION_CONTROLE,
+  contenuSansDate,
+  formaterDetailControle,
+} from "./detail-controle-avis-impot";

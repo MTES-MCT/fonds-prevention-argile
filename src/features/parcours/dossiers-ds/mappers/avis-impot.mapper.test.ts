@@ -111,6 +111,15 @@ describe("mapDossierAvisImpot", () => {
     expect(avis.attributsInconnus).toEqual(["impot_revenu_net"]);
   });
 
+  it("indexe la valeur actuelle des annotations par id de descripteur", () => {
+    const donnees = mapDossierAvisImpot({
+      ...FIXTURES_AVIS_IMPOT.lu,
+      annotations: [{ champDescriptorId: "Q2hhbXAtNzAyMDIwNw==", stringValue: "Cohérent" }],
+    });
+
+    expect(donnees.annotations).toEqual({ "Q2hhbXAtNzAyMDIwNw==": "Cohérent" });
+  });
+
   it("laisse les déclaratifs à null quand le demandeur ne les a pas saisis", () => {
     const donnees = mapDossierAvisImpot(dossierAvisFictif({ nombrePersonnes: null, revenuFiscalReference: null }));
 

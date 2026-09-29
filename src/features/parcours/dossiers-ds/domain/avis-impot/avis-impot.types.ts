@@ -32,4 +32,6 @@ export interface DonneesAvisImpotDossier {
   dateDepot: string | null;
   declaratif: DeclaratifFoyer;
   avis: AvisImpotExtrait[];
+  /** Valeur actuelle de chaque annotation privée, par id de descripteur. */
+  annotations: Record<string, string | null>;
 }

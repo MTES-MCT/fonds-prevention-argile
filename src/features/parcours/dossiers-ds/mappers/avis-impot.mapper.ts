@@ -136,5 +136,8 @@ export function mapDossierAvisImpot(dossier: DossierAvisImpot): DonneesAvisImpot
       revenuFiscalReference: entiers.get(DS_FIELD_IDS.ELIGIBILITE.REVENU_FISCAL_REFERENCE) ?? null,
     },
     avis,
+    annotations: Object.fromEntries(
+      (dossier.annotations ?? []).map((a) => [a.champDescriptorId, a.stringValue ?? null])
+    ),
   };
 }

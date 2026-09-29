@@ -38,6 +38,23 @@ export function getAnnotationLienFpaEligibilite(demarcheNumber: number): string 
   return champId;
 }
 
+/** « Contrôle avis d'imposition » (texte long, 500 caractères), écrite par l'application. */
+export const DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE: Record<number, string> = {
+  146377: "Q2hhbXAtNzAyMDIwNw==", // préprod
+};
+
+export function getAnnotationControleAvisImpot(demarcheNumber: number): string | null {
+  const champId = DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[demarcheNumber];
+  if (!champId) {
+    console.warn(
+      `Éligibilité: démarche ${demarcheNumber} inconnue, annotation « contrôle avis d'imposition » non écrite. ` +
+        `Relever son id avec \`pnpm ds:fetch-schema ${demarcheNumber}\` et l'ajouter à DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE.`
+    );
+    return null;
+  }
+  return champId;
+}
+
 /**
  * Id du descripteur de l'annotation « lien FPA » pour une étape donnée. Diagnostic et devis
  * partagent le même id (antérieur au clonage) ; l'éligibilité dépend de la démarche.

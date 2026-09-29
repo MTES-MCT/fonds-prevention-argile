@@ -101,6 +101,8 @@ const serverSchema = z.object({
     .url()
     .default("https://www.demarches-simplifiees.fr/api/v2/graphql"),
   DEMARCHES_SIMPLIFIEES_REST_API_URL: z.string().url().default("https://www.demarches-simplifiees.fr/api/public/v1"),
+  // Instructeur au nom duquel l'app écrit les annotations privées (id GraphQL). Absent : aucune écriture.
+  DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID: z.string().min(1).optional(),
 
   // Configuration des 4 démarches dans DS
   DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: z.string().min(1),
