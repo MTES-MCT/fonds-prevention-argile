@@ -230,8 +230,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     return () => clearTimeout(timeout);
   }, [selectedAddress, buildingData, isAddressLocked]);
 
-  const handleManualFallback = useCallback(async () => {
-    if (!selectedAddress) return;
+  const chargerBatimentSansCarte = useCallback(async (): Promise<BuildingData | null> => {
+    if (!selectedAddress) return null;
     setIsFallbackLoading(true);
     try {
       const coordonnees = buildingData
@@ -243,44 +243,57 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         ? await getBuildingDataByRnbId(buildingData.rnbId, coordonnees)
         : await getBuildingDataFallback(coordonnees);
       handleBuildingSelect(data);
+      return data;
     } finally {
       setIsFallbackLoading(false);
     }
   }, [selectedAddress, buildingData, handleBuildingSelect]);
 
-  // Soumission du formulaire
+  const soumettreBatiment = useCallback(
+    (batiment: BuildingData) => {
+      if (!selectedAddress) return;
+
+      const addressData = mapBanFeatureToAddressData(selectedAddress, { codeEpci: codeEpci ?? undefined });
+      // Autre bâtiment qu'à l'arrivée : l'année et les niveaux déjà répondus ne le décrivent plus.
+      const memeBatiment = isAddressLocked || (!!initialRnbId && batiment.rnbId === initialRnbId);
+
+      setPrefillBatiment({
+        anneeConstruction: batiment.anneeConstruction,
+        nombreNiveaux: batiment.nombreNiveaux,
+        donneesIndisponibles: Boolean(batiment.donneesIndisponibles),
+      });
+
+      onSubmit({
+        logement: {
+          adresse: batiment.adresse || addressData.label,
+          commune: addressData.codeCommune,
+          commune_nom: addressData.nomCommune,
+          code_departement: addressData.codeDepartement,
+          code_region: addressData.codeRegion,
+          epci: addressData.codeEpci,
+          // Utiliser les coordonnées du bâtiment sélectionné
+          coordonnees: formatCoordinatesString({ lat: batiment.lat, lon: batiment.lon }),
+          clef_ban: addressData.clefBan,
+          // Données du bâtiment (BDNB + potentiellement éditées)
+          // null = hors zone argileuse (réponse à part entière, distincte de "non répondu")
+          zone_dexposition: batiment.aleaArgiles,
+          rnb: batiment.rnbId,
+          ...(memeBatiment ? {} : { annee_de_construction: undefined, niveaux: undefined }),
+        },
+      });
+    },
+    [selectedAddress, codeEpci, onSubmit, isAddressLocked, initialRnbId, setPrefillBatiment]
+  );
+
   const handleSubmit = useCallback(() => {
-    if (!selectedAddress || !buildingData) return;
+    if (buildingData) soumettreBatiment(buildingData);
+  }, [buildingData, soumettreBatiment]);
 
-    const addressData = mapBanFeatureToAddressData(selectedAddress, { codeEpci: codeEpci ?? undefined });
-    // Autre bâtiment qu'à l'arrivée : l'année et les niveaux déjà répondus ne le décrivent plus.
-    const memeBatiment = isAddressLocked || (!!initialRnbId && buildingData.rnbId === initialRnbId);
-
-    setPrefillBatiment({
-      anneeConstruction: buildingData.anneeConstruction,
-      nombreNiveaux: buildingData.nombreNiveaux,
-      donneesIndisponibles: Boolean(buildingData.donneesIndisponibles),
-    });
-
-    onSubmit({
-      logement: {
-        adresse: buildingData.adresse || addressData.label,
-        commune: addressData.codeCommune,
-        commune_nom: addressData.nomCommune,
-        code_departement: addressData.codeDepartement,
-        code_region: addressData.codeRegion,
-        epci: addressData.codeEpci,
-        // Utiliser les coordonnées du bâtiment sélectionné
-        coordonnees: formatCoordinatesString({ lat: buildingData.lat, lon: buildingData.lon }),
-        clef_ban: addressData.clefBan,
-        // Données du bâtiment (BDNB + potentiellement éditées)
-        // null = hors zone argileuse (réponse à part entière, distincte de "non répondu")
-        zone_dexposition: buildingData.aleaArgiles,
-        rnb: buildingData.rnbId,
-        ...(memeBatiment ? {} : { annee_de_construction: undefined, niveaux: undefined }),
-      },
-    });
-  }, [selectedAddress, buildingData, codeEpci, onSubmit, isAddressLocked, initialRnbId, setPrefillBatiment]);
+  // Proposer de « renseigner soi-même » puis rester sur la carte serait incohérent : on passe à l'écran de saisie.
+  const handleSaisieManuelle = useCallback(async () => {
+    const batiment = await chargerBatimentSansCarte();
+    if (batiment && !batiment.aleaIndetermine) soumettreBatiment(batiment);
+  }, [chargerBatimentSansCarte, soumettreBatiment]);
 
   // aleaIndetermine bloque : l'aléa RGA n'est pas saisissable par l'utilisateur et null y a un
   // sens métier propre ("hors zone", cf. checkZoneForte) qu'un échec de récupération ne doit pas masquer.
@@ -410,7 +423,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
                   <button
                     type="button"
                     className="fr-link fr-link--sm"
-                    onClick={handleManualFallback}
+                    onClick={chargerBatimentSansCarte}
                     disabled={isFallbackLoading}>
                     {isFallbackLoading ? "Vérification en cours..." : "Réessayer la vérification"}
                   </button>
@@ -425,7 +438,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
               <button
                 type="button"
                 className={carteIndisponible ? "fr-btn fr-btn--secondary fr-btn--sm" : "fr-link fr-link--sm"}
-                onClick={handleManualFallback}
+                onClick={handleSaisieManuelle}
                 disabled={isFallbackLoading}>
                 {isFallbackLoading
                   ? "Vérification en cours..."
