@@ -59,6 +59,7 @@ export interface Dossier {
   datePassageEnInstruction?: string;
   dateTraitement?: string;
   dateDerniereCorrectionEnAttente?: string;
+  dateDerniereModificationChamps?: string;
   motivation?: string;
   motivationAttachment?: Attachment;
   attestation?: Attachment;

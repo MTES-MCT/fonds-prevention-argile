@@ -480,6 +480,7 @@ export class DemarchesSimplifieesClient {
           datePassageEnInstruction
           dateTraitement
           dateDerniereCorrectionEnAttente
+          dateDerniereModificationChamps
           motivation
           usager {
             email
@@ -526,6 +527,7 @@ export class DemarchesSimplifieesClient {
     datePassageEnConstruction?: string;
     datePassageEnInstruction?: string;
     dateTraitement?: string;
+    dateDerniereModificationChamps?: string;
   } | null> {
     const dossier = await this.getDossier(dossierNumber);
     if (!dossier) return null;
@@ -534,6 +536,7 @@ export class DemarchesSimplifieesClient {
       datePassageEnConstruction: dossier.datePassageEnConstruction,
       datePassageEnInstruction: dossier.datePassageEnInstruction,
       dateTraitement: dossier.dateTraitement,
+      dateDerniereModificationChamps: dossier.dateDerniereModificationChamps,
     };
   }
 

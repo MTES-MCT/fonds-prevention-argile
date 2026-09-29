@@ -1,3 +1,4 @@
+export { doitControlerAvisImpot, type EtatDeclenchementControle } from "./declenchement-controle";
 export type { AvisImpotExtrait, DeclaratifFoyer, DonneesAvisImpotDossier } from "./avis-impot.types";
 export {
   STATUTS_CONTROLE,
