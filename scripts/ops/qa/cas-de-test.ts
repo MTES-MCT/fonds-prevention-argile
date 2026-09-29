@@ -22,6 +22,7 @@
  *   pnpm qa:cas-de-test --agent=prenom.nom@structure.fr  # les cas de test de ce compte
  *   pnpm qa:cas-de-test --agent=... --markdown           # checklist collable dans Notion
  *   pnpm qa:cas-de-test --agent=... --scenario=dossier-archive --limit=5
+ *   pnpm qa:cas-de-test --multi-amo                      # EPCI où le demandeur choisit son AMO
  *
  * Coût de `--comptes` : un listing complet par agent, et le repository charge tous les
  * parcours avant de filtrer le territoire côté JS. C'est donc en O(agents x volume
@@ -33,20 +34,22 @@
  */
 
 import "../lib/env";
-import { inArray, and } from "drizzle-orm";
+import { inArray, and, eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { rawClient } from "@/shared/database/client";
-import { parcoursActions } from "@/shared/database/schema";
+import { entreprisesAmo, entreprisesAmoEpci, parcoursActions } from "@/shared/database/schema";
 import { agentsRepo, entreprisesAmoRepo, allersVersRepository } from "@/shared/database/repositories";
 import { getDossiersByAgent } from "@/features/backoffice/espace-agent/dossiers/services/dossiers-territoire.service";
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { ACTION_TYPES_SYSTEME } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { getServerEnv } from "@/shared/config/env.config";
+import { getReglesAmo } from "@/features/parcours/amo/domain/value-objects/departements-amo";
+import epciData from "@/features/seo/data/generated/epci.json";
 
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
 import type { Agent } from "@/shared/database/schema/agents";
-import { SCENARIOS, type Scenario, type ScenarioContext } from "./scenarios";
+import { SCENARIOS, grouperEpcisMultiAmo, type Scenario, type ScenarioContext } from "./scenarios";
 import { getArg, getNumberArg, hasFlag } from "../lib/args";
 
 const AGENT_EMAIL = getArg("agent");
@@ -54,6 +57,7 @@ const SCENARIO_ID = getArg("scenario");
 const LIMIT = getNumberArg("limit", 3, 1);
 const MARKDOWN = hasFlag("markdown");
 const COMPTES = hasFlag("comptes");
+const MULTI_AMO = hasFlag("multi-amo");
 
 function line() {
   console.log("=".repeat(78));
@@ -87,6 +91,52 @@ async function findParcoursAvecActionSysteme(parcoursIds: string[]): Promise<Set
     );
 
   return new Set(rows.map((r) => r.parcoursId));
+}
+
+/** EPCI couverts par plusieurs AMO, avec le nom de ces AMO. */
+async function findEpcisMultiAmo(): Promise<Map<string, string[]>> {
+  const liaisons = await db
+    .select({ codeEpci: entreprisesAmoEpci.codeEpci, nomAmo: entreprisesAmo.nom })
+    .from(entreprisesAmoEpci)
+    .innerJoin(entreprisesAmo, eq(entreprisesAmo.id, entreprisesAmoEpci.entrepriseAmoId));
+  return grouperEpcisMultiAmo(liaisons);
+}
+
+/** Précondition côté demandeur : aucun dossier requis, seulement une adresse dans l'un de ces EPCI. */
+async function listerEpcisMultiAmo() {
+  const epcis = await findEpcisMultiAmo();
+  const referentiel = new Map(epciData.map((e) => [e.codeSiren, e]));
+
+  if (!MARKDOWN) {
+    line();
+    console.log(`EPCI COUVERTS PAR PLUSIEURS AMO — ${epcis.size}`);
+    line();
+    console.log();
+  }
+  if (epcis.size === 0) {
+    console.log("Aucun EPCI couvert par plusieurs AMO sur cet environnement (le seed en pose un : 200068500).");
+    return;
+  }
+
+  for (const [codeEpci, amos] of epcis) {
+    const epci = referentiel.get(codeEpci);
+    const departements = epci?.codesDepartements ?? [];
+    // Le choix n'a de sens que là où l'AMO est facultatif : ailleurs, il est attribué d'office.
+    const imposee = departements.some((d) => getReglesAmo(d).amoObligatoire);
+    const regle = imposee ? "AMO imposée (attribution d'office)" : "AMO facultative";
+    const communes = epci?.codesCommunes.length
+      ? `ex. communes ${epci.codesCommunes.join(", ")}`
+      : "communes inconnues";
+    const titre = `${epci?.nom ?? "EPCI hors référentiel"} (${codeEpci}, dépt ${departements.join(", ") || "?"})`;
+
+    if (MARKDOWN) {
+      console.log(`- ${titre} — ${regle} — AMO : ${amos.join(", ")}`);
+    } else {
+      console.log(`  ${titre}`);
+      console.log(`      ${regle} — ${communes}`);
+      console.log(`      AMO : ${amos.join(" / ")}`);
+    }
+  }
 }
 
 /**
@@ -223,6 +273,7 @@ async function listerCasDeTest(email: string) {
 
   const ctx: ScenarioContext = {
     parcoursAvecActionSysteme: await findParcoursAvecActionSysteme(dossiers.map((d) => d.parcoursId)),
+    epcisMultiAmo: new Set((await findEpcisMultiAmo()).keys()),
   };
 
   const baseUrl = getServerEnv().BASE_URL.replace(/\/$/, "");
@@ -259,12 +310,15 @@ async function listerCasDeTest(email: string) {
 }
 
 async function main() {
-  if (!COMPTES && !AGENT_EMAIL) {
-    console.error("Indiquer un compte : --agent=<email>, ou --comptes pour lister les comptes disponibles.");
+  if (!COMPTES && !AGENT_EMAIL && !MULTI_AMO) {
+    console.error(
+      "Indiquer un compte : --agent=<email>, ou --comptes pour lister les comptes, ou --multi-amo pour les EPCI à plusieurs AMO."
+    );
     process.exit(1);
   }
 
-  if (COMPTES) await listerComptes();
+  if (MULTI_AMO) await listerEpcisMultiAmo();
+  else if (COMPTES) await listerComptes();
   else await listerCasDeTest(AGENT_EMAIL!);
 
   await rawClient.end();

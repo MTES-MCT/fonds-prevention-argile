@@ -19,6 +19,22 @@ import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/do
 export interface ScenarioContext {
   /** Parcours (parmi ceux visibles) portant déjà au moins une action système. */
   parcoursAvecActionSysteme: Set<string>;
+  /** EPCI couverts par au moins deux AMO : le demandeur doit y choisir la sienne. */
+  epcisMultiAmo: Set<string>;
+}
+
+/** Regroupe les liaisons AMO ↔ EPCI et ne garde que les EPCI couverts par plusieurs AMO. */
+export function grouperEpcisMultiAmo(liaisons: { codeEpci: string; nomAmo: string }[]): Map<string, string[]> {
+  const parEpci = new Map<string, Set<string>>();
+  for (const { codeEpci, nomAmo } of liaisons) {
+    parEpci.set(codeEpci, (parEpci.get(codeEpci) ?? new Set()).add(nomAmo));
+  }
+  return new Map(
+    [...parEpci]
+      .filter(([, amos]) => amos.size > 1)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([codeEpci, amos]) => [codeEpci, [...amos].sort((a, b) => a.localeCompare(b))])
+  );
 }
 
 export interface Scenario {
@@ -39,6 +55,17 @@ export const SCENARIOS: Scenario[] = [
     titre: "Prospect à qualifier par un Aller-vers",
     sert_a: "Qualifier en éligible / à qualifier / non éligible et vérifier l'action tracée",
     matches: (d) => d.validation === null && !d.archivedAt && d.canActAsResponsable,
+  },
+  {
+    id: "prospect-epci-multi-amo",
+    titre: "Prospect à qualifier dans un EPCI couvert par plusieurs AMO",
+    sert_a: "Qualifier en éligible avec accompagnement et relever quelle AMO est sollicitée",
+    matches: (d, ctx) =>
+      d.validation === null &&
+      !d.archivedAt &&
+      d.canActAsResponsable &&
+      d.logement.codeEpci !== null &&
+      ctx.epcisMultiAmo.has(d.logement.codeEpci),
   },
   {
     id: "demande-amo-en-attente",
