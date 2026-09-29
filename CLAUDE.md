@@ -235,9 +235,10 @@ lesquels sont marqués « COMPTE INEXPLOITABLE » (à écarter).
 les dossiers réels du périmètre du compte **avec leur URL complète** : coller ces liens dans
 le bloc « Données », pas sous les étapes.
 
-**Territoires à plusieurs AMO.** `pnpm qa:cas-de-test --multi-amo` liste les EPCI couverts par
-au moins deux AMO, où le demandeur doit choisir la sienne. Le seed en pose un (CA de Cambrai,
-200068500, deux AMO fictives) : l'adresse du bloc « Données » se prend dans cet EPCI.
+**Territoires à plusieurs AMO.** `pnpm qa:cas-de-test --multi-amo` liste les EPCI et les
+départements couverts par au moins deux AMO, où le demandeur doit choisir la sienne (ADR-0041).
+Le seed pose la CA de Cambrai (200068500, deux AMO fictives) : l'adresse du bloc « Données » se
+prend dans cet EPCI.
 
 Qui lance `qa:cas-de-test` dépend de l'environnement visé :
 

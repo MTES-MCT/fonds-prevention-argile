@@ -22,7 +22,7 @@
  *   pnpm qa:cas-de-test --agent=prenom.nom@structure.fr  # les cas de test de ce compte
  *   pnpm qa:cas-de-test --agent=... --markdown           # checklist collable dans Notion
  *   pnpm qa:cas-de-test --agent=... --scenario=dossier-archive --limit=5
- *   pnpm qa:cas-de-test --multi-amo                      # EPCI où le demandeur choisit son AMO
+ *   pnpm qa:cas-de-test --multi-amo                      # territoires où le demandeur choisit son AMO
  *
  * Coût de `--comptes` : un listing complet par agent, et le repository charge tous les
  * parcours avant de filtrer le territoire côté JS. C'est donc en O(agents x volume
@@ -49,7 +49,13 @@ import epciData from "@/features/seo/data/generated/epci.json";
 
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
 import type { Agent } from "@/shared/database/schema/agents";
-import { SCENARIOS, grouperEpcisMultiAmo, type Scenario, type ScenarioContext } from "./scenarios";
+import {
+  SCENARIOS,
+  grouperDepartementsMultiAmo,
+  grouperEpcisMultiAmo,
+  type Scenario,
+  type ScenarioContext,
+} from "./scenarios";
 import { getArg, getNumberArg, hasFlag } from "../lib/args";
 
 const AGENT_EMAIL = getArg("agent");
@@ -102,10 +108,15 @@ async function findEpcisMultiAmo(): Promise<Map<string, string[]>> {
   return grouperEpcisMultiAmo(liaisons);
 }
 
-/** Précondition côté demandeur : aucun dossier requis, seulement une adresse dans l'un de ces EPCI. */
-async function listerEpcisMultiAmo() {
+/** Précondition côté demandeur : aucun dossier requis, seulement une adresse dans l'un de ces territoires. */
+async function listerTerritoiresMultiAmo() {
   const epcis = await findEpcisMultiAmo();
+  const departements = grouperDepartementsMultiAmo(
+    await db.select({ departements: entreprisesAmo.departements, nom: entreprisesAmo.nom }).from(entreprisesAmo)
+  );
   const referentiel = new Map(epciData.map((e) => [e.codeSiren, e]));
+  const regle = (codes: string[]) =>
+    codes.some((d) => getReglesAmo(d).amoObligatoire) ? "AMO imposée" : "AMO facultative";
 
   if (!MARKDOWN) {
     line();
@@ -115,27 +126,37 @@ async function listerEpcisMultiAmo() {
   }
   if (epcis.size === 0) {
     console.log("Aucun EPCI couvert par plusieurs AMO sur cet environnement (le seed en pose un : 200068500).");
-    return;
   }
 
   for (const [codeEpci, amos] of epcis) {
     const epci = referentiel.get(codeEpci);
-    const departements = epci?.codesDepartements ?? [];
-    // Le choix n'a de sens que là où l'AMO est facultatif : ailleurs, il est attribué d'office.
-    const imposee = departements.some((d) => getReglesAmo(d).amoObligatoire);
-    const regle = imposee ? "AMO imposée (attribution d'office)" : "AMO facultative";
+    const depts = epci?.codesDepartements ?? [];
     const communes = epci?.codesCommunes.length
       ? `ex. communes ${epci.codesCommunes.join(", ")}`
       : "communes inconnues";
-    const titre = `${epci?.nom ?? "EPCI hors référentiel"} (${codeEpci}, dépt ${departements.join(", ") || "?"})`;
+    const titre = `${epci?.nom ?? "EPCI hors référentiel"} (${codeEpci}, dépt ${depts.join(", ") || "?"})`;
 
     if (MARKDOWN) {
-      console.log(`- ${titre} — ${regle} — AMO : ${amos.join(", ")}`);
+      console.log(`- ${titre} — ${regle(depts)} — AMO : ${amos.join(", ")}`);
     } else {
       console.log(`  ${titre}`);
-      console.log(`      ${regle} — ${communes}`);
+      console.log(`      ${regle(depts)} — ${communes}`);
       console.log(`      AMO : ${amos.join(" / ")}`);
     }
+  }
+
+  // Le département ne sert que de repli : il ne joue que pour une commune dont l'EPCI n'a pas d'AMO.
+  console.log();
+  if (!MARKDOWN) {
+    line();
+    console.log(`DÉPARTEMENTS DÉCLARÉS PAR PLUSIEURS AMO — ${departements.size}`);
+    console.log("(s'applique aux communes dont ni la commune ni l'EPCI n'est rattaché à une AMO)");
+    line();
+    console.log();
+  }
+  for (const [code, amos] of departements) {
+    if (MARKDOWN) console.log(`- Département ${code} — ${regle([code])} — AMO : ${amos.join(", ")}`);
+    else console.log(`  Département ${code} — ${regle([code])} — AMO : ${amos.join(" / ")}`);
   }
 }
 
@@ -312,12 +333,12 @@ async function listerCasDeTest(email: string) {
 async function main() {
   if (!COMPTES && !AGENT_EMAIL && !MULTI_AMO) {
     console.error(
-      "Indiquer un compte : --agent=<email>, ou --comptes pour lister les comptes, ou --multi-amo pour les EPCI à plusieurs AMO."
+      "Indiquer un compte : --agent=<email>, ou --comptes pour lister les comptes, ou --multi-amo pour les territoires à plusieurs AMO."
     );
     process.exit(1);
   }
 
-  if (MULTI_AMO) await listerEpcisMultiAmo();
+  if (MULTI_AMO) await listerTerritoiresMultiAmo();
   else if (COMPTES) await listerComptes();
   else await listerCasDeTest(AGENT_EMAIL!);
 

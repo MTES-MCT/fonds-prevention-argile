@@ -14,6 +14,7 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { DOSSIER_ETAT } from "@/features/parcours/core/domain/services/dossier-etat.service";
 import { STATUTS_SIMULATION_EDITABLE } from "@/features/backoffice/espace-agent/dossiers/domain/types/amo-dossiers.types";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
+import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
 /** Contexte transverse calculé une fois pour tous les scénarios. */
 export interface ScenarioContext {
@@ -21,6 +22,16 @@ export interface ScenarioContext {
   parcoursAvecActionSysteme: Set<string>;
   /** EPCI couverts par au moins deux AMO : le demandeur doit y choisir la sienne. */
   epcisMultiAmo: Set<string>;
+}
+
+/** Départements déclarés par plusieurs AMO : repli des communes dont ni la commune ni l'EPCI n'a d'AMO. */
+export function grouperDepartementsMultiAmo(
+  amos: { departements: string | null; nom: string }[]
+): Map<string, string[]> {
+  const liaisons = amos.flatMap(({ departements, nom }) =>
+    parseCodesDepartement(departements).map((code) => ({ codeEpci: code, nomAmo: nom }))
+  );
+  return grouperEpcisMultiAmo(liaisons);
 }
 
 /** Regroupe les liaisons AMO ↔ EPCI et ne garde que les EPCI couverts par plusieurs AMO. */

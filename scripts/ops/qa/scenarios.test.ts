@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
-import { SCENARIOS, grouperEpcisMultiAmo, type ScenarioContext } from "./scenarios";
+import { SCENARIOS, grouperDepartementsMultiAmo, grouperEpcisMultiAmo, type ScenarioContext } from "./scenarios";
 
 describe("grouperEpcisMultiAmo", () => {
   it("ne garde que les EPCI couverts par au moins deux AMO distinctes", () => {
@@ -21,6 +21,19 @@ describe("grouperEpcisMultiAmo", () => {
     ]);
 
     expect(epcis.size).toBe(0);
+  });
+});
+
+describe("grouperDepartementsMultiAmo", () => {
+  it("lit les codes du champ libre et ne garde que les départements déclarés par plusieurs AMO", () => {
+    const departements = grouperDepartementsMultiAmo([
+      { departements: "Indre 36", nom: "AMO Maison Tranquille" },
+      { departements: "Indre 36, Cher 18", nom: "AMO du Berry Profond" },
+      { departements: "Gers 32", nom: "Anti-Fissure Express" },
+      { departements: null, nom: "Sans département" },
+    ]);
+
+    expect([...departements]).toEqual([["36", ["AMO du Berry Profond", "AMO Maison Tranquille"]]]);
   });
 });
 
