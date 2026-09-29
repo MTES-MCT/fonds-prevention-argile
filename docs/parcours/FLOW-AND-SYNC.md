@@ -443,6 +443,42 @@ Les deux mêmes pièges que l'annotation « lien FPA » s'appliquent :
 > degré : « endommagée » y désignait « avec des premiers désordres structuraux », elles
 > restent éligibles et sont préremplies avec « … mais sans désordres structuraux ».
 
+### 2.6.3 Contrôle de l'avis d'imposition (annotation privée écrite après dépôt) — ADR-0043
+
+DN décode le **2D-Doc** des avis déposés dans les pièces de nature « avis d'impôt » (« Dernier avis
+d'imposition » et le bloc répété « Tous les Avis d'imposition du foyer ») et expose le résultat en
+colonnes de `PieceJustificativeChamp` : déclarants, référence, année des revenus, **parts**, RFR.
+Pas de nombre de personnes, et rien du tout sans 2D-Doc valide (scan dégradé, photo, faux).
+
+Le CRON compare ces données aux déclaratifs (« Revenu fiscal de référence », « Nombre de personnes
+composant le ménage ») et écrit le verdict dans l'annotation « Contrôle avis d'imposition » :
+
+| Critère    | Règle                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| RFR        | égalité stricte avec la somme des avis, dédoublonnés par référence ; écart traduit en tranche |
+| Personnes  | fourchette estimée depuis parts et déclarants, jamais au-delà de « à vérifier »               |
+| Année      | revenus N-1, N étant l'année du dépôt                                                         |
+| Couverture | aucun avis lu → Non vérifiable ; un avis sur plusieurs non lu → À vérifier                    |
+
+Trois règles à connaître :
+
+- **Canal d'écriture** : la mutation GraphQL `dossierModifierAnnotations`, pas le préremplissage
+  (§ 2.6.1), qui ne sait que créer. Elle exige un token en **lecture et écriture** et un
+  `instructeurId` (`DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID`) membre du groupe du dossier. L'historique
+  DN attribue l'écriture à cet instructeur.
+- **Déclenchement** : dossier d'éligibilité déposé et sans décision, jamais contrôlé ou dont
+  `dateDerniereModificationChamps` a bougé depuis le contrôle (colonnes `avis_impot_*` de
+  `dossiers_demarches_simplifiees`). Écrire l'annotation fait bouger `dateDerniereModification`,
+  **pas** `dateDerniereModificationChamps` : c'est pour ça que le repère est la seconde. Après la
+  décision DDT, l'annotation n'est plus touchée.
+- **Activation par démarche** : seule une démarche répertoriée dans
+  `DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE` est contrôlée, les autres sont ignorées sans
+  bruit. Aucune valeur fiscale n'est stockée ni journalisée.
+
+> Outils : `pnpm ds:inspecter-avis-impot --dossier=<n>` (lecture, valeurs masquées),
+> `pnpm ds:controler-avis-impot --dossier=<n> | --tous [--apply]` (dry-run par défaut, rattrapage),
+> `pnpm ds:lister-instructeurs <numero>` (id et groupes de chaque instructeur).
+
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
 Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des
@@ -1119,7 +1155,7 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 3. Récupère tous les parcours actifs via `parcoursRepo.findActiveForSync()` (`archived_at IS NULL AND completed_at IS NULL`).
 4. Pour chaque parcours, dans un `try/catch` indépendant :
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
-   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`.
+   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
    c. Appelle `recomputeParcoursStatus` une fois.
    d. Si `current_status === VALIDE`, appelle `moveToNextStep` qui :
    - avance à l'étape suivante si non finale ;
@@ -1586,6 +1622,7 @@ retrouvé déposé.
 | Rattrapage des actions d'audit (script ops)    | `scripts/ops/fix/backfill-actions-audit.ts` (`pnpm fix:backfill-actions-audit`)                             |
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
 | Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
+| Contrôle de l'avis d'imposition (ADR-0043)     | `dossiers-ds/domain/avis-impot/`, `services/controle-avis-impot.service.ts`, `mappers/avis-impot.mapper.ts` |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
 | Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
