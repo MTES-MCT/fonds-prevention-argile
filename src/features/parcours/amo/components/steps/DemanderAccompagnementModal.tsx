@@ -31,8 +31,12 @@ export function DemanderAccompagnementModal({ isOpen, onClose }: DemanderAccompa
 
   useEffect(() => {
     if (!isOpen) return;
+    // Chaque ouverture repart de zéro : un choix ou une erreur d'une ouverture précédente ne vaut plus.
+    setAmoChoisie(null);
+    setError(null);
     getAmosDisponibles().then((result) => {
       if (result.success) setAmos(result.data);
+      else setError(result.error || "Impossible de charger les AMO de votre territoire");
     });
   }, [isOpen]);
 
