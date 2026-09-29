@@ -9,9 +9,10 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (septembre 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
-> (Moderate, transitif via `exceljs`). Tout le reste est corrigé à la source. Voir
-> [Refresh — septembre 2026](#refresh--septembre-2026-branche-chorebump-deps-securite-sept).
+> **État courant (fin septembre 2026) — trois vulnérabilités Moderate acceptées** : `uuid` <11.1.1
+> (transitif via `exceljs`), `nodemailer` <10.0.2 (SMTP local seulement) et `undici` <7.29.1
+> (devDep). Les deux dernières attendent une PR de dépendances dédiée. Voir
+> [Refresh — fin septembre 2026](#refresh--fin-septembre-2026-branche-featcontrole-avis-impot).
 
 ## Décision
 
@@ -414,6 +415,23 @@ au comportement — le script d'install était déjà ignoré — mais supprime 
 | Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
 | --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
 | `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
+
+## Refresh — fin septembre 2026 (branche `feat/controle-avis-impot`)
+
+Branche sans ajout de dépendance. `pnpm audit` remonte **3 Moderate** (prod : 2), dont deux publiées
+depuis le refresh précédent et **déjà présentes sur `main`** : elles ne viennent pas de cette branche.
+Acceptées temporairement plutôt que corrigées ici, un bump majeur de `nodemailer` n'ayant pas sa
+place dans une PR fonctionnelle.
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin                          | Justification                                                                                                                                                                                                                        |
+| --------------------- | -------- | ------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `nodemailer` <10.0.2  | Moderate | runtime | `nodemailer` (direct)           | `GHSA-6vj9-mwq6-2f5v` : cache DNS global qui réutilise le `servername` TLS entre transports. Un seul transport, SMTP vers Mailhog **en local** ; staging et prod envoient par l'API HTTP Brevo (`email.service.ts`). Non atteignable |
+| `undici` <7.29.1      | Moderate | devDep  | `jsdom > undici` (via `vitest`) | `GHSA-3wwx-pv8p-q78v` : DoS sur une extension WebSocket. Environnement de test uniquement, jamais déployé                                                                                                                            |
+| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid`                | Inchangé : exceljs appelle `uuidv4()` sans buffer, faille non atteignable                                                                                                                                                            |
+
+**Plan de correction** : PR de dépendances dédiée — `nodemailer` en `^10.0.2` (le blocage
+`minimumReleaseAge` de la 10.0.10, levé depuis le 2026-09-21, ne tient plus) et override
+`undici: ^7.29.1`.
 
 ## Prochaine revue
 
