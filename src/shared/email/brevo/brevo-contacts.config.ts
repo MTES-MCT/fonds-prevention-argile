@@ -66,6 +66,9 @@ export const BREVO_EVENTS = {
   AMO_DEFINI: "amo_defini",
   AMO_REPONSE: "amo_reponse",
   DN_UPDATE: "dn_update",
+  // L'AMO mandataire financier a créé le brouillon de la demande de paiement à la place du
+  // demandeur : déclenche le mail qui l'en informe. Part en plus du `dn_update` de création.
+  DEMANDE_PAIEMENT_INITIEE_PAR_AMO: "demande_paiement_initiee_par_amo",
 } as const;
 
 export type BrevoEventName = (typeof BREVO_EVENTS)[keyof typeof BREVO_EVENTS];

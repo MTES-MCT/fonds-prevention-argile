@@ -17,6 +17,8 @@ interface InfoDossierCalloutProps {
   archiveReason: string | null;
   /** Date de passage en instruction — distingue 1er dépôt et retour de correction DDT. */
   instructedAt: Date | null;
+  /** Le formulaire de l'étape est porté par l'AMO mandataire financier, sur son compte DN. */
+  formulaireGereParAmo?: boolean;
 }
 
 interface CalloutMessage {
@@ -74,7 +76,7 @@ function getAccepteMessage(currentStep: Step): CalloutMessage {
 /**
  * Messages lorsque le dossier est refuse
  */
-function getRefuseMessage(currentStep: Step): CalloutMessage {
+function getRefuseMessage(currentStep: Step, parAmo: boolean): CalloutMessage {
   const lienDS = "demarche.numerique.gouv.fr";
   const stepLabel: Record<string, string> = {
     [Step.ELIGIBILITE]: "La demande d'éligibilité",
@@ -86,7 +88,9 @@ function getRefuseMessage(currentStep: Step): CalloutMessage {
 
   return {
     title: `${label} a été refusé(e) par la DDT.`,
-    description: `Pour en savoir plus, le demandeur doit consulter sa messagerie sur ${lienDS}.`,
+    description: parAmo
+      ? `Pour en savoir plus, l'AMO doit consulter la messagerie du dossier sur ${lienDS}.`
+      : `Pour en savoir plus, le demandeur doit consulter sa messagerie sur ${lienDS}.`,
     hint: "",
     variant: "red-marianne",
   };
@@ -95,7 +99,7 @@ function getRefuseMessage(currentStep: Step): CalloutMessage {
 /**
  * Messages lorsque le dossier est en instruction
  */
-function getEnInstructionMessage(currentStep: Step): CalloutMessage {
+function getEnInstructionMessage(currentStep: Step, parAmo: boolean): CalloutMessage {
   const stepLabel: Record<string, string> = {
     [Step.ELIGIBILITE]: "La demande d'éligibilité est",
     [Step.DIAGNOSTIC]: "Le diagnostic est",
@@ -106,7 +110,9 @@ function getEnInstructionMessage(currentStep: Step): CalloutMessage {
 
   return {
     title: `${label} en cours d'instruction par la DDT.`,
-    description: "Le demandeur sera notifié une fois la décision prise.",
+    description: parAmo
+      ? "L'AMO, qui a déposé le dossier, sera notifiée une fois la décision prise."
+      : "Le demandeur sera notifié une fois la décision prise.",
     hint: "",
     variant: "blue-france",
   };
@@ -117,7 +123,7 @@ function getEnInstructionMessage(currentStep: Step): CalloutMessage {
  * - Cas 1 (instructedAt null) : dépôt initial, en attente de prise en instruction
  * - Cas 2 (instructedAt renseigné) : renvoyé en construction par l'instructeur pour demande de complément
  */
-function getEnConstructionMessage(currentStep: Step, isRetourCorrection: boolean): CalloutMessage {
+function getEnConstructionMessage(currentStep: Step, isRetourCorrection: boolean, parAmo: boolean): CalloutMessage {
   const stepLabel: Record<string, string> = {
     [Step.ELIGIBILITE]: "La demande d'éligibilité",
     [Step.DIAGNOSTIC]: "Le diagnostic",
@@ -129,16 +135,19 @@ function getEnConstructionMessage(currentStep: Step, isRetourCorrection: boolean
   if (isRetourCorrection) {
     return {
       title: `${label} a été renvoyé(e) en construction par la DDT.`,
-      description:
-        "La DDT a demandé des compléments ou corrections. Le demandeur doit mettre à jour son dossier sur demarche.numerique.gouv.fr puis le soumettre à nouveau.",
-      hint: "Accompagnez le demandeur dans la correction de son dossier.",
+      description: parAmo
+        ? "La DDT a demandé des compléments ou corrections. L'AMO, qui a déposé le dossier, doit le mettre à jour sur demarche.numerique.gouv.fr puis le soumettre à nouveau."
+        : "La DDT a demandé des compléments ou corrections. Le demandeur doit mettre à jour son dossier sur demarche.numerique.gouv.fr puis le soumettre à nouveau.",
+      hint: parAmo ? "" : "Accompagnez le demandeur dans la correction de son dossier.",
       variant: "yellow-moutarde",
     };
   }
 
   return {
     title: `${label} a été déposé(e), en attente de prise en instruction par la DDT.`,
-    description: "Le demandeur sera notifié une fois que la DDT aura pris son dossier en instruction.",
+    description: parAmo
+      ? "L'AMO, qui a déposé le dossier, sera notifiée une fois que la DDT l'aura pris en instruction."
+      : "Le demandeur sera notifié une fois que la DDT aura pris son dossier en instruction.",
     hint: "",
     variant: "blue-france",
   };
@@ -147,7 +156,17 @@ function getEnConstructionMessage(currentStep: Step, isRetourCorrection: boolean
 /**
  * Messages par defaut (dossier non encore déposé)
  */
-function getDefaultMessage(currentStep: Step): CalloutMessage {
+function getDefaultMessage(currentStep: Step, parAmo: boolean): CalloutMessage {
+  if (parAmo) {
+    return {
+      title: "La demande de paiement du diagnostic revient à l'AMO mandataire financier.",
+      description:
+        "Le demandeur n'a pas de formulaire à remplir pour cette étape : l'AMO initie la demande sur demarche.numerique.gouv.fr et y dépose le rapport de diagnostic.",
+      hint: "Le demandeur est prévenu par e-mail dès que la demande est initiée.",
+      variant: "yellow-moutarde",
+    };
+  }
+
   switch (currentStep) {
     case Step.INVITATION:
       return {
@@ -210,6 +229,7 @@ export function InfoDossierCallout({
   archivedAt,
   archiveReason,
   instructedAt,
+  formulaireGereParAmo = false,
 }: InfoDossierCalloutProps) {
   let message: CalloutMessage;
 
@@ -247,15 +267,15 @@ export function InfoDossierCallout({
   } else if (dsStatus === DSStatus.ACCEPTE || currentStatus === Status.VALIDE) {
     message = getAccepteMessage(currentStep);
   } else if (dsStatus === DSStatus.REFUSE || dsStatus === DSStatus.CLASSE_SANS_SUITE) {
-    message = getRefuseMessage(currentStep);
+    message = getRefuseMessage(currentStep, formulaireGereParAmo);
   } else if (dsStatus === DSStatus.EN_INSTRUCTION) {
     // ds_status fait foi (cf. ADR-0009) : current_status reste TODO tant que la DDT
     // n'a pas pris le dossier en instruction, donc pas de fallback sur currentStatus ici.
-    message = getEnInstructionMessage(currentStep);
+    message = getEnInstructionMessage(currentStep, formulaireGereParAmo);
   } else if (dsStatus === DSStatus.EN_CONSTRUCTION) {
-    message = getEnConstructionMessage(currentStep, instructedAt !== null);
+    message = getEnConstructionMessage(currentStep, instructedAt !== null, formulaireGereParAmo);
   } else {
-    message = getDefaultMessage(currentStep);
+    message = getDefaultMessage(currentStep, formulaireGereParAmo);
   }
 
   return (
