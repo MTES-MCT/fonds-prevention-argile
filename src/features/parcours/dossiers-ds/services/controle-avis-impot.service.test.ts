@@ -20,7 +20,6 @@ import {
 import { FIXTURES_AVIS_IMPOT, dossierAvisFictif } from "../mappers/avis-impot.fixtures";
 import {
   DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE,
-  DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE,
   DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE,
 } from "../domain/value-objects/ds-annotations";
 import { STATUTS_CONTROLE } from "../domain/avis-impot";
@@ -42,14 +41,14 @@ describe("controlerEtAnnoterAvisImpot", () => {
     expect(client.modifierAnnotations).toHaveBeenCalledWith({
       dossierId: FIXTURES_AVIS_IMPOT.lu.id,
       instructeurId: "SW5zdHJ1Y3RldXItMQ==",
-      annotations: [
+      annotations: expect.arrayContaining([
         {
           id: ANNOTATION_PREPROD,
           value: {
             textarea: "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.",
           },
         },
-      ],
+      ]),
     });
   });
 
@@ -64,7 +63,7 @@ describe("controlerEtAnnoterAvisImpot", () => {
     const premier = await controlerEtAnnoterAvisImpot(1, { ...options, appliquer: false });
     client.getDossierAvisImpot.mockResolvedValue({
       ...FIXTURES_AVIS_IMPOT.lu,
-      annotations: [{ champDescriptorId: ANNOTATION_PREPROD, stringValue: premier?.texte }],
+      annotations: (premier?.annotations ?? []).map((a) => ({ champDescriptorId: a.id, stringValue: a.valeur })),
     });
     client.modifierAnnotations.mockClear();
 
@@ -210,7 +209,7 @@ describe("controlerAvisImpotApresSync", () => {
     });
     client.getDossierAvisImpot.mockResolvedValue({
       ...FIXTURES_AVIS_IMPOT["ecart-revenu"],
-      annotations: [{ champDescriptorId: ANNOTATION_PREPROD, stringValue: premier?.texte }],
+      annotations: (premier?.annotations ?? []).map((a) => ({ champDescriptorId: a.id, stringValue: a.valeur })),
     });
 
     await expect(appeler()).resolves.toBe("inchangee");
@@ -219,8 +218,8 @@ describe("controlerAvisImpotApresSync", () => {
 });
 
 describe("annotations de tranche de revenu", () => {
-  const TYPE_MENAGE = "Q2hhbXAtVHlwZQ==";
-  const TAUX = "Q2hhbXAtVGF1eA==";
+  const TYPE_MENAGE = "Q2hhbXAtNzAzMDU1Mw==";
+  const TAUX = "Q2hhbXAtNzAzMDU1NQ==";
   const COHERENT = "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.";
 
   const ecrites = () =>
@@ -230,13 +229,9 @@ describe("annotations de tranche de revenu", () => {
     vi.clearAllMocks();
     client.modifierAnnotations.mockResolvedValue(undefined);
     client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
-    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[146377] = TYPE_MENAGE;
-    DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE[146377] = TAUX;
   });
 
   afterEach(() => {
-    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[146377];
-    delete DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE[146377];
     delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
   });
 

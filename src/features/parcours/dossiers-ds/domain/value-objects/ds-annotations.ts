@@ -44,10 +44,14 @@ export const DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE: Record<number, strin
 };
 
 /** « Type de ménage » (liste déroulante : TMO, MO, INT, Hors plafond, Non calculable). */
-export const DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE: Record<number, string> = {};
+export const DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE: Record<number, string> = {
+  146377: "Q2hhbXAtNzAzMDU1Mw==", // préprod
+};
 
 /** « Taux de subvention » (texte court, ex. « 90 % »). */
-export const DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE: Record<number, string> = {};
+export const DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE: Record<number, string> = {
+  146377: "Q2hhbXAtNzAzMDU1NQ==", // préprod
+};
 
 export interface IdsAnnotationsInstruction {
   avisImpot?: string;

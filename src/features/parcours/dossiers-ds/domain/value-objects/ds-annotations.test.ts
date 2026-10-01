@@ -42,21 +42,30 @@ describe("getAnnotationLienFpaEligibilite", () => {
 
 describe("idsAnnotationsInstruction", () => {
   afterEach(() => {
-    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[146377];
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
   });
 
-  it("renvoie l'id de l'annotation de l'avis en préprod", () => {
-    expect(idsAnnotationsInstruction(146377).avisImpot).toBe("Q2hhbXAtNzAyMDIwNw==");
+  it("renvoie les trois annotations de la préprod", () => {
+    expect(idsAnnotationsInstruction(146377)).toEqual({
+      avisImpot: "Q2hhbXAtNzAyMDIwNw==",
+      typeMenage: "Q2hhbXAtNzAzMDU1Mw==",
+      tauxSubvention: "Q2hhbXAtNzAzMDU1NQ==",
+    });
   });
 
   it("active chaque annotation séparément", () => {
-    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[146377] = "Q2hhbXAtMQ==";
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = "Q2hhbXAtMQ==";
 
-    expect(idsAnnotationsInstruction(146377)).toMatchObject({ typeMenage: "Q2hhbXAtMQ==", tauxSubvention: undefined });
+    expect(idsAnnotationsInstruction(999)).toEqual({
+      avisImpot: undefined,
+      typeMenage: "Q2hhbXAtMQ==",
+      tauxSubvention: undefined,
+    });
+    expect(estInstructionAutomatiqueActive(999)).toBe(true);
   });
 
   it("considère active une démarche dès qu'une annotation y est répertoriée", () => {
     expect(estInstructionAutomatiqueActive(146377)).toBe(true);
-    expect(estInstructionAutomatiqueActive(999)).toBe(false);
+    expect(estInstructionAutomatiqueActive(126061)).toBe(false);
   });
 });
