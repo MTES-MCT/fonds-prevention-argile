@@ -20,6 +20,8 @@ interface QualificationSectionProps {
   parcoursId: string;
   /** L'AMO est-il imposé dans le département du logement ? Sinon l'agent tranche. */
   amoObligatoire: boolean;
+  /** AMO proposées pour le territoire : au-delà d'une, l'agent choisit celle à solliciter. */
+  amosTerritoire: { id: string; nom: string }[];
   /** null si aucune qualification existante */
   qualification: QualificationData | null;
   agentNom: string;
@@ -35,6 +37,7 @@ interface QualificationSectionProps {
 export function QualificationSection({
   parcoursId,
   amoObligatoire,
+  amosTerritoire,
   qualification,
   agentNom,
   structureNom,
@@ -81,6 +84,7 @@ export function QualificationSection({
       <QualificationForm
         parcoursId={parcoursId}
         amoObligatoire={amoObligatoire}
+        amosTerritoire={amosTerritoire}
         onSuccess={handleSuccess}
         onCancel={qualification ? () => setMode("view") : undefined}
         isUpdate={isUpdate}

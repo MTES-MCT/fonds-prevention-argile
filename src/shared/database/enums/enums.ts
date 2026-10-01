@@ -50,6 +50,8 @@ export const attributionAmoModePgEnum = pgEnum("attribution_amo_mode", [
   AttributionAmoMode.AUTO_OBLIGATOIRE,
   AttributionAmoMode.AUTO_AV_AMO,
   AttributionAmoMode.AUCUN,
+  AttributionAmoMode.AUTO_UNIQUE,
+  AttributionAmoMode.CHOIX_AGENT,
 ]);
 
 export const situationParticulierPgEnum = pgEnum("situation_particulier", [

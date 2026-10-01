@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo, parcoursActionsRepo } from "@/shared/database/repositories";
@@ -9,15 +10,21 @@ import { demanderAccompagnementDemandeur } from "../services/amo-selection.servi
 
 /**
  * Demande un accompagnement AMO pour le demandeur connecté, après avoir choisi
- * l'autonomie (mode FACULTATIF uniquement).
+ * l'autonomie (mode FACULTATIF uniquement). `entrepriseAmoId` : l'AMO choisie quand plusieurs
+ * couvrent le territoire.
  */
-export async function demanderMonAccompagnement(): Promise<
-  ActionResult<{ amoNom: string; formulaireReinitialise: boolean }>
-> {
+export async function demanderMonAccompagnement(
+  entrepriseAmoId?: string
+): Promise<ActionResult<{ amoNom: string; formulaireReinitialise: boolean }>> {
   try {
     const session = await getSession();
     if (!session?.userId) {
       return { success: false, error: "Non connecté" };
+    }
+
+    const choix = z.string().uuid().optional().safeParse(entrepriseAmoId);
+    if (!choix.success) {
+      return { success: false, error: "AMO invalide" };
     }
 
     const parcours = await parcoursRepo.findByUserId(session.userId);
@@ -25,7 +32,7 @@ export async function demanderMonAccompagnement(): Promise<
       return { success: false, error: "Parcours non trouvé" };
     }
 
-    const result = await demanderAccompagnementDemandeur(session.userId);
+    const result = await demanderAccompagnementDemandeur(session.userId, choix.data);
     if (!result.success) {
       return { success: false, error: result.error };
     }

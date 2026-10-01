@@ -18,13 +18,13 @@
 -- affiche aux demandeurs) et les checklists de test s'y réfèrent.
 --
 -- Contenu :
---   - 11 entreprises AMO (incluant `dedd84de-…` utilisé par fake-parcours/03,
+--   - 13 entreprises AMO (incluant `dedd84de-…` utilisé par fake-parcours/03,
 --     et les 3 AMOs `99999999*` que fake-parcours/13 attend déjà présents)
 --   - 13 Allers-vers (incluant `88888888-…01/02` que fake-parcours/13 attend
 --     déjà présents)
 --   - 13 liaisons AV ↔ département
 --   - 30 liaisons AV ↔ EPCI
---   - 37 liaisons AMO ↔ EPCI
+--   - 39 liaisons AMO ↔ EPCI (dont un EPCI couvert par deux AMO, cf. § 5)
 --
 -- Idempotence :
 --   - AMO : ON CONFLICT (siret) DO UPDATE
@@ -53,7 +53,7 @@ DELETE FROM entreprises_amo;
 DELETE FROM allers_vers;
 
 -- =============================================================================
--- 1. Entreprises AMO (11 lignes)
+-- 1. Entreprises AMO (13 lignes)
 -- =============================================================================
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('3fe0b9e7-4371-40b4-b03f-da6d560b71ea'::uuid, 'Alohé', '99999999900004', 'Meurthe-et-Moselle 54', 'alohe@example.org', '03 83 00 00 00', '1 rue de Nancy, 54000 Nancy') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('a83baa10-9522-4f05-a604-8ecd5e9f6038'::uuid, 'ALTE (amo)', '99999999900005', 'Alpes de Haute provence 04', 'alte@example.org', '0102030405', '12 rue de la Construction, 75001 Paris') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
@@ -66,6 +66,9 @@ INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, ad
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('9bf88991-f647-4661-8096-19c62d223186'::uuid, 'Soliha', '99999999900010', 'Meurthe-et-Moselle 54', 'soliha-54@example.org', '03 83 00 00 00', '2 rue de Nancy, 54000 Nancy') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('066731d8-a0f7-4c2e-97b3-1bf4ef598d87'::uuid, 'Soliha 24', '99999999900011', 'Dordogne 24', 'soliha-24@example.org', '05 53 00 00 00', '1 rue de Périgueux, 24000 Périgueux') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
 INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('99999999-9999-4999-8999-999999999902'::uuid, 'Soliha 54 (seed test)', '99999999900002', 'Meurthe-et-Moselle 54', 'soliha-54-seed@example.org', '03 83 00 00 00', '1 rue de Nancy, 54000 Nancy') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
+-- Deux AMO sur le même EPCI (CA de Cambrai) : seul territoire où le demandeur doit choisir.
+INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('dc467f8e-6bc5-408f-a263-1474b03387f9'::uuid, 'Habitat Cambrésis (seed test)', '99999999900012', 'Nord 59', 'habitat-cambresis@example.org', '03 27 00 00 01', '3 rue de Noyon, 59400 Cambrai') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
+INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse) VALUES ('6a4403e5-1c9d-4e3e-b2b1-77ed657467a6'::uuid, 'Argiles du Nord (seed test)', '99999999900013', 'Nord 59', 'argiles-du-nord@example.org', '03 27 00 00 02', '8 place Aristide Briand, 59400 Cambrai') ON CONFLICT (siret) DO UPDATE SET nom = EXCLUDED.nom, departements = EXCLUDED.departements, emails = EXCLUDED.emails, telephone = EXCLUDED.telephone, adresse = EXCLUDED.adresse, updated_at = now();
 
 -- =============================================================================
 -- 2. Allers-vers (13 lignes)
@@ -156,7 +159,7 @@ INSERT INTO allers_vers_epci (allers_vers_id, code_epci) VALUES ('c1381ec2-a499-
 INSERT INTO allers_vers_epci (allers_vers_id, code_epci) VALUES ('c1381ec2-a499-475a-91a0-ed1486c5234a'::uuid, '245701404') ON CONFLICT DO NOTHING;
 
 -- =============================================================================
--- 5. Liaisons AMO ↔ EPCI (37 lignes)
+-- 5. Liaisons AMO ↔ EPCI (39 lignes)
 -- =============================================================================
 -- Table `entreprises_amo_communes` (code_insee) : vide en staging — non seeded.
 
@@ -197,3 +200,7 @@ INSERT INTO entreprises_amo_epci (entreprise_amo_id, code_epci) VALUES ('dedd84d
 INSERT INTO entreprises_amo_epci (entreprise_amo_id, code_epci) VALUES ('dedd84de-da92-4825-aba3-6f2ee43803fe'::uuid, '243200458') ON CONFLICT DO NOTHING;
 INSERT INTO entreprises_amo_epci (entreprise_amo_id, code_epci) VALUES ('dedd84de-da92-4825-aba3-6f2ee43803fe'::uuid, '243200508') ON CONFLICT DO NOTHING;
 INSERT INTO entreprises_amo_epci (entreprise_amo_id, code_epci) VALUES ('dedd84de-da92-4825-aba3-6f2ee43803fe'::uuid, '243200607') ON CONFLICT DO NOTHING;
+
+-- CA de Cambrai (200068500) : les deux AMO du Nord, pour tester le choix du demandeur.
+INSERT INTO entreprises_amo_epci (entreprise_amo_id, code_epci) VALUES ('dc467f8e-6bc5-408f-a263-1474b03387f9'::uuid, '200068500') ON CONFLICT DO NOTHING;
+INSERT INTO entreprises_amo_epci (entreprise_amo_id, code_epci) VALUES ('6a4403e5-1c9d-4e3e-b2b1-77ed657467a6'::uuid, '200068500') ON CONFLICT DO NOTHING;

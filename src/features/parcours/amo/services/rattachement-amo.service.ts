@@ -8,7 +8,6 @@ import {
   parcoursPrevention,
 } from "@/shared/database/schema";
 import { ActionResult } from "@/shared/types/action-result.types";
-import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
 import { ACTION_TYPE_ACCOMPAGNEMENT_ARRETE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { StatutValidationAmo, estDossierChezLaDdt } from "../domain/value-objects";
@@ -16,11 +15,18 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import { resolveReglesAmoForParcours } from "../domain/value-objects/departements-amo";
-import { normalizeCodeInsee } from "../utils/amo.utils";
-import { findFirstAmoForTerritory } from "./amo-selection.service";
+import { resoudreAmo, territoireDuParcours } from "../domain/value-objects/couverture-amo";
+import { listerAmosDuTerritoire } from "./amo-couverture.service";
+import type { ParcoursSimulationPair } from "@/shared/domain/utils/rga-simulation.utils";
 
 /** D'où vient l'AMO rattachée : sa trace d'audit du détachement, ou le territoire. */
 export type OrigineRattachement = "audit" | "territoire";
+
+/** AMO à rattacher : trouvée, introuvable, ou à choisir par le demandeur parmi plusieurs. */
+export type ResolutionRattachement =
+  | { statut: "trouvee"; entrepriseAmoId: string; origine: OrigineRattachement }
+  | { statut: "aucune" }
+  | { statut: "plusieurs"; nomsAmo: string[] };
 
 export interface RattacherAmoResult {
   entrepriseAmoId: string;
@@ -87,8 +93,11 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
   }
 
   const resolved = await resoudreAmoARattacher(parcours);
-  if (!resolved) {
+  if (resolved.statut === "aucune") {
     return { success: false, error: "Aucune AMO trouvée (ni dans l'historique, ni sur le territoire)" };
+  }
+  if (resolved.statut === "plusieurs") {
+    return { success: false, error: messageRattachementImpossible(resolved.nomsAmo) };
   }
 
   const attributionMode = regles.avCumuleAmo ? AttributionAmoMode.AUTO_AV_AMO : AttributionAmoMode.AUTO_OBLIGATOIRE;
@@ -118,15 +127,19 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
   };
 }
 
+/** Pourquoi le back-office ne rattache pas : le choix revient au demandeur, pas à l'application. */
+export function messageRattachementImpossible(nomsAmo: readonly string[]): string {
+  return `Plusieurs AMO couvrent ce territoire (${nomsAmo.join(", ")}) : le demandeur doit choisir la sienne, le rattachement automatique est impossible.`;
+}
+
 /**
  * L'AMO d'origine d'abord (agent du dernier `accompagnement_arrete`), le territoire ensuite :
- * un détachement par le script ops ne laisse aucune trace d'audit.
+ * un détachement par le script ops ne laisse aucune trace d'audit. Sur le territoire, une AMO
+ * n'est retenue que si elle est seule à le couvrir.
  */
-export async function resoudreAmoARattacher(parcours: {
-  id: string;
-  rgaSimulationData: unknown;
-  rgaSimulationDataAgent: unknown;
-}): Promise<{ entrepriseAmoId: string; origine: OrigineRattachement } | null> {
+export async function resoudreAmoARattacher(
+  parcours: ParcoursSimulationPair & { id: string }
+): Promise<ResolutionRattachement> {
   const [trace] = await db
     .select({ entrepriseAmoId: agents.entrepriseAmoId })
     .from(parcoursActions)
@@ -141,13 +154,19 @@ export async function resoudreAmoARattacher(parcours: {
     .orderBy(desc(parcoursActions.createdAt))
     .limit(1);
   if (trace?.entrepriseAmoId) {
-    return { entrepriseAmoId: trace.entrepriseAmoId, origine: "audit" };
+    return { statut: "trouvee", entrepriseAmoId: trace.entrepriseAmoId, origine: "audit" };
   }
 
-  const logement = getDemandeurFirstLogement(parcours as Parameters<typeof getDemandeurFirstLogement>[0]);
-  const codeInsee = normalizeCodeInsee(logement?.commune);
-  if (!codeInsee) return null;
+  const territoire = territoireDuParcours(parcours);
+  if (!territoire) return { statut: "aucune" };
 
-  const amo = await findFirstAmoForTerritory(codeInsee, logement?.epci ? String(logement.epci).trim() : null);
-  return amo ? { entrepriseAmoId: amo.id, origine: "territoire" } : null;
+  const resolution = resoudreAmo(await listerAmosDuTerritoire(territoire));
+  switch (resolution.statut) {
+    case "aucune":
+      return { statut: "aucune" };
+    case "plusieurs":
+      return { statut: "plusieurs", nomsAmo: resolution.amos.map((amo) => amo.nom) };
+    case "unique":
+      return { statut: "trouvee", entrepriseAmoId: resolution.amo.id, origine: "territoire" };
+  }
 }

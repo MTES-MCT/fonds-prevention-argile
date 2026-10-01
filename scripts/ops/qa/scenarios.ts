@@ -14,11 +14,48 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { DOSSIER_ETAT } from "@/features/parcours/core/domain/services/dossier-etat.service";
 import { STATUTS_SIMULATION_EDITABLE } from "@/features/backoffice/espace-agent/dossiers/domain/types/amo-dossiers.types";
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
+import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
 /** Contexte transverse calculé une fois pour tous les scénarios. */
 export interface ScenarioContext {
   /** Parcours (parmi ceux visibles) portant déjà au moins une action système. */
   parcoursAvecActionSysteme: Set<string>;
+  /** EPCI couverts par au moins deux AMO : le demandeur doit y choisir la sienne. */
+  epcisMultiAmo: Set<string>;
+}
+
+/** Territoire (EPCI ou département) couvert par une AMO. */
+interface Liaison {
+  code: string;
+  nomAmo: string;
+}
+
+/** Ne garde que les territoires couverts par plusieurs AMO distinctes, triés, noms d'AMO triés. */
+function grouperMultiAmo(liaisons: Liaison[]): Map<string, string[]> {
+  const parTerritoire = new Map<string, Set<string>>();
+  for (const { code, nomAmo } of liaisons) {
+    parTerritoire.set(code, (parTerritoire.get(code) ?? new Set()).add(nomAmo));
+  }
+  return new Map(
+    [...parTerritoire]
+      .filter(([, amos]) => amos.size > 1)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([code, amos]) => [code, [...amos].sort((a, b) => a.localeCompare(b))])
+  );
+}
+
+/** EPCI couverts par plusieurs AMO. */
+export function grouperEpcisMultiAmo(liaisons: { codeEpci: string; nomAmo: string }[]): Map<string, string[]> {
+  return grouperMultiAmo(liaisons.map(({ codeEpci, nomAmo }) => ({ code: codeEpci, nomAmo })));
+}
+
+/** Départements déclarés par plusieurs AMO : repli des communes dont ni la commune ni l'EPCI n'a d'AMO. */
+export function grouperDepartementsMultiAmo(
+  amos: { departements: string | null; nom: string }[]
+): Map<string, string[]> {
+  return grouperMultiAmo(
+    amos.flatMap(({ departements, nom }) => parseCodesDepartement(departements).map((code) => ({ code, nomAmo: nom })))
+  );
 }
 
 export interface Scenario {
@@ -39,6 +76,17 @@ export const SCENARIOS: Scenario[] = [
     titre: "Prospect à qualifier par un Aller-vers",
     sert_a: "Qualifier en éligible / à qualifier / non éligible et vérifier l'action tracée",
     matches: (d) => d.validation === null && !d.archivedAt && d.canActAsResponsable,
+  },
+  {
+    id: "prospect-epci-multi-amo",
+    titre: "Prospect à qualifier dans un EPCI couvert par plusieurs AMO",
+    sert_a: "Qualifier en éligible avec accompagnement et relever quelle AMO est sollicitée",
+    matches: (d, ctx) =>
+      d.validation === null &&
+      !d.archivedAt &&
+      d.canActAsResponsable &&
+      d.logement.codeEpci !== null &&
+      ctx.epcisMultiAmo.has(d.logement.codeEpci),
   },
   {
     id: "demande-amo-en-attente",

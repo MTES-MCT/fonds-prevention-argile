@@ -3,7 +3,7 @@
 import { getSession } from "@/features/auth/server";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
-import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
+import { listerAmosDuTerritoire } from "@/features/parcours/amo/services/amo-couverture.service";
 import { getCodeDepartementFromCodeInsee, normalizeCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
 import type { ActionResult } from "@/shared/types";
 
@@ -40,7 +40,7 @@ export async function getActeursLocauxDisponibles(): Promise<ActionResult<Acteur
       : undefined;
 
     const [amos, allersVers] = await Promise.all([
-      entreprisesAmoRepository.findByCodeInsee(codeInsee, codeDepartement),
+      listerAmosDuTerritoire({ codeInsee, codeEpci: codeEpci ?? null }),
       allersVersRepository.findByEpciWithDepartementFallback(codeDepartement, codeEpci),
     ]);
 

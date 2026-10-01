@@ -158,6 +158,11 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
             <QualificationSection
               parcoursId={prospect.parcoursId}
               amoObligatoire={estAmoObligatoire(prospect.logement.codeDepartement)}
+              amosTerritoire={
+                prospect.amoInfo.status === "amo_disponibles"
+                  ? prospect.amoInfo.amosDisponibles.map(({ id, nom }) => ({ id, nom }))
+                  : []
+              }
               qualification={
                 latestQualification
                   ? {

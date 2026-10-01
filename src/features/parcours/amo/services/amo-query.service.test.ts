@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  getAmosForCodeInsee,
-  getAllAmosWithCommunes,
-  getUserSelectedAmo,
-  getAmoById,
-  checkAmoCoversCodeInsee,
-} from "./amo-query.service";
+import { getAmosForCodeInsee, getAllAmosWithCommunes, getUserSelectedAmo, getAmoById } from "./amo-query.service";
 import { db } from "@/shared/database/client";
 import { getCodeDepartementFromCodeInsee } from "../utils/amo.utils";
 
@@ -414,55 +408,6 @@ describe("amo-query.service", () => {
       const result = await getAmoById("amo-inexistant");
 
       expect(result).toBeNull();
-    });
-  });
-
-  describe("checkAmoCoversCodeInsee", () => {
-    const amoId = "amo-123";
-    const codeInsee = "75001";
-    const codeDepartement = "75";
-
-    beforeEach(() => {
-      vi.mocked(getCodeDepartementFromCodeInsee).mockReturnValue(codeDepartement);
-    });
-
-    it("devrait retourner true si l'AMO couvre via une commune spécifique", async () => {
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([{ id: amoId }]));
-
-      const result = await checkAmoCoversCodeInsee(amoId, codeInsee);
-
-      expect(result).toBe(true);
-      expect(getCodeDepartementFromCodeInsee).toHaveBeenCalledWith(codeInsee);
-    });
-
-    it("devrait retourner true si l'AMO couvre via le département entier", async () => {
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([{ id: amoId }]));
-
-      const result = await checkAmoCoversCodeInsee(amoId, codeInsee);
-
-      expect(result).toBe(true);
-    });
-
-    it("devrait retourner false si l'AMO ne couvre pas le code INSEE", async () => {
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([]));
-
-      const result = await checkAmoCoversCodeInsee(amoId, codeInsee);
-
-      expect(result).toBe(false);
-    });
-
-    it("devrait gérer les codes INSEE d'outre-mer (3 chiffres)", async () => {
-      const codeInseeOM = "97411"; // Réunion
-      const codeDeptOM = "974";
-
-      vi.mocked(getCodeDepartementFromCodeInsee).mockReturnValue(codeDeptOM);
-
-      vi.mocked(db.select).mockReturnValueOnce(createMockChain([{ id: amoId }]));
-
-      const result = await checkAmoCoversCodeInsee(amoId, codeInseeOM);
-
-      expect(result).toBe(true);
-      expect(getCodeDepartementFromCodeInsee).toHaveBeenCalledWith(codeInseeOM);
     });
   });
 });

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { assignAmoAutomatique, getAmosDisponibles, skipAmoStep } from "../../actions";
+import type { Amo } from "../../domain/entities";
+import { ChoixAmoListe } from "./ChoixAmoListe";
 
 interface CalloutChoixAccompagnementProps {
   onSuccess?: () => void;
@@ -16,11 +18,14 @@ interface CalloutChoixAccompagnementProps {
  *   - Si **0 AMO** seedé pour le département → bypass automatique vers ELIGIBILITE
  *     (`skipAmoStep`). L'utilisateur ne voit jamais les radios Oui/Non.
  *   - Si AMO(s) disponible(s) → affichage des radios :
- *     - "Oui" → `assignAmoAutomatique` (1er AMO du territoire) → CalloutAmoEnAttente.
+ *     - "Oui" → `assignAmoAutomatique` → CalloutAmoEnAttente. S'il y a plusieurs AMO sur le
+ *       territoire, le demandeur choisit la sienne avant de confirmer.
  *     - "Non" → `skipAmoStep` → ELIGIBILITE.
  */
 export default function CalloutChoixAccompagnement({ onSuccess, refresh }: CalloutChoixAccompagnementProps) {
   const [choix, setChoix] = useState<"oui" | "non" | null>(null);
+  const [amos, setAmos] = useState<Amo[]>([]);
+  const [amoChoisie, setAmoChoisie] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // True pendant le fetch initial des AMOs disponibles. Tant que c'est vrai, on n'affiche
@@ -36,8 +41,14 @@ export default function CalloutChoixAccompagnement({ onSuccess, refresh }: Callo
 
     (async () => {
       const result = await getAmosDisponibles();
-      const hasAmo = result.success && result.data.length > 0;
-      if (hasAmo) {
+      // Une erreur de lecture n'est pas une absence d'AMO : elle ne doit pas faire passer en autonomie.
+      if (!result.success) {
+        setError(result.error || "Impossible de charger les AMO de votre territoire");
+        setIsCheckingAmoAvailability(false);
+        return;
+      }
+      if (result.data.length > 0) {
+        setAmos(result.data);
         setIsCheckingAmoAvailability(false);
         return;
       }
@@ -79,8 +90,14 @@ export default function CalloutChoixAccompagnement({ onSuccess, refresh }: Callo
       return;
     }
 
+    const choixRequis = amos.length > 1;
+    if (choixRequis && !amoChoisie) {
+      setError("Merci de choisir votre AMO");
+      return;
+    }
+
     setIsSubmitting(true);
-    const result = await assignAmoAutomatique();
+    const result = await assignAmoAutomatique(choixRequis ? (amoChoisie ?? undefined) : undefined);
     setIsSubmitting(false);
 
     if (result.success) {
@@ -150,6 +167,10 @@ export default function CalloutChoixAccompagnement({ onSuccess, refresh }: Callo
             </div>
           </div>
         </fieldset>
+
+        {choix === "oui" && amos.length > 1 && (
+          <ChoixAmoListe amos={amos} amoChoisie={amoChoisie} onChoix={setAmoChoisie} />
+        )}
 
         {error && (
           <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-2w">

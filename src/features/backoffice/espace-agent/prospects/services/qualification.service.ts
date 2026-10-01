@@ -29,6 +29,8 @@ interface QualifyProspectParams {
   estMandataireFinancier?: boolean;
   /** Réponse du demandeur recueillie par l'agent (départements sans AMO imposé). */
   accompagnementSouhaite?: AccompagnementSouhaite;
+  /** AMO désignée par l'agent quand plusieurs couvrent le territoire. */
+  entrepriseAmoIdChoisie?: string;
   note?: string;
   /**
    * Casquettes de l'agent, pour décider si sa qualification vaut validation AMO. Absent
@@ -57,6 +59,7 @@ export class QualificationService {
       raisonsIneligibilite,
       estMandataireFinancier,
       accompagnementSouhaite,
+      entrepriseAmoIdChoisie,
       note,
       contexteAgent,
     } = params;
@@ -89,7 +92,8 @@ export class QualificationService {
         parcours,
         { agentId, ...(contexteAgent ?? { entrepriseAmoId: null, aLaCapaciteAmo: false }) },
         accompagnementSouhaite,
-        estMandataireFinancier
+        estMandataireFinancier,
+        entrepriseAmoIdChoisie
       );
     } else if (decision === QualificationDecision.NON_ELIGIBLE) {
       await parcoursPreventionRepository.updateSituationParticulier(

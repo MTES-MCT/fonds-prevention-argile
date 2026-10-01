@@ -26,8 +26,10 @@ export interface DossierARattacher {
   dept: string;
   currentStep: Step;
   currentStatus: Status;
-  /** AMO qui serait rattachée, et d'où elle vient. `null` = aucune trouvable sur le territoire. */
+  /** AMO qui serait rattachée, et d'où elle vient. `null` = aucune, ou plusieurs à départager. */
   amoCible: { nom: string; origine: OrigineRattachement } | null;
+  /** Plusieurs AMO couvrent le territoire : le demandeur choisit, le back-office ne rattache pas. */
+  amosEnConcurrence: string[];
   /** Formulaire d'éligibilité déposé, décision non rendue : le rattachement est gelé. */
   gele: boolean;
 }
@@ -82,7 +84,7 @@ export async function listerDossiersARattacher(parcoursId?: string): Promise<Dos
     const logement = getDemandeurFirstLogement(row);
     const codeInsee = (asString(logement?.commune) ?? "").padStart(5, "0");
     const resolved = await resoudreAmoARattacher(row);
-    const nomAmo = resolved === null ? null : await nomEntreprise(resolved.entrepriseAmoId);
+    const nomAmo = resolved.statut === "trouvee" ? await nomEntreprise(resolved.entrepriseAmoId) : null;
 
     dossiers.push({
       parcoursId: row.id,
@@ -91,7 +93,8 @@ export async function listerDossiersARattacher(parcoursId?: string): Promise<Dos
       dept: codeInsee.startsWith("97") || codeInsee.startsWith("98") ? codeInsee.slice(0, 3) : codeInsee.slice(0, 2),
       currentStep: row.currentStep as Step,
       currentStatus: row.currentStatus as Status,
-      amoCible: resolved && nomAmo ? { nom: nomAmo, origine: resolved.origine } : null,
+      amoCible: resolved.statut === "trouvee" && nomAmo ? { nom: nomAmo, origine: resolved.origine } : null,
+      amosEnConcurrence: resolved.statut === "plusieurs" ? resolved.nomsAmo : [],
       gele: estDossierChezLaDdt((row.eligibiliteDsStatus as DSStatus | null) ?? null),
     });
   }

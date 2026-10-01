@@ -14,7 +14,8 @@ import { calculateNiveauRevenuFromRga } from "@/features/simulateur/domain/types
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import type { InfoLogement } from "@/features/backoffice/espace-agent/demandes/domain/types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
-import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
+import { listerAmosDuTerritoire } from "@/features/parcours/amo/services/amo-couverture.service";
+import { territoireDuParcours, type TerritoireAmo } from "@/features/parcours/amo/domain/value-objects/couverture-amo";
 import { buildAgentEditInfo } from "@/features/backoffice/espace-agent/shared/services/agent-edit-info.service";
 import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 import { buildInfoVulnerabilite } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
@@ -38,20 +39,14 @@ function buildAdresseComplete(logement: Partial<RGASimulationData["logement"]>):
 }
 
 /**
- * Détermine le statut AMO d'un prospect :
- * Un prospect n'a par définition pas de validation AMO,
- * on cherche simplement les AMO disponibles dans le territoire du logement.
+ * AMO proposées pour le territoire du prospect : celles entre lesquelles l'Aller-vers choisit
+ * quand il en existe plusieurs. Même source que la liste présentée au demandeur.
  */
-async function resolveAmoInfo(codeInsee: string, codeDepartement: string): Promise<ProspectAmoInfo> {
-  if (codeInsee && codeDepartement) {
-    const amosDisponibles = await entreprisesAmoRepository.findByCodeInsee(codeInsee, codeDepartement);
-
-    if (amosDisponibles.length > 0) {
-      return { status: "amo_disponibles", amosDisponibles };
-    }
-  }
-
-  return { status: "aucun_amo_disponible" };
+async function resolveAmoInfo(territoire: TerritoireAmo | null): Promise<ProspectAmoInfo> {
+  const amosDisponibles = territoire ? await listerAmosDuTerritoire(territoire) : [];
+  return amosDisponibles.length > 0
+    ? { status: "amo_disponibles", amosDisponibles }
+    : { status: "aucun_amo_disponible" };
 }
 
 /**
@@ -124,7 +119,8 @@ export async function getProspectDetail(parcoursId: string): Promise<ActionResul
     };
 
     // Déterminer le statut AMO du prospect
-    const amoInfo = await resolveAmoInfo(logement?.commune || "", logement?.code_departement || "");
+    // USER-first comme l'attribution qui suivra la qualification, et non AGENT-first comme l'affichage.
+    const amoInfo = await resolveAmoInfo(territoireDuParcours(result.parcours));
 
     // Construire les informations de diff agent + résolution agent invitant + vulnérabilité RGA
     const [agentEditInfo, creator, vulnerabilite] = await Promise.all([

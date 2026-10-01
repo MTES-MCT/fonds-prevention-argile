@@ -3,6 +3,7 @@ import { entreprisesAmo, entreprisesAmoCommunes, allersVersDepartements } from "
 import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/shared/constants/rga.constants";
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 import { getCodeDepartementFromCodeInsee } from "@/features/parcours/amo/utils/amo.utils";
+import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
 /**
  * Départements éligibles au dispositif qui n'ont, à ce jour, **ni AMO ni Aller-vers**.
@@ -35,13 +36,11 @@ export async function getDepartementsNonCouverts(): Promise<string[]> {
     }
   }
 
-  // `departements` est un champ libre (« Allier 03, Indre 36 ») : même recherche par
-  // inclusion que l'auto-attribution AMO (`findFirstAmoForTerritory`), pour que le
-  // signalement colle exactement à ce que le demandeur obtiendra.
-  const departementsLibres = amos.map((a) => a.departements ?? "").join(" | ");
+  // Champ libre parsé en codes, comme la couverture des AMO (`niveauCouverture`) : le signalement
+  // colle à ce que le demandeur obtiendra, sans qu'un « 54000 » passe pour le département 54.
+  for (const { departements } of amos) {
+    for (const code of parseCodesDepartement(departements)) couverts.add(normalizeCodeDepartement(code));
+  }
 
-  return DEPARTEMENTS_ELIGIBLES_RGA.filter((code) => {
-    if (couverts.has(normalizeCodeDepartement(code))) return false;
-    return !departementsLibres.includes(code);
-  });
+  return DEPARTEMENTS_ELIGIBLES_RGA.filter((code) => !couverts.has(normalizeCodeDepartement(code)));
 }
