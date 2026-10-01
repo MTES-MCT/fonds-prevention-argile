@@ -495,6 +495,28 @@ pour que le rattachement et la réinitialisation ne puissent pas diverger. Les e
 correspondantes sont masquées aux rôles non habilités (`peutAgirSurDossierDn`) — masquage de
 confort, la barrière restant la garde de l'action.
 
+### 6.1.4 Initiation du formulaire de diagnostic par l'AMO mandataire financier (ADR-0044)
+
+`initierFormulaireDiagnosticAction` crée le formulaire DN de l'étape diagnostic à la place du
+demandeur. Garde **plus étroite** que celle des autres actions sur le dossier DN (§6.1.3) :
+
+- rôle `AMO` ou `AMO_ET_ALLERS_VERS` (`ROLES_INITIATION_FORMULAIRE`) ;
+- agent rattaché à **l'entreprise AMO du dossier** — vérifié avant tout autre motif, pour qu'un
+  agent d'une autre structure n'apprenne rien de l'état du dossier ;
+- AMO **mandataire financier** d'une validation `logement_eligible`, parcours à l'étape
+  diagnostic et non archivé (`estFormulaireConfieAAmo`, revérifié dans le service).
+
+`ALLERS_VERS`, `ANALYSTE`, `ADMINISTRATEUR` et le **super-admin** sont exclus : pas de nouvelle
+exception à son read-only, le dossier DN créé appartenant au compte de celui qui l'ouvre.
+
+Le lien de préremplissage vaut capacité — qui l'ouvre devient propriétaire du dossier DN. La
+page ne le transmet donc qu'aux agents de l'entreprise rattachée, et `createDiagnosticDossier`
+refuse de le rendre au demandeur.
+
+> Symétrique côté demandeur : `envoyerDossierDiagnostic` et `recreerFormulaireAction` refusent
+> dès que le formulaire est géré par l'AMO. Le parcours y vient de la session, aucun
+> identifiant n'entre par le client.
+
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
 Le bouton « Vérifier son éligibilité » (édition du formulaire de simulation, page
@@ -564,6 +586,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Garde arrêt d'accompagnement                | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                  |
 | Garde refus accompagnement (éligible)       | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                    |
 | Garde refus menant à l'autonomie            | `demandes/actions/demande-detail.actions.ts` (`declinerVersAutonomie` → `peutPasserEnAutonomie` + `estDossierChezLaDdt`)                                 |
+| Garde initiation du formulaire diagnostic   | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` + `parcours/core/services/diagnostic.service.ts` (`refusInitiateur`)                         |
 | Garde rattachement / réinit. DN             | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                              |
 | Garde édition simulation                    | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                        |
 | Résolution du permalien parcours            | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                |

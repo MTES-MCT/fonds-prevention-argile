@@ -614,14 +614,15 @@ via le helper unique `logSystemAction` (`shared/services/action-audit.service.ts
 un audit raté n'invalide jamais la mutation). C'est la seule source des indicateurs de délai
 de `/administration/activite` — ce qui n'est pas tracé n'est pas mesuré.
 
-| Évènement                                     | Type d'action                                                      | Écrit depuis                                            |
-| --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
-| Décision d'éligibilité AMO (×3)               | `eligibilite_*`, `accompagnement_refuse_eligible`                  | `demandes/actions/demande-detail.actions.ts` (§2.8)     |
-| **Qualification Aller-vers** (×3)             | `av_qualification_{eligible,a_qualifier,non_eligible}`             | `prospects/services/qualification.service.ts`           |
-| **Archivage / dé-archivage manuel**           | `dossier_archive` / `dossier_desarchive`                           | `dossiers/actions/archive-dossier.actions.ts`           |
-| Archivage / dé-archivage auto (correction)    | idem (+ `eligibilite_refusee_non_eligible` si décision AMO)        | `shared/actions/update-simulation-data.action.ts`       |
-| Archivage à la création (mode `amo`)          | `dossier_archive`                                                  | `creation-dossier/services/creation-dossier.service.ts` |
-| Arrêt d'accompagnement, ré-ouverture, relance | `accompagnement_arrete`, `dossier_reouvert`, `invitation_renvoyee` | cf. §2.4, §2.7                                          |
+| Évènement                                     | Type d'action                                                      | Écrit depuis                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Décision d'éligibilité AMO (×3)               | `eligibilite_*`, `accompagnement_refuse_eligible`                  | `demandes/actions/demande-detail.actions.ts` (§2.8)                 |
+| **Qualification Aller-vers** (×3)             | `av_qualification_{eligible,a_qualifier,non_eligible}`             | `prospects/services/qualification.service.ts`                       |
+| **Archivage / dé-archivage manuel**           | `dossier_archive` / `dossier_desarchive`                           | `dossiers/actions/archive-dossier.actions.ts`                       |
+| Archivage / dé-archivage auto (correction)    | idem (+ `eligibilite_refusee_non_eligible` si décision AMO)        | `shared/actions/update-simulation-data.action.ts`                   |
+| Archivage à la création (mode `amo`)          | `dossier_archive`                                                  | `creation-dossier/services/creation-dossier.service.ts`             |
+| Arrêt d'accompagnement, ré-ouverture, relance | `accompagnement_arrete`, `dossier_reouvert`, `invitation_renvoyee` | cf. §2.4, §2.7                                                      |
+| Formulaire diagnostic initié par l'AMO        | `formulaire_initie_par_amo`                                        | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` (§2.13) |
 
 Trois règles à connaître :
 
@@ -986,6 +987,57 @@ attributs : [BREVO-LIFECYCLE §2](../emails/BREVO-LIFECYCLE.md).
 > simulation existante différente et renvoie `enregistree: false`, laissant le cache local
 > alimenter l'arbitrage. Sans cela, `/embed-simulateur` — non gardé, puisque anonyme et
 > partenaire — restait une porte d'entrée pour écraser un dossier.
+
+### 2.13 Diagnostic : la demande de paiement est initiée par l'AMO mandataire financier — ADR-0044
+
+Quand l'AMO est mandataire financier, la subvention de l'étape diagnostic lui est versée : elle
+n'a plus à attendre que le demandeur crée le formulaire. Règle unique, partagée par les deux
+espaces et les gardes serveur : `estFormulaireConfieAAmo(step, statutAmo, estMandataireFinancier)`
+— étape dans `STEPS_FORMULAIRE_PAR_AMO` (le diagnostic seul aujourd'hui), validation
+`logement_eligible`, mandat financier à `true`. Un mandat `null` vaut non-mandataire.
+
+**Le dossier DN change de propriétaire.** Un prérempli appartient au compte DN qui ouvre son
+lien : initié par l'AMO, il vit sur le compte de l'agent, et le demandeur ne peut pas l'ouvrir.
+D'où `dossiers_demarches_simplifiees.initie_par` (`demandeur` | `amo`, migration `0052`), seul
+moyen de savoir à qui proposer un lien DN. `estFormulaireGereParAmo` en tire l'affichage :
+
+| Formulaire de l'étape              | AMO mandataire financier        | Sinon                              |
+| ---------------------------------- | ------------------------------- | ---------------------------------- |
+| aucun                              | géré par l'AMO                  | au demandeur                       |
+| initié par l'AMO, non déposé       | géré par l'AMO                  | au demandeur (AMO détachée depuis) |
+| initié par l'AMO, déposé           | géré par l'AMO                  | géré par l'AMO                     |
+| initié par le demandeur, brouillon | géré par l'AMO (cf. ci-dessous) | au demandeur                       |
+| initié par le demandeur, déposé    | au demandeur                    | au demandeur                       |
+
+- **Côté demandeur**, « géré par l'AMO » retire le bouton de création et tout lien DN sur quatre
+  surfaces — callout (`CalloutDiagnosticParAmo`), carte « 4. Diagnostic logement », « Ma liste »,
+  secours « Ce lien ne fonctionne plus ? » — et sur les callouts de suivi (déposé, en
+  instruction). La barrière est serveur : `createDiagnosticDossier` et
+  `recreerFormulaireDemandeur` refusent, ce dernier **avant** de retirer le pointeur.
+- **Côté AMO**, le détail dossier porte le bouton « Initier la demande de paiement du
+  diagnostic » (`initierFormulaireDiagnosticAction`), puis le lien de reprise. Le lien prefill
+  n'est remis qu'aux agents de l'entreprise rattachée.
+- **Brouillon déjà commencé par le demandeur** : il ne lui est plus proposé, et l'AMO ne le
+  reprend pas (il serait réclamé par le premier compte DN qui l'ouvre). Elle le retire par
+  « Gérer → Réinitialiser le formulaire », puis initie le sien.
+
+> **L'idempotence passe après la garde.** `createDiagnosticDossier` renvoie le lien d'un
+> formulaire existant : sans vérifier d'abord qui appelle, le demandeur aurait reçu le lien
+> prefill du brouillon de son AMO — et en serait devenu propriétaire en l'ouvrant.
+
+La création trace `formulaire_initie_par_amo` (action système, auteur = l'agent) et émet
+`demande_paiement_initiee_par_amo` vers Brevo, en plus du `dn_update` de création. Un second
+clic rend le lien existant, sans nouvelle trace ni nouvel évènement.
+
+**Gel de l'arrêt d'accompagnement au diagnostic.** `estArretGeleAuDiagnostic` s'ajoute au gel
+de §2.7.1, sur les mêmes points d'application (annulation demandeur, « Ne plus accompagner »
+côté AMO) : détacher l'AMO laisserait sur son compte DN un dossier que personne ne suit. Il vaut
+pour tous les dossiers à cette étape et se lève aux devis. Une demande d'arrêt posée avant le
+diagnostic ne peut plus, pendant l'étape, qu'être refusée.
+
+> **Préremplissage : simulation effective.** `createDiagnosticDossier` lit désormais
+> `getEffectiveRGAData` (agent d'abord). Un dossier créé par un agent n'a pas de simulation
+> demandeur : la commune manquait, donc le routage vers le bon groupe d'instructeurs.
 
 ---
 
@@ -1612,6 +1664,9 @@ retrouvé déposé.
 | Choix de l'AMO parmi plusieurs (demandeur)     | `amo/components/steps/ChoixAmoListe.tsx`                                                                    |
 | Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
 | Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |
+| Formulaire confié à l'AMO (règle, ADR-0044)    | `amo/domain/value-objects/formulaire-par-amo.ts` (`estFormulaireConfieAAmo`, `estFormulaireGereParAmo`)     |
+| Entrées de la règle, point unique              | `amo/services/formulaire-par-amo.service.ts` (`chargerEtatFormulaireParAmo`)                                |
+| Initiation du formulaire diagnostic par l'AMO  | `espace-agent/dossiers/actions/initier-formulaire-diagnostic.actions.ts`                                    |
 | Demande d'accompagnement après autonomie       | `amo-selection.service.ts` (`demanderAccompagnementDemandeur`), `demande-accompagnement.actions.ts`         |
 | Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                                   |
 | Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                                  |

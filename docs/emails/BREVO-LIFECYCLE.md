@@ -18,30 +18,36 @@ ne fait que **peupler la donnée**.
 | Résout l'email du contact par environnement (anti-fuite)        | Crée les **attributs** de contact (voir §3)                          |
 | Mappe `user`+`parcours` → attributs                             | Crée la **liste** cycle de vie (1 par env) → `BREVO_CONTACT_LIST_ID` |
 | Upsert du contact dans la liste + enregistrement de l'évènement | Construit les **templates** hébergés                                 |
-| 7 hooks best-effort (§2)                                        | Construit les **Automations** (déclenchées par évènement/attribut)   |
+| 8 hooks best-effort (§2)                                        | Construit les **Automations** (déclenchées par évènement/attribut)   |
 
 Le code **ne dépend pas** de l'existence d'une Automation : il remplit la liste, que des
 Automations soient branchées ou non. C'est ce découplage qui rend les évolutions rapides.
 
 ---
 
-## 2. Les 7 flux (hooks best-effort)
+## 2. Les 8 flux (hooks best-effort)
 
 Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 
-| Déclencheur                    | Fichier                                                                                                           | `event_name`                    | `event_properties`                                       |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------------------- | -------------------------------------------------------- |
-| Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller`   | —                                                        |
-| Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`                | —                                                        |
-| Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`        | —                                                        |
-| Simulation non éligible        | idem — en plus du précédent, au **1er** archivage seulement                                                       | `simulation_non_eligible`       | —                                                        |
-| Simulation non éligible        | `features/parcours/core/actions/enregistrer-simulation-demandeur.actions.ts` (correction depuis l'espace)         | `simulation_non_eligible`       | —                                                        |
-| Simulation redevenue éligible  | idem — au dé-archivage seulement                                                                                  | `simulation_redevenue_eligible` | —                                                        |
-| AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                    | —                                                        |
-| Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                   | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
-| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                     | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
-| Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                     | `step`, `old_ds_status`, `new_ds_status`                 |
+| Déclencheur                    | Fichier                                                                                                           | `event_name`                       | `event_properties`                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------- |
+| Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller`      | —                                                        |
+| Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`                   | —                                                        |
+| Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`           | —                                                        |
+| Simulation non éligible        | idem — en plus du précédent, au **1er** archivage seulement                                                       | `simulation_non_eligible`          | —                                                        |
+| Simulation non éligible        | `features/parcours/core/actions/enregistrer-simulation-demandeur.actions.ts` (correction depuis l'espace)         | `simulation_non_eligible`          | —                                                        |
+| Simulation redevenue éligible  | idem — au dé-archivage seulement                                                                                  | `simulation_redevenue_eligible`    | —                                                        |
+| AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                       | —                                                        |
+| Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                      | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
+| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                        | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
+| Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                        | `step`, `old_ds_status`, `new_ds_status`                 |
+| Demande de paiement initiée    | `features/backoffice/espace-agent/dossiers/actions/initier-formulaire-diagnostic.actions.ts`                      | `demande_paiement_initiee_par_amo` | `step` (`diagnostic`), `amo_nom`                         |
 
+- `demande_paiement_initiee_par_amo` part quand l'AMO **mandataire financier** crée le brouillon
+  de la demande de paiement du diagnostic à la place du demandeur (ADR-0044) — à la **création**
+  du brouillon, pas au dépôt : un mail qui annoncerait une demande « transmise » serait faux à ce
+  stade. Il part **en plus** du `dn_update` de création, émis par le même geste. Un second clic
+  de l'AMO sur un formulaire déjà créé ne le ré-émet pas.
 - `dossier_cree_par_conseiller` part quand un conseiller (AMO ou Aller-vers) pré-crée un dossier pour un
   demandeur sans compte FranceConnect actif (`createDossierByAgent`) : le `parcours_prevention` est
   créé **à cet instant précis**, potentiellement bien avant que le demandeur se connecte. Pousse
@@ -204,6 +210,11 @@ email) tout en livrant tout dans la boîte de test.
       **`simulation_redevenue_eligible`** (ADR-0036). Le demandeur a corrigé sa simulation, son
       dossier est dé-archivé et un conseiller va le reprendre — le mail de bienvenue est déjà parti
       et ne repartira pas. Personnaliser avec les `CONSEILLER_*`, comme la bienvenue.
+- [ ] **Prévenir le demandeur que son AMO a initié la demande de paiement** : brancher une
+      Automation sur **`demande_paiement_initiee_par_amo`** (ADR-0044), personnalisable avec
+      `amo_nom`. Le demandeur n'a aucune action à faire et ne peut pas ouvrir ce dossier DN.
+- [ ] **Ne plus inviter ces demandeurs à transmettre leur diagnostic** : conditionner le mail
+      d'entrée en étape diagnostic sur `EST_MANDATAIRE` — à `true`, c'est l'AMO qui s'en charge.
 - [ ] Ne pas conditionner cette Automation sur `ELIGIBILITE` : l'attribut vaut `eligible` en
       permanence pour l'immense majorité des contacts, l'évènement est le seul signal du
       **changement**.
