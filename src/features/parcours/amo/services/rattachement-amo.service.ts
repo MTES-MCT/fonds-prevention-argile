@@ -9,6 +9,7 @@ import {
 } from "@/shared/database/schema";
 import { ActionResult } from "@/shared/types/action-result.types";
 import { ACTION_TYPE_ACCOMPAGNEMENT_ARRETE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
+import { BREVO_EVENTS, buildConseillerAttributesApresChangement, emitBrevoEvent } from "@/shared/email/brevo";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 import { StatutValidationAmo, estDossierChezLaDdt } from "../domain/value-objects";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
@@ -120,6 +121,11 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
     .from(entreprisesAmo)
     .where(eq(entreprisesAmo.id, resolved.entrepriseAmoId))
     .limit(1);
+
+  // Synchro Brevo (flux), best-effort : le contact portait encore l'aller-vers comme conseiller.
+  await emitBrevoEvent(parcoursId, BREVO_EVENTS.AMO_DEFINI, {
+    attributes: await buildConseillerAttributesApresChangement(parcoursId),
+  });
 
   return {
     success: true,

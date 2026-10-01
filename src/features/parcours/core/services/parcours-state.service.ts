@@ -60,6 +60,7 @@ export async function getParcoursComplet(userId: string): Promise<ParcoursComple
     submittedAt: d.submittedAt,
     instructedAt: d.instructedAt,
     processedAt: d.processedAt,
+    initiePar: d.initiePar,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));

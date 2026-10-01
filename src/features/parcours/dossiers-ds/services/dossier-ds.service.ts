@@ -5,6 +5,7 @@ import { eq, and, desc } from "drizzle-orm";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DSStatus } from "../domain/value-objects/ds-status";
 import type { ActionResult } from "@/shared/types";
+import type { InitiateurFormulaire } from "@/shared/domain/value-objects/initiateur-formulaire.enum";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
 
 /**
@@ -17,6 +18,8 @@ interface CreateDossierDSParams {
   dsUrl?: string;
   /** Identifiant GraphQL du dossier renvoyé par l'API de préremplissage (ADR-0026). */
   dsId?: string;
+  /** Créateur du prérempli ; le demandeur par défaut. */
+  initiePar?: InitiateurFormulaire;
 }
 
 /**
@@ -41,6 +44,7 @@ export async function createDossierForCurrentStep(
           dsDemarcheId: params.dsDemarcheId,
           dsUrl: params.dsUrl,
           dsId: params.dsId,
+          ...(params.initiePar ? { initiePar: params.initiePar } : {}),
         })
         .returning();
 

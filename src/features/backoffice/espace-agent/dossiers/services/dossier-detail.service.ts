@@ -7,7 +7,13 @@ import {
   users,
 } from "@/shared/database/schema";
 import { eq, and } from "drizzle-orm";
-import type { DossierDetail, InfoDemandeur, InfoLogement, ParcoursDateProgression } from "../domain/types";
+import type {
+  DossierDetail,
+  FormulaireCourant,
+  InfoDemandeur,
+  InfoLogement,
+  ParcoursDateProgression,
+} from "../domain/types";
 import type { ActionResult } from "@/shared/types/action-result.types";
 import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -24,6 +30,8 @@ import { getParcoursCreator } from "@/features/backoffice/espace-agent/shared/se
 import { buildInfoVulnerabilite } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import { STATUTS_CONSULTABLES } from "../domain/types";
+import { estDossierDepose } from "@/features/parcours/amo/domain/value-objects";
+import { buildDemarcheUrl } from "@/features/parcours/dossiers-ds/utils/ds-url.utils";
 import type { DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 
 /**
@@ -153,6 +161,15 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       };
     }
 
+    const dossierCourant = allDossiersDS.find((d) => d.step === dossier.parcours.currentStep);
+    const formulaireCourant: FormulaireCourant | null = dossierCourant
+      ? {
+          initiePar: dossierCourant.initiePar,
+          depose: Boolean(dossierCourant.submittedAt) || estDossierDepose(dossierCourant.dsStatus),
+          url: buildDemarcheUrl(dossierCourant) ?? null,
+        }
+      : null;
+
     // Construire l'objet des dates de progression
     const dates: ParcoursDateProgression = {
       compteCreatedAt: dossier.parcours.createdAt,
@@ -201,6 +218,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       suiviDepuis: dossier.validation.valideeAt,
       dates,
       dossiersTimeline,
+      formulaireCourant,
       agentEditInfo,
       creator,
     };

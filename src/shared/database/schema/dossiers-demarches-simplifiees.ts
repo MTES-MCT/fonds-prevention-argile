@@ -2,6 +2,10 @@ import { pgTable, uuid, timestamp, varchar, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { dsStatusPgEnum, stepPgEnum } from "../enums/enums";
+import {
+  INITIATEUR_FORMULAIRE,
+  type InitiateurFormulaire,
+} from "../../domain/value-objects/initiateur-formulaire.enum";
 
 // Table des dossiers Démarches Simplifiées
 export const dossiersDemarchesSimplifiees = pgTable(
@@ -37,6 +41,12 @@ export const dossiersDemarchesSimplifiees = pgTable(
     // Verdict DN observé au dernier sondage de la sync (état réel côté DN)
     dnProbeState: varchar("dn_probe_state", { length: 30 }),
     dnProbeAt: timestamp("dn_probe_at", { mode: "date" }),
+
+    // Créateur du prérempli : un dossier initié par l'AMO vit sur son compte DN, hors de portée du demandeur.
+    initiePar: varchar("initie_par", { length: 20 })
+      .$type<InitiateurFormulaire>()
+      .notNull()
+      .default(INITIATEUR_FORMULAIRE.DEMANDEUR),
 
     // Contrôle de l'avis d'imposition (éligibilité) : verdict seul, jamais de donnée fiscale.
     avisImpotControleAt: timestamp("avis_impot_controle_at", { mode: "date" }),

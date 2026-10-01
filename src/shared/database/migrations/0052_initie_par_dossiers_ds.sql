@@ -1,0 +1,1 @@
+ALTER TABLE "dossiers_demarches_simplifiees" ADD COLUMN "initie_par" varchar(20) DEFAULT 'demandeur' NOT NULL;

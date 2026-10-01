@@ -6,6 +6,7 @@ import { normalizeCodeInsee, getCodeDepartementFromCodeInsee } from "@/features/
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { isProduction } from "@/shared/config/env.config";
+import { aUneAmoMandataireFinancier } from "@/features/parcours/amo/services/formulaire-par-amo.service";
 import { resolveAdminUrl } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
 
 /**
@@ -18,8 +19,8 @@ function put(attrs: BrevoAttributes, key: string, value: string | number | boole
 }
 
 // Attributs Brevo depuis user + parcours ; `resolvedEmail` != vrai email (staging) -> EMAIL_REEL.
-// N'inclut aucun attribut d'état AMO (A_AMO...) : posés par les hooks quand la valeur est connue,
-// sinon un dn_update écraserait le A_AMO=true d'un amo_reponse. Voir docs/emails/BREVO-LIFECYCLE.md.
+// N'inclut ni A_AMO ni AMO_STATUT : posés par les hooks quand la valeur est connue, sinon un
+// dn_update écraserait le A_AMO=true d'un amo_reponse. Voir docs/emails/BREVO-LIFECYCLE.md.
 export async function buildContactAttributes(
   user: User,
   parcours: ParcoursPrevention,
@@ -43,6 +44,14 @@ export async function buildContactAttributes(
     put(attrs, BREVO_ATTRS.ADMIN_URL, adminUrl ?? undefined);
   } catch (error) {
     console.error("[BREVO_CONTACTS] resolveAdminUrl échec:", error instanceof Error ? error.message : error);
+  }
+
+  // Relu en base à chaque push : posé une seule fois par `amo_reponse`, il restait vrai après
+  // un détachement de l'AMO, et les Automations suivantes s'adressaient au mauvais public.
+  try {
+    attrs[BREVO_ATTRS.EST_MANDATAIRE] = await aUneAmoMandataireFinancier(parcours.id);
+  } catch (error) {
+    console.error("[BREVO_CONTACTS] EST_MANDATAIRE échec:", error instanceof Error ? error.message : error);
   }
 
   // Données RGA effectives (agent prioritaire). JSONB peut stocker un nombre : normalizeCodeInsee

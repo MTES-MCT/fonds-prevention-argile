@@ -30,10 +30,27 @@ describe("requiertAccordAmo", () => {
 describe("peutAnnulerAccompagnement", () => {
   const base = {
     statut: StatutValidationAmo.LOGEMENT_ELIGIBLE,
+    currentStep: Step.ELIGIBILITE,
     demandeArretAt: null,
     eligibiliteDsStatus: null,
     dossierArchive: false,
   };
+
+  it("n'autorise plus l'annulation au diagnostic, éligibilité pourtant acceptée", () => {
+    expect(
+      peutAnnulerAccompagnement({ ...base, currentStep: Step.DIAGNOSTIC, eligibiliteDsStatus: DSStatus.ACCEPTE })
+    ).toBe(false);
+  });
+
+  it.each([Step.DEVIS, Step.FACTURES])("reste fermée à l'étape %s : passé l'éligibilité, c'est trop tard", (step) => {
+    expect(peutAnnulerAccompagnement({ ...base, currentStep: step, eligibiliteDsStatus: DSStatus.ACCEPTE })).toBe(
+      false
+    );
+  });
+
+  it("ne change rien pendant l'éligibilité : un refus de la DDT laisse l'annulation ouverte", () => {
+    expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.REFUSE })).toBe(true);
+  });
 
   it("autorise l'annulation quand l'AMO est en attente", () => {
     expect(peutAnnulerAccompagnement({ ...base, statut: StatutValidationAmo.EN_ATTENTE })).toBe(true);
@@ -54,7 +71,7 @@ describe("peutAnnulerAccompagnement", () => {
   });
 
   it("autorise à nouveau une fois la décision rendue", () => {
-    // Ce dossier est soldé : la relation AMO continue sur le diagnostic et les devis.
+    // Ce dossier est soldé : la relation AMO continue sur les étapes suivantes.
     for (const statut of [DSStatus.ACCEPTE, DSStatus.REFUSE, DSStatus.CLASSE_SANS_SUITE]) {
       expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: statut })).toBe(true);
     }

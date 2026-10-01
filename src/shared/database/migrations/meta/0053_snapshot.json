@@ -1,6 +1,6 @@
 {
-  "id": "87ea20c5-43b5-456f-acf3-4457a82453d1",
-  "prevId": "c799c68a-f6b5-4211-b063-4903e708370f",
+  "id": "3a07afe2-8cef-4042-b642-5bbcf766bd87",
+  "prevId": "87ea20c5-43b5-456f-acf3-4457a82453d1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -764,6 +764,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'demandeur'"
+        },
+        "avis_impot_controle_at": {
+          "name": "avis_impot_controle_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avis_impot_statut": {
+          "name": "avis_impot_statut",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avis_impot_champs_modifies_at": {
+          "name": "avis_impot_champs_modifies_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
