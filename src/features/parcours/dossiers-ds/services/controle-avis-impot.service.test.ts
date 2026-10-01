@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const env = vi.hoisted(() => ({ DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID: "SW5zdHJ1Y3RldXItMQ==" }));
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: vi.fn(() => env) }));
@@ -17,7 +17,12 @@ import {
   controlerEtEnregistrerAvisImpot,
   type DossierApresSync,
 } from "./controle-avis-impot.service";
-import { FIXTURES_AVIS_IMPOT } from "../mappers/avis-impot.fixtures";
+import { FIXTURES_AVIS_IMPOT, dossierAvisFictif } from "../mappers/avis-impot.fixtures";
+import {
+  DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE,
+  DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE,
+  DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE,
+} from "../domain/value-objects/ds-annotations";
 import { STATUTS_CONTROLE } from "../domain/avis-impot";
 
 const ANNOTATION_PREPROD = "Q2hhbXAtNzAyMDIwNw==";
@@ -210,5 +215,103 @@ describe("controlerAvisImpotApresSync", () => {
 
     await expect(appeler()).resolves.toBe("inchangee");
     expect(enregistrerControleAvisImpot).toHaveBeenCalledOnce();
+  });
+});
+
+describe("annotations de tranche de revenu", () => {
+  const TYPE_MENAGE = "Q2hhbXAtVHlwZQ==";
+  const TAUX = "Q2hhbXAtVGF1eA==";
+  const COHERENT = "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.";
+
+  const ecrites = () =>
+    client.modifierAnnotations.mock.calls[0][0].annotations as Array<{ id: string; value: Record<string, string> }>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.modifierAnnotations.mockResolvedValue(undefined);
+    client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[146377] = TYPE_MENAGE;
+    DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE[146377] = TAUX;
+  });
+
+  afterEach(() => {
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[146377];
+    delete DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE[146377];
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
+  });
+
+  it("écrit les trois annotations dans une seule mutation, d'après le RFR déclaré", async () => {
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(controle?.tranche).toEqual({ typeMenage: "TMO", tauxSubvention: 90 });
+    expect(client.modifierAnnotations).toHaveBeenCalledOnce();
+    expect(ecrites()).toEqual([
+      { id: ANNOTATION_PREPROD, value: { textarea: COHERENT } },
+      { id: TYPE_MENAGE, value: { dropDownList: "TMO" } },
+      { id: TAUX, value: { text: "90 %" } },
+    ]);
+  });
+
+  it("n'envoie que les annotations dont la valeur change", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...FIXTURES_AVIS_IMPOT.lu,
+      annotations: [
+        { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
+        { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
+        { champDescriptorId: TAUX, stringValue: "85 %" },
+      ],
+    });
+
+    await expect(controlerEtAnnoterAvisImpot(1, options)).resolves.toMatchObject({ issue: "ecrite" });
+    expect(ecrites()).toEqual([{ id: TAUX, value: { text: "90 %" } }]);
+  });
+
+  it("calcule la tranche sur le RFR déclaré même quand l'avis en indique un autre", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT["ecart-revenu"]);
+
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(controle?.tranche.typeMenage).toBe("TMO");
+    expect(ecrites()).toContainEqual({ id: TYPE_MENAGE, value: { dropDownList: "TMO" } });
+  });
+
+  it("écrit « Non calculable » sans commune dans le dossier", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(
+      dossierAvisFictif({ nombrePersonnes: 3, revenuFiscalReference: 18500, codeDepartement: null })
+    );
+
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(ecrites()).toEqual(
+      expect.arrayContaining([
+        { id: TYPE_MENAGE, value: { dropDownList: "Non calculable" } },
+        { id: TAUX, value: { text: "Non calculable" } },
+      ])
+    );
+  });
+
+  it("écrit « Hors plafond » et « Non éligible » au-delà du plafond intermédiaire", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(
+      dossierAvisFictif({ nombrePersonnes: 1, revenuFiscalReference: 90000 })
+    );
+
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(ecrites()).toEqual(
+      expect.arrayContaining([
+        { id: TYPE_MENAGE, value: { dropDownList: "Hors plafond" } },
+        { id: TAUX, value: { text: "Non éligible" } },
+      ])
+    );
+  });
+
+  it("fonctionne sur une démarche où seule l'annotation de tranche est répertoriée", async () => {
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = TYPE_MENAGE;
+    client.getDossierAvisImpot.mockResolvedValue({ ...FIXTURES_AVIS_IMPOT.lu, demarche: { number: 999 } });
+
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[999]).toBeUndefined();
+    expect(ecrites()).toEqual([{ id: TYPE_MENAGE, value: { dropDownList: "TMO" } }]);
   });
 });

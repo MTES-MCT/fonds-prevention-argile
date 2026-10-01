@@ -25,6 +25,7 @@ import {
   type AvisImpotExtrait,
   type DonneesAvisImpotDossier,
 } from "@/features/parcours/dossiers-ds/domain/avis-impot";
+import { calculerTrancheDossier, texteTauxSubvention } from "@/features/parcours/dossiers-ds/domain/tranche-revenu";
 import { mapDossierAvisImpot } from "@/features/parcours/dossiers-ds/mappers/avis-impot.mapper";
 import {
   FIXTURES_AVIS_IMPOT,
@@ -82,7 +83,13 @@ function afficher(donnees: DonneesAvisImpotDossier): void {
 
 function afficherControle(donnees: DonneesAvisImpotDossier): void {
   const resultat = controlerAvisImpot(donnees, { maintenant: new Date() });
+  const tranche = calculerTrancheDossier({
+    revenuFiscalReference: donnees.declaratif.revenuFiscalReference,
+    nombrePersonnes: donnees.declaratif.nombrePersonnes,
+    codeDepartement: donnees.codeDepartement,
+  });
   console.log(`Annotation DN : « ${texteAnnotationControle(resultat)} »`);
+  console.log(`Type de ménage : ${tranche.typeMenage} — taux de subvention : ${texteTauxSubvention(tranche)}`);
   console.log(`Contrôle : ${LIBELLES_STATUT_CONTROLE[resultat.statut]}`);
   if (AFFICHER_VALEURS) {
     console.log(formaterDetailControle(resultat).replace(/^/gm, "      "));

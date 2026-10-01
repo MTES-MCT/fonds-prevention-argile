@@ -23,7 +23,7 @@ import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { LIBELLES_STATUT_CONTROLE, statutAnnotationControle } from "@/features/parcours/dossiers-ds/domain/avis-impot";
-import { estControleAvisImpotActive } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
+import { estInstructionAutomatiqueActive } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
 import {
   controlerEtAnnoterAvisImpot,
   controlerEtEnregistrerAvisImpot,
@@ -74,7 +74,7 @@ async function ciblesDepuisBase(): Promise<Cible[]> {
       )
     );
 
-  const actives = lignes.filter((l) => estControleAvisImpotActive(Number(l.dsDemarcheId)));
+  const actives = lignes.filter((l) => estInstructionAutomatiqueActive(Number(l.dsDemarcheId)));
   if (actives.length < lignes.length) {
     console.log(`${lignes.length - actives.length} dossier(s) ignoré(s) : contrôle non activé sur leur démarche`);
   }
@@ -121,7 +121,10 @@ async function main(): Promise<void> {
       } else {
         const statut = LIBELLES_STATUT_CONTROLE[statutAnnotationControle(controle.resultat)];
         console.log(`\nDossier ${cible.dsNumber} : ${statut} — ${LIBELLES_ISSUE[controle.issue]}${horsBase}`);
-        console.log(`      « ${controle.texte} »`);
+        if (controle.annotations.length === 0) console.log(`      « ${controle.texte} »`);
+        for (const annotation of controle.annotations) {
+          console.log(`      ${annotation.nom} : « ${annotation.valeur} »`);
+        }
         compter(statut);
       }
     } catch (error) {

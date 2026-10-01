@@ -2,6 +2,7 @@ import { getServerEnv } from "@/shared/config/env.config";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient } from "../adapters/graphql/client";
+import type { ValeurAnnotationDn } from "../adapters/graphql/types";
 import {
   controlerAvisImpot,
   doitControlerAvisImpot,
@@ -9,7 +10,8 @@ import {
   texteAnnotationControle,
   type ResultatControleAvisImpot,
 } from "../domain/avis-impot";
-import { estControleAvisImpotActive, getAnnotationControleAvisImpot } from "../domain/value-objects/ds-annotations";
+import { calculerTrancheDossier, texteTauxSubvention, type TrancheDossier } from "../domain/tranche-revenu";
+import { estInstructionAutomatiqueActive, idsAnnotationsInstruction } from "../domain/value-objects/ds-annotations";
 import { lireAvisImpotDossier } from "./avis-impot.service";
 import { enregistrerControleAvisImpot } from "./dossier-ds.service";
 
@@ -18,10 +20,47 @@ export type IssueAnnotationControle = "ecrite" | "inchangee" | "simulation" | "a
 export interface ControleAvisImpotDossier {
   numero: number;
   resultat: ResultatControleAvisImpot;
+  tranche: TrancheDossier;
   champsModifiesAt: string | null;
-  /** Texte de l'annotation DN : une phrase métier, sans donnée fiscale. */
+  /** Texte de l'annotation de l'avis : une phrase métier, sans donnée fiscale. */
   texte: string;
+  /** Valeur de chaque annotation répertoriée pour la démarche, écrite ou déjà à jour. */
+  annotations: AnnotationInstruction[];
   issue: IssueAnnotationControle;
+}
+
+export interface AnnotationInstruction {
+  nom: "Contrôle avis d'imposition" | "Type de ménage" | "Taux de subvention";
+  id: string;
+  valeur: string;
+  value: ValeurAnnotationDn;
+}
+
+function annotationsInstruction(
+  demarcheNumero: number | null,
+  texteAvis: string,
+  tranche: TrancheDossier
+): AnnotationInstruction[] {
+  if (!demarcheNumero) return [];
+  const ids = idsAnnotationsInstruction(demarcheNumero);
+  const taux = texteTauxSubvention(tranche);
+  const candidates: Array<AnnotationInstruction | null> = [
+    ids.avisImpot
+      ? { nom: "Contrôle avis d'imposition", id: ids.avisImpot, valeur: texteAvis, value: { textarea: texteAvis } }
+      : null,
+    ids.typeMenage
+      ? {
+          nom: "Type de ménage",
+          id: ids.typeMenage,
+          valeur: tranche.typeMenage,
+          value: { dropDownList: tranche.typeMenage },
+        }
+      : null,
+    ids.tauxSubvention
+      ? { nom: "Taux de subvention", id: ids.tauxSubvention, valeur: taux, value: { text: taux } }
+      : null,
+  ];
+  return candidates.filter((a): a is AnnotationInstruction => a !== null);
 }
 
 export interface OptionsControleAvisImpot {
@@ -39,21 +78,26 @@ export async function controlerEtAnnoterAvisImpot(
 
   const maintenant = options.maintenant ?? new Date();
   const resultat = controlerAvisImpot(donnees, { maintenant });
+  // RFR déclaré, pas celui de l'avis : la DDT instruit sur le formulaire, l'écart est signalé à part.
+  const tranche = calculerTrancheDossier({
+    revenuFiscalReference: donnees.declaratif.revenuFiscalReference,
+    nombrePersonnes: donnees.declaratif.nombrePersonnes,
+    codeDepartement: donnees.codeDepartement,
+  });
   const texte = texteAnnotationControle(resultat);
-  const controle = { numero, resultat, texte, champsModifiesAt: donnees.champsModifiesAt };
+  const annotations = annotationsInstruction(donnees.demarcheNumero, texte, tranche);
+  const controle = { numero, resultat, tranche, texte, annotations, champsModifiesAt: donnees.champsModifiesAt };
 
-  const annotationId = donnees.demarcheNumero ? getAnnotationControleAvisImpot(donnees.demarcheNumero) : null;
-  if (!annotationId) return { ...controle, issue: "annotation_non_configuree" };
+  if (annotations.length === 0) return { ...controle, issue: "annotation_non_configuree" };
   // Chaque écriture s'inscrit dans l'historique DN du dossier : on n'y ajoute pas de bruit.
-  if (donnees.annotations[annotationId] === texte) {
-    return { ...controle, issue: "inchangee" };
-  }
+  const aEcrire = annotations.filter((a) => donnees.annotations[a.id] !== a.valeur);
+  if (aEcrire.length === 0) return { ...controle, issue: "inchangee" };
   if (!options.appliquer) return { ...controle, issue: "simulation" };
 
   await graphqlClient.modifierAnnotations({
     dossierId: donnees.dossierId,
     instructeurId: getServerEnv().DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID,
-    annotations: [{ id: annotationId, value: { textarea: texte } }],
+    annotations: aEcrire.map(({ id, value }) => ({ id, value })),
   });
   return { ...controle, issue: "ecrite" };
 }
@@ -110,7 +154,7 @@ export async function controlerAvisImpotApresSync(params: {
     champsModifiesAtControle: dossier.avisImpotChampsModifiesAt,
     champsModifiesAtDn: champsModifiesAt,
   });
-  if (!aControler || !dossier.dsNumber || !estControleAvisImpotActive(Number(dossier.dsDemarcheId))) return null;
+  if (!aControler || !dossier.dsNumber || !estInstructionAutomatiqueActive(Number(dossier.dsDemarcheId))) return null;
 
   const controle = await controlerEtEnregistrerAvisImpot({
     dossierId: dossier.id,
