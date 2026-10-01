@@ -7,6 +7,7 @@ import { Step } from "../../core";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import {
   StatutValidationAmo,
+  estArretGeleAuDiagnostic,
   estDossierChezLaDdt,
   peutAnnulerAccompagnement,
   requiertAccordAmo,
@@ -106,6 +107,7 @@ export async function annulerAccompagnementDemandeur(params: {
   if (
     !peutAnnulerAccompagnement({
       statut: validation.statut,
+      currentStep: parcours.currentStep,
       demandeArretAt: validation.demandeArretAt,
       eligibiliteDsStatus,
       dossierArchive: Boolean(parcours.archivedAt),
@@ -122,6 +124,12 @@ export async function annulerAccompagnementDemandeur(params: {
         success: false,
         error:
           "Votre formulaire d'éligibilité a été transmis : l'accompagnement ne peut plus être modifié tant que l'administration n'a pas répondu",
+      };
+    }
+    if (estArretGeleAuDiagnostic(parcours.currentStep)) {
+      return {
+        success: false,
+        error: "Votre accompagnement ne peut pas être annulé pendant l'étape du diagnostic",
       };
     }
     return { success: false, error: "Votre accompagnement ne peut pas être annulé à ce stade" };

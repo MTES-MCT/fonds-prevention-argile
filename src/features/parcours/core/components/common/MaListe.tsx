@@ -65,6 +65,7 @@ export default function MaListe() {
     validationAmoComplete !== null &&
     peutAnnulerAccompagnement({
       statut: statutAmo,
+      currentStep,
       demandeArretAt: validationAmoComplete.demandeArretAt,
       eligibiliteDsStatus,
       dossierArchive,

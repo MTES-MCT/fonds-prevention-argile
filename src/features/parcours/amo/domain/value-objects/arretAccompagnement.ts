@@ -33,8 +33,18 @@ export function estDossierDepose(eligibiliteDsStatus: DSStatus | null): boolean 
   return estDossierChezLaDdt(eligibiliteDsStatus) || estDecisionDdtRendue(eligibiliteDsStatus);
 }
 
+/**
+ * Au diagnostic, l'AMO porte la demande de paiement (elle l'initie quand elle est mandataire
+ * financier) : la détacher laisserait un dossier DN sur son compte, sans personne pour le suivre.
+ */
+export function estArretGeleAuDiagnostic(currentStep: Step | null): boolean {
+  return currentStep === Step.DIAGNOSTIC;
+}
+
 export interface EtatAnnulationAccompagnement {
   statut: StatutValidationAmo;
+  /** Étape courante du parcours — requis : l'arrêt est gelé au diagnostic. */
+  currentStep: Step | null;
   /** Non-null = une demande d'arrêt est déjà en attente de réponse AMO. */
   demandeArretAt: Date | null;
   /** Statut DN du dossier d'éligibilité (null si pas encore de dossier). */
@@ -56,13 +66,14 @@ export function requiertAccordAmo(statut: StatutValidationAmo, estMandataireFina
 
 /**
  * Le demandeur peut changer d'avis à tout moment, sauf pendant que la DDT tient son
- * formulaire d'éligibilité (du dépôt à la décision).
+ * formulaire d'éligibilité (du dépôt à la décision) et pendant l'étape diagnostic.
  */
 export function peutAnnulerAccompagnement(etat: EtatAnnulationAccompagnement): boolean {
   if (etat.dossierArchive) return false;
   if (!STATUTS_ANNULABLES.includes(etat.statut)) return false;
   if (etat.demandeArretAt) return false;
   if (estDossierChezLaDdt(etat.eligibiliteDsStatus)) return false;
+  if (estArretGeleAuDiagnostic(etat.currentStep)) return false;
   return true;
 }
 
