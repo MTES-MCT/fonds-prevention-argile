@@ -484,9 +484,28 @@ Trois règles à connaître :
   `dossiers_demarches_simplifiees`). Écrire l'annotation fait bouger `dateDerniereModification`,
   **pas** `dateDerniereModificationChamps` : c'est pour ça que le repère est la seconde. Après la
   décision DDT, l'annotation n'est plus touchée.
-- **Activation par démarche** : seule une démarche répertoriée dans
-  `DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE` est contrôlée, les autres sont ignorées sans
-  bruit. Aucune valeur fiscale n'est stockée ni journalisée.
+- **Activation par annotation** : chacune s'active dès que son id est répertorié pour la démarche
+  (`idsAnnotationsInstruction`, `ds-annotations.ts`), sans attendre les autres ; une démarche sans
+  aucune annotation est ignorée sans bruit. Toutes partent dans la **même mutation**, et seules
+  celles dont la valeur change sont envoyées. Aucune valeur fiscale n'est stockée ni journalisée.
+
+**Type de ménage et taux de subvention.** Deux annotations de plus, calculées depuis le formulaire
+DN seul (`calculerTrancheDossier`, `domain/tranche-revenu/`) :
+
+| Annotation         | Type DN          | Valeur                                                                             |
+| ------------------ | ---------------- | ---------------------------------------------------------------------------------- |
+| Type de ménage     | liste déroulante | `TMO`, `MO`, `INT`, `Hors plafond`, `Non calculable` (libellés exacts)             |
+| Taux de subvention | texte court      | `90 %`, `85 %`, `70 %` (phases étude et travaux), `Non éligible`, `Non calculable` |
+
+- **RFR déclaré**, pas celui de l'avis : la DDT instruit sur le formulaire, et un écart est déjà
+  signalé par l'annotation de l'avis.
+- **Barème du simulateur** (`calculerTrancheRevenu`, seuils ANAH codés en dur) : la DDT voit la
+  tranche annoncée au demandeur. À mettre à jour à chaque nouveau barème annuel.
+- **Île-de-France lue sur le département de la commune** déclarée dans DN (le champ « Commune »
+  expose `departement.code`, pas la région). Le contrôle de l'avis l'emploie aussi pour chiffrer
+  un écart : un dossier n'a qu'un barème, plus celui de la simulation FPA.
+- **Taux** : `TAUX_SUBVENTION` reprend le tableau « Taux de subvention de l'État » de la page
+  d'accueil ; un test échoue si les deux divergent.
 
 > Outils : `pnpm ds:inspecter-avis-impot --dossier=<n>` (lecture, valeurs masquées),
 > `pnpm ds:controler-avis-impot --dossier=<n> | --tous [--apply]` (dry-run par défaut, rattrapage),
@@ -1696,6 +1715,7 @@ retrouvé déposé.
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
 | Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
 | Contrôle de l'avis d'imposition (ADR-0043)     | `dossiers-ds/domain/avis-impot/`, `services/controle-avis-impot.service.ts`, `mappers/avis-impot.mapper.ts` |
+| Type de ménage et taux de subvention           | `dossiers-ds/domain/tranche-revenu/` (`calculerTrancheDossier`, `TAUX_SUBVENTION`)                          |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
 | Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
