@@ -11,7 +11,7 @@ import {
 } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
 import { refuserDemandeArret } from "@/features/parcours/amo/services/arret-accompagnement.service";
-import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
+import { estArretGeleAuDiagnostic, estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
 import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
@@ -63,6 +63,14 @@ export async function arreterAccompagnementAction(parcoursId: string, raisons: s
         success: false,
         error:
           "L'AMO est obligatoire dans ce département : le demandeur ne peut pas poursuivre seul. Utilisez « Archiver » pour ne plus suivre ce dossier.",
+      };
+    }
+
+    // L'AMO porte la demande de paiement du diagnostic : pas de détachement pendant cette étape.
+    if (estArretGeleAuDiagnostic(parcours.currentStep)) {
+      return {
+        success: false,
+        error: "L'accompagnement ne peut pas être arrêté pendant l'étape du diagnostic",
       };
     }
 

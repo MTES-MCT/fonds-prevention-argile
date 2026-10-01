@@ -9,14 +9,41 @@ import { createDebugLogger } from "@/shared/utils";
 import { DS_FIELD_IDS } from "../../dossiers-ds/domain/value-objects/ds-field-ids";
 import { toAdresseRueSeule, toCommuneValue } from "../../dossiers-ds/domain/value-objects/ds-field-transformers";
 import { getServerEnv } from "@/shared/config/env.config";
+import {
+  INITIATEUR_FORMULAIRE,
+  type InitiateurFormulaire,
+} from "@/shared/domain/value-objects/initiateur-formulaire.enum";
+import { chargerEtatFormulaireParAmo, type EtatFormulaireParAmo } from "../../amo/services/formulaire-par-amo.service";
+import { getEffectiveRGAData } from "./rga-data.service";
 
 const debug = createDebugLogger("DIAGNOSTIC");
 
 interface DiagnosticResult {
+  /** Faux quand un dossier existait déjà : rien n'a été créé, rien n'est à tracer. */
+  cree: boolean;
   dossierUrl: string;
   dossierNumber: number;
   dossierId: string;
   message: string;
+}
+
+/** Motif de refus, ou `null` si cet appelant peut créer — ou reprendre — le formulaire. */
+function refusInitiateur(initiateur: InitiateurFormulaire, etat: EtatFormulaireParAmo): string | null {
+  if (initiateur === INITIATEUR_FORMULAIRE.DEMANDEUR) {
+    return etat.gereParAmo
+      ? "Votre AMO se charge de la demande de paiement du diagnostic : vous n'avez pas de formulaire à remplir."
+      : null;
+  }
+
+  if (!etat.confie) {
+    return "Seule une AMO mandataire financier peut initier la demande de paiement du diagnostic.";
+  }
+  if (etat.formulaire && etat.formulaire.initiePar !== INITIATEUR_FORMULAIRE.AMO) {
+    return etat.formulaire.depose
+      ? "Le demandeur a déjà transmis ce formulaire."
+      : "Le demandeur a déjà commencé un formulaire : réinitialisez-le depuis « Gérer » avant d'initier le vôtre.";
+  }
+  return null;
 }
 
 /**
@@ -24,8 +51,14 @@ interface DiagnosticResult {
  * Préremplit les 2 annotations privées (lien dossier éligibilité, lien back office FPA)
  * + commune (routage instructeurs) et adresse depuis la simulation RGA.
  * Idempotent : si un dossier existe déjà pour l'étape, retourne son URL.
+ *
+ * `initiateur` désigne l'appelant : avec une AMO mandataire financier, seule l'AMO crée ce
+ * formulaire, et chacun ne récupère que le lien d'un dossier qu'il peut ouvrir.
  */
-export async function createDiagnosticDossier(userId: string): Promise<ActionResult<DiagnosticResult>> {
+export async function createDiagnosticDossier(
+  userId: string,
+  initiateur: InitiateurFormulaire = INITIATEUR_FORMULAIRE.DEMANDEUR
+): Promise<ActionResult<DiagnosticResult>> {
   try {
     debug.log("=== DÉBUT CRÉATION DOSSIER DIAGNOSTIC ===");
     debug.log("User ID:", userId);
@@ -39,9 +72,13 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
       console.error("Étape incorrecte:", parcoursData.parcours.currentStep, "!== DIAGNOSTIC");
       return {
         success: false,
-        error: "Vous n'êtes pas à l'étape diagnostic",
+        error: "Le parcours n'est pas à l'étape diagnostic",
       };
     }
+
+    const etat = await chargerEtatFormulaireParAmo(parcoursData.parcours.id, Step.DIAGNOSTIC);
+    const refus = refusInitiateur(initiateur, etat);
+    if (refus) return { success: false, error: refus };
 
     // Idempotence : si un dossier existe déjà pour cette étape, le retourner.
     const existing = await getDossierByStep(parcoursData.parcours.id, Step.DIAGNOSTIC);
@@ -50,6 +87,7 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
       return {
         success: true,
         data: {
+          cree: false,
           dossierUrl: existing.dsUrl ?? "",
           dossierNumber: Number(existing.dsNumber),
           dossierId: existing.id,
@@ -83,7 +121,9 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
 
     // Commune (routage vers le bon groupe d'instructeurs) + adresse (texte),
     // depuis la simulation RGA. Best-effort : on ne bloque pas si données absentes.
-    const logement = parcoursData.parcours.rgaSimulationData?.logement;
+    // Simulation effective : un dossier créé par un agent n'a pas de simulation demandeur.
+    const parcoursBrut = await parcoursRepo.findById(parcoursData.parcours.id);
+    const logement = (parcoursBrut ? getEffectiveRGAData(parcoursBrut) : null)?.logement;
     if (logement?.commune) {
       prefillData[`champ_${DS_FIELD_IDS.DIAGNOSTIC.COMMUNE}`] = toCommuneValue(logement.commune, logement.adresse);
     } else {
@@ -119,6 +159,7 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
       dsDemarcheId: demarcheId,
       dsUrl: createResponse.dossier_url,
       dsId: createResponse.dossier_id,
+      initiePar: initiateur,
     });
 
     if (!dossierResult.success) {
@@ -138,6 +179,7 @@ export async function createDiagnosticDossier(userId: string): Promise<ActionRes
     return {
       success: true,
       data: {
+        cree: true,
         dossierUrl: createResponse.dossier_url,
         dossierNumber: createResponse.dossier_number,
         dossierId: dossierResult.data.dossierId,

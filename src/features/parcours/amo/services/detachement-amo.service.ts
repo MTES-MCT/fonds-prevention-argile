@@ -9,6 +9,12 @@ import {
 import { ActionResult } from "@/shared/types/action-result.types";
 import { Status, Step } from "../../core";
 import { StatutValidationAmo } from "../domain/value-objects";
+import {
+  BREVO_ATTRS,
+  BREVO_EVENTS,
+  buildConseillerAttributesApresChangement,
+  emitBrevoEvent,
+} from "@/shared/email/brevo";
 import { AttributionAmoMode } from "@/shared/domain/value-objects/attribution-amo-mode.enum";
 
 /** Statuts depuis lesquels un détachement est possible (tout sauf « déjà sans AMO »). */
@@ -121,6 +127,16 @@ export async function detacherAmo(params: DetacherAmoParams): Promise<ActionResu
         .set({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO, updatedAt: now })
         .where(eq(parcoursPrevention.id, parcoursId));
     }
+  });
+
+  // Synchro Brevo (flux), best-effort : le responsable redevient l'aller-vers du territoire.
+  await emitBrevoEvent(parcoursId, BREVO_EVENTS.ACCOMPAGNEMENT_ARRETE, {
+    attributes: {
+      [BREVO_ATTRS.A_AMO]: false,
+      [BREVO_ATTRS.AMO_STATUT]: StatutValidationAmo.SANS_AMO,
+      ...(await buildConseillerAttributesApresChangement(parcoursId)),
+    },
+    eventProperties: { amo_nom: entreprise?.nom ?? "" },
   });
 
   return {

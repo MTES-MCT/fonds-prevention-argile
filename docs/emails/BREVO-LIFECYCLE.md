@@ -18,30 +18,53 @@ ne fait que **peupler la donnée**.
 | Résout l'email du contact par environnement (anti-fuite)        | Crée les **attributs** de contact (voir §3)                          |
 | Mappe `user`+`parcours` → attributs                             | Crée la **liste** cycle de vie (1 par env) → `BREVO_CONTACT_LIST_ID` |
 | Upsert du contact dans la liste + enregistrement de l'évènement | Construit les **templates** hébergés                                 |
-| 7 hooks best-effort (§2)                                        | Construit les **Automations** (déclenchées par évènement/attribut)   |
+| 9 hooks best-effort (§2)                                        | Construit les **Automations** (déclenchées par évènement/attribut)   |
 
 Le code **ne dépend pas** de l'existence d'une Automation : il remplit la liste, que des
 Automations soient branchées ou non. C'est ce découplage qui rend les évolutions rapides.
 
 ---
 
-## 2. Les 7 flux (hooks best-effort)
+## 2. Les 9 flux (hooks best-effort)
 
 Un échec Brevo n'échoue jamais le flux métier appelant (log seulement).
 
-| Déclencheur                    | Fichier                                                                                                           | `event_name`                    | `event_properties`                                       |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------------------- | -------------------------------------------------------- |
-| Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller`   | —                                                        |
-| Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`                | —                                                        |
-| Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`        | —                                                        |
-| Simulation non éligible        | idem — en plus du précédent, au **1er** archivage seulement                                                       | `simulation_non_eligible`       | —                                                        |
-| Simulation non éligible        | `features/parcours/core/actions/enregistrer-simulation-demandeur.actions.ts` (correction depuis l'espace)         | `simulation_non_eligible`       | —                                                        |
-| Simulation redevenue éligible  | idem — au dé-archivage seulement                                                                                  | `simulation_redevenue_eligible` | —                                                        |
-| AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                    | —                                                        |
-| Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                   | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
-| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                     | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
-| Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                     | `step`, `old_ds_status`, `new_ds_status`                 |
+| Déclencheur                    | Fichier                                                                                                           | `event_name`                       | `event_properties`                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------- |
+| Dossier créé par un conseiller | `features/backoffice/espace-agent/creation-dossier/services/creation-dossier.service.ts` (`createDossierByAgent`) | `dossier_cree_par_conseiller`      | —                                                        |
+| Compte créé                    | `features/auth/adapters/franceconnect/franceconnect.service.ts`                                                   | `demandeur_cree`                   | —                                                        |
+| Simulation enregistrée         | `features/parcours/core/actions/parcours-simulateur-rga-migration.actions.ts`                                     | `simulation_enregistree`           | —                                                        |
+| Simulation non éligible        | idem — en plus du précédent, au **1er** archivage seulement                                                       | `simulation_non_eligible`          | —                                                        |
+| Simulation non éligible        | `features/parcours/core/actions/enregistrer-simulation-demandeur.actions.ts` (correction depuis l'espace)         | `simulation_non_eligible`          | —                                                        |
+| Simulation redevenue éligible  | idem — au dé-archivage seulement                                                                                  | `simulation_redevenue_eligible`    | —                                                        |
+| AMO définie                    | `features/parcours/amo/services/amo-selection.service.ts` (`selectAmoForUser`)                                    | `amo_defini`                       | —                                                        |
+| Réponse AMO                    | `features/parcours/amo/services/amo-validation.service.ts`                                                        | `amo_reponse`                      | `decision` (`eligible`/`non_eligible`), `est_mandataire` |
+| Dossier DN créé (brouillon)    | `features/parcours/dossiers-ds/services/dossier-ds.service.ts` (`createDossierForCurrentStep`)                    | `dn_update`                        | `step`, `old_ds_status` (`""`), `new_ds_status` (`""`)   |
+| Update DN                      | `features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                       | `dn_update`                        | `step`, `old_ds_status`, `new_ds_status`                 |
+| Demande de paiement initiée    | `features/backoffice/espace-agent/dossiers/actions/initier-formulaire-diagnostic.actions.ts`                      | `demande_paiement_initiee_par_amo` | `step` (`diagnostic`), `amo_nom`                         |
+| Arrêt de l'accompagnement      | `features/parcours/amo/services/detachement-amo.service.ts` (`detacherAmo`)                                       | `accompagnement_arrete`            | `amo_nom` (AMO détachée)                                 |
+| AMO rattachée (réparation)     | `features/parcours/amo/services/rattachement-amo.service.ts` (`rattacherAmo`)                                     | `amo_defini`                       | —                                                        |
 
+- `accompagnement_arrete` part à chaque **détachement** de l'AMO, quel qu'en soit le chemin :
+  annulation par le demandeur, « Ne plus accompagner » côté AMO, refus menant à l'autonomie,
+  script ops. Il remet `A_AMO` à `false`, `AMO_STATUT` à `sans_amo`, et réécrit les cinq
+  `CONSEILLER_*` avec le nouveau responsable (l'aller-vers du territoire) — **à vide** là où
+  il n'a rien renseigné, pour que les coordonnées de l'ancienne AMO ne survivent pas. Avant
+  lui, un détachement ne poussait rien : le contact gardait indéfiniment son AMO.
+- `rattacherAmo` (réparation d'un dossier détaché à tort, ADR-0037) réémet `amo_defini` avec
+  les `CONSEILLER_*` de l'AMO rattachée.
+
+  > **Angles morts restants.** La ré-ouverture d'une demande refusée
+  > (`reouvrirDemandeRefusee`) ne pousse rien : `AMO_STATUT` reste sur le refus jusqu'à la
+  > prochaine réponse de l'AMO. Le passage en autonomie au **premier** choix
+  > (`skipAmoStepForUser`, `passerEnAutonomie`) non plus — sans conséquence sur les attributs,
+  > aucune AMO n'ayant été posée.
+
+- `demande_paiement_initiee_par_amo` part quand l'AMO **mandataire financier** crée le brouillon
+  de la demande de paiement du diagnostic à la place du demandeur (ADR-0044) — à la **création**
+  du brouillon, pas au dépôt : un mail qui annoncerait une demande « transmise » serait faux à ce
+  stade. Il part **en plus** du `dn_update` de création, émis par le même geste. Un second clic
+  de l'AMO sur un formulaire déjà créé ne le ré-émet pas.
 - `dossier_cree_par_conseiller` part quand un conseiller (AMO ou Aller-vers) pré-crée un dossier pour un
   demandeur sans compte FranceConnect actif (`createDossierByAgent`) : le `parcours_prevention` est
   créé **à cet instant précis**, potentiellement bien avant que le demandeur se connecte. Pousse
@@ -140,9 +163,9 @@ Source de vérité des noms : `src/shared/email/brevo/brevo-contacts.config.ts` 
 | `SITUATION`            | Texte   | tous (`prospect`/`particulier`)                                                                                                                                                                                                                                                                                                                                                      |
 | `ETAPE`                | Texte   | tous (étape courante du parcours)                                                                                                                                                                                                                                                                                                                                                    |
 | `STATUT`               | Texte   | tous (`todo`/`en_instruction`/`valide`)                                                                                                                                                                                                                                                                                                                                              |
-| `A_AMO`                | Booléen | `false` à `demandeur_cree`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait)                                                                                                                                                                                                                                                                                    |
-| `AMO_STATUT`           | Texte   | `amo_reponse`                                                                                                                                                                                                                                                                                                                                                                        |
-| `EST_MANDATAIRE`       | Booléen | `amo_reponse` (éligible + mandataire)                                                                                                                                                                                                                                                                                                                                                |
+| `A_AMO`                | Booléen | `false` à `demandeur_cree` et à `accompagnement_arrete`, `true` à `amo_reponse` (jamais en base : un `dn_update` l'écraserait)                                                                                                                                                                                                                                                       |
+| `AMO_STATUT`           | Texte   | `amo_reponse` ; `sans_amo` à `accompagnement_arrete`                                                                                                                                                                                                                                                                                                                                 |
+| `EST_MANDATAIRE`       | Booléen | **tous** — relu en base à chaque push : `true` si le dossier est suivi par une AMO mandataire financier (validation `logement_eligible`), `false` sinon, y compris sans AMO ou après un détachement. Sert à ajuster les Automations selon que l'AMO perçoit l'aide ou non                                                                                                            |
 | `DS_STATUT`            | Texte   | `dn_update`                                                                                                                                                                                                                                                                                                                                                                          |
 | `DEPARTEMENT`, `INSEE` | Texte   | dès que la simulation existe (`simulation_enregistree`, puis `amo_reponse`/`dn_update`) — pas au `demandeur_cree`                                                                                                                                                                                                                                                                    |
 | `SOURCE_ACQUISITION`   | Texte   | tous                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -204,6 +227,15 @@ email) tout en livrant tout dans la boîte de test.
       **`simulation_redevenue_eligible`** (ADR-0036). Le demandeur a corrigé sa simulation, son
       dossier est dé-archivé et un conseiller va le reprendre — le mail de bienvenue est déjà parti
       et ne repartira pas. Personnaliser avec les `CONSEILLER_*`, comme la bienvenue.
+- [ ] **Décider du mail d'arrêt d'accompagnement** : brancher (ou non) une Automation sur
+      **`accompagnement_arrete`**. Même sans Automation, l'évènement remet le contact à jour.
+- [ ] **Vérifier l'Automation branchée sur `amo_defini`** : l'évènement part désormais aussi
+      quand un super-admin rattache une AMO à un dossier détaché à tort.
+- [ ] **Prévenir le demandeur que son AMO a initié la demande de paiement** : brancher une
+      Automation sur **`demande_paiement_initiee_par_amo`** (ADR-0044), personnalisable avec
+      `amo_nom`. Le demandeur n'a aucune action à faire et ne peut pas ouvrir ce dossier DN.
+- [ ] **Ne plus inviter ces demandeurs à transmettre leur diagnostic** : conditionner le mail
+      d'entrée en étape diagnostic sur `EST_MANDATAIRE` — à `true`, c'est l'AMO qui s'en charge.
 - [ ] Ne pas conditionner cette Automation sur `ELIGIBILITE` : l'attribut vaut `eligible` en
       permanence pour l'immense majorité des contacts, l'évènement est le seul signal du
       **changement**.
@@ -240,7 +272,7 @@ place, ce qui fait planter les Automations qui comptent dessus.
 jamais rejouer `trackEvent` (aucun évènement historique n'est re-tiré, donc aucune Automation
 n'est déclenchée). Il réutilise `buildContactAttributes` / `buildConseillerAttributes` — les mêmes
 fonctions que les hooks live — et redérive depuis la base les attributs d'état normalement posés
-par les hooks événementiels : `A_AMO` / `AMO_STATUT` / `EST_MANDATAIRE` (depuis
+par les hooks événementiels : `A_AMO` / `AMO_STATUT` (depuis
 `parcours_amo_validations.statut`), `DS_STATUT` (dossier DS de l'étape courante) et
 `CREE_PAR_CONSEILLER` (`parcours.created_by_agent_id`).
 

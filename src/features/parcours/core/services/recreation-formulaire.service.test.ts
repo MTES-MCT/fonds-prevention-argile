@@ -6,12 +6,14 @@ import { createDiagnosticDossier } from "./diagnostic.service";
 import { createDevisDossier } from "./devis.service";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { chargerEtatFormulaireParAmo } from "../../amo/services/formulaire-par-amo.service";
 
 vi.mock("@/shared/database/repositories", () => ({ parcoursRepo: { findByUserId: vi.fn() } }));
 vi.mock("../../dossiers-ds/services/regeneration.service", () => ({ reinitialiserDossierEtape: vi.fn() }));
 vi.mock("./eligibilite.service", () => ({ createEligibiliteDossier: vi.fn() }));
 vi.mock("./diagnostic.service", () => ({ createDiagnosticDossier: vi.fn() }));
 vi.mock("./devis.service", () => ({ createDevisDossier: vi.fn() }));
+vi.mock("../../amo/services/formulaire-par-amo.service", () => ({ chargerEtatFormulaireParAmo: vi.fn() }));
 
 const SIMULATION = { logement: { adresse: "1 rue des Argiles" } };
 
@@ -28,6 +30,7 @@ const URL_DN = "https://demarche.numerique.gouv.fr/commencer/x?prefill_token=y";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(chargerEtatFormulaireParAmo).mockResolvedValue({ gereParAmo: false } as never);
   vi.mocked(reinitialiserDossierEtape).mockResolvedValue({
     success: true,
     data: { statut: "a_recreer", ancienDsNumber: "32872663" },
@@ -84,13 +87,25 @@ describe("recreerFormulaireDemandeur", () => {
     mockParcours(step);
     vi.mocked(service).mockResolvedValue({
       success: true,
-      data: { dossierUrl: URL_DN, dossierNumber: 2, dossierId: "d2", message: "" },
+      data: { cree: true, dossierUrl: URL_DN, dossierNumber: 2, dossierId: "d2", message: "" },
     });
 
     const result = await recreerFormulaireDemandeur("user-1", step);
 
     expect(service).toHaveBeenCalledWith("user-1");
     expect(result.success && result.data.statut).toBe("recree");
+  });
+
+  // Le refus doit précéder la réinitialisation : sinon le lien de l'AMO serait retiré pour rien.
+  it("refuse sans toucher au pointeur quand le formulaire est porté par l'AMO", async () => {
+    mockParcours(Step.DIAGNOSTIC);
+    vi.mocked(chargerEtatFormulaireParAmo).mockResolvedValue({ gereParAmo: true } as never);
+
+    const result = await recreerFormulaireDemandeur("user-1", Step.DIAGNOSTIC);
+
+    expect(result.success).toBe(false);
+    expect(reinitialiserDossierEtape).not.toHaveBeenCalled();
+    expect(createDiagnosticDossier).not.toHaveBeenCalled();
   });
 
   it("ne crée rien quand un ancien numéro a été retrouvé déposé", async () => {

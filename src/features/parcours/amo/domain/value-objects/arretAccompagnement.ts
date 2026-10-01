@@ -33,8 +33,29 @@ export function estDossierDepose(eligibiliteDsStatus: DSStatus | null): boolean 
   return estDossierChezLaDdt(eligibiliteDsStatus) || estDecisionDdtRendue(eligibiliteDsStatus);
 }
 
+/**
+ * Côté AMO (« Ne plus accompagner ») : au diagnostic, elle porte la demande de paiement — elle
+ * l'initie quand elle est mandataire financier. Se détacher laisserait ce dossier DN sans suivi.
+ */
+export function estArretGeleAuDiagnostic(currentStep: Step | null): boolean {
+  return currentStep === Step.DIAGNOSTIC;
+}
+
+/** Étapes où le demandeur ne peut plus renoncer à son AMO : l'éligibilité est derrière lui. */
+const STEPS_APRES_ELIGIBILITE: readonly Step[] = [Step.DIAGNOSTIC, Step.DEVIS, Step.FACTURES];
+
+/**
+ * Le demandeur ne change d'avis que pendant l'éligibilité, tant que rien n'est déposé.
+ * Sans cette borne, une éligibilité acceptée lui rouvrait l'arrêt pour tout le reste du parcours.
+ */
+export function estArretDemandeurTropTard(currentStep: Step | null): boolean {
+  return currentStep !== null && STEPS_APRES_ELIGIBILITE.includes(currentStep);
+}
+
 export interface EtatAnnulationAccompagnement {
   statut: StatutValidationAmo;
+  /** Étape courante du parcours — requis : l'arrêt n'est plus possible après l'éligibilité. */
+  currentStep: Step | null;
   /** Non-null = une demande d'arrêt est déjà en attente de réponse AMO. */
   demandeArretAt: Date | null;
   /** Statut DN du dossier d'éligibilité (null si pas encore de dossier). */
@@ -56,13 +77,14 @@ export function requiertAccordAmo(statut: StatutValidationAmo, estMandataireFina
 
 /**
  * Le demandeur peut changer d'avis à tout moment, sauf pendant que la DDT tient son
- * formulaire d'éligibilité (du dépôt à la décision).
+ * formulaire d'éligibilité (du dépôt à la décision), et plus du tout une fois l'éligibilité passée.
  */
 export function peutAnnulerAccompagnement(etat: EtatAnnulationAccompagnement): boolean {
   if (etat.dossierArchive) return false;
   if (!STATUTS_ANNULABLES.includes(etat.statut)) return false;
   if (etat.demandeArretAt) return false;
   if (estDossierChezLaDdt(etat.eligibiliteDsStatus)) return false;
+  if (estArretDemandeurTropTard(etat.currentStep)) return false;
   return true;
 }
 

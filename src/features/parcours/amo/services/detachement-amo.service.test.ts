@@ -12,7 +12,14 @@ vi.mock("@/shared/database/client", () => ({
     transaction: vi.fn(),
   },
 }));
+vi.mock("@/shared/email/brevo", () => ({
+  emitBrevoEvent: vi.fn(),
+  buildConseillerAttributesApresChangement: vi.fn().mockResolvedValue({ CONSEILLER_TYPE: "ALLERS_VERS" }),
+  BREVO_EVENTS: { ACCOMPAGNEMENT_ARRETE: "accompagnement_arrete", AMO_DEFINI: "amo_defini" },
+  BREVO_ATTRS: { A_AMO: "A_AMO", AMO_STATUT: "AMO_STATUT" },
+}));
 import { detacherAmo } from "./detachement-amo.service";
+import { emitBrevoEvent } from "@/shared/email/brevo";
 
 /** Chaîne `db.select(...).from(...).where(...).limit(...)` -> rows (un appel). */
 function mockSelectOnce(rows: unknown[]) {
@@ -118,6 +125,21 @@ describe("detacherAmo", () => {
       expect(result.data.amoEmails).toBe("contact@solha.fr");
       expect(result.data.entrepriseAmoId).toBe("e1");
     }
+  });
+
+  // Sans cet évènement, le contact gardait A_AMO=true et les coordonnées de l'AMO détachée.
+  it("annonce l'arrêt à Brevo, avec le conseiller qui reprend le dossier", async () => {
+    mockSelectOnce([parcoursChoixAmo]);
+    mockSelectOnce([validationValidee]);
+    mockSelectOnce([entreprise]);
+    mockTransactionCapturingSets();
+
+    await detacherAmo({ parcoursId: "p1" });
+
+    expect(emitBrevoEvent).toHaveBeenCalledWith("p1", "accompagnement_arrete", {
+      attributes: { A_AMO: false, AMO_STATUT: StatutValidationAmo.SANS_AMO, CONSEILLER_TYPE: "ALLERS_VERS" },
+      eventProperties: { amo_nom: "SOLHA Indre" },
+    });
   });
 
   it("refuse un parcours déjà sans AMO (idempotence)", async () => {

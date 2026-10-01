@@ -2,6 +2,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParcours } from "../../context/useParcours";
 import { useLectureSeuleSimulation } from "../../hooks/useLectureSeuleSimulation";
+import { useFormulaireGereParAmo } from "../../hooks/useFormulaireGereParAmo";
 import { Step } from "../../domain";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
 import { useReglesAmo } from "@/features/parcours/amo/hooks";
@@ -38,6 +39,7 @@ export default function MaListe() {
     parcours,
   } = useParcours();
   const simulationVerrouillee = useLectureSeuleSimulation() !== null;
+  const diagnosticGereParAmo = useFormulaireGereParAmo(Step.DIAGNOSTIC);
   const regles = useReglesAmo();
   const [isAnnulerOpen, setIsAnnulerOpen] = useState(false);
   const [isDemanderOpen, setIsDemanderOpen] = useState(false);
@@ -65,6 +67,7 @@ export default function MaListe() {
     validationAmoComplete !== null &&
     peutAnnulerAccompagnement({
       statut: statutAmo,
+      currentStep,
       demandeArretAt: validationAmoComplete.demandeArretAt,
       eligibiliteDsStatus,
       dossierArchive,
@@ -107,7 +110,12 @@ export default function MaListe() {
               </li>
               {items.map((item) => (
                 <li key={item.key}>
-                  {renderItemLink(item, getDossierUrl)}
+                  {renderItemLink(item, getDossierUrl, item.step === Step.DIAGNOSTIC && diagnosticGereParAmo)}
+                  {item.step === Step.DIAGNOSTIC && diagnosticGereParAmo && item.state !== "pending" && (
+                    <div className="fr-ml-3v fr-mt-1v fr-text--sm text-(--text-mention-grey)">
+                      Pris en charge par votre AMO
+                    </div>
+                  )}
                   {item.key === "choix-accompagnement" && peutAnnuler && (
                     <button
                       type="button"
@@ -156,7 +164,7 @@ export default function MaListe() {
   );
 }
 
-function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => string | null) {
+function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => string | null, sansLienDn = false) {
   // Item lié à l'étape AMO : ancre interne (#choix-amo)
   if (item.isAmoAnchor) {
     if (item.state === "completed") {
@@ -187,6 +195,10 @@ function renderItemLink(item: StepListItem, getDossierUrl: (step: Step) => strin
         {item.label} <span className="fr-icon-checkbox-circle-fill text-green-800" aria-hidden="true" />
       </span>
     );
+  }
+  // Formulaire porté par l'AMO : le demandeur n'a aucun lien DN à suivre pour cette étape.
+  if (item.state === "active" && sansLienDn) {
+    return <span>{item.label}</span>;
   }
   if (item.state === "active" && item.step) {
     const url = getDossierUrl(item.step);

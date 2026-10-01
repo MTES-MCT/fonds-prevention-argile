@@ -39,15 +39,20 @@ import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossi
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { parcoursActionsRepo } from "@/shared/database/repositories";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 
 const PARCOURS_ID = "11111111-1111-1111-1111-111111111111";
 // 59 = facultatif par défaut, 47 = AMO obligatoire par défaut (cf. departements-amo).
 const COMMUNE_FACULTATIF = "59350";
 const COMMUNE_OBLIGATOIRE = "47001";
 
-function mockParcours(commune: string | null, { source = "demandeur" as "demandeur" | "agent" } = {}) {
+function mockParcours(
+  commune: string | null,
+  { source = "demandeur" as "demandeur" | "agent", currentStep = Step.ELIGIBILITE } = {}
+) {
   const logement = commune ? { logement: { commune } } : null;
   vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue({
+    currentStep,
     rgaSimulationData: source === "demandeur" ? logement : null,
     rgaSimulationDataAgent: source === "agent" ? logement : null,
   } as never);
@@ -90,6 +95,17 @@ describe("arreterAccompagnementAction", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Archiver");
+    expect(detacherAmo).not.toHaveBeenCalled();
+  });
+
+  // L'AMO porte la demande de paiement du diagnostic : la détacher laisserait le dossier DN orphelin.
+  it("refuse le détachement pendant l'étape diagnostic", async () => {
+    mockParcours(COMMUNE_FACULTATIF, { currentStep: Step.DIAGNOSTIC });
+
+    const result = await arreterAccompagnementAction(PARCOURS_ID, ["Reste à charge trop élevé"]);
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("diagnostic");
     expect(detacherAmo).not.toHaveBeenCalled();
   });
 

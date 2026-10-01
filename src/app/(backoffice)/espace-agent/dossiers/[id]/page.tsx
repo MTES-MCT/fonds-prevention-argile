@@ -34,7 +34,14 @@ import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 import { listerDossiersARattacher } from "@/features/backoffice/administration/diagnostics/services/amo-a-rattacher.service";
 import { peutAgirSurDossierDn } from "@/features/backoffice/espace-agent/shared/services/dossier-dn-permissions.service";
 import { STEPS_REINITIALISABLES } from "@/features/parcours/dossiers-ds/services/regeneration.service";
-import { estDossierChezLaDdt } from "@/features/parcours/amo/domain/value-objects";
+import {
+  estArretGeleAuDiagnostic,
+  estDossierChezLaDdt,
+  estFormulaireConfieAAmo,
+  estFormulaireGereParAmo,
+} from "@/features/parcours/amo/domain/value-objects";
+import { INITIATEUR_FORMULAIRE } from "@/shared/domain/value-objects/initiateur-formulaire.enum";
+import { FormulaireDiagnosticAmo, type EtatFormulaireDiagnosticAmo } from "./components/FormulaireDiagnosticAmo";
 import { qualificationService } from "@/features/backoffice/espace-agent/prospects/services/qualification.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 import { allersVersRepository } from "@/shared/database/repositories/allers-vers.repository";
@@ -80,8 +87,8 @@ export default async function DossierDetailPage({ params }: PageProps) {
     canReouvrir = agentResult.success && ROLES_REOUVERTURE.includes(agentResult.data.role);
   }
 
-  // « Ne plus accompagner » : réservé à l'AMO de l'entreprise rattachée (le périmètre
-  // fin est revérifié côté action via assertCanActAsResponsable).
+  // « Ne plus accompagner » et l'initiation du formulaire de diagnostic : réservés à l'AMO de
+  // l'entreprise rattachée (périmètre fin revérifié côté action).
   const agentCourant = await getCurrentAgent();
   const peutArreterAccompagnement =
     agentCourant.success &&
@@ -99,13 +106,31 @@ export default async function DossierDetailPage({ params }: PageProps) {
     !timelineEtapeCourante.submittedAt &&
     !timelineEtapeCourante.etatDs;
 
-  // Deux masquages, gardes revérifiées côté action : le gel dépôt/décision DDT (§2.7), et
-  // l'AMO obligatoire, où l'autonomie n'existe pas. Le bandeau `arretADecider` n'est PAS gelé —
+  // Trois masquages, gardes revérifiées côté action : le gel dépôt/décision DDT (§2.7), l'étape
+  // diagnostic, et l'AMO obligatoire, où l'autonomie n'existe pas. Le bandeau `arretADecider` n'est PAS gelé —
   // l'AMO doit pouvoir refuser une demande d'arrêt en attente, sinon elle reste pendante.
   const peutArreterMaintenant =
     peutArreterAccompagnement &&
     dossier.peutPasserEnAutonomie &&
+    !estArretGeleAuDiagnostic(dossier.currentStep) &&
     !estDossierChezLaDdt(dossier.dossiersTimeline[Step.ELIGIBILITE]?.etatDs ?? null);
+
+  // Demande de paiement du diagnostic : avec une AMO mandataire financier, c'est elle qui crée
+  // le formulaire DN. Le lien de reprise n'est donné qu'aux agents de cette AMO.
+  const formulaire = dossier.formulaireCourant;
+  const formulaireConfie = estFormulaireConfieAAmo(
+    dossier.currentStep,
+    dossier.validationStatut,
+    dossier.estMandataireFinancier
+  );
+  const formulaireGereParAmo = estFormulaireGereParAmo(formulaireConfie, formulaire);
+  let formulaireDiagnosticAmo: EtatFormulaireDiagnosticAmo | null = null;
+  if (peutArreterAccompagnement && formulaireGereParAmo && dossier.archivedAt === null) {
+    if (!formulaire) formulaireDiagnosticAmo = { type: "a_initier" };
+    else if (formulaire.initiePar === INITIATEUR_FORMULAIRE.AMO)
+      formulaireDiagnosticAmo = { type: "initie", url: formulaire.url, depose: formulaire.depose };
+    else formulaireDiagnosticAmo = { type: "brouillon_demandeur" };
+  }
 
   // Réparation d'un dossier détaché à tort (ADR-0037), réservée au super-admin comme la file
   // des diagnostics. Gardé par le statut : sans ce court-circuit, chaque détail paierait la requête.
@@ -207,7 +232,11 @@ export default async function DossierDetailPage({ params }: PageProps) {
               archivedAt={dossier.archivedAt}
               archiveReason={dossier.archiveReason}
               instructedAt={dossier.instructedAt}
+              formulaireGereParAmo={formulaireGereParAmo}
             />
+            {formulaireDiagnosticAmo && (
+              <FormulaireDiagnosticAmo parcoursId={dossier.parcoursId} etat={formulaireDiagnosticAmo} />
+            )}
             {/* Invitation en attente (étape INVITATION = stub non réclamé) → renvoi possible,
                 sauf dossier non éligible archivé. Le callout ci-dessus porte déjà le message. */}
             {dossier.currentStep === Step.INVITATION &&

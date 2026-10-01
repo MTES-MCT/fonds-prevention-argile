@@ -10,6 +10,7 @@ import type {
 } from "@/features/backoffice/espace-agent/demandes/domain/types/demande-detail.types";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
 import type { DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
+import type { FormulaireExistant } from "@/features/parcours/amo/domain/value-objects/formulaire-par-amo";
 import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
 /**
@@ -23,6 +24,12 @@ export interface DateIndemnisation {
   debut: Date;
   fin: Date;
   montant: number;
+}
+
+/** Qui a créé le formulaire de l'étape courante, et son lien de reprise. */
+export interface FormulaireCourant extends FormulaireExistant {
+  /** Lien prefill tant que rien n'est déposé : à ne montrer qu'à celui qui a créé le formulaire. */
+  url: string | null;
 }
 
 /**
@@ -75,6 +82,8 @@ export interface DossierDetail {
   dates: ParcoursDateProgression;
   /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape */
   dossiersTimeline: Partial<Record<Step, DossierTimelineData>>;
+  /** Formulaire DN de l'étape courante, null tant qu'aucun n'a été créé. */
+  formulaireCourant: FormulaireCourant | null;
   /** Informations sur les modifications agent (si données éditées) */
   agentEditInfo?: AgentEditInfo | null;
   /** Agent qui a pré-créé le compte (av-add-dossier), null sinon. */

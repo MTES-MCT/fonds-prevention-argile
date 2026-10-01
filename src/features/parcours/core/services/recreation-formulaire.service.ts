@@ -6,6 +6,7 @@ import { createEligibiliteDossier } from "./eligibilite.service";
 import { createDiagnosticDossier } from "./diagnostic.service";
 import { createDevisDossier } from "./devis.service";
 import { getEffectiveRGAData } from "./rga-data.service";
+import { chargerEtatFormulaireParAmo } from "../../amo/services/formulaire-par-amo.service";
 
 /**
  * « Créer un nouveau formulaire » côté demandeur : réinitialise l'étape courante ET recrée
@@ -31,6 +32,12 @@ export async function recreerFormulaireDemandeur(
   // diagnostic accepté rend déjà le CTA devis. On ne recrée donc que l'étape en cours.
   if (step !== parcours.currentStep) {
     return { success: false, error: "Votre parcours a avancé depuis l'affichage de cette page. Rechargez-la." };
+  }
+
+  // À vérifier avant de retirer le pointeur : sinon le refus de création laisserait l'AMO sans son lien.
+  const etat = await chargerEtatFormulaireParAmo(parcours.id, step);
+  if (etat.gereParAmo) {
+    return { success: false, error: "Votre AMO se charge de ce formulaire : contactez-la si besoin." };
   }
 
   // Le service refuse de lui-même une étape non recréable, un dossier déposé, ou un sondage

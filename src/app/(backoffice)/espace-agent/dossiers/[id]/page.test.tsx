@@ -30,6 +30,8 @@ vi.mock("@/features/backoffice/espace-agent/prospects/services/qualification.ser
 vi.mock("@/features/parcours/dossiers-ds/adapters/graphql/client", () => ({
   graphqlClient: { getDossierStatus: vi.fn(), getDemarcheDossiers: vi.fn() },
 }));
+// Même raison côté REST : l'action d'initiation tire le client de préremplissage.
+vi.mock("@/features/parcours/dossiers-ds/adapters/rest/client", () => ({ prefillClient: {} }));
 vi.mock("@/shared/database/repositories/agents.repository", () => ({ agentsRepository: {} }));
 vi.mock("@/shared/database/repositories/allers-vers.repository", () => ({ allersVersRepository: {} }));
 

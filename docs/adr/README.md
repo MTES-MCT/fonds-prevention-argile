@@ -70,5 +70,6 @@ purement cosmétique.
 | 0040 | [Un tunnel sans navigation pour le simulateur, et l'adresse en deux écrans](0040-tunnel-simulateur-adresse-en-deux-ecrans.md)           | Accepté |
 | 0041 | [Calcul de vulnérabilité sans pondération en cascade, moyenne quadratique](0041-calcul-vulnerabilite-sans-ponderation-cascade.md)       | Accepté |
 | 0042 | [Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un](0042-choix-amo-parmi-plusieurs.md)                                 | Accepté |
+| 0044 | [La demande de paiement du diagnostic est initiée par l'AMO mandataire financier](0044-demande-paiement-diagnostic-initiee-par-amo.md)  | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

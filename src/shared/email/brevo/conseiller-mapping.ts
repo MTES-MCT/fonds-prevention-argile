@@ -47,6 +47,24 @@ export function buildConseillerAttributesFromAmo(amo: {
   });
 }
 
+const ATTRIBUTS_CONSEILLER = [
+  BREVO_ATTRS.CONSEILLER_TYPE,
+  BREVO_ATTRS.CONSEILLER_NOM,
+  BREVO_ATTRS.CONSEILLER_EMAIL,
+  BREVO_ATTRS.CONSEILLER_TELEPHONE,
+  BREVO_ATTRS.CONSEILLER_HORAIRES,
+];
+
+/**
+ * Conseiller après un changement d'accompagnement : les cinq attributs sont toujours écrits,
+ * à vide s'il le faut. Sans cela, les coordonnées de l'ancienne AMO survivraient partout où
+ * le nouveau responsable n'a rien renseigné.
+ */
+export async function buildConseillerAttributesApresChangement(parcoursId: string): Promise<BrevoAttributes> {
+  const attrs = await buildConseillerAttributes(parcoursId);
+  return Object.fromEntries(ATTRIBUTS_CONSEILLER.map((cle) => [cle, attrs[cle] ?? ""]));
+}
+
 /**
  * Résout le conseiller local (AMO ou Aller-vers) responsable du parcours et retourne
  * ses coordonnées comme attributs de contact Brevo. Objet vide si aucun conseiller

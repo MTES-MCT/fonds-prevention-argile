@@ -249,7 +249,7 @@ dessus (cf. [docs/emails/BREVO-LIFECYCLE.md](../../docs/emails/BREVO-LIFECYCLE.m
 Réutilise les mêmes fonctions que les hooks live (`buildContactAttributes`,
 `buildConseillerAttributes`) pour les attributs génériques, et redérive depuis la vérité DB
 actuelle les attributs d'état normalement posés par les hooks événementiels (`A_AMO` /
-`AMO_STATUT` / `EST_MANDATAIRE` depuis `parcours_amo_validations.statut`, `DS_STATUT` depuis
+`AMO_STATUT` depuis `parcours_amo_validations.statut`, `DS_STATUT` depuis
 le dossier DS de l'étape courante, `CREE_PAR_CONSEILLER` depuis `created_by_agent_id`). No-op
 propre si la synchro Brevo est désactivée. Dry-run par défaut.
 
