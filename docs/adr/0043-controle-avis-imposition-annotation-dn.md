@@ -36,9 +36,12 @@ aucun avis n'a encore été déposé.
   d'un écart sur la tranche de revenus ; nombre de personnes comparé à une **fourchette estimée**
   depuis les parts, jamais au-delà de « à vérifier » ; année des revenus N-1, N étant l'année du
   dépôt. Verdict global : Cohérent, À vérifier ou Non vérifiable.
-- **Écriture** : une annotation texte long (500 caractères), statut et date en tête, réécrite
-  seulement si le contenu hors date change. La mutation exige un `instructeurId` : c'est
-  `DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID`, obligatoire, avec un token en lecture et écriture.
+- **Écriture** : l'annotation (texte long) ne porte qu'**une phrase validée par le métier**, choisie
+  par le seul critère du RFR : cohérent, incohérence (« Attention, il semble y avoir une
+  incohérence… »), ou vérification impossible. Ni montant ni date : le détail chiffré reste aux
+  scripts d'inspection. Réécrite seulement si la phrase change. La mutation exige un
+  `instructeurId` : c'est `DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID`, obligatoire, avec un token en
+  lecture et écriture.
 - **Déclenchement** : dossier d'éligibilité déposé et sans décision, jamais contrôlé ou dont les
   champs ont été modifiés depuis (`dateDerniereModificationChamps`, que la synchronisation lit
   déjà). Activation par démarche : sans id d'annotation dans

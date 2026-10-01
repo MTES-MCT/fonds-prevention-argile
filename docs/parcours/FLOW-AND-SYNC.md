@@ -451,7 +451,7 @@ colonnes de `PieceJustificativeChamp` : déclarants, référence, année des rev
 Pas de nombre de personnes, et rien du tout sans 2D-Doc valide (scan dégradé, photo, faux).
 
 Le CRON compare ces données aux déclaratifs (« Revenu fiscal de référence », « Nombre de personnes
-composant le ménage ») et écrit le verdict dans l'annotation « Contrôle avis d'imposition » :
+composant le ménage ») selon ces critères :
 
 | Critère    | Règle                                                                                         |
 | ---------- | --------------------------------------------------------------------------------------------- |
@@ -459,6 +459,19 @@ composant le ménage ») et écrit le verdict dans l'annotation « Contrôle avi
 | Personnes  | fourchette estimée depuis parts et déclarants, jamais au-delà de « à vérifier »               |
 | Année      | revenus N-1, N étant l'année du dépôt                                                         |
 | Couverture | aucun avis lu → Non vérifiable ; un avis sur plusieurs non lu → À vérifier                    |
+
+L'annotation « Contrôle avis d'imposition » ne reçoit qu'**une phrase**, choisie par le seul critère
+du RFR (`TEXTES_ANNOTATION_CONTROLE`, libellés validés par le métier) :
+
+| RFR            | Phrase écrite dans DN                                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cohérent       | « Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition. »                                                  |
+| Écart          | « Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition. »                 |
+| Non vérifiable | « La vérification automatique n'a pas pu être réalisée : l'avis d'imposition n'a pas pu être lu. Une vérification manuelle est nécessaire. » |
+
+Le foyer et l'année n'alertent pas la DDT : l'estimation depuis les parts est trop incertaine. Ils
+restent, avec les montants et la tranche, dans le détail de `pnpm ds:inspecter-avis-impot`. Le statut
+enregistré en base (`avis_impot_statut`) est celui de la phrase, pour que les deux ne divergent pas.
 
 Trois règles à connaître :
 
