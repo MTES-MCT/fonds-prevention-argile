@@ -32,6 +32,7 @@ import {
   CalloutOuvertureEligibilite,
   CalloutDiagnosticEnConstruction,
   CalloutDiagnosticEnInstruction,
+  CalloutDiagnosticParAmo,
   CalloutDiagnosticTodo,
   CalloutDevisTodo,
   CalloutDevisEnConstruction,
@@ -52,6 +53,7 @@ import SimulationNeededAlert from "@/app/(main)/mon-compte/components/Simulation
 import { PourEnSavoirPlusSectionContent } from "@/app/(main)/(home)/components/PourEnSavoirPlusSection";
 // import FaqAccountSection from "@/app/(main)/mon-compte/components/FaqAccountSection";
 import { useMigrateRGAToDB } from "../hooks";
+import { useFormulaireGereParAmo } from "../hooks/useFormulaireGereParAmo";
 import { MESSAGES_LECTURE_SEULE } from "../domain/value-objects/edition-simulation";
 import { ChoixSimulationModal } from "./ChoixSimulationModal";
 import { formatDate } from "@/shared/utils";
@@ -305,6 +307,7 @@ function CalloutManager({
   contactInfoVersion: number;
 }) {
   const regles = useReglesAmo();
+  const diagnosticGereParAmo = useFormulaireGereParAmo(Step.DIAGNOSTIC);
 
   // Si pas de parcours, rien à afficher
   if (!hasParcours || !currentStep) {
@@ -344,7 +347,7 @@ function CalloutManager({
       return renderEligibiliteCallout(dsStatus);
 
     case Step.DIAGNOSTIC:
-      return renderDiagnosticCallout(dsStatus);
+      return renderDiagnosticCallout(dsStatus, diagnosticGereParAmo);
 
     case Step.DEVIS:
       return renderDevisCallout(dsStatus);
@@ -425,9 +428,10 @@ function renderEligibiliteCallout(dsStatus: DSStatus | null) {
   return null;
 }
 
-function renderDiagnosticCallout(dsStatus: DSStatus | null) {
+function renderDiagnosticCallout(dsStatus: DSStatus | null, gereParAmo: boolean) {
   if (!dsStatus || dsStatus === DSStatus.NON_ACCESSIBLE) {
-    return <CalloutDiagnosticTodo />;
+    // AMO mandataire financier : c'est elle qui crée la demande, pas de bouton pour le demandeur.
+    return gereParAmo ? <CalloutDiagnosticParAmo /> : <CalloutDiagnosticTodo />;
   }
 
   if (dsStatus === DSStatus.EN_CONSTRUCTION) {

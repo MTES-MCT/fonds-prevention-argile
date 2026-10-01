@@ -9,11 +9,14 @@ import { envoyerDossierDiagnostic } from "../../../actions/diagnostic.actions";
 import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
 import { formatDate } from "@/shared/utils";
 import PiecesAPrevoir from "../../common/PiecesAPrevoir";
+import { useFormulaireGereParAmo } from "../../../hooks/useFormulaireGereParAmo";
 
 export default function StepDetailDiagnostic({ pieces }: { pieces?: PieceJustificative[] }) {
   const { currentStep, getDossierUrl, lastDSStatus, refresh, dossiers } = useParcours();
 
-  const dsUrl = getDossierUrl(Step.DIAGNOSTIC);
+  // Dossier porté par l'AMO mandataire financier : ni création ni lien DN pour le demandeur.
+  const gereParAmo = useFormulaireGereParAmo(Step.DIAGNOSTIC);
+  const dsUrl = gereParAmo ? null : getDossierUrl(Step.DIAGNOSTIC);
   const submittedAt = dossiers?.find((d) => d.demarcheEtape === Step.DIAGNOSTIC)?.submittedAt ?? null;
 
   const isStepActive = currentStep === Step.DIAGNOSTIC;
@@ -96,8 +99,12 @@ export default function StepDetailDiagnostic({ pieces }: { pieces?: PieceJustifi
           <>
             {(!lastDSStatus || lastDSStatus === DSStatus.NON_ACCESSIBLE) && (
               <>
-                <p>Démarrer le diagnostic et communiquer les résultats</p>
-                {dsUrl ? (
+                <p>
+                  {gereParAmo
+                    ? "Votre AMO se charge de transmettre le diagnostic et la demande de paiement."
+                    : "Démarrer le diagnostic et communiquer les résultats"}
+                </p>
+                {gereParAmo ? null : dsUrl ? (
                   <Link
                     href={dsUrl}
                     rel="noopener noreferrer"
