@@ -94,6 +94,8 @@ export function pieceAvisFictive(
 export function dossierAvisFictif(options: {
   nombrePersonnes: number | null;
   revenuFiscalReference: number | null;
+  /** Département de la commune du logement : 32 (Gers, hors IdF) par défaut, null sans commune. */
+  codeDepartement?: string | null;
   dernierAvis?: PieceJustificativeChampDn;
   avisRepetes?: PieceJustificativeChampDn[];
 }): DossierAvisImpot {
@@ -115,6 +117,13 @@ export function dossierAvisFictif(options: {
       "Revenu fiscal de référence",
       options.revenuFiscalReference
     ),
+    {
+      __typename: "CommuneChamp",
+      champDescriptorId: DS_FIELD_IDS.ELIGIBILITE.COMMUNE,
+      label: "Commune",
+      updatedAt: MIS_A_JOUR,
+      departement: options.codeDepartement === null ? null : { code: options.codeDepartement ?? "32" },
+    },
     {
       __typename: "RepetitionChamp",
       champDescriptorId: "Q2hhbXAtNzAxNDgyNA==",

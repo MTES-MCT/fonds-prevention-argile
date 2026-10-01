@@ -22,7 +22,7 @@ import { STATUTS_CONTROLE } from "../domain/avis-impot";
 
 const ANNOTATION_PREPROD = "Q2hhbXAtNzAyMDIwNw==";
 const MAINTENANT = new Date("2026-09-29T12:00:00Z");
-const options = { codeRegion: "32", appliquer: true, maintenant: MAINTENANT };
+const options = { appliquer: true, maintenant: MAINTENANT };
 
 describe("controlerEtAnnoterAvisImpot", () => {
   beforeEach(() => {
@@ -92,10 +92,6 @@ describe("controlerEtAnnoterAvisImpot", () => {
 
 describe("controlerAvisImpotApresSync", () => {
   const CHAMPS_MODIFIES_AT = "2026-09-29T15:41:02+02:00";
-  const parcours = {
-    rgaSimulationData: { logement: { code_region: "32" } },
-    rgaSimulationDataAgent: null,
-  } as unknown as Parameters<typeof controlerAvisImpotApresSync>[0]["parcours"];
 
   function dossier(valeurs: Partial<DossierApresSync> = {}): DossierApresSync {
     return {
@@ -111,7 +107,6 @@ describe("controlerAvisImpotApresSync", () => {
 
   const appeler = (valeurs: Partial<DossierApresSync> = {}, dsStatus: DSStatus | null = DSStatus.EN_CONSTRUCTION) =>
     controlerAvisImpotApresSync({
-      parcours,
       dossier: dossier(valeurs),
       dsStatus,
       champsModifiesAt: CHAMPS_MODIFIES_AT,
@@ -197,7 +192,7 @@ describe("controlerAvisImpotApresSync", () => {
   });
 
   it("n'enregistre rien quand l'annotation n'est pas écrite (dry-run)", async () => {
-    await controlerEtEnregistrerAvisImpot({ parcours, dossierId: "d1", dsNumber: "1", appliquer: false });
+    await controlerEtEnregistrerAvisImpot({ dossierId: "d1", dsNumber: "1", appliquer: false });
 
     expect(client.modifierAnnotations).not.toHaveBeenCalled();
     expect(enregistrerControleAvisImpot).not.toHaveBeenCalled();
@@ -205,7 +200,6 @@ describe("controlerAvisImpotApresSync", () => {
 
   it("enregistre aussi un contrôle dont l'annotation était déjà à jour", async () => {
     const premier = await controlerEtAnnoterAvisImpot(1, {
-      codeRegion: "32",
       appliquer: false,
       maintenant: MAINTENANT,
     });

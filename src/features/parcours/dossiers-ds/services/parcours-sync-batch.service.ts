@@ -207,7 +207,6 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       // Best-effort : un échec est tracé dans le run sans bloquer la sync, et retenté au suivant.
       try {
         await controlerAvisImpotApresSync({
-          parcours: before,
           dossier,
           dsStatus: (result.data?.newStatus as DSStatus | undefined) ?? null,
           champsModifiesAt: result.data?.champsModifiesAt,

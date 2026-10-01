@@ -33,7 +33,7 @@ function ligneRevenu({ revenu }: ResultatControleAvisImpot): string {
   if (revenu.ecart === 0) return `${titre} : cohérent (${valeurs})`;
 
   const signe = (revenu.ecart ?? 0) > 0 ? "+" : "-";
-  let impact = "tranche non calculée (région inconnue)";
+  let impact = "tranche non calculée (commune inconnue)";
   if (revenu.trancheDeclaree && revenu.trancheAvis) {
     if (revenu.trancheAvis === "supérieure") impact = "devient inéligible (tranche supérieure)";
     else if (revenu.trancheDeclaree === revenu.trancheAvis) impact = `tranche inchangée (${revenu.trancheAvis})`;

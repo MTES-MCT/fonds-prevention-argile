@@ -9,7 +9,7 @@ import {
   type NomFixtureAvisImpot,
 } from "../../mappers/avis-impot.fixtures";
 
-const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: new Date("2026-09-29T12:00:00Z") };
+const HORS_IDF: ContexteControle = { maintenant: new Date("2026-09-29T12:00:00Z") };
 
 const COHERENT = "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.";
 const INCOHERENT =

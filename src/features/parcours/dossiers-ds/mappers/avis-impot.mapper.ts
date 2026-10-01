@@ -1,6 +1,7 @@
 import type {
   ChampAvisImpotDn,
   ColonneDn,
+  CommuneChampDn,
   DossierAvisImpot,
   IntegerNumberChampDn,
   PieceJustificativeChampDn,
@@ -64,6 +65,10 @@ function estEntier(champ: ChampAvisImpotDn): champ is IntegerNumberChampDn {
   return champ.__typename === "IntegerNumberChamp";
 }
 
+function estCommune(champ: ChampAvisImpotDn): champ is CommuneChampDn {
+  return champ.__typename === "CommuneChamp";
+}
+
 function extraireAvis(piece: PieceJustificativeChampDn, dansRepetition: boolean): AvisImpotExtrait {
   const parAttribut = new Map<string, ColonneDn>();
   const attributsInconnus: string[] = [];
@@ -112,10 +117,14 @@ function extraireAvis(piece: PieceJustificativeChampDn, dansRepetition: boolean)
 export function mapDossierAvisImpot(dossier: DossierAvisImpot): DonneesAvisImpotDossier {
   const avis: AvisImpotExtrait[] = [];
   const entiers = new Map<string, number | null>();
+  let codeDepartement: string | null = null;
 
   for (const champ of dossier.champs) {
     if (estPiece(champ) && champ.nature === NATURE_AVIS_IMPOT) avis.push(extraireAvis(champ, false));
     if (estEntier(champ)) entiers.set(champ.champDescriptorId, versNombre(champ.valeurEntiere));
+    if (estCommune(champ) && champ.champDescriptorId === DS_FIELD_IDS.ELIGIBILITE.COMMUNE) {
+      codeDepartement = versTexte(champ.departement?.code);
+    }
     if (estRepetition(champ)) {
       for (const ligne of champ.rows) {
         for (const sousChamp of ligne.champs) {
@@ -136,6 +145,7 @@ export function mapDossierAvisImpot(dossier: DossierAvisImpot): DonneesAvisImpot
       nombrePersonnes: entiers.get(DS_FIELD_IDS.ELIGIBILITE.NOMBRE_PERSONNES) ?? null,
       revenuFiscalReference: entiers.get(DS_FIELD_IDS.ELIGIBILITE.REVENU_FISCAL_REFERENCE) ?? null,
     },
+    codeDepartement,
     avis,
     annotations: Object.fromEntries(
       (dossier.annotations ?? []).map((a) => [a.champDescriptorId, a.stringValue ?? null])

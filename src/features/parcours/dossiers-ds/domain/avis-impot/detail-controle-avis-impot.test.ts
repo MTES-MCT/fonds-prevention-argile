@@ -9,7 +9,7 @@ import {
   type NomFixtureAvisImpot,
 } from "../../mappers/avis-impot.fixtures";
 
-const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: new Date("2026-09-29T12:00:00Z") };
+const HORS_IDF: ContexteControle = { maintenant: new Date("2026-09-29T12:00:00Z") };
 
 function detail(nom: NomFixtureAvisImpot, contexte: ContexteControle = HORS_IDF): string {
   return formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(FIXTURES_AVIS_IMPOT[nom]), contexte));
@@ -34,9 +34,12 @@ describe("formaterDetailControle", () => {
     );
   });
 
-  it("dit pourquoi la tranche manque sans région", () => {
-    expect(detail("ecart-revenu", { ...HORS_IDF, codeRegion: null })).toContain(
-      "tranche non calculée (région inconnue)"
+  it("dit pourquoi la tranche manque sans commune", () => {
+    const ecart = FIXTURES_AVIS_IMPOT["ecart-revenu"];
+    const sansCommune = { ...ecart, champs: ecart.champs.filter((c) => c.__typename !== "CommuneChamp") };
+
+    expect(formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(sansCommune), HORS_IDF))).toContain(
+      "tranche non calculée (commune inconnue)"
     );
   });
 

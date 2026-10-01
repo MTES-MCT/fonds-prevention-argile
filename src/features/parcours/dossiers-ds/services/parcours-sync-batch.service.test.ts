@@ -404,7 +404,7 @@ describe("runSyncBatch", () => {
     }
 
     it("est lancé après la sync du dossier d'éligibilité, avec son état DN", async () => {
-      const parcours = preparer([eligibilite], {
+      preparer([eligibilite], {
         success: true,
         data: {
           updated: false,
@@ -418,7 +418,6 @@ describe("runSyncBatch", () => {
       assertExecuted(result);
 
       expect(mockedControleAvisImpot).toHaveBeenCalledWith({
-        parcours,
         dossier: eligibilite,
         dsStatus: DSStatus.EN_INSTRUCTION,
         champsModifiesAt: "2026-09-29T15:41:02+02:00",

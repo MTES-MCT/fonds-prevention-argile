@@ -5,7 +5,7 @@ import { mapDossierAvisImpot } from "../../mappers/avis-impot.mapper";
 import { FIXTURES_AVIS_IMPOT } from "../../mappers/avis-impot.fixtures";
 
 const { COHERENT, A_VERIFIER, NON_VERIFIABLE } = STATUTS_CONTROLE;
-const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: new Date("2026-09-29T12:00:00Z") };
+const HORS_IDF: ContexteControle = { maintenant: new Date("2026-09-29T12:00:00Z") };
 
 function avis(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
   return {
@@ -28,12 +28,14 @@ function avis(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
 
 function donnees(
   listeAvis: AvisImpotExtrait[],
-  declaratif: Partial<DonneesAvisImpotDossier["declaratif"]> = {}
-): Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot"> {
+  declaratif: Partial<DonneesAvisImpotDossier["declaratif"]> = {},
+  codeDepartement: string | null = "32"
+): Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot" | "codeDepartement"> {
   return {
     declaratif: { nombrePersonnes: 3, revenuFiscalReference: 18500, ...declaratif },
     avis: listeAvis,
     dateDepot: "2026-09-29T15:41:02+02:00",
+    codeDepartement,
   };
 }
 
@@ -96,23 +98,17 @@ describe("controlerAvisImpot — revenu fiscal de référence", () => {
     expect(revenu.trancheAvis).toBe("supérieure");
   });
 
-  it("applique le barème IdF", () => {
+  it("applique le barème IdF d'après le département de la commune", () => {
     const { revenu } = controlerAvisImpot(
-      donnees([avis({ revenuFiscalReference: 35000 })], { revenuFiscalReference: 30000 }),
-      {
-        ...HORS_IDF,
-        codeRegion: "11",
-      }
+      donnees([avis({ revenuFiscalReference: 35000 })], { revenuFiscalReference: 30000 }, "75"),
+      HORS_IDF
     );
 
     expect(revenu).toMatchObject({ trancheDeclaree: "très modeste", trancheAvis: "très modeste" });
   });
 
-  it("ne calcule pas de tranche sans région", () => {
-    const { revenu } = controlerAvisImpot(donnees([avis({ revenuFiscalReference: 35000 })]), {
-      ...HORS_IDF,
-      codeRegion: null,
-    });
+  it("ne calcule pas de tranche sans commune", () => {
+    const { revenu } = controlerAvisImpot(donnees([avis({ revenuFiscalReference: 35000 })], {}, null), HORS_IDF);
 
     expect(revenu).toMatchObject({ statut: A_VERIFIER, trancheDeclaree: null, trancheAvis: null });
   });

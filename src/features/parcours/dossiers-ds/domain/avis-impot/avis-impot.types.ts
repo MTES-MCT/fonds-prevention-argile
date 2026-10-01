@@ -33,6 +33,8 @@ export interface DonneesAvisImpotDossier {
   /** Dernière modification des champs par l'usager : repère pour relancer le contrôle. */
   champsModifiesAt: string | null;
   declaratif: DeclaratifFoyer;
+  /** Département de la commune du logement : décide du barème (IdF ou non). */
+  codeDepartement: string | null;
   avis: AvisImpotExtrait[];
   /** Valeur actuelle de chaque annotation privée, par id de descripteur. */
   annotations: Record<string, string | null>;

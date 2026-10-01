@@ -1,8 +1,5 @@
-import {
-  calculerTrancheRevenu,
-  isRegionIDF,
-  type TrancheRevenuRga,
-} from "@/features/simulateur/domain/types/rga-revenus.types";
+import { calculerTrancheRevenu, type TrancheRevenuRga } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { estDepartementIDF } from "../tranche-revenu";
 import type { AvisImpotExtrait, DonneesAvisImpotDossier } from "./avis-impot.types";
 
 export const STATUTS_CONTROLE = {
@@ -50,8 +47,6 @@ export interface ResultatControleAvisImpot {
 }
 
 export interface ContexteControle {
-  /** Région du logement (simulation FPA) : sans elle, pas de calcul de tranche. */
-  codeRegion: string | null;
   maintenant: Date;
 }
 
@@ -90,16 +85,17 @@ function estimerPersonnes(avis: AvisImpotExtrait, nombreParts: number): { min: n
   };
 }
 
-function tranche(revenu: number, personnes: number | null, codeRegion: string | null): TrancheRevenuRga | null {
-  if (!codeRegion || !personnes || personnes < 1) return null;
-  return calculerTrancheRevenu(revenu, personnes, isRegionIDF(codeRegion));
+// Barème lu sur le département du dossier DN, comme l'annotation « Type de ménage ».
+function tranche(revenu: number, personnes: number | null, codeDepartement: string | null): TrancheRevenuRga | null {
+  if (!codeDepartement || !personnes || personnes < 1) return null;
+  return calculerTrancheRevenu(revenu, personnes, estDepartementIDF(codeDepartement));
 }
 
 function controlerRevenu(
   declaratif: DonneesAvisImpotDossier["declaratif"],
   avis: AvisImpotExtrait[],
   complet: boolean,
-  codeRegion: string | null
+  codeDepartement: string | null
 ): ControleRevenu {
   const declare = declaratif.revenuFiscalReference;
   const montants = avis.map((a) => a.revenuFiscalReference);
@@ -117,8 +113,8 @@ function controlerRevenu(
     declare,
     avis: somme,
     ecart,
-    trancheDeclaree: ecart === 0 ? null : tranche(declare, declaratif.nombrePersonnes, codeRegion),
-    trancheAvis: ecart === 0 ? null : tranche(somme, declaratif.nombrePersonnes, codeRegion),
+    trancheDeclaree: ecart === 0 ? null : tranche(declare, declaratif.nombrePersonnes, codeDepartement),
+    trancheAvis: ecart === 0 ? null : tranche(somme, declaratif.nombrePersonnes, codeDepartement),
   };
 }
 
@@ -155,7 +151,7 @@ function controlerAnnee(avis: AvisImpotExtrait[], dateDepot: string | null, main
 }
 
 export function controlerAvisImpot(
-  donnees: Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot">,
+  donnees: Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot" | "codeDepartement">,
   contexte: ContexteControle
 ): ResultatControleAvisImpot {
   const deposes = donnees.avis.filter((a) => a.nombreFichiers > 0);
@@ -164,7 +160,7 @@ export function controlerAvisImpot(
   const avisNonLus = deposes.length - lus.length;
   const complet = avisNonLus === 0;
 
-  const revenu = controlerRevenu(donnees.declaratif, distincts, complet, contexte.codeRegion);
+  const revenu = controlerRevenu(donnees.declaratif, distincts, complet, donnees.codeDepartement);
   const foyer = controlerFoyer(donnees.declaratif.nombrePersonnes, distincts, complet);
   const annee = controlerAnnee(distincts, donnees.dateDepot, contexte.maintenant);
 

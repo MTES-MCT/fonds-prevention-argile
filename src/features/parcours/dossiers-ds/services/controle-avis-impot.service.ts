@@ -1,7 +1,6 @@
 import { getServerEnv } from "@/shared/config/env.config";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
-import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { graphqlClient } from "../adapters/graphql/client";
 import {
   controlerAvisImpot,
@@ -26,7 +25,6 @@ export interface ControleAvisImpotDossier {
 }
 
 export interface OptionsControleAvisImpot {
-  codeRegion: string | null;
   /** Faux : calcule le verdict sans rien écrire dans DN. */
   appliquer: boolean;
   maintenant?: Date;
@@ -40,7 +38,7 @@ export async function controlerEtAnnoterAvisImpot(
   if (!donnees) return null;
 
   const maintenant = options.maintenant ?? new Date();
-  const resultat = controlerAvisImpot(donnees, { codeRegion: options.codeRegion, maintenant });
+  const resultat = controlerAvisImpot(donnees, { maintenant });
   const texte = texteAnnotationControle(resultat);
   const controle = { numero, resultat, texte, champsModifiesAt: donnees.champsModifiesAt };
 
@@ -69,14 +67,11 @@ export interface DossierApresSync {
   avisImpotChampsModifiesAt: Date | null;
 }
 
-type ParcoursAvecSimulation = Parameters<typeof getEffectiveRGAData>[0];
-
 /**
  * Contrôle, écrit l'annotation et enregistre le verdict en base. Rien n'est enregistré sans
  * écriture effective (ou déjà à jour), pour qu'un échec soit retenté au passage suivant.
  */
 export async function controlerEtEnregistrerAvisImpot(params: {
-  parcours: ParcoursAvecSimulation;
   dossierId: string;
   dsNumber: string;
   appliquer: boolean;
@@ -84,7 +79,6 @@ export async function controlerEtEnregistrerAvisImpot(params: {
 }): Promise<ControleAvisImpotDossier | null> {
   const maintenant = params.maintenant ?? new Date();
   const controle = await controlerEtAnnoterAvisImpot(Number(params.dsNumber), {
-    codeRegion: getEffectiveRGAData(params.parcours)?.logement?.code_region ?? null,
     appliquer: params.appliquer,
     maintenant,
   });
@@ -103,13 +97,12 @@ export async function controlerEtEnregistrerAvisImpot(params: {
  * une erreur DN remonte à l'appelant, qui la trace dans l'historique du run.
  */
 export async function controlerAvisImpotApresSync(params: {
-  parcours: ParcoursAvecSimulation;
   dossier: DossierApresSync;
   dsStatus: DSStatus | null;
   champsModifiesAt: string | undefined;
   maintenant?: Date;
 }): Promise<IssueAnnotationControle | null> {
-  const { parcours, dossier, dsStatus, champsModifiesAt } = params;
+  const { dossier, dsStatus, champsModifiesAt } = params;
   const aControler = doitControlerAvisImpot({
     step: dossier.step,
     dsStatus,
@@ -120,7 +113,6 @@ export async function controlerAvisImpotApresSync(params: {
   if (!aControler || !dossier.dsNumber || !estControleAvisImpotActive(Number(dossier.dsDemarcheId))) return null;
 
   const controle = await controlerEtEnregistrerAvisImpot({
-    parcours,
     dossierId: dossier.id,
     dsNumber: dossier.dsNumber,
     appliquer: true,
