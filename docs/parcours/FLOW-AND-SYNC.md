@@ -1029,11 +1029,19 @@ La création trace `formulaire_initie_par_amo` (action système, auteur = l'agen
 `demande_paiement_initiee_par_amo` vers Brevo, en plus du `dn_update` de création. Un second
 clic rend le lien existant, sans nouvelle trace ni nouvel évènement.
 
-**Gel de l'arrêt d'accompagnement au diagnostic.** `estArretGeleAuDiagnostic` s'ajoute au gel
-de §2.7.1, sur les mêmes points d'application (annulation demandeur, « Ne plus accompagner »
-côté AMO) : détacher l'AMO laisserait sur son compte DN un dossier que personne ne suit. Il vaut
-pour tous les dossiers à cette étape et se lève aux devis. Une demande d'arrêt posée avant le
-diagnostic ne peut plus, pendant l'étape, qu'être refusée.
+**L'arrêt d'accompagnement se ferme après l'éligibilité.** Deux bornes s'ajoutent au gel de
+§2.7.1, qui reste inchangé pendant l'éligibilité :
+
+- **Demandeur** — `estArretDemandeurTropTard` : l'annulation n'existe que jusqu'à l'éligibilité,
+  tant que rien n'est déposé. Au diagnostic, aux devis et aux factures, c'est trop tard.
+  Auparavant, une éligibilité acceptée lui rouvrait l'arrêt pour tout le reste du parcours.
+- **AMO** — `estArretGeleAuDiagnostic` : « Ne plus accompagner » est refusé à l'étape diagnostic,
+  où elle porte la demande de paiement. Se détacher laisserait ce dossier DN sans suivi.
+
+Ces bornes valent pour tous les dossiers, mandataire financier ou non. Cas résiduel : une
+demande d'arrêt faite pendant l'éligibilité et restée sans réponse de l'AMO mandataire
+(`demande_arret_at` posé) peut encore attendre quand le parcours atteint le diagnostic — l'AMO
+ne peut alors que la refuser, le bandeau « Je donne ma réponse » n'étant pas gelé.
 
 > **Préremplissage : simulation effective.** `createDiagnosticDossier` lit désormais
 > `getEffectiveRGAData` (agent d'abord). Un dossier créé par un agent n'a pas de simulation

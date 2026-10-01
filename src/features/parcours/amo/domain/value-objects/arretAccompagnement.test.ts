@@ -36,16 +36,20 @@ describe("peutAnnulerAccompagnement", () => {
     dossierArchive: false,
   };
 
-  it("gèle l'annulation pendant l'étape diagnostic, éligibilité pourtant acceptée", () => {
+  it("n'autorise plus l'annulation au diagnostic, éligibilité pourtant acceptée", () => {
     expect(
       peutAnnulerAccompagnement({ ...base, currentStep: Step.DIAGNOSTIC, eligibiliteDsStatus: DSStatus.ACCEPTE })
     ).toBe(false);
   });
 
-  it("rouvre l'annulation une fois le diagnostic passé", () => {
-    expect(peutAnnulerAccompagnement({ ...base, currentStep: Step.DEVIS, eligibiliteDsStatus: DSStatus.ACCEPTE })).toBe(
-      true
+  it.each([Step.DEVIS, Step.FACTURES])("reste fermée à l'étape %s : passé l'éligibilité, c'est trop tard", (step) => {
+    expect(peutAnnulerAccompagnement({ ...base, currentStep: step, eligibiliteDsStatus: DSStatus.ACCEPTE })).toBe(
+      false
     );
+  });
+
+  it("ne change rien pendant l'éligibilité : un refus de la DDT laisse l'annulation ouverte", () => {
+    expect(peutAnnulerAccompagnement({ ...base, eligibiliteDsStatus: DSStatus.REFUSE })).toBe(true);
   });
 
   it("autorise l'annulation quand l'AMO est en attente", () => {

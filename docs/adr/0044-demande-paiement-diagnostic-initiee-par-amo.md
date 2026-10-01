@@ -30,9 +30,10 @@ Quatre règles en découlent.
   avant la bascule — dont le lien reste valide pour lui — d'un dossier de l'AMO.
 - **Le blocage est serveur.** `createDiagnosticDossier` et `recreerFormulaireDemandeur`
   refusent le demandeur ; l'action de l'AMO vérifie rôle, entreprise rattachée et mandat.
-- **L'arrêt d'accompagnement est gelé à l'étape diagnostic**, pour le demandeur comme pour
-  l'AMO (`estArretGeleAuDiagnostic`). Détacher l'AMO laisserait sur son compte DN un dossier
-  que personne ne suit.
+- **L'arrêt d'accompagnement se ferme après l'éligibilité.** Le demandeur ne peut y renoncer
+  que pendant l'éligibilité, tant que rien n'est déposé (`estArretDemandeurTropTard`) ; l'AMO ne
+  peut plus se détacher à l'étape diagnostic (`estArretGeleAuDiagnostic`). Détacher l'AMO
+  laisserait sur son compte DN un dossier que personne ne suit.
 
 La création trace une action système (`formulaire_initie_par_amo`) et émet un évènement Brevo
 dédié (`demande_paiement_initiee_par_amo`), en plus du `dn_update` de création.
@@ -71,11 +72,13 @@ dédié (`demande_paiement_initiee_par_amo`), en plus du `dn_update` de créatio
 
 - Le dossier vit sur le compte DN d'un agent : un collègue ne le reprend que par invitation
   côté DN.
-- Le gel de l'arrêt au diagnostic revient sur la borne haute d'ADR-0018, qui rouvrait
-  l'arrêt dès l'éligibilité tranchée. Il vaut pour tous les dossiers, pas seulement ceux à
-  mandataire financier. L'arrêt redevient possible aux devis.
-- Une demande d'arrêt posée avant l'entrée au diagnostic ne peut plus qu'être refusée par
-  l'AMO pendant cette étape.
+- Ces bornes reviennent sur la borne haute d'ADR-0018, qui rouvrait l'arrêt dès l'éligibilité
+  tranchée. Elles valent pour tous les dossiers, pas seulement ceux à mandataire financier.
+  Le comportement pendant l'éligibilité est inchangé.
+- Côté AMO, « Ne plus accompagner » reste possible aux devis et aux factures : seul le
+  diagnostic est gelé.
+- Une demande d'arrêt faite pendant l'éligibilité et restée sans réponse ne peut plus qu'être
+  refusée par l'AMO une fois le parcours au diagnostic.
 
 ### Migration
 
