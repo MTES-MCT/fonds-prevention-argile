@@ -46,7 +46,7 @@ overrides:
   # Zero-step sequence ReDoS + DoS exponentielle non bornée (transitif via
   # minimatch, exceljs>archiver côté prod). 2.1.4 reste sur la ligne 2.x : la 5.x
   # est un major, inutile ici puisque le correctif est backporté.
-  brace-expansion: "^2.1.4"
+  brace-expansion: "^2.1.7"
   # Copie récursive suivant les symlinks hors du répertoire cible (transitif via eslint)
   "@humanfs/node": "^0.16.8"
   # Prototype pollution via merge + DoS quadratique sur clés de merge
@@ -60,7 +60,7 @@ overrides:
   tmp: "^0.2.6"
   # CRLF injection, origin validation error, DoS WebSocket, TLS bypass SOCKS5
   # (transitif via jsdom -> vitest, devDep test uniquement)
-  undici: "^7.29.0"
+  undici: "^7.29.1"
   # CVE libvips (CVE-2026-33327/33328/35590/35591) — transitif via next (image
   # optimization), non exploitable sans input attaquant mais patché à la source
   sharp: "^0.35.4"
