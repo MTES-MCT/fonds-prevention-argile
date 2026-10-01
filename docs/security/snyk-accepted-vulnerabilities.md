@@ -1,7 +1,7 @@
 # Vulnérabilités Snyk — Acceptées
 
 Date d'audit initial : mars 2026 (Snyk)
-Dernier refresh : septembre 2026 (`pnpm audit`, voir section dédiée)
+Dernier refresh : octobre 2026 (`pnpm audit`, voir section dédiée)
 Auditeur : Samir + Claude
 
 > **Ce document est chronologique : seule la dernière section « Refresh » fait foi.** Les
@@ -9,10 +9,9 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (fin septembre 2026) — trois vulnérabilités Moderate acceptées** : `uuid` <11.1.1
-> (transitif via `exceljs`), `nodemailer` <10.0.2 (SMTP local seulement) et `undici` <7.29.1
-> (devDep). Les deux dernières attendent une PR de dépendances dédiée. Voir
-> [Refresh — fin septembre 2026](#refresh--fin-septembre-2026-branche-featcontrole-avis-impot).
+> **État courant (octobre 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
+> (Moderate, transitif via `exceljs`). Tout le reste est corrigé à la source. Voir
+> [Refresh — octobre 2026](#refresh--octobre-2026-branche-chorebump-deps-securite-oct).
 
 ## Décision
 
@@ -416,22 +415,34 @@ au comportement — le script d'install était déjà ignoré — mais supprime 
 | --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
 | `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
 
-## Refresh — fin septembre 2026 (branche `feat/controle-avis-impot`)
+## Refresh — octobre 2026 (branche `chore/bump-deps-securite-oct`)
 
-Branche sans ajout de dépendance. `pnpm audit` remonte **3 Moderate** (prod : 2), dont deux publiées
-depuis le refresh précédent et **déjà présentes sur `main`** : elles ne viennent pas de cette branche.
-Acceptées temporairement plutôt que corrigées ici, un bump majeur de `nodemailer` n'ayant pas sa
-place dans une PR fonctionnelle.
+Dix-huit avis publiés fin septembre sur trois paquets déjà présents (lockfile de `main` inchangé) :
+`pnpm audit` passe de **19 à 1** vulnérabilité, prod comprise. Vérification : `pnpm validate`,
+`pnpm build` prod, et un envoi réel vers Mailhog avec `nodemailer` 10.
 
-| Dépendance vulnérable | Sévérité | Type    | Chemin                          | Justification                                                                                                                                                                                                                        |
-| --------------------- | -------- | ------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `nodemailer` <10.0.2  | Moderate | runtime | `nodemailer` (direct)           | `GHSA-6vj9-mwq6-2f5v` : cache DNS global qui réutilise le `servername` TLS entre transports. Un seul transport, SMTP vers Mailhog **en local** ; staging et prod envoient par l'API HTTP Brevo (`email.service.ts`). Non atteignable |
-| `undici` <7.29.1      | Moderate | devDep  | `jsdom > undici` (via `vitest`) | `GHSA-3wwx-pv8p-q78v` : DoS sur une extension WebSocket. Environnement de test uniquement, jamais déployé                                                                                                                            |
-| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid`                | Inchangé : exceljs appelle `uuidv4()` sans buffer, faille non atteignable                                                                                                                                                            |
+### Corrigées à la source
 
-**Plan de correction** : PR de dépendances dédiée — `nodemailer` en `^10.0.2` (le blocage
-`minimumReleaseAge` de la 10.0.10, levé depuis le 2026-09-21, ne tient plus) et override
-`undici: ^7.29.1`.
+| Paquet                       | Avant     | Après     | Avis éliminés                                                                                                                                                   |
+| ---------------------------- | --------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nodemailer` (direct)        | `9.1.1`   | `10.0.10` | 2 High (`GHSA-v53p-9fqp-m79j`, `GHSA-prgh-xp8r-p3m5` : DoS de l'`addressparser`) + 3 Moderate (cache DNS TLS, récursion des destinataires, enveloppe malformée) |
+| `brace-expansion` (override) | `^2.1.4`  | `^2.1.7`  | 2 High (`GHSA-qhr7-859c-m2p7`, `GHSA-6j4f-fj2g-mc7p` : récursion non bornée) + 1 Moderate — transitif **prod** via `exceljs > archiver > … > minimatch`         |
+| `undici` (override)          | `^7.29.0` | `^7.29.1` | 2 High (`GHSA-rfgv-xxqx-mfg5`, `GHSA-w293-vg96-wgc3`) + 6 Moderate + 3 Low — devDep (`vitest > jsdom`), jamais déployé                                          |
+
+**`nodemailer` 10 est un major**, sans effet ici : Node 20 requis (on est en 24), paquet réécrit
+en TypeScript avec ses propres types (`@types/nodemailer` reste compatible, typecheck vert), et
+seuls `createTransport` + `sendMail` sont utilisés, pour le SMTP local vers Mailhog — staging et
+prod envoient par l'API Brevo. Version retenue : la plus récente hors fenêtre `minimumReleaseAge`
+(10.0.11 à 10.0.13 ont moins d'une semaine), elle couvre tous les avis listés.
+
+> L'override `undici` en `^7.29.1` laisse `7.30.0` de côté tant qu'elle a moins d'une semaine :
+> pnpm retient la plus haute version **éligible**, pas la plus haute publiée.
+
+### Reste accepté (`pnpm audit`, 1 vulnérabilité)
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
+| --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
 
 ## Prochaine revue
 
@@ -440,6 +451,6 @@ place dans une PR fonctionnelle.
   `postcss` pourra probablement sauter (Next 16 embarque un postcss récent).
 - **`@react-email/components`** : le package est marqué **deprecated** par l'upstream — prévoir
   une PR de migration ou de remplacement.
-- **`brace-expansion`** : la ligne 5.x existe (`5.0.9`) mais reste un major ; `^2.1.4` embarque
+- **`brace-expansion`** : la ligne 5.x existe (`5.0.9`) mais reste un major ; `^2.1.7` embarque
   déjà les correctifs, pas d'urgence.
 - **Vérifier trimestriellement** les fix upstream pour `exceljs` (tmp, uuid, brace-expansion) et `maplibre-gl`.
