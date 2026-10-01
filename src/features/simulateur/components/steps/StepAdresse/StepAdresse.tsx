@@ -19,6 +19,7 @@ import { asString } from "@/shared/utils";
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
 import { NavigationButtons } from "../../shared/NavigationButtons";
 import { peutReprendreAdresseExistante } from "./adresse-reprise";
+import { BatimentSelectionne } from "./BatimentSelectionne";
 import { useSimulateurStore, selectEditMode } from "../../../stores/simulateur.store";
 
 interface StepAdresseProps {
@@ -412,6 +413,10 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
             onEmptyClick={isAddressLocked ? undefined : handleEmptyClick}
             onCarteIndisponible={handleCarteIndisponible}
           />
+
+          {buildingData && (
+            <BatimentSelectionne batiment={buildingData} adresseRecherchee={selectedAddress.properties.label} />
+          )}
 
           {aleaIndetermine && (
             <div className="fr-alert fr-alert--error fr-alert--sm fr-mt-2w" role="alert">
