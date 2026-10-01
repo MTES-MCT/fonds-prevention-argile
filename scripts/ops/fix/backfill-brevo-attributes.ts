@@ -19,7 +19,8 @@
  * Complété par les attributs d'état posés historiquement par les hooks événementiels
  * (non rejouables depuis les fonctions ci-dessus), redérivés ici depuis la vérité DB
  * actuelle :
- *   - A_AMO / AMO_STATUT / EST_MANDATAIRE : depuis `parcours_amo_validations.statut`
+ *   - A_AMO / AMO_STATUT : depuis `parcours_amo_validations.statut` (EST_MANDATAIRE vient
+ *     désormais de `buildContactAttributes`, comme dans les hooks live)
  *     (A_AMO = true dès qu'une décision AMO existe : éligible, non éligible, ou
  *     accompagnement refusé — pas seulement "éligible")
  *   - DS_STATUT                           : depuis le dossier DS de l'étape courante
@@ -103,9 +104,6 @@ async function buildBackfillAttributes(
   if (validation && STATUTS_DECIDES.includes(validation.statut)) {
     attrs[BREVO_ATTRS.A_AMO] = true;
     attrs[BREVO_ATTRS.AMO_STATUT] = validation.statut;
-    if (validation.estMandataireFinancier !== null) {
-      attrs[BREVO_ATTRS.EST_MANDATAIRE] = validation.estMandataireFinancier;
-    }
   } else {
     attrs[BREVO_ATTRS.A_AMO] = false;
   }

@@ -10,7 +10,14 @@ vi.mock("@/shared/database/client", () => ({
 vi.mock("./amo-couverture.service", () => ({ listerAmosDuTerritoire: vi.fn() }));
 vi.mock("../../dossiers-ds/services/dossier-ds.service", () => ({ getDossierByStep: vi.fn() }));
 
+vi.mock("@/shared/email/brevo", () => ({
+  emitBrevoEvent: vi.fn(),
+  buildConseillerAttributesApresChangement: vi.fn().mockResolvedValue({ CONSEILLER_TYPE: "ALLERS_VERS" }),
+  BREVO_EVENTS: { ACCOMPAGNEMENT_ARRETE: "accompagnement_arrete", AMO_DEFINI: "amo_defini" },
+  BREVO_ATTRS: { A_AMO: "A_AMO", AMO_STATUT: "AMO_STATUT" },
+}));
 import { rattacherAmo } from "./rattachement-amo.service";
+import { emitBrevoEvent } from "@/shared/email/brevo";
 import { listerAmosDuTerritoire } from "./amo-couverture.service";
 import type { Amo } from "../domain/entities";
 
@@ -90,6 +97,8 @@ describe("rattacherAmo", () => {
     // L'étape du parcours ne doit jamais être touchée.
     expect(sets).toHaveLength(1);
     expect(listerAmosDuTerritoire).not.toHaveBeenCalled();
+    // Le contact Brevo portait encore l'aller-vers comme conseiller.
+    expect(emitBrevoEvent).toHaveBeenCalledWith("p1", "amo_defini", expect.anything());
   });
 
   it("retombe sur l'AMO du territoire quand aucune trace d'audit n'existe", async () => {

@@ -5,6 +5,7 @@ import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { getDossierByStep } from "../../dossiers-ds/services/dossier-ds.service";
 import {
+  estAmoMandataireFinancier,
   estDossierDepose,
   estFormulaireConfieAAmo,
   estFormulaireGereParAmo,
@@ -19,6 +20,20 @@ export interface EtatFormulaireParAmo {
   formulaire: FormulaireExistant | null;
   entrepriseAmoId: string | null;
   amoNom: string | null;
+}
+
+/** État courant du mandat financier, lu en base : `false` sans AMO, ou AMO non mandataire. */
+export async function aUneAmoMandataireFinancier(parcoursId: string): Promise<boolean> {
+  const [validation] = await db
+    .select({
+      statut: parcoursAmoValidations.statut,
+      estMandataireFinancier: parcoursAmoValidations.estMandataireFinancier,
+    })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
+    .limit(1);
+
+  return estAmoMandataireFinancier(validation?.statut ?? null, validation?.estMandataireFinancier ?? null);
 }
 
 /** Point unique des entrées du prédicat : l'écran et les actions jugent sur les mêmes faits. */

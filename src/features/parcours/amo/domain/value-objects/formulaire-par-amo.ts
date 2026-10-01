@@ -9,19 +9,23 @@ import { StatutValidationAmo } from "./statutValidation";
 export const STEPS_FORMULAIRE_PAR_AMO: readonly Step[] = [Step.DIAGNOSTIC];
 
 /**
- * La création du formulaire de cette étape revient à l'AMO, et plus au demandeur.
+ * Le dossier est suivi par une AMO qui perçoit l'aide à la place du demandeur.
  * Un `estMandataireFinancier` nul vaut non-mandataire, comme pour `requiertAccordAmo`.
  */
+export function estAmoMandataireFinancier(
+  statutAmo: StatutValidationAmo | null,
+  estMandataireFinancier: boolean | null
+): boolean {
+  return statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE && estMandataireFinancier === true;
+}
+
+/** La création du formulaire de cette étape revient à l'AMO, et plus au demandeur. */
 export function estFormulaireConfieAAmo(
   step: Step,
   statutAmo: StatutValidationAmo | null,
   estMandataireFinancier: boolean | null
 ): boolean {
-  return (
-    STEPS_FORMULAIRE_PAR_AMO.includes(step) &&
-    statutAmo === StatutValidationAmo.LOGEMENT_ELIGIBLE &&
-    estMandataireFinancier === true
-  );
+  return STEPS_FORMULAIRE_PAR_AMO.includes(step) && estAmoMandataireFinancier(statutAmo, estMandataireFinancier);
 }
 
 export interface FormulaireExistant {

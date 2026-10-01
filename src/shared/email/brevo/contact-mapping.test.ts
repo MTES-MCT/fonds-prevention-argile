@@ -3,9 +3,14 @@ import { buildContactAttributes } from "./contact-mapping";
 import { BREVO_ATTRS } from "./brevo-contacts.config";
 import type { User } from "@/shared/database/schema/users";
 import type { ParcoursPrevention } from "@/shared/database/schema/parcours-prevention";
+import { aUneAmoMandataireFinancier } from "@/features/parcours/amo/services/formulaire-par-amo.service";
 
 vi.mock("@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service", () => ({
   resolveAdminUrl: vi.fn().mockResolvedValue("https://fonds-prevention-argile.beta.gouv.fr/espace-agent/dossiers/v1"),
+}));
+
+vi.mock("@/features/parcours/amo/services/formulaire-par-amo.service", () => ({
+  aUneAmoMandataireFinancier: vi.fn().mockResolvedValue(false),
 }));
 
 const user = (over: Partial<User> = {}): User =>
@@ -31,6 +36,26 @@ const parcours = (over: Partial<ParcoursPrevention> = {}): ParcoursPrevention =>
     rgaSimulationDataAgent: null,
     ...over,
   }) as unknown as ParcoursPrevention;
+
+describe("buildContactAttributes — EST_MANDATAIRE", () => {
+  // Explicitement `false`, pas absent : un attribut absent garderait le `true` d'une AMO détachée.
+  it("pousse `false` quand aucune AMO mandataire financier ne suit le dossier", async () => {
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
+    expect(attrs[BREVO_ATTRS.EST_MANDATAIRE]).toBe(false);
+  });
+
+  it("pousse `true` quand l'AMO du dossier est mandataire financier", async () => {
+    vi.mocked(aUneAmoMandataireFinancier).mockResolvedValueOnce(true);
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
+    expect(attrs[BREVO_ATTRS.EST_MANDATAIRE]).toBe(true);
+  });
+
+  it("n'écrit rien si la lecture échoue, plutôt qu'une valeur fausse", async () => {
+    vi.mocked(aUneAmoMandataireFinancier).mockRejectedValueOnce(new Error("db down"));
+    const attrs = await buildContactAttributes(user(), parcours(), "jean@gmail.com");
+    expect(attrs).not.toHaveProperty(BREVO_ATTRS.EST_MANDATAIRE);
+  });
+});
 
 describe("buildContactAttributes — ELIGIBILITE", () => {
   const SIM_ELIGIBLE = {
