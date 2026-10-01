@@ -96,6 +96,21 @@ export async function recordDnProbeState(dossierId: string, state: string): Prom
     .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
 }
 
+/** Verdict du contrôle de l'avis d'imposition : statut et dates, jamais de donnée fiscale. */
+export async function enregistrerControleAvisImpot(
+  dossierId: string,
+  controle: { statut: string; controleAt: Date; champsModifiesAt: Date | null }
+): Promise<void> {
+  await db
+    .update(dossiersDemarchesSimplifiees)
+    .set({
+      avisImpotStatut: controle.statut,
+      avisImpotControleAt: controle.controleAt,
+      avisImpotChampsModifiesAt: controle.champsModifiesAt,
+    })
+    .where(eq(dossiersDemarchesSimplifiees.id, dossierId));
+}
+
 /**
  * Récupère un dossier DS par étape
  */

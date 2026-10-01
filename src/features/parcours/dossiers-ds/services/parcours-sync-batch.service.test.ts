@@ -3,6 +3,7 @@ import { runSyncBatch } from "./parcours-sync-batch.service";
 import { parcoursRepo, syncRunRepo } from "@/shared/database/repositories";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
+import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -35,6 +36,10 @@ vi.mock("./ds-sync.service", () => ({
   recomputeParcoursStatus: vi.fn(),
 }));
 
+vi.mock("./controle-avis-impot.service", () => ({
+  controlerAvisImpotApresSync: vi.fn(),
+}));
+
 vi.mock("@/features/parcours/core/services", () => ({
   moveToNextStep: vi.fn(),
   validateCurrentStep: vi.fn(),
@@ -48,6 +53,7 @@ const mockedGetAllDossiers = vi.mocked(getAllDossiersByParcours);
 const mockedSyncDossierStatus = vi.mocked(syncDossierStatus);
 const mockedRecomputeStatus = vi.mocked(recomputeParcoursStatus);
 const mockedMoveToNextStep = vi.mocked(moveToNextStep);
+const mockedControleAvisImpot = vi.mocked(controlerAvisImpotApresSync);
 
 /** Type guard pour narrow dans les tests qui attendent un run effectif. */
 function assertExecuted<T extends { skipped: boolean }>(result: T): asserts result is Extract<T, { skipped: false }> {
@@ -86,6 +92,7 @@ describe("runSyncBatch", () => {
     // Par défaut : recompute ne change rien (les tests qui veulent simuler une transition
     // s'appuient sur les findById séquencés du parcours, pas sur cette valeur)
     mockedRecomputeStatus.mockResolvedValue({ success: true, data: { updated: false } } as never);
+    mockedControleAvisImpot.mockResolvedValue(null);
   });
 
   it("aucun parcours actif → status SUCCESS, pas d'entry", async () => {
@@ -382,6 +389,81 @@ describe("runSyncBatch", () => {
 
     expect(result.totalErrors).toBe(2);
     expect(result.status).toBe(SyncRunStatus.ERROR);
+  });
+
+  describe("contrôle de l'avis d'imposition", () => {
+    const eligibilite = { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" };
+
+    function preparer(dossiers: unknown[], sync: unknown) {
+      const parcours = fakeParcours();
+      mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
+      mockedParcoursRepo.findById.mockResolvedValue(parcours as never);
+      mockedGetAllDossiers.mockResolvedValue(dossiers as never);
+      mockedSyncDossierStatus.mockResolvedValue(sync as never);
+      return parcours;
+    }
+
+    it("est lancé après la sync du dossier d'éligibilité, avec son état DN", async () => {
+      const parcours = preparer([eligibilite], {
+        success: true,
+        data: {
+          updated: false,
+          oldStatus: DSStatus.EN_INSTRUCTION,
+          newStatus: DSStatus.EN_INSTRUCTION,
+          champsModifiesAt: "2026-09-29T15:41:02+02:00",
+        },
+      });
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      expect(mockedControleAvisImpot).toHaveBeenCalledWith({
+        parcours,
+        dossier: eligibilite,
+        dsStatus: DSStatus.EN_INSTRUCTION,
+        champsModifiesAt: "2026-09-29T15:41:02+02:00",
+      });
+      expect(result.status).toBe(SyncRunStatus.SUCCESS);
+      expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
+    });
+
+    it("n'est pas lancé pour un autre dossier que celui d'éligibilité", async () => {
+      preparer([{ id: "d2", step: Step.DIAGNOSTIC, dsNumber: "456" }], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedControleAvisImpot).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["sync en échec", { success: false, error: "unauthorized" }],
+      ["prérempli non observé", { success: true, data: { updated: false, notObserved: true } }],
+    ])("n'est pas lancé quand l'état DN est inconnu (%s)", async (_cas, sync) => {
+      preparer([eligibilite], sync);
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedControleAvisImpot).not.toHaveBeenCalled();
+    });
+
+    it("trace un échec dans le run sans interrompre la sync du parcours", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+      mockedControleAvisImpot.mockRejectedValue(new Error("Le jeton utilisé est configuré seulement en lecture"));
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      expect(mockedRecomputeStatus).toHaveBeenCalled();
+      expect(result.totalErrors).toBe(1);
+      const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+      expect(entry.error).toContain("avis-impot: Le jeton utilisé est configuré seulement en lecture");
+    });
   });
 
   describe("verrou anti-runs concurrents", () => {

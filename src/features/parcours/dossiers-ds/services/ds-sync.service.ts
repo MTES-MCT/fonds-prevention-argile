@@ -22,6 +22,8 @@ interface SyncResult {
   newStatus?: DSStatus;
   /** Prérempli encore invisible de l'API instructeur : état normal, pas une erreur (ADR-0026). */
   notObserved?: boolean;
+  /** Dernière modification des champs par l'usager, qui décide de relancer le contrôle de l'avis. */
+  champsModifiesAt?: string;
 }
 
 /**
@@ -117,6 +119,7 @@ export async function syncDossierStatus(
         updated: true,
         oldStatus,
         newStatus,
+        champsModifiesAt: dsResult.dateDerniereModificationChamps,
       },
     };
   }
@@ -132,6 +135,7 @@ export async function syncDossierStatus(
       updated: false,
       oldStatus,
       newStatus: oldStatus,
+      champsModifiesAt: dsResult.dateDerniereModificationChamps,
     },
   };
 }
