@@ -1,22 +1,12 @@
 import { STATUTS_CONTROLE, type ResultatControleAvisImpot, type StatutControle } from "./controle-avis-impot";
 
-/** Limite fixée sur l'annotation DN, que l'API n'expose pas. */
-export const LIMITE_ANNOTATION_CONTROLE = 500;
-
 export const LIBELLES_STATUT_CONTROLE: Record<StatutControle, string> = {
   [STATUTS_CONTROLE.COHERENT]: "Cohérent",
   [STATUTS_CONTROLE.A_VERIFIER]: "À vérifier",
   [STATUTS_CONTROLE.NON_VERIFIABLE]: "Non vérifiable",
 };
 
-const DATE_FR = new Intl.DateTimeFormat("fr-FR", {
-  timeZone: "Europe/Paris",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
-// Espace simple plutôt que l'espace fine de toLocaleString, pour un texte DN lisible partout.
+// Espace simple plutôt que l'espace fine de toLocaleString, lisible dans n'importe quel terminal.
 function euros(montant: number): string {
   return `${String(Math.abs(montant)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €`;
 }
@@ -72,9 +62,9 @@ function ligneAnnee({ annee }: ResultatControleAvisImpot): string {
   return `${titre} : à vérifier (${annee.lues.join(", ")} ${accord(annee.lues.length, "lue")}, ${annee.attendue} attendue)`;
 }
 
-/** Texte de l'annotation DN : statut et date en tête, une ligne par critère, 500 caractères au plus. */
-export function formaterDetailControle(resultat: ResultatControleAvisImpot, dateControle: Date): string {
-  const entete = `${LIBELLES_STATUT_CONTROLE[resultat.statut]} (contrôle automatique FPA du ${DATE_FR.format(dateControle)})`;
+/** Détail chiffré du contrôle, pour les scripts d'inspection : jamais écrit dans DN (montants). */
+export function formaterDetailControle(resultat: ResultatControleAvisImpot): string {
+  const entete = `Contrôle : ${LIBELLES_STATUT_CONTROLE[resultat.statut]}`;
   let lignes: string[];
   if (resultat.avisDeposes === 0) lignes = [entete, "Aucun avis d'imposition déposé."];
   else if (resultat.avisLus === 0) {
@@ -85,11 +75,5 @@ export function formaterDetailControle(resultat: ResultatControleAvisImpot, date
     ];
   } else lignes = [entete, ligneAvis(resultat), ligneRevenu(resultat), ligneFoyer(resultat), ligneAnnee(resultat)];
 
-  const texte = lignes.join("\n");
-  return texte.length <= LIMITE_ANNOTATION_CONTROLE ? texte : `${texte.slice(0, LIMITE_ANNOTATION_CONTROLE - 1)}…`;
-}
-
-/** Contenu hors date : deux contrôles au même résultat ne réécrivent pas l'annotation. */
-export function contenuSansDate(texte: string | null): string | null {
-  return texte?.replace(/ du \d{2}\/\d{2}\/\d{4}\)/, ")") ?? null;
+  return lignes.join("\n");
 }

@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
-import {
-  controlerAvisImpot,
-  STATUTS_CONTROLE,
-  type ContexteControle,
-  type ResultatControleAvisImpot,
-} from "./controle-avis-impot";
-import { LIMITE_ANNOTATION_CONTROLE, contenuSansDate, formaterDetailControle } from "./detail-controle-avis-impot";
+import { controlerAvisImpot, type ContexteControle } from "./controle-avis-impot";
+import { formaterDetailControle } from "./detail-controle-avis-impot";
 import { mapDossierAvisImpot } from "../../mappers/avis-impot.mapper";
 import {
   FIXTURES_AVIS_IMPOT,
@@ -14,22 +9,17 @@ import {
   type NomFixtureAvisImpot,
 } from "../../mappers/avis-impot.fixtures";
 
-// 29/09 à 23h30 UTC = 30/09 à Paris : la date affichée est celle de Paris.
-const MAINTENANT = new Date("2026-09-29T23:30:00Z");
-const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: MAINTENANT };
+const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: new Date("2026-09-29T12:00:00Z") };
 
 function detail(nom: NomFixtureAvisImpot, contexte: ContexteControle = HORS_IDF): string {
-  return formaterDetailControle(
-    controlerAvisImpot(mapDossierAvisImpot(FIXTURES_AVIS_IMPOT[nom]), contexte),
-    MAINTENANT
-  );
+  return formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(FIXTURES_AVIS_IMPOT[nom]), contexte));
 }
 
 describe("formaterDetailControle", () => {
-  it("détaille un contrôle cohérent, doublon compris, daté à l'heure de Paris", () => {
+  it("détaille un contrôle cohérent, doublon compris", () => {
     expect(detail("doublon")).toBe(
       [
-        "Cohérent (contrôle automatique FPA du 30/09/2026)",
+        "Contrôle : Cohérent",
         "Avis lus : 1 sur 2 pièces, 1 doublon ignoré",
         "Revenu fiscal de référence : cohérent (déclaré 18 500 €, avis 18 500 €)",
         "Personnes du ménage : cohérent (3 déclarées, 2,5 parts pour 2 déclarants, soit 3 estimées)",
@@ -53,7 +43,7 @@ describe("formaterDetailControle", () => {
   it("renvoie à une vérification manuelle quand aucun 2D-Doc n'est lu", () => {
     expect(detail("non-lu")).toBe(
       [
-        "Non vérifiable (contrôle automatique FPA du 30/09/2026)",
+        "Contrôle : Non vérifiable",
         "Avis lus : 0 sur 1 pièce, 1 non lu",
         "Aucun 2D-Doc lu (avis scanné, photographié ou sans code) : vérification manuelle.",
       ].join("\n")
@@ -61,9 +51,7 @@ describe("formaterDetailControle", () => {
   });
 
   it("signale l'absence d'avis", () => {
-    expect(detail("sans-avis")).toBe(
-      "Non vérifiable (contrôle automatique FPA du 30/09/2026)\nAucun avis d'imposition déposé."
-    );
+    expect(detail("sans-avis")).toBe("Contrôle : Non vérifiable\nAucun avis d'imposition déposé.");
   });
 
   it("additionne parts et déclarants de plusieurs foyers", () => {
@@ -86,53 +74,8 @@ describe("formaterDetailControle", () => {
       }),
     });
 
-    expect(formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(dossier), HORS_IDF), MAINTENANT)).toContain(
+    expect(formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(dossier), HORS_IDF))).toContain(
       "Personnes du ménage : cohérent (2 déclarées, 2 parts pour 1 déclarant, soit 2 à 3 estimées)"
     );
-  });
-
-  it("tient dans la limite de l'annotation sans tronquer, même dans le pire cas", () => {
-    const pireCas: ResultatControleAvisImpot = {
-      statut: STATUTS_CONTROLE.NON_VERIFIABLE,
-      avisDeposes: 12,
-      avisLus: 10,
-      avisNonLus: 11,
-      doublonsIgnores: 11,
-      revenu: {
-        statut: STATUTS_CONTROLE.A_VERIFIER,
-        declare: 1234567,
-        avis: 12345678,
-        ecart: -11111111,
-        trancheDeclaree: "intermédiaire",
-        trancheAvis: "très modeste",
-      },
-      foyer: {
-        statut: STATUTS_CONTROLE.A_VERIFIER,
-        declare: 12,
-        nombreParts: 10.75,
-        declarants: 14,
-        estimationMin: 14,
-        estimationMax: 22,
-      },
-      annee: { statut: STATUTS_CONTROLE.A_VERIFIER, attendue: 2025, lues: [2021, 2022, 2023, 2024] },
-    };
-    const texte = formaterDetailControle(pireCas, MAINTENANT);
-
-    expect(texte.length).toBeLessThanOrEqual(LIMITE_ANNOTATION_CONTROLE);
-    expect(texte.endsWith("…")).toBe(false);
-  });
-});
-
-describe("contenuSansDate", () => {
-  it("rend égaux deux contrôles identiques faits à des dates différentes", () => {
-    const resultat = controlerAvisImpot(mapDossierAvisImpot(FIXTURES_AVIS_IMPOT.lu), HORS_IDF);
-
-    expect(contenuSansDate(formaterDetailControle(resultat, new Date("2026-09-01T12:00:00Z")))).toBe(
-      contenuSansDate(formaterDetailControle(resultat, MAINTENANT))
-    );
-  });
-
-  it("accepte une annotation vide", () => {
-    expect(contenuSansDate(null)).toBeNull();
   });
 });

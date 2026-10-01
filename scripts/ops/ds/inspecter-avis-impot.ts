@@ -22,6 +22,7 @@ import {
   LIBELLES_STATUT_CONTROLE,
   controlerAvisImpot,
   formaterDetailControle,
+  texteAnnotationControle,
   type AvisImpotExtrait,
   type DonneesAvisImpotDossier,
 } from "@/features/parcours/dossiers-ds/domain/avis-impot";
@@ -82,11 +83,11 @@ function afficher(donnees: DonneesAvisImpotDossier): void {
 }
 
 function afficherControle(donnees: DonneesAvisImpotDossier): void {
-  const maintenant = new Date();
-  const resultat = controlerAvisImpot(donnees, { codeRegion: REGION, maintenant });
+  const resultat = controlerAvisImpot(donnees, { codeRegion: REGION, maintenant: new Date() });
+  console.log(`Annotation DN : « ${texteAnnotationControle(resultat)} »`);
   console.log(`Contrôle : ${LIBELLES_STATUT_CONTROLE[resultat.statut]}`);
   if (AFFICHER_VALEURS) {
-    console.log(formaterDetailControle(resultat, maintenant).replace(/^/gm, "      "));
+    console.log(formaterDetailControle(resultat).replace(/^/gm, "      "));
     return;
   }
   const criteres = [

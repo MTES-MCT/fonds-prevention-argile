@@ -4,10 +4,10 @@ import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
 import { graphqlClient } from "../adapters/graphql/client";
 import {
-  contenuSansDate,
   controlerAvisImpot,
   doitControlerAvisImpot,
-  formaterDetailControle,
+  statutAnnotationControle,
+  texteAnnotationControle,
   type ResultatControleAvisImpot,
 } from "../domain/avis-impot";
 import { estControleAvisImpotActive, getAnnotationControleAvisImpot } from "../domain/value-objects/ds-annotations";
@@ -20,7 +20,7 @@ export interface ControleAvisImpotDossier {
   numero: number;
   resultat: ResultatControleAvisImpot;
   champsModifiesAt: string | null;
-  /** Texte de l'annotation : contient des montants, ne jamais le journaliser. */
+  /** Texte de l'annotation DN : une phrase métier, sans donnée fiscale. */
   texte: string;
   issue: IssueAnnotationControle;
 }
@@ -41,13 +41,13 @@ export async function controlerEtAnnoterAvisImpot(
 
   const maintenant = options.maintenant ?? new Date();
   const resultat = controlerAvisImpot(donnees, { codeRegion: options.codeRegion, maintenant });
-  const texte = formaterDetailControle(resultat, maintenant);
+  const texte = texteAnnotationControle(resultat);
   const controle = { numero, resultat, texte, champsModifiesAt: donnees.champsModifiesAt };
 
   const annotationId = donnees.demarcheNumero ? getAnnotationControleAvisImpot(donnees.demarcheNumero) : null;
   if (!annotationId) return { ...controle, issue: "annotation_non_configuree" };
   // Chaque écriture s'inscrit dans l'historique DN du dossier : on n'y ajoute pas de bruit.
-  if (contenuSansDate(donnees.annotations[annotationId] ?? null) === contenuSansDate(texte)) {
+  if (donnees.annotations[annotationId] === texte) {
     return { ...controle, issue: "inchangee" };
   }
   if (!options.appliquer) return { ...controle, issue: "simulation" };
@@ -90,7 +90,7 @@ export async function controlerEtEnregistrerAvisImpot(params: {
   });
   if (controle && params.appliquer && (controle.issue === "ecrite" || controle.issue === "inchangee")) {
     await enregistrerControleAvisImpot(params.dossierId, {
-      statut: controle.resultat.statut,
+      statut: statutAnnotationControle(controle.resultat),
       controleAt: maintenant,
       champsModifiesAt: controle.champsModifiesAt ? new Date(controle.champsModifiesAt) : null,
     });

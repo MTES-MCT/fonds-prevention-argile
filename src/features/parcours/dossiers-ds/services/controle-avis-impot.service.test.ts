@@ -37,7 +37,14 @@ describe("controlerEtAnnoterAvisImpot", () => {
     expect(client.modifierAnnotations).toHaveBeenCalledWith({
       dossierId: FIXTURES_AVIS_IMPOT.lu.id,
       instructeurId: "SW5zdHJ1Y3RldXItMQ==",
-      annotations: [{ id: ANNOTATION_PREPROD, value: { textarea: controle?.texte } }],
+      annotations: [
+        {
+          id: ANNOTATION_PREPROD,
+          value: {
+            textarea: "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.",
+          },
+        },
+      ],
     });
   });
 
@@ -48,8 +55,8 @@ describe("controlerEtAnnoterAvisImpot", () => {
     expect(client.modifierAnnotations).not.toHaveBeenCalled();
   });
 
-  it("ne réécrit pas une annotation au contenu identique, seule la date changeant", async () => {
-    const premier = await controlerEtAnnoterAvisImpot(1, { ...options, maintenant: new Date("2026-09-01T12:00:00Z") });
+  it("ne réécrit pas une annotation déjà à jour", async () => {
+    const premier = await controlerEtAnnoterAvisImpot(1, { ...options, appliquer: false });
     client.getDossierAvisImpot.mockResolvedValue({
       ...FIXTURES_AVIS_IMPOT.lu,
       annotations: [{ champDescriptorId: ANNOTATION_PREPROD, stringValue: premier?.texte }],
@@ -128,11 +135,28 @@ describe("controlerAvisImpotApresSync", () => {
     });
   });
 
-  it("calcule la tranche avec la région de la simulation du parcours", async () => {
+  it("écrit l'alerte d'incohérence quand le RFR déclaré diffère de l'avis", async () => {
     await appeler();
 
-    const texte = client.modifierAnnotations.mock.calls[0][0].annotations[0].value.textarea;
-    expect(texte).toContain("tranche très modeste → modeste");
+    expect(client.modifierAnnotations.mock.calls[0][0].annotations[0].value.textarea).toBe(
+      "Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition."
+    );
+  });
+
+  it("enregistre le statut affiché dans l'annotation, celui du RFR", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...FIXTURES_AVIS_IMPOT.lu,
+      champs: FIXTURES_AVIS_IMPOT.lu.champs.map((c) =>
+        c.label === "Nombre de personnes composant le ménage" ? { ...c, valeurEntiere: "6" } : c
+      ),
+    });
+
+    await appeler();
+
+    expect(enregistrerControleAvisImpot).toHaveBeenCalledWith(
+      "d1",
+      expect.objectContaining({ statut: STATUTS_CONTROLE.COHERENT })
+    );
   });
 
   it("ne relit pas DN quand les champs n'ont pas bougé depuis le dernier contrôle", async () => {

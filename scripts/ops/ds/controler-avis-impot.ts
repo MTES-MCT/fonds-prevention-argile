@@ -10,7 +10,6 @@
  * Options :
  *   --region=<code INSEE> force la région ; sinon lue dans la simulation du parcours
  *   --apply               écrit l'annotation et enregistre le verdict en base
- *   --afficher-valeurs    affiche le texte de l'annotation, qui contient des montants
  *
  * Usage :
  *   pnpm ds:controler-avis-impot --tous
@@ -25,7 +24,7 @@ import { dossiersDemarchesSimplifiees, parcoursPrevention } from "@/shared/datab
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import type { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
-import { LIBELLES_STATUT_CONTROLE } from "@/features/parcours/dossiers-ds/domain/avis-impot";
+import { LIBELLES_STATUT_CONTROLE, statutAnnotationControle } from "@/features/parcours/dossiers-ds/domain/avis-impot";
 import { estControleAvisImpotActive } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
 import {
   controlerEtAnnoterAvisImpot,
@@ -37,14 +36,13 @@ import { getArg, hasFlag } from "../lib/args";
 
 const APPLIQUER = hasFlag("apply");
 const TOUS = hasFlag("tous");
-const AFFICHER_VALEURS = hasFlag("afficher-valeurs");
 const REGION = getArg("region") ?? null;
 const NUMEROS = (getArg("dossier") ?? "")
   .split(",")
   .map((n) => n.trim())
   .filter(Boolean);
 const PAUSE_MS = 150;
-const USAGE = "Usage : --dossier=<numéro>[,<numéro>] ou --tous [--region=<code>] [--apply] [--afficher-valeurs]";
+const USAGE = "Usage : --dossier=<numéro>[,<numéro>] ou --tous [--region=<code>] [--apply]";
 
 const LIBELLES_ISSUE: Record<IssueAnnotationControle, string> = {
   ecrite: "annotation écrite",
@@ -135,9 +133,9 @@ async function main(): Promise<void> {
         console.log(`\nDossier ${cible.dsNumber} : introuvable ou invisible côté DN`);
         compter("invisible");
       } else {
-        const statut = LIBELLES_STATUT_CONTROLE[controle.resultat.statut];
+        const statut = LIBELLES_STATUT_CONTROLE[statutAnnotationControle(controle.resultat)];
         console.log(`\nDossier ${cible.dsNumber} : ${statut} — ${LIBELLES_ISSUE[controle.issue]}${horsBase}`);
-        if (AFFICHER_VALEURS) console.log(controle.texte.replace(/^/gm, "      "));
+        console.log(`      « ${controle.texte} »`);
         compter(statut);
       }
     } catch (error) {
