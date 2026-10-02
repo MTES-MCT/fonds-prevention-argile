@@ -9,10 +9,8 @@ import {
 } from "../schema/sync-run-entries";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
-import {
-  SyncRunStatus,
-  SyncRunTrigger,
-} from "@/shared/domain/value-objects/sync-run-status.enum";
+import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
+import type { BilanAnnotationsDn } from "@/shared/domain/value-objects/bilan-annotations-dn";
 
 export type SyncRunListItem = SyncRun;
 
@@ -62,6 +60,7 @@ export class SyncRunRepository {
       totalParcoursUpdated: number;
       totalErrors: number;
       errorSummary?: string | null;
+      bilanAnnotationsDn?: BilanAnnotationsDn;
     }
   ): Promise<SyncRun | null> {
     const [row] = await db
@@ -73,6 +72,7 @@ export class SyncRunRepository {
         totalParcoursUpdated: data.totalParcoursUpdated,
         totalErrors: data.totalErrors,
         errorSummary: data.errorSummary ?? null,
+        ...(data.bilanAnnotationsDn ? { bilanAnnotationsDn: data.bilanAnnotationsDn } : {}),
       })
       .where(eq(syncRuns.id, runId))
       .returning();
@@ -94,16 +94,9 @@ export class SyncRunRepository {
     const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 20));
     const offset = (page - 1) * pageSize;
 
-    const data = await db
-      .select()
-      .from(syncRuns)
-      .orderBy(desc(syncRuns.startedAt))
-      .limit(pageSize)
-      .offset(offset);
+    const data = await db.select().from(syncRuns).orderBy(desc(syncRuns.startedAt)).limit(pageSize).offset(offset);
 
-    const totalResult = await db
-      .select({ count: sql<number>`cast(count(*) as integer)` })
-      .from(syncRuns);
+    const totalResult = await db.select({ count: sql<number>`cast(count(*) as integer)` }).from(syncRuns);
     const total = totalResult[0]?.count ?? 0;
 
     return {
@@ -134,6 +127,7 @@ export class SyncRunRepository {
         dsStatusChanges: syncRunEntries.dsStatusChanges,
         stepAdvanced: syncRunEntries.stepAdvanced,
         error: syncRunEntries.error,
+        annotationsDn: syncRunEntries.annotationsDn,
         createdAt: syncRunEntries.createdAt,
         userId: users.id,
         userPrenom: users.prenom,
