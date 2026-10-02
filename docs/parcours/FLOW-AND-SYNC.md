@@ -1260,33 +1260,35 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne | Type |
-| ------------------------ | ---------------------------------- | ------- | ----- | ----- |
-| `id` | uuid |
-| `started_at` | timestamp |
-| `finished_at` | timestamp (null = en cours) |
-| `status` | `success                           | partial | error | null` |
-| `triggered_by` | `cron                              | manual` |
-| `total_parcours_scanned` | int |
-| `total_parcours_updated` | int |
-| `total_errors` | int |
-| `error_summary` | text (20 premières erreurs concat) |
+| Colonne                  | Type                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `id`                     | uuid                                                                          |
+| `started_at`             | timestamp                                                                     |
+| `finished_at`            | timestamp (null = en cours)                                                   |
+| `status`                 | `success` \| `partial` \| `error` \| `null`                                   |
+| `triggered_by`           | `cron` \| `manual`                                                            |
+| `total_parcours_scanned` | int                                                                           |
+| `total_parcours_updated` | int                                                                           |
+| `total_errors`           | int                                                                           |
+| `error_summary`          | text (20 premières erreurs concat)                                            |
+| `bilan_annotations_dn`   | jsonb : compteurs du contrôle de l'avis (§ 5) ; null pour les runs antérieurs |
 
-**`sync_run_entries`** — une entrée par parcours **modifié** (ou en erreur) durant un run. Les parcours sans changement ne génèrent **pas** d'entrée pour ne pas alourdir la table.
+**`sync_run_entries`** — une entrée par parcours **modifié**, en erreur, ou dont l'avis d'imposition a été **contrôlé** durant un run. Les autres parcours ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
-| Colonne             | Type                                           |
-| ------------------- | ---------------------------------------------- |
-| `id`                | uuid                                           |
-| `sync_run_id`       | FK → sync_runs (cascade)                       |
-| `parcours_id`       | FK → parcours_prevention (cascade)             |
-| `step_before`       | step enum (nullable)                           |
-| `step_after`        | step enum (nullable)                           |
-| `status_before`     | status enum (nullable)                         |
-| `status_after`      | status enum (nullable)                         |
-| `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]` |
-| `step_advanced`     | boolean                                        |
-| `error`             | text (nullable)                                |
-| `created_at`        | timestamp                                      |
+| Colonne             | Type                                                                  |
+| ------------------- | --------------------------------------------------------------------- |
+| `id`                | uuid                                                                  |
+| `sync_run_id`       | FK → sync_runs (cascade)                                              |
+| `parcours_id`       | FK → parcours_prevention (cascade)                                    |
+| `step_before`       | step enum (nullable)                                                  |
+| `step_after`        | step enum (nullable)                                                  |
+| `status_before`     | status enum (nullable)                                                |
+| `status_after`      | status enum (nullable)                                                |
+| `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]`                        |
+| `step_advanced`     | boolean                                                               |
+| `error`             | text (nullable)                                                       |
+| `annotations_dn`    | jsonb : `{ issue, annotationsEcrites }`, noms d'annotations seulement |
+| `created_at`        | timestamp                                                             |
 
 ### 4.3 Configuration GitHub Actions
 
@@ -1336,7 +1338,18 @@ Route : `src/app/api/cron/sync-parcours/route.ts`.
 URL : `/administration/synchronisations` (réservée `SUPER_ADMINISTRATEUR`).
 
 - **Liste** : table paginée des runs (date, durée, badge statut, trigger, totaux), bouton « Lancer une synchro maintenant ».
-- **Détail** (`/administration/synchronisations/[id]`) : table des `sync_run_entries` avec demandeur, transitions step/status, changements DS, étape avancée, erreur.
+- **Détail** (`/administration/synchronisations/[id]`) : table des `sync_run_entries` avec demandeur, transitions step/status, changements DS, étape avancée, annotations DN, erreur.
+
+**Bilan des annotations DN** (§ 2.6.3). La liste porte une colonne « Annotations DN »
+(« 4 contrôlés · 3 mis à jour »), le détail un encart de synthèse et une colonne de badges
+(annotations écrites, « À jour », « Échec »). Trois règles :
+
+- **Des actions, jamais des valeurs.** Une ligne ne garde que l'issue et les **noms** des
+  annotations écrites ; ni montant, ni type de ménage, ni taux, ni verdict.
+- **Le verdict n'est compté qu'au niveau du run**, agrégé et non nominatif : il dit d'un coup
+  d'œil si le 2D-Doc est lu, sans rattacher un verdict à un demandeur nommé.
+- **Un contrôle lancé a sa ligne, même s'il n'a rien écrit** (« À jour ») : c'est ce qui montre
+  ce qui a tourné. Le volume reste borné, le contrôle ne tournant que si les champs ont bougé.
 
 Server actions : `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`.
 
