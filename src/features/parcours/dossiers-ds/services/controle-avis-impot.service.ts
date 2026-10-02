@@ -1,5 +1,10 @@
 import { getServerEnv } from "@/shared/config/env.config";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import type {
+  AnnotationDn,
+  AnnotationsDnEntree,
+  VerdictControleDn,
+} from "@/shared/domain/value-objects/bilan-annotations-dn";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient } from "../adapters/graphql/client";
 import type { ValeurAnnotationDn } from "../adapters/graphql/types";
@@ -26,10 +31,13 @@ export interface ControleAvisImpotDossier {
   texte: string;
   /** Valeur de chaque annotation répertoriée pour la démarche, écrite ou déjà à jour. */
   annotations: AnnotationInstruction[];
+  /** Annotations effectivement envoyées à DN par cet appel. */
+  annotationsEcrites: AnnotationDn[];
   issue: IssueAnnotationControle;
 }
 
 export interface AnnotationInstruction {
+  cle: AnnotationDn;
   nom: "Contrôle avis d'imposition" | "Type de ménage" | "Taux de subvention";
   id: string;
   valeur: string;
@@ -46,10 +54,17 @@ function annotationsInstruction(
   const taux = texteTauxSubvention(tranche);
   const candidates: Array<AnnotationInstruction | null> = [
     ids.avisImpot
-      ? { nom: "Contrôle avis d'imposition", id: ids.avisImpot, valeur: texteAvis, value: { textarea: texteAvis } }
+      ? {
+          cle: "avisImpot",
+          nom: "Contrôle avis d'imposition",
+          id: ids.avisImpot,
+          valeur: texteAvis,
+          value: { textarea: texteAvis },
+        }
       : null,
     ids.typeMenage
       ? {
+          cle: "typeMenage",
           nom: "Type de ménage",
           id: ids.typeMenage,
           valeur: tranche.typeMenage,
@@ -57,7 +72,13 @@ function annotationsInstruction(
         }
       : null,
     ids.tauxSubvention
-      ? { nom: "Taux de subvention", id: ids.tauxSubvention, valeur: taux, value: { text: taux } }
+      ? {
+          cle: "tauxSubvention",
+          nom: "Taux de subvention",
+          id: ids.tauxSubvention,
+          valeur: taux,
+          value: { text: taux },
+        }
       : null,
   ];
   return candidates.filter((a): a is AnnotationInstruction => a !== null);
@@ -86,7 +107,15 @@ export async function controlerEtAnnoterAvisImpot(
   });
   const texte = texteAnnotationControle(resultat);
   const annotations = annotationsInstruction(donnees.demarcheNumero, texte, tranche);
-  const controle = { numero, resultat, tranche, texte, annotations, champsModifiesAt: donnees.champsModifiesAt };
+  const controle = {
+    numero,
+    resultat,
+    tranche,
+    texte,
+    annotations,
+    annotationsEcrites: [] as AnnotationDn[],
+    champsModifiesAt: donnees.champsModifiesAt,
+  };
 
   if (annotations.length === 0) return { ...controle, issue: "annotation_non_configuree" };
   // Chaque écriture s'inscrit dans l'historique DN du dossier : on n'y ajoute pas de bruit.
@@ -99,7 +128,7 @@ export async function controlerEtAnnoterAvisImpot(
     instructeurId: getServerEnv().DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID,
     annotations: aEcrire.map(({ id, value }) => ({ id, value })),
   });
-  return { ...controle, issue: "ecrite" };
+  return { ...controle, annotationsEcrites: aEcrire.map((a) => a.cle), issue: "ecrite" };
 }
 
 export interface DossierApresSync {
@@ -136,6 +165,11 @@ export async function controlerEtEnregistrerAvisImpot(params: {
   return controle;
 }
 
+export interface ResultatAnnotationsApresSync {
+  entree: AnnotationsDnEntree;
+  verdict: VerdictControleDn;
+}
+
 /**
  * Appelé par le CRON après la sync d'un dossier. Renvoie null quand aucun contrôle n'était dû ;
  * une erreur DN remonte à l'appelant, qui la trace dans l'historique du run.
@@ -145,7 +179,7 @@ export async function controlerAvisImpotApresSync(params: {
   dsStatus: DSStatus | null;
   champsModifiesAt: string | undefined;
   maintenant?: Date;
-}): Promise<IssueAnnotationControle | null> {
+}): Promise<ResultatAnnotationsApresSync | null> {
   const { dossier, dsStatus, champsModifiesAt } = params;
   const aControler = doitControlerAvisImpot({
     step: dossier.step,
@@ -162,5 +196,9 @@ export async function controlerAvisImpotApresSync(params: {
     appliquer: true,
     maintenant: params.maintenant,
   });
-  return controle?.issue ?? null;
+  if (!controle || (controle.issue !== "ecrite" && controle.issue !== "inchangee")) return null;
+  return {
+    entree: { issue: controle.issue, annotationsEcrites: controle.annotationsEcrites },
+    verdict: statutAnnotationControle(controle.resultat),
+  };
 }

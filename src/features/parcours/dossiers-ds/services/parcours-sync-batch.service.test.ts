@@ -448,6 +448,71 @@ describe("runSyncBatch", () => {
       expect(mockedControleAvisImpot).not.toHaveBeenCalled();
     });
 
+    it("trace chaque contrôle lancé et totalise le bilan du run, sans aucune valeur", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+      mockedControleAvisImpot.mockResolvedValue({
+        entree: { issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage"] },
+        verdict: "a_verifier",
+      });
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+      expect(entry.annotationsDn).toEqual({ issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage"] });
+      expect(Object.keys(entry.annotationsDn ?? {}).sort()).toEqual(["annotationsEcrites", "issue"]);
+      expect(result.totalUpdated).toBe(0);
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({
+          bilanAnnotationsDn: {
+            controles: 1,
+            ecritures: { avisImpot: 1, typeMenage: 1, tauxSubvention: 0 },
+            aJour: 0,
+            echecs: 0,
+            verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
+          },
+        })
+      );
+    });
+
+    it("trace aussi un contrôle qui n'a rien eu à écrire", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+      mockedControleAvisImpot.mockResolvedValue({
+        entree: { issue: "inchangee", annotationsEcrites: [] },
+        verdict: "coherent",
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledOnce();
+      expect(mockedSyncRunRepo.addEntry.mock.calls[0][0].annotationsDn).toEqual({
+        issue: "inchangee",
+        annotationsEcrites: [],
+      });
+    });
+
+    it("enregistre un bilan à zéro quand aucun contrôle n'a tourné", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.EN_INSTRUCTION },
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({ bilanAnnotationsDn: expect.objectContaining({ controles: 0 }) })
+      );
+    });
+
     it("trace un échec dans le run sans interrompre la sync du parcours", async () => {
       preparer([eligibilite], {
         success: true,
@@ -462,6 +527,11 @@ describe("runSyncBatch", () => {
       expect(result.totalErrors).toBe(1);
       const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
       expect(entry.error).toContain("avis-impot: Le jeton utilisé est configuré seulement en lecture");
+      expect(entry.annotationsDn).toEqual({ issue: "echec", annotationsEcrites: [] });
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({ bilanAnnotationsDn: expect.objectContaining({ controles: 1, echecs: 1 }) })
+      );
     });
   });
 

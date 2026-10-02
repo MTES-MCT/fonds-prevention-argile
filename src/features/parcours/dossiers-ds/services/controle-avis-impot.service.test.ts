@@ -124,7 +124,10 @@ describe("controlerAvisImpotApresSync", () => {
   });
 
   it("contrôle un dossier déposé jamais contrôlé, écrit l'annotation et enregistre le verdict", async () => {
-    await expect(appeler()).resolves.toBe("ecrite");
+    await expect(appeler()).resolves.toEqual({
+      entree: { issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage", "tauxSubvention"] },
+      verdict: "a_verifier",
+    });
 
     expect(client.getDossierAvisImpot).toHaveBeenCalledWith(33301642);
     expect(enregistrerControleAvisImpot).toHaveBeenCalledWith("d1", {
@@ -212,7 +215,10 @@ describe("controlerAvisImpotApresSync", () => {
       annotations: (premier?.annotations ?? []).map((a) => ({ champDescriptorId: a.id, stringValue: a.valeur })),
     });
 
-    await expect(appeler()).resolves.toBe("inchangee");
+    await expect(appeler()).resolves.toEqual({
+      entree: { issue: "inchangee", annotationsEcrites: [] },
+      verdict: "a_verifier",
+    });
     expect(enregistrerControleAvisImpot).toHaveBeenCalledOnce();
   });
 });
@@ -245,6 +251,20 @@ describe("annotations de tranche de revenu", () => {
       { id: TYPE_MENAGE, value: { dropDownList: "TMO" } },
       { id: TAUX, value: { text: "90 %" } },
     ]);
+  });
+
+  it("ne rapporte comme écrites que les annotations envoyées", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...FIXTURES_AVIS_IMPOT.lu,
+      annotations: [
+        { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
+        { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
+      ],
+    });
+
+    await expect(controlerEtAnnoterAvisImpot(1, options)).resolves.toMatchObject({
+      annotationsEcrites: ["tauxSubvention"],
+    });
   });
 
   it("n'envoie que les annotations dont la valeur change", async () => {
