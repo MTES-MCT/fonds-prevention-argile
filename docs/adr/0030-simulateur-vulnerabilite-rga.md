@@ -3,6 +3,10 @@
 **Date** : 2026-09-04
 **Statut** : Accepté
 
+> **Amendé par [ADR-0045](0045-categorisation-qualitative-vulnerabilite.md)** : le score, la jauge et
+> la grille de pondération décrits ci-dessous sont remplacés par une catégorisation qualitative
+> des réponses, et la feature importe les règles d'éligibilité de `features/simulateur`.
+
 ## Contexte
 
 Un second simulateur public (`/vulnerabilite-rga`, embarquable via `/embed-vulnerabilite-rga`) est ajouté au produit
