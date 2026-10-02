@@ -21,7 +21,7 @@ export class VulnerabiliteSimulationsRepository {
 
   /**
    * Toutes les lignes créées depuis `debut`. Le service de stats en fait un seul passage
-   * en mémoire (répartition par réponse + score moyen) plutôt que N requêtes GROUP BY —
+   * en mémoire (répartition par réponse + points moyens) plutôt que N requêtes GROUP BY —
    * même esprit que `computeEligibiliteCounts`, volumétrie attendue modeste.
    */
   async findSince(debut: Date): Promise<VulnerabiliteSimulation[]> {

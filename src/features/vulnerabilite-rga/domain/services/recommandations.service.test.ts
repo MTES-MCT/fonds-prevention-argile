@@ -1,68 +1,96 @@
 import { describe, it, expect } from "vitest";
-import { getRecommandationsPrioritaires } from "./recommandations.service";
-import { computeScoreResult } from "./scoring.service";
-import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
+import { getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
+import { categoriserReponses } from "./categorisation.service";
 
-const REPONSES_PIRES: PartialVulnerabiliteReponses = {
-  adresse: {
-    label: "1 rue Test",
-    communeNom: "Testville",
-    codeDepartement: "81",
-    coordonnees: "43.9,2.15",
-    clefBan: "abc",
-    rnb: "rnb-1",
-    aleaRga: "fort",
-  },
-  eaux: {
-    pente_terrain: "vers_facade",
-    reseaux_enterres: "sous_fondations",
-    gravier_proprete: "present_tout_pourtour",
-    gouttieres: "absentes_ou_debordantes",
-  },
-  vegetation: {
-    arbre_proximite: "oui",
-    arbre_essence: "peuplier",
-    haies: "proches_denses",
-    vegetation_pied_facade: "presente",
-  },
-  divers: {
-    mitoyennete: "mitoyen_voisin_sans_travaux",
-    ensoleillement: "fort_sud",
-  },
-};
+describe("getSectionsRecommandations", () => {
+  it("regroupe les fiches en trois sections, dans l'ordre critiques, vigilance, à vérifier", () => {
+    const sections = getSectionsRecommandations(
+      categoriserReponses({
+        pente_terrain: "ne_sais_pas",
+        gouttieres: "absentes_ou_debordantes",
+        haies: "proches_denses",
+      })
+    );
 
-describe("getRecommandationsPrioritaires", () => {
-  it("ne génère jamais de recommandation pour l'aléa du sol, quel que soit son score", () => {
-    const result = computeScoreResult(REPONSES_PIRES);
-    const recos = getRecommandationsPrioritaires(result, { limit: 20 });
-    expect(recos.some((r) => r.critereId === "aleaRga")).toBe(false);
+    expect(sections.map((s) => [s.categorie, s.titre])).toEqual([
+      ["critique", "Points critiques"],
+      ["vigilance", "Points de vigilance"],
+      ["a_verifier", "Points à vérifier"],
+    ]);
+    expect(sections[0].recommandations.map((r) => r.id)).toEqual(["veg-haies"]);
+    expect(sections[1].recommandations.map((r) => r.id)).toEqual(["eaux-gouttieres"]);
+    expect(sections[2].recommandations.map((r) => r.id)).toEqual(["eaux-pente"]);
   });
 
-  it("trie par score décroissant", () => {
-    const result = computeScoreResult(REPONSES_PIRES);
-    const recos = getRecommandationsPrioritaires(result, { limit: 20 });
-    for (let i = 1; i < recos.length; i++) {
-      expect(recos[i - 1].score).toBeGreaterThanOrEqual(recos[i].score);
-    }
+  it("omet une section vide", () => {
+    const sections = getSectionsRecommandations(categoriserReponses({ gouttieres: "absentes_ou_debordantes" }));
+
+    expect(sections.map((s) => s.categorie)).toEqual(["vigilance"]);
   });
 
-  it("respecte la limite demandée", () => {
-    const result = computeScoreResult(REPONSES_PIRES);
-    const recos = getRecommandationsPrioritaires(result, { limit: 2 });
-    expect(recos.length).toBeLessThanOrEqual(2);
+  it("ne produit aucune section pour des bonnes pratiques, du sans objet ou l'aléa", () => {
+    const sections = getSectionsRecommandations(
+      categoriserReponses({
+        aleaRga: "fort",
+        reseaux_enterres: "eloignes",
+        gouttieres: "entretenues_evacuation_proche",
+        ensoleillement: "modere",
+      })
+    );
+
+    expect(sections).toEqual([]);
   });
 
-  it("filtre les scores sous le seuil minimum", () => {
-    const reponsesFaibles: PartialVulnerabiliteReponses = {
-      eaux: { pente_terrain: "plat" }, // score 10, sous le seuil par défaut (25)
-    };
-    const result = computeScoreResult(reponsesFaibles);
-    const recos = getRecommandationsPrioritaires(result);
-    expect(recos.some((r) => r.critereId === "pente_terrain")).toBe(false);
+  it("classe la fiche gravier selon la réponse : pourtour critique, localisé vigilance", () => {
+    const pourtour = getSectionsRecommandations(categoriserReponses({ gravier_proprete: "present_tout_pourtour" }));
+    const localise = getSectionsRecommandations(categoriserReponses({ gravier_proprete: "present_localise" }));
+
+    expect(pourtour[0]).toMatchObject({ categorie: "critique" });
+    expect(pourtour[0].recommandations[0].id).toBe("eaux-gravier-tout-pourtour");
+    expect(localise[0]).toMatchObject({ categorie: "vigilance" });
+    expect(localise[0].recommandations[0].id).toBe("eaux-gravier-localise");
   });
 
-  it("ne renvoie rien si aucune réponse n'est fournie", () => {
-    const result = computeScoreResult({});
-    expect(getRecommandationsPrioritaires(result)).toHaveLength(0);
+  it("porte la fiche arbre sur la proximité, quelle que soit l'essence", () => {
+    const sections = getSectionsRecommandations(
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "conifere" })
+    );
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0].categorie).toBe("critique");
+    expect(sections[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
+  });
+
+  it("liste sans conseil un point qu'aucune fiche ne couvre", () => {
+    const sections = getSectionsRecommandations(categoriserReponses({ source_chaleur_sous_sol: "oui_mur_non_isole" }));
+
+    expect(sections).toEqual([
+      {
+        categorie: "critique",
+        titre: "Points critiques",
+        recommandations: [],
+        pointsSansCarte: [
+          {
+            critereId: "source_chaleur_sous_sol",
+            question: "Source de chaleur en sous-sol",
+            reponse: "Oui, sur un mur non isolé",
+          },
+        ],
+      },
+    ]);
+  });
+});
+
+describe("getReponsesSansCarte", () => {
+  // Liste figée : y ajouter une entrée, c'est accepter qu'un point s'affiche sans conseil.
+  it("recense les réponses à traiter qui n'ont pas encore de fiche", () => {
+    expect(getReponsesSansCarte()).toEqual([
+      "pente_terrain/plat",
+      "pente_terrain/eloignee_facade",
+      "gravier_proprete/absent",
+      "recuperateur_eau/present_bon_etat",
+      "source_chaleur_sous_sol/oui_mur_isole",
+      "source_chaleur_sous_sol/oui_mur_non_isole",
+    ]);
   });
 });

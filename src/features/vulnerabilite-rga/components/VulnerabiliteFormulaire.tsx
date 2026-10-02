@@ -25,6 +25,7 @@ import {
   StepVegetationPiedFacade,
   StepMitoyenneteVulnerabilite,
   StepEnsoleillement,
+  StepSourceChaleurSousSol,
 } from "./steps";
 import { ResultVulnerabilite } from "./results";
 
@@ -91,7 +92,7 @@ export function VulnerabiliteFormulaire() {
       const currentResult = useVulnerabiliteStore.getState().vulnerabilite.result;
       if (currentResult) {
         // Fire-and-forget : ne doit jamais bloquer ni faire échouer l'affichage du résultat.
-        // Le score n'est pas transmis (recalculé côté serveur), l'adresse non plus.
+        // Seuls le département et les réponses sortent du navigateur, jamais l'adresse.
         enregistrerResultatVulnerabiliteAction(toSimulationPayload(currentAnswers)).catch(() => {});
       }
     } else if (currentStep !== VulnerabiliteStep.INTRO) {
@@ -167,6 +168,9 @@ export function VulnerabiliteFormulaire() {
     case VulnerabiliteStep.ENSOLEILLEMENT:
       return <StepEnsoleillement {...stepProps} initialValue={answers.divers?.ensoleillement} />;
 
+    case VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL:
+      return <StepSourceChaleurSousSol {...stepProps} initialValue={answers.divers?.source_chaleur_sous_sol} />;
+
     case VulnerabiliteStep.RESULTAT:
       if (!result) {
         console.error("[VulnerabiliteFormulaire] État incohérent à l'étape RESULTAT : résultat manquant");
@@ -179,7 +183,7 @@ export function VulnerabiliteFormulaire() {
           </div>
         );
       }
-      return <ResultVulnerabilite result={result} onRestart={reset} />;
+      return <ResultVulnerabilite answers={answers} result={result} onRestart={reset} />;
 
     default:
       return (

@@ -1,4 +1,4 @@
-import type { CategorieVulnerabilite } from "@/features/vulnerabilite-rga/domain/value-objects/grille-ponderation";
+import type { CategorieAffichee } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
 
 export interface ReponseDistribution {
   reponse: string;
@@ -16,16 +16,13 @@ export interface CritereReponsesStats {
   reponses: ReponseDistribution[];
 }
 
-export interface VulnerabiliteScoreMoyen {
-  /** null si aucune simulation sur la période. */
-  global: number | null;
-  parCategorie: Record<CategorieVulnerabilite, number | null>;
-}
+/** Nombre moyen de réponses de chaque catégorie par simulation ; null si aucune simulation sur la période. */
+export type VulnerabilitePointsMoyens = Record<CategorieAffichee, number | null>;
 
 export interface VulnerabiliteStatsBdd {
   totalSimulations: number;
   reponses: CritereReponsesStats[];
-  scoreMoyen: VulnerabiliteScoreMoyen;
+  pointsMoyens: VulnerabilitePointsMoyens;
 }
 
 export interface VulnerabiliteTopDepartement {

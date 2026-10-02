@@ -1,8 +1,8 @@
-import { ESSENCES_AGRESSIVITE, getCritereConfig } from "./grille-ponderation";
-import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
+import { ALEA_RGA_CRITERE_ID, ALEA_RGA_LABELS, getCritereConfig } from "./grille-categorisation";
+import type { PartialVulnerabiliteReponses, ReponseAleaRga } from "../types/vulnerabilite-reponses.types";
 
 /**
- * Un critère de la grille de pondération = une colonne de la table `vulnerabilite_simulations`.
+ * Une question (ou l'aléa de la carte) = une colonne de la table `vulnerabilite_simulations`.
  * `field` reste un `string` générique (pas `keyof VulnerabiliteSimulation`) pour ne pas faire
  * dépendre ce fichier de domaine du schéma Drizzle — les appelants castent au point d'usage.
  */
@@ -19,10 +19,11 @@ export const CRITERE_FIELDS: { critereId: string; field: string }[] = [
   { critereId: "vegetation_pied_facade", field: "vegetationPiedFacade" },
   { critereId: "mitoyennete", field: "mitoyennete" },
   { critereId: "ensoleillement", field: "ensoleillement" },
+  { critereId: "source_chaleur_sous_sol", field: "sourceChaleurSousSol" },
 ];
 
 /** Réponses aplaties par identifiant de critère — forme pivot entre les sections du parcours,
- * le calcul de score et la charge utile envoyée au serveur. */
+ * la catégorisation et la charge utile envoyée au serveur. */
 export type ReponsesParCritere = Record<string, string | undefined>;
 
 /** Aplatit les réponses collectées section par section en `critereId → réponse`. */
@@ -40,7 +41,19 @@ export function toReponsesParCritere(answers: PartialVulnerabiliteReponses): Rep
     vegetation_pied_facade: answers.vegetation?.vegetation_pied_facade,
     mitoyennete: answers.divers?.mitoyennete,
     ensoleillement: answers.divers?.ensoleillement,
+    source_chaleur_sous_sol: answers.divers?.source_chaleur_sous_sol,
   };
+}
+
+/** Relit une ligne de `vulnerabilite_simulations` en `critereId → réponse`. */
+export function reponsesDepuisColonnes(ligne: object): ReponsesParCritere {
+  const colonnes = ligne as Record<string, unknown>;
+  return Object.fromEntries(
+    CRITERE_FIELDS.map(({ critereId, field }) => {
+      const valeur = colonnes[field];
+      return [critereId, typeof valeur === "string" ? valeur : undefined];
+    })
+  );
 }
 
 /** Libellés des questions, indépendants des textes UI du simulateur (intro/bullets). */
@@ -57,12 +70,13 @@ export const QUESTION_LABELS: Record<string, string> = {
   vegetation_pied_facade: "Végétation en pied de façade",
   mitoyennete: "Mitoyenneté",
   ensoleillement: "Ensoleillement",
+  source_chaleur_sous_sol: "Source de chaleur en sous-sol",
 };
 
-/** Libellé lisible d'une réponse donnée à un critère (bareme, ou table d'essences d'arbre à part). */
+/** Libellé lisible d'une réponse donnée à une question, ou de l'aléa issu de la carte. */
 export function getReponseLabel(critereId: string, reponse: string): string {
-  if (critereId === "arbre_essence") {
-    return ESSENCES_AGRESSIVITE[reponse]?.label ?? reponse;
+  if (critereId === ALEA_RGA_CRITERE_ID) {
+    return ALEA_RGA_LABELS[reponse as ReponseAleaRga] ?? reponse;
   }
-  return getCritereConfig(critereId)?.bareme.find((b) => b.reponse === reponse)?.label ?? reponse;
+  return getCritereConfig(critereId)?.reponses.find((r) => r.reponse === reponse)?.label ?? reponse;
 }

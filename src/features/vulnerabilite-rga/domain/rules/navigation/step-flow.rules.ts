@@ -18,6 +18,7 @@ const STEP_ORDER: VulnerabiliteStep[] = [
   VulnerabiliteStep.VEGETATION_PIED_FACADE,
   VulnerabiliteStep.MITOYENNETE,
   VulnerabiliteStep.ENSOLEILLEMENT,
+  VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL,
   VulnerabiliteStep.RESULTAT,
 ];
 

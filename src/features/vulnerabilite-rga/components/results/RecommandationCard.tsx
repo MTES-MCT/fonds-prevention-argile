@@ -8,8 +8,7 @@ import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
 import schemaHaies from "../illustrations/SchemaHaies.svg";
 import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
 import schemaEnsoleillement from "../illustrations/SchemaEnsoleillement.svg";
-import { ImpactBadge } from "../shared/ImpactBadge";
-import type { RecommandationPrioritaire } from "../../domain/services/recommandations.service";
+import type { RecommandationDef } from "../../domain/catalogues/recommandations.catalogue";
 
 const ILLUSTRATIONS: Record<string, StaticImageData> = {
   pente: schemaPenteTerrain,
@@ -24,11 +23,11 @@ const ILLUSTRATIONS: Record<string, StaticImageData> = {
 };
 
 interface RecommandationCardProps {
-  recommandation: RecommandationPrioritaire;
+  recommandation: RecommandationDef;
 }
 
 export function RecommandationCard({ recommandation }: RecommandationCardProps) {
-  const { titre, problemes, ameliorations, illustrationId } = recommandation.def;
+  const { titre, problemes, ameliorations, illustrationId } = recommandation;
   const illustration = illustrationId ? ILLUSTRATIONS[illustrationId] : undefined;
 
   return (
@@ -40,9 +39,6 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
               simple <div> (order:0 par défaut) passerait avant le titre. fr-card__desc (order:3)
               garantit sa position après le titre sans dépendre de l'ordre dans le DOM. */}
           <div className="fr-card__desc">
-            <div className="fr-mb-3w">
-              <ImpactBadge score={recommandation.score} context="solution" inline={false} />
-            </div>
             {illustration && (
               <div style={{ maxWidth: "260px", marginInline: "auto" }}>
                 <Image src={illustration} alt="" className="w-full h-auto" />

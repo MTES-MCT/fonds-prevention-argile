@@ -27,7 +27,7 @@ export interface VulnerabiliteEauxReponses {
 }
 
 export type ReponseArbreProximite = "oui" | "non" | "ne_sais_pas";
-/** Clé dans `ESSENCES_AGRESSIVITE` (grille-ponderation.ts) — pas de type littéral figé ici pour ne pas dupliquer la liste. */
+/** Réponse du critère `arbre_essence` (grille-categorisation.ts) — pas de type littéral figé ici pour ne pas dupliquer la liste. */
 export type ReponseArbreEssence = string;
 export type ReponseHaies = "eloignees_peu_denses" | "proches_moyennement_denses" | "proches_denses" | "ne_sais_pas";
 export type ReponseVegetationPiedFacade = "absente" | "presente";
@@ -41,10 +41,12 @@ export interface VulnerabiliteVegetationReponses {
 
 export type ReponseMitoyennete = "pas_mitoyen" | "mitoyen_voisin_travaux_prevention" | "mitoyen_voisin_sans_travaux";
 export type ReponseEnsoleillement = "faible_ombrage" | "modere" | "fort_sud";
+export type ReponseSourceChaleurSousSol = "oui_mur_isole" | "oui_mur_non_isole" | "non" | "pas_de_sous_sol";
 
 export interface VulnerabiliteDiversReponses {
   mitoyennete?: ReponseMitoyennete;
   ensoleillement?: ReponseEnsoleillement;
+  source_chaleur_sous_sol?: ReponseSourceChaleurSousSol;
 }
 
 /** Réponses collectées au fil du parcours, section par section (miroir de `PartialRGASimulationData`). */

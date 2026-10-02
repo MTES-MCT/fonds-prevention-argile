@@ -5,7 +5,6 @@ import { vulnerabiliteSimulationsRepo, parcoursRepo } from "@/shared/database/re
 import { getSession, COOKIE_NAMES, getCookieOptions, SESSION_DURATION } from "@/features/auth/server";
 import { vulnerabiliteSimulationPayloadSchema } from "../domain/value-objects/simulation-payload";
 import { isVulnerabiliteRgaActive } from "../domain/value-objects/vulnerabilite-disponibilite";
-import { computeScoreFromReponses } from "../domain/services/scoring.service";
 
 /**
  * Enregistre une simulation de vulnérabilité terminée, de façon strictement anonyme
@@ -13,8 +12,8 @@ import { computeScoreFromReponses } from "../domain/services/scoring.service";
  * Best-effort : appelé en fire-and-forget par `VulnerabiliteFormulaire`, une erreur ici
  * ne doit jamais empêcher l'affichage du résultat à l'utilisateur.
  *
- * Endpoint public : la charge utile est validée contre la grille de pondération et le score
- * est **recalculé côté serveur**, jamais accepté du client (cf. `simulation-payload.ts`).
+ * Endpoint public : la charge utile est validée contre la grille de catégorisation, seules
+ * des réponses connues sont stockées (cf. `simulation-payload.ts`).
  *
  * Si un demandeur est déjà connecté au moment de la simulation, le pointeur
  * `parcours_prevention.vulnerabilite_simulation_id` est posé immédiatement. Sinon, un cookie
@@ -36,8 +35,6 @@ export async function enregistrerResultatVulnerabiliteAction(payload: unknown): 
   const { codeDepartement, reponses } = parsed.data;
 
   try {
-    const scoreResult = computeScoreFromReponses(reponses);
-
     const simulation = await vulnerabiliteSimulationsRepo.create({
       codeDepartement,
       aleaRga: reponses.aleaRga ?? null,
@@ -52,8 +49,7 @@ export async function enregistrerResultatVulnerabiliteAction(payload: unknown): 
       vegetationPiedFacade: reponses.vegetation_pied_facade ?? null,
       mitoyennete: reponses.mitoyennete ?? null,
       ensoleillement: reponses.ensoleillement ?? null,
-      scoreGlobal: scoreResult.scoreGlobal,
-      scoreParCategorie: scoreResult.scoreParCategorie,
+      sourceChaleurSousSol: reponses.source_chaleur_sous_sol ?? null,
     });
 
     const session = await getSession();

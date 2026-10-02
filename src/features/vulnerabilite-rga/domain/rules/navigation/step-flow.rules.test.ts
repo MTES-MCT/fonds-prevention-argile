@@ -21,7 +21,8 @@ describe("getNextStep", () => {
   it("avance normalement sur les étapes non conditionnelles", () => {
     expect(getNextStep(VulnerabiliteStep.INTRO, SANS_REPONSE)).toBe(VulnerabiliteStep.ADRESSE);
     expect(getNextStep(VulnerabiliteStep.ADRESSE, SANS_REPONSE)).toBe(VulnerabiliteStep.PENTE_TERRAIN);
-    expect(getNextStep(VulnerabiliteStep.ENSOLEILLEMENT, SANS_REPONSE)).toBe(VulnerabiliteStep.RESULTAT);
+    expect(getNextStep(VulnerabiliteStep.ENSOLEILLEMENT, SANS_REPONSE)).toBe(VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL);
+    expect(getNextStep(VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL, SANS_REPONSE)).toBe(VulnerabiliteStep.RESULTAT);
   });
 
   it("renvoie null après la dernière étape", () => {

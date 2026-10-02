@@ -1,47 +1,66 @@
-import { getCategorieConfig } from "../value-objects/grille-ponderation";
+import {
+  CATEGORIES_AFFICHAGE,
+  CATEGORIES_A_TRAITER,
+  CRITERES_CONFIG,
+  type CategorieATraiter,
+} from "../value-objects/grille-categorisation";
+import { QUESTION_LABELS, getReponseLabel } from "../value-objects/vulnerabilite-critere-fields";
 import { RECOMMANDATIONS_CATALOGUE, type RecommandationDef } from "../catalogues/recommandations.catalogue";
-import type { VulnerabiliteScoreResult } from "./scoring.service";
+import type { PointVulnerabilite } from "./categorisation.service";
 
-export interface RecommandationPrioritaire {
-  def: RecommandationDef;
+export interface PointSansCarte {
   critereId: string;
-  score: number;
+  question: string;
+  reponse: string;
 }
 
-const SCORE_MINIMUM_DEFAUT = 25;
-const LIMIT_DEFAUT = 6;
+export interface SectionRecommandations {
+  categorie: CategorieATraiter;
+  titre: string;
+  recommandations: RecommandationDef[];
+  /** Points de la catégorie qu'aucune fiche du catalogue ne couvre : listés sans conseil. */
+  pointsSansCarte: PointSansCarte[];
+}
+
+function trouverRecommandation(critereId: string, reponse: string): RecommandationDef | undefined {
+  return RECOMMANDATIONS_CATALOGUE.find((r) => r.critereId === critereId && r.reponsesDeclenchantes.includes(reponse));
+}
 
 /**
- * Sélectionne et priorise les recommandations à afficher, à partir du détail de score
- * déjà calculé par `computeScoreResult`. Tri par score décroissant uniquement : sans
- * pondération de catégorie ni de critère, le score de la réponse est le seul signal
- * d'importance qui reste.
- *
- * Ne retourne jamais de recommandation pour une catégorie non actionnable (le sol/aléa) :
- * garanti par `recommandations.catalogue.test.ts` (aucune entrée du catalogue ne référence
- * un critère de cette catégorie) et revérifié ici par sécurité.
+ * Regroupe les fiches en trois sections — critiques, vigilance, à vérifier — dans cet ordre,
+ * chacune omise si elle est vide. L'ordre des fiches suit celui des questions.
  */
-export function getRecommandationsPrioritaires(
-  scoreResult: VulnerabiliteScoreResult,
-  options?: { limit?: number; scoreMinimum?: number }
-): RecommandationPrioritaire[] {
-  const limit = options?.limit ?? LIMIT_DEFAUT;
-  const scoreMinimum = options?.scoreMinimum ?? SCORE_MINIMUM_DEFAUT;
+export function getSectionsRecommandations(points: PointVulnerabilite[]): SectionRecommandations[] {
+  return CATEGORIES_A_TRAITER.flatMap((categorie) => {
+    const recommandations: RecommandationDef[] = [];
+    const pointsSansCarte: PointSansCarte[] = [];
 
-  const candidats: RecommandationPrioritaire[] = [];
+    for (const point of points) {
+      if (point.categorie !== categorie) continue;
 
-  for (const detail of scoreResult.details) {
-    if (detail.score === null || detail.score <= scoreMinimum) continue;
-    if (!detail.reponse) continue;
-    if (!getCategorieConfig(detail.categorie).actionnable) continue;
+      const def = trouverRecommandation(point.critereId, point.reponse);
+      if (def) {
+        recommandations.push(def);
+      } else {
+        pointsSansCarte.push({
+          critereId: point.critereId,
+          question: QUESTION_LABELS[point.critereId] ?? point.critereId,
+          reponse: getReponseLabel(point.critereId, point.reponse),
+        });
+      }
+    }
 
-    const def = RECOMMANDATIONS_CATALOGUE.find(
-      (r) => r.critereId === detail.critereId && r.reponsesDeclenchantes.includes(detail.reponse!)
-    );
-    if (!def) continue;
+    if (recommandations.length === 0 && pointsSansCarte.length === 0) return [];
+    return [{ categorie, titre: CATEGORIES_AFFICHAGE[categorie].pluriel, recommandations, pointsSansCarte }];
+  });
+}
 
-    candidats.push({ def, critereId: detail.critereId, score: detail.score });
-  }
-
-  return candidats.sort((a, b) => b.score - a.score).slice(0, limit);
+/** Réponses classées critique, vigilance ou à vérifier qu'aucune fiche ne couvre (`critereId/reponse`). */
+export function getReponsesSansCarte(): string[] {
+  return CRITERES_CONFIG.flatMap((critere) =>
+    critere.reponses
+      .filter((r) => (CATEGORIES_A_TRAITER as readonly string[]).includes(r.categorie ?? ""))
+      .filter((r) => !trouverRecommandation(critere.id, r.reponse))
+      .map((r) => `${critere.id}/${r.reponse}`)
+  );
 }

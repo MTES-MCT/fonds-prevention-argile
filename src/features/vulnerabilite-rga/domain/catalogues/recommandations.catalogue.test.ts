@@ -1,28 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { RECOMMANDATIONS_CATALOGUE } from "./recommandations.catalogue";
-import { CRITERES_CONFIG, getCategorieConfig } from "../value-objects/grille-ponderation";
+import { CATEGORIES_A_TRAITER } from "../value-objects/grille-categorisation";
+import { getCategorieReponse } from "../services/categorisation.service";
 
 describe("RECOMMANDATIONS_CATALOGUE", () => {
-  it("ne référence jamais un critère de la catégorie non actionnable (sol)", () => {
+  it("ne se déclenche que sur des réponses classées critique, vigilance ou à vérifier", () => {
     for (const reco of RECOMMANDATIONS_CATALOGUE) {
-      const critere = CRITERES_CONFIG.find((c) => c.id === reco.critereId);
-      expect(critere, `critère "${reco.critereId}" introuvable pour la reco "${reco.id}"`).toBeDefined();
-      const categorieConfig = getCategorieConfig(critere!.categorie);
-      expect(categorieConfig.actionnable, `reco "${reco.id}" référence un critère non actionnable`).toBe(true);
+      for (const reponse of reco.reponsesDeclenchantes) {
+        expect(CATEGORIES_A_TRAITER, `${reco.id} / ${reponse}`).toContain(getCategorieReponse(reco.critereId, reponse));
+      }
     }
   });
 
-  it("chaque critère actionnable a au moins une recommandation associée", () => {
-    // arbre_proximite exclu : quand la réponse est "oui", la navigation force toujours la
-    // question arbre_essence juste après (cf. step-flow.rules.ts), dont la recommandation
-    // couvre déjà ce cas — plus précise (par essence) qu'une reco générique sur la proximité.
-    const criteresActionnables = CRITERES_CONFIG.filter(
-      (c) => getCategorieConfig(c.categorie).actionnable && c.id !== "arbre_proximite"
+  it("une réponse ne déclenche qu'une seule fiche", () => {
+    const declencheurs = RECOMMANDATIONS_CATALOGUE.flatMap((r) =>
+      r.reponsesDeclenchantes.map((reponse) => `${r.critereId}/${reponse}`)
     );
-    for (const critere of criteresActionnables) {
-      const aUneReco = RECOMMANDATIONS_CATALOGUE.some((r) => r.critereId === critere.id);
-      expect(aUneReco, `critère actionnable "${critere.id}" sans recommandation`).toBe(true);
-    }
+    expect(new Set(declencheurs).size).toBe(declencheurs.length);
   });
 
   it("des ids uniques et au moins un problème et une amélioration par recommandation", () => {
