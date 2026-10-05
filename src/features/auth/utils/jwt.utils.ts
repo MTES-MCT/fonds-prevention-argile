@@ -43,7 +43,10 @@ export function verifyToken(token: string): JWTPayload | null {
 
     const expectedSignature = crypto.createHmac("sha256", secret).update(`${header}.${payload}`).digest("base64url");
 
-    if (signature !== expectedSignature) return null;
+    // Comparaison des chaînes et non des octets décodés : le base64url de Node tolère des variantes.
+    const recue = Buffer.from(signature);
+    const attendue = Buffer.from(expectedSignature);
+    if (recue.length !== attendue.length || !crypto.timingSafeEqual(recue, attendue)) return null;
 
     const decoded = JSON.parse(Buffer.from(payload, "base64url").toString()) as JWTPayload;
     if (decoded.exp && decoded.exp < Date.now()) return null;

@@ -43,6 +43,16 @@ describe("jwt.utils — secret de signature", () => {
     expect(() => verifyToken(jeton)).toThrow(/JWT_SECRET absent ou trop court/);
   });
 
+  it.each([
+    ["même longueur", (s: string) => (s[0] === "A" ? "B" : "A") + s.slice(1)],
+    ["tronquée", (s: string) => s.slice(0, -1)],
+    ["rallongée", (s: string) => `${s}A`],
+  ])("rejette une signature altérée (%s) sans lever", (_cas, alterer) => {
+    const [entete, charge, signature] = createToken(PAYLOAD).split(".");
+
+    expect(verifyToken(`${entete}.${charge}.${alterer(signature)}`)).toBeNull();
+  });
+
   it("rejette un jeton signé avec l'ancien secret par défaut", () => {
     expect(verifyToken(signerAvec("change-this-secret", PAYLOAD))).toBeNull();
   });
