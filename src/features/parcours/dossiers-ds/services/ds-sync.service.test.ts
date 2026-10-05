@@ -203,3 +203,26 @@ describe("syncDossierStatus — prérempli non déposé (ADR-0026)", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("syncDossierStatus — date de modification des champs", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedUpdateDossierStatus.mockResolvedValue({ success: true, data: { updated: true } });
+    mockedRecordDnProbeState.mockResolvedValue(undefined);
+  });
+
+  it.each([
+    ["statut changé", DSStatus.EN_CONSTRUCTION],
+    ["statut inchangé", DSStatus.EN_INSTRUCTION],
+  ])("la renvoie pour le contrôle de l'avis (%s)", async (_cas, statutLocal) => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: statutLocal } as never);
+    mockedGetDossierStatus.mockResolvedValue({
+      state: DSStatus.EN_INSTRUCTION,
+      dateDerniereModificationChamps: "2026-09-29T15:41:02+02:00",
+    });
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    expect(result.success && result.data?.champsModifiesAt).toBe("2026-09-29T15:41:02+02:00");
+  });
+});

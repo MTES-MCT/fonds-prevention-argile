@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { DS_ANNOTATION_LIEN_FPA_ELIGIBILITE, getAnnotationLienFpaEligibilite } from "./ds-annotations";
+import {
+  DS_ANNOTATION_LIEN_FPA_ELIGIBILITE,
+  getAnnotationControleAvisImpot,
+  getAnnotationLienFpaEligibilite,
+} from "./ds-annotations";
 
 describe("getAnnotationLienFpaEligibilite", () => {
   afterEach(() => {
@@ -31,5 +35,22 @@ describe("getAnnotationLienFpaEligibilite", () => {
   it("ne réutilise pas l'id des démarches diagnostic/devis", () => {
     // Erreur d'origine de la PR #272 : Champ-6352089 appartient à diagnostic et devis.
     expect(Object.values(DS_ANNOTATION_LIEN_FPA_ELIGIBILITE)).not.toContain("Q2hhbXAtNjM1MjA4OQ==");
+  });
+});
+
+describe("getAnnotationControleAvisImpot", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renvoie l'id de préprod pour la démarche 146377", () => {
+    expect(getAnnotationControleAvisImpot(146377)).toBe("Q2hhbXAtNzAyMDIwNw==");
+  });
+
+  it("renvoie null et avertit pour une démarche non répertoriée", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(getAnnotationControleAvisImpot(999)).toBeNull();
+    expect(warn).toHaveBeenCalledOnce();
   });
 });

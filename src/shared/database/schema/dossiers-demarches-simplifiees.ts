@@ -47,6 +47,12 @@ export const dossiersDemarchesSimplifiees = pgTable(
       .$type<InitiateurFormulaire>()
       .notNull()
       .default(INITIATEUR_FORMULAIRE.DEMANDEUR),
+
+    // Contrôle de l'avis d'imposition (éligibilité) : verdict seul, jamais de donnée fiscale.
+    avisImpotControleAt: timestamp("avis_impot_controle_at", { mode: "date" }),
+    avisImpotStatut: varchar("avis_impot_statut", { length: 20 }),
+    // `dateDerniereModificationChamps` DN au moment du contrôle : le relancer seulement si elle bouge.
+    avisImpotChampsModifiesAt: timestamp("avis_impot_champs_modifies_at", { mode: "date" }),
   },
   // Un seul pointeur par (parcours, étape) : `getDossierByStep` serait sinon indéterministe.
   (t) => [unique("dossiers_ds_parcours_step_unique").on(t.parcoursId, t.step)]

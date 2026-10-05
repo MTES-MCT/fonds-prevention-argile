@@ -16,6 +16,9 @@ export const DS_FIELD_IDS = {
     ANNEE_CONSTRUCTION: "Q2hhbXAtNTU0MjU2OA==",
     ZONE_EXPOSITION: "Q2hhbXAtNTUxMDk4Mw==",
     NOMBRE_NIVEAUX: "Q2hhbXAtNTQxNzM0OA==",
+    // Déclaratifs du foyer, relus pour le contrôle de l'avis d'imposition (non préremplis pour le RFR).
+    NOMBRE_PERSONNES: "Q2hhbXAtNTQyMjU4NA==",
+    REVENU_FISCAL_REFERENCE: "Q2hhbXAtNTQyMjU4NQ==",
   },
   // Autres démarches
   DIAGNOSTIC: {

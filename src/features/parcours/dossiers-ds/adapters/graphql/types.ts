@@ -59,6 +59,7 @@ export interface Dossier {
   datePassageEnInstruction?: string;
   dateTraitement?: string;
   dateDerniereCorrectionEnAttente?: string;
+  dateDerniereModificationChamps?: string;
   motivation?: string;
   motivationAttachment?: Attachment;
   attestation?: Attachment;
@@ -164,6 +165,75 @@ export interface DossierInspection {
   usager?: { email: string };
   demandeur?: { __typename?: string; nom?: string | null; prenom?: string | null };
   champs?: Array<{ champDescriptorId: string; label: string; stringValue?: string | null }>;
+}
+
+/** Colonne DN : porte les données qu'il a extraites d'une pièce, ici le 2D-Doc de l'avis. */
+export interface ColonneDn {
+  __typename: string;
+  id: string;
+  label: string;
+  stringValue?: string | null;
+  // Alias : `value` n'a pas le même type d'une colonne à l'autre (BigInt, Float, ISO8601Date).
+  valeurEntiere?: string | number | null;
+  valeurDecimale?: number | null;
+  valeurDate?: string | null;
+}
+
+export interface PieceJustificativeChampDn {
+  __typename: "PieceJustificativeChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  nature: string;
+  files: Array<{ contentType?: string | null }>;
+  columns: ColonneDn[];
+}
+
+export interface IntegerNumberChampDn {
+  __typename: "IntegerNumberChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  valeurEntiere?: string | number | null;
+}
+
+export interface RepetitionChampDn {
+  __typename: "RepetitionChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  rows: Array<{ champs: ChampAvisImpotDn[] }>;
+}
+
+export interface AutreChampDn {
+  __typename: string;
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+}
+
+export type ChampAvisImpotDn = PieceJustificativeChampDn | IntegerNumberChampDn | RepetitionChampDn | AutreChampDn;
+
+/** Projection d'un dossier d'éligibilité pour le contrôle de l'avis d'imposition. */
+export interface DossierAvisImpot {
+  id: string;
+  number: number;
+  state: DossierState;
+  dateDepot?: string | null;
+  dateDerniereModification?: string | null;
+  dateDerniereModificationChamps?: string | null;
+  demarche?: { number: number } | null;
+  champs: ChampAvisImpotDn[];
+  annotations: Array<{ champDescriptorId: string; stringValue?: string | null }>;
+}
+
+/** Valeur d'annotation, un seul type de champ à la fois (`AnnotationValueInput @oneOf`). */
+export type ValeurAnnotationDn = { text: string } | { textarea: string };
+
+export interface ModificationAnnotationsDn {
+  dossierId: string;
+  instructeurId: string;
+  annotations: Array<{ id: string; value: ValeurAnnotationDn }>;
 }
 
 export interface DossiersConnection {
