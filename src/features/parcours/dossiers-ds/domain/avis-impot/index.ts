@@ -13,6 +13,7 @@ export {
 export { LIBELLES_STATUT_CONTROLE, formaterDetailControle } from "./detail-controle-avis-impot";
 export {
   TEXTES_ANNOTATION_CONTROLE,
+  masquerMontants,
   statutAnnotationControle,
   texteAnnotationControle,
 } from "./texte-annotation-controle";

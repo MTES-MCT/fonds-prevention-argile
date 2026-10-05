@@ -21,6 +21,7 @@ import {
   LIBELLES_STATUT_CONTROLE,
   controlerAvisImpot,
   formaterDetailControle,
+  masquerMontants,
   texteAnnotationControle,
   type AvisImpotExtrait,
   type DonneesAvisImpotDossier,
@@ -88,7 +89,8 @@ function afficherControle(donnees: DonneesAvisImpotDossier): void {
     nombrePersonnes: donnees.declaratif.nombrePersonnes,
     codeDepartement: donnees.codeDepartement,
   });
-  console.log(`Annotation DN : « ${texteAnnotationControle(resultat)} »`);
+  const texte = texteAnnotationControle(resultat);
+  console.log(`Annotation DN : « ${AFFICHER_VALEURS ? texte : masquerMontants(texte)} »`);
   console.log(
     `Tranche de revenus : ${tranche.typeMenage} — taux de subvention : ${valeurTauxSubvention(tranche) ?? "vide"}`
   );

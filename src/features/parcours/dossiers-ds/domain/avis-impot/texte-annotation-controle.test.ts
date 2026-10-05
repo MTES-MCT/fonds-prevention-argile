@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { controlerAvisImpot, STATUTS_CONTROLE, type ContexteControle } from "./controle-avis-impot";
-import { statutAnnotationControle, texteAnnotationControle } from "./texte-annotation-controle";
+import { masquerMontants, statutAnnotationControle, texteAnnotationControle } from "./texte-annotation-controle";
 import { mapDossierAvisImpot } from "../../mappers/avis-impot.mapper";
 import {
   FIXTURES_AVIS_IMPOT,
@@ -64,6 +64,13 @@ describe("texteAnnotationControle", () => {
     for (const nom of ["lu", "non-lu", "sans-avis"] as const) {
       expect(texteAnnotationControle(resultat(nom))).not.toMatch(/\d/);
     }
+  });
+
+  it("masque les montants pour les sorties de scripts", () => {
+    expect(masquerMontants(INCOHERENT)).toBe(
+      "Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition : montant déclaré = *** € et montant indiqué dans l'avis d'imposition = *** €."
+    );
+    expect(masquerMontants(COHERENT)).toBe(COHERENT);
   });
 
   it("annonce une somme quand l'écart porte sur plusieurs avis", () => {

@@ -151,6 +151,13 @@ aussi ce qui est écrit dans DN.
 - « Type de ménage » s'appelle désormais **« Tranche de revenus »** dans DN (même id, mêmes
   options).
 
+**Rattrapage au déploiement.** Un dossier déjà contrôlé n'est recontrôlé que si ses champs
+bougent : ni la nouvelle règle de somme, ni les deux nouvelles annotations ne l'atteignent seules.
+Après le déploiement, lancer une fois `pnpm ds:controler-avis-impot --tous --apply`, qui n'envoie
+que les annotations dont la valeur change. Seule la préprod est concernée : la prod n'a encore
+aucune annotation répertoriée, donc aucun contrôle passé. Les scripts masquent désormais les
+montants de la phrase par défaut (`--afficher-valeurs` pour les voir).
+
 ## Liens
 
 - Code : `src/features/parcours/dossiers-ds/domain/avis-impot/`,

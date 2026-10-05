@@ -16,6 +16,11 @@ export function statutAnnotationControle(resultat: ResultatControleAvisImpot): S
   return resultat.revenu.statut;
 }
 
+/** Pour les sorties de scripts : la phrase sans ses montants, qui ne se journalisent pas. */
+export function masquerMontants(texte: string): string {
+  return texte.replace(/\d[\d\s]* €/g, "*** €");
+}
+
 export function texteAnnotationControle(resultat: ResultatControleAvisImpot): string {
   const statut = statutAnnotationControle(resultat);
   const { declare, avis } = resultat.revenu;

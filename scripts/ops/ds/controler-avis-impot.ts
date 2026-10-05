@@ -9,6 +9,7 @@
  *
  * Options :
  *   --apply               écrit l'annotation et enregistre le verdict en base
+ *   --afficher-valeurs    montants de l'annotation en clair (masqués par défaut)
  *
  * Usage :
  *   pnpm ds:controler-avis-impot --tous
@@ -22,7 +23,11 @@ import { db, rawClient } from "@/shared/database/client";
 import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import { LIBELLES_STATUT_CONTROLE, statutAnnotationControle } from "@/features/parcours/dossiers-ds/domain/avis-impot";
+import {
+  LIBELLES_STATUT_CONTROLE,
+  masquerMontants,
+  statutAnnotationControle,
+} from "@/features/parcours/dossiers-ds/domain/avis-impot";
 import { estInstructionAutomatiqueActive } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
 import {
   controlerEtAnnoterAvisImpot,
@@ -33,6 +38,8 @@ import {
 import { getArg, hasFlag } from "../lib/args";
 
 const APPLIQUER = hasFlag("apply");
+const AFFICHER_VALEURS = hasFlag("afficher-valeurs");
+const afficher = (texte: string) => (AFFICHER_VALEURS ? texte : masquerMontants(texte));
 const TOUS = hasFlag("tous");
 const NUMEROS = (getArg("dossier") ?? "")
   .split(",")
@@ -121,9 +128,9 @@ async function main(): Promise<void> {
       } else {
         const statut = LIBELLES_STATUT_CONTROLE[statutAnnotationControle(controle.resultat)];
         console.log(`\nDossier ${cible.dsNumber} : ${statut} — ${LIBELLES_ISSUE[controle.issue]}${horsBase}`);
-        if (controle.annotations.length === 0) console.log(`      « ${controle.texte} »`);
+        if (controle.annotations.length === 0) console.log(`      « ${afficher(controle.texte)} »`);
         for (const annotation of controle.annotations) {
-          console.log(`      ${annotation.nom} : « ${annotation.valeur} »`);
+          console.log(`      ${annotation.nom} : « ${afficher(annotation.valeur)} »`);
         }
         compter(statut);
       }

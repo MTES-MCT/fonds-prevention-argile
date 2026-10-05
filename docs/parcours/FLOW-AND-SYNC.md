@@ -526,7 +526,9 @@ formulaire DN seul (`calculerTrancheDossier`, `domain/tranche-revenu/`) :
   d'accueil ; un test échoue si les deux divergent.
 
 > Outils : `pnpm ds:inspecter-avis-impot --dossier=<n>` (lecture, valeurs masquées),
-> `pnpm ds:controler-avis-impot --dossier=<n> | --tous [--apply]` (dry-run par défaut, rattrapage),
+> `pnpm ds:controler-avis-impot --dossier=<n> | --tous [--apply]` (dry-run par défaut, rattrapage :
+> à relancer avec `--tous --apply` quand les règles ou les annotations changent, un dossier déjà
+> contrôlé n'étant recontrôlé que si ses champs bougent ; montants masqués sans `--afficher-valeurs`),
 > `pnpm ds:lister-instructeurs <numero>` (id et groupes de chaque instructeur).
 
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
