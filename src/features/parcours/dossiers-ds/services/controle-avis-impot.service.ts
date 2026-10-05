@@ -27,7 +27,7 @@ export interface ControleAvisImpotDossier {
   resultat: ResultatControleAvisImpot;
   tranche: TrancheDossier;
   champsModifiesAt: string | null;
-  /** Texte de l'annotation de l'avis : une phrase métier, sans donnée fiscale. */
+  /** Texte de l'annotation de l'avis : une phrase métier, avec les deux montants en cas d'écart. */
   texte: string;
   /** Valeur de chaque annotation répertoriée pour la démarche, écrite ou déjà à jour. */
   annotations: AnnotationInstruction[];

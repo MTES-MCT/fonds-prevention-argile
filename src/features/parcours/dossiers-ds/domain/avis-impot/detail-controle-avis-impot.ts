@@ -7,7 +7,7 @@ export const LIBELLES_STATUT_CONTROLE: Record<StatutControle, string> = {
 };
 
 // Espace simple plutôt que l'espace fine de toLocaleString, lisible dans n'importe quel terminal.
-function euros(montant: number): string {
+export function euros(montant: number): string {
   return `${String(Math.abs(montant)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €`;
 }
 

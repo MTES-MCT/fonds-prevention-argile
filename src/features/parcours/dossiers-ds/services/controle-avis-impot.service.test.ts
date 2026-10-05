@@ -141,7 +141,7 @@ describe("controlerAvisImpotApresSync", () => {
     await appeler();
 
     expect(client.modifierAnnotations.mock.calls[0][0].annotations[0].value.textarea).toBe(
-      "Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition."
+      "Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition : montant déclaré = 30 000 € et montant indiqué dans l'avis d'imposition = 35 000 €."
     );
   });
 

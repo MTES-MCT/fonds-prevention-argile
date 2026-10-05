@@ -1,6 +1,7 @@
 import { STATUTS_CONTROLE, type ResultatControleAvisImpot, type StatutControle } from "./controle-avis-impot";
+import { euros } from "./detail-controle-avis-impot";
 
-/** Libellés validés par le métier : l'annotation DN se résume à l'une de ces phrases. */
+/** Libellés validés par le métier ; l'incohérence est complétée par les deux montants comparés. */
 export const TEXTES_ANNOTATION_CONTROLE: Record<StatutControle, string> = {
   [STATUTS_CONTROLE.COHERENT]:
     "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.",
@@ -16,5 +17,13 @@ export function statutAnnotationControle(resultat: ResultatControleAvisImpot): S
 }
 
 export function texteAnnotationControle(resultat: ResultatControleAvisImpot): string {
-  return TEXTES_ANNOTATION_CONTROLE[statutAnnotationControle(resultat)];
+  const statut = statutAnnotationControle(resultat);
+  const { declare, avis } = resultat.revenu;
+  if (statut !== STATUTS_CONTROLE.A_VERIFIER || declare === null || avis === null) {
+    return TEXTES_ANNOTATION_CONTROLE[statut];
+  }
+  const source =
+    resultat.avisLus > 1 ? `les avis d'imposition (somme de ${resultat.avisLus} avis)` : "l'avis d'imposition";
+  const phrase = TEXTES_ANNOTATION_CONTROLE[statut].replace(/\.$/, "");
+  return `${phrase} : montant déclaré = ${euros(declare)} et montant indiqué dans ${source} = ${euros(avis)}.`;
 }
