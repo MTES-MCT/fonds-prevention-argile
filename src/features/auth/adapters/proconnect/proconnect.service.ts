@@ -16,6 +16,8 @@ import { agentsRepo } from "@/shared/database/repositories";
 import { PC_ERROR_MAPPING, PC_USER_ERROR_MESSAGES, createPCError } from "./proconnect.errors";
 import { generateSecureRandomString } from "../../utils/oauth.utils";
 import { AgentRole } from "@/shared/domain/value-objects";
+import { buildClaimsMfaProConnect, estAcrMfa, type AcrMfaProConnect } from "../../domain/value-objects/session-mfa";
+import { PC_CALLBACK_ERROR_CODES } from "./proconnect.types";
 import {
   getContexteVerificationProConnect,
   JetonProConnectInvalideError,
@@ -43,7 +45,7 @@ export async function generateAuthorizationUrl(): Promise<string> {
     scope: config.scopes,
     state: state,
     nonce: nonce,
-    acr_values: config.acrValues,
+    claims: buildClaimsMfaProConnect(),
   });
 
   return `${config.urls.authorization}?${params.toString()}`;
@@ -120,6 +122,7 @@ export async function getStoredNonce(): Promise<string | undefined> {
 export async function createProConnectSession(
   agentId: string,
   agentRole: AgentRole,
+  proConnectAcr: AcrMfaProConnect,
   pcIdToken?: string,
   firstName?: string,
   lastName?: string
@@ -131,6 +134,7 @@ export async function createProConnectSession(
     lastName,
     authMethod: AUTH_METHODS.PROCONNECT,
     idToken: pcIdToken,
+    proConnectAcr,
     exp: Date.now() + SESSION_DURATION.admin * 1000,
     iat: Date.now(),
   };
@@ -182,6 +186,18 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     const contexte = getContexteVerificationProConnect();
     const claims = await verifierIdTokenProConnect(tokens.id_token, await getStoredNonce(), contexte);
 
+    // Avant toute écriture en base : un agent sans second facteur ne laisse aucune trace.
+    const acr = claims.acr;
+    if (!estAcrMfa(acr)) {
+      console.warn("[ProConnect] Connexion refusée sans double authentification", { acr: String(acr) });
+      return {
+        success: false,
+        error: "Double authentification requise",
+        code: PC_CALLBACK_ERROR_CODES.MFA_REQUISE,
+        shouldLogout: true,
+      };
+    }
+
     // 4. Récupérer les infos utilisateur, rattachées au même sujet que l'id_token (OIDC Core 5.3.2)
     const userInfo = await getUserInfo(tokens.access_token, contexte);
     if (userInfo.sub !== claims.sub) {
@@ -226,7 +242,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     }
 
     // 9. Créer la session avec l'agentId et son rôle
-    await createProConnectSession(agent.id, agent.role, tokens.id_token, agent.givenName, agent.usualName || "");
+    await createProConnectSession(agent.id, agent.role, acr, tokens.id_token, agent.givenName, agent.usualName || "");
 
     return { success: true, role: agent.role };
   } catch (error) {

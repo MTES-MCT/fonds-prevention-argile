@@ -21,7 +21,7 @@ import { getProConnectConfig } from "./proconnect.config";
 import { createToken } from "../../utils/jwt.utils";
 import { agentsRepo } from "@/shared/database/repositories";
 import { JetonProConnectInvalideError, lireUserInfoProConnect, verifierIdTokenProConnect } from "./proconnect-oidc";
-import { handleProConnectCallback } from "./proconnect.service";
+import { generateAuthorizationUrl, handleProConnectCallback } from "./proconnect.service";
 import { COOKIE_NAMES } from "../../domain/value-objects";
 import { UserRole } from "@/shared/domain/value-objects";
 
@@ -56,7 +56,12 @@ beforeEach(() => {
     clientId: "client",
     clientSecret: "secret",
     callbackUrl: "https://app.test/api/auth/pc/callback",
-    urls: { token: "https://pc.test/api/v2/token", userinfo: "https://pc.test/api/v2/userinfo" },
+    scopes: "openid email",
+    urls: {
+      authorization: "https://pc.test/api/v2/authorize",
+      token: "https://pc.test/api/v2/token",
+      userinfo: "https://pc.test/api/v2/userinfo",
+    },
   } as never);
   vi.mocked(verifierIdTokenProConnect).mockResolvedValue({ sub: "sub-agent", acr: "eidas1-mfa", amr: ["pwd"] });
   vi.mocked(lireUserInfoProConnect).mockResolvedValue({ ...USER_INFO });
@@ -114,5 +119,56 @@ describe("handleProConnectCallback — vérification OIDC", () => {
 
     expect(resultat).toMatchObject({ success: false, shouldLogout: true });
     expect(agentsRepo.authenticateFromProConnect).not.toHaveBeenCalled();
+  });
+});
+
+describe("generateAuthorizationUrl — exigence de 2FA", () => {
+  it("demande un acr MFA essentiel via claims, sans acr_values", async () => {
+    const url = new URL(await generateAuthorizationUrl());
+
+    expect(url.searchParams.has("acr_values")).toBe(false);
+    expect(JSON.parse(url.searchParams.get("claims") ?? "")).toEqual({
+      id_token: { acr: { essential: true, values: ["eidas0-mfa", "eidas1-mfa", "eidas2", "eidas3"] } },
+    });
+  });
+});
+
+describe("handleProConnectCallback — exigence de 2FA", () => {
+  it.each([
+    ["absent", undefined],
+    ["eidas1 (mot de passe seul)", "eidas1"],
+    ["eidas0", "eidas0"],
+    ["sous forme de tableau", ["eidas2"]],
+    ["inconnu", "https://proconnect.gouv.fr/assurance/consistency-checked-2fa"],
+  ])("acr %s → refus dédié, ni UserInfo, ni base, ni session", async (_cas, acr) => {
+    const fetchMock = stubFetch();
+    vi.mocked(verifierIdTokenProConnect).mockResolvedValue({ sub: "sub-agent", acr, amr: ["mfa"] });
+
+    const resultat = await handleProConnectCallback("code", "state-ok");
+
+    expect(resultat).toMatchObject({ success: false, code: "pc_mfa_required", shouldLogout: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(agentsRepo.authenticateFromProConnect).not.toHaveBeenCalled();
+    expect(createToken).not.toHaveBeenCalled();
+  });
+
+  it.each(["eidas0-mfa", "eidas1-mfa", "eidas2", "eidas3"])("acr %s → session portant cet acr", async (acr) => {
+    stubFetch();
+    vi.mocked(verifierIdTokenProConnect).mockResolvedValue({ sub: "sub-agent", acr, amr: undefined });
+
+    const resultat = await handleProConnectCallback("code", "state-ok");
+
+    expect(resultat).toEqual({ success: true, role: UserRole.AMO });
+    expect(createToken).toHaveBeenCalledWith(expect.objectContaining({ proConnectAcr: acr, userId: "agent-1" }));
+  });
+
+  it("2FA valide mais agent inconnu → refus, aucune session", async () => {
+    stubFetch();
+    vi.mocked(agentsRepo.authenticateFromProConnect).mockResolvedValue(null as never);
+
+    const resultat = await handleProConnectCallback("code", "state-ok");
+
+    expect(resultat).toMatchObject({ success: false, shouldLogout: true });
+    expect(createToken).not.toHaveBeenCalled();
   });
 });

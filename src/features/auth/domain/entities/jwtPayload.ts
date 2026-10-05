@@ -9,6 +9,8 @@ export interface JWTPayload {
   email?: string;
   authMethod: string;
   idToken?: string;
+  // acr ProConnect vérifié au callback : sans valeur MFA, la session agent est refusée.
+  proConnectAcr?: string;
   exp: number;
   iat: number;
 }
