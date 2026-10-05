@@ -94,6 +94,8 @@ export interface Champ {
 
 export interface Annotation {
   id: string;
+  /** Id du descripteur, commun à tous les dossiers d'une démarche (l'`id` change d'un dossier à l'autre). */
+  champDescriptorId?: string;
   label: string;
   stringValue?: string;
   instructeur?: Instructeur;
@@ -126,6 +128,12 @@ export interface Attachment {
 }
 
 /** Annotation réduite à ce qui sert au rattachement (ADR-0027). */
+/** Annotation relue par la synchro : de quoi savoir si un champ est vide. */
+export interface AnnotationLue {
+  champDescriptorId: string;
+  stringValue: string | null;
+}
+
 export interface AnnotationReconciliation {
   champDescriptorId: string;
   stringValue?: string | null;

@@ -173,7 +173,7 @@ export default function SyncRunDetailPanel({ runId }: Props) {
             <div className="fr-callout">
               <p className="fr-callout__text">
                 Aucun parcours n&apos;a été modifié pendant ce run (aucun changement DS, aucune progression, aucun
-                contrôle de l&apos;avis, aucune erreur).
+                contrôle de l&apos;avis, aucun lien FPA complété, aucune erreur).
               </p>
             </div>
           ) : (

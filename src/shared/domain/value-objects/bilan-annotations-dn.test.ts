@@ -11,9 +11,10 @@ describe("ajouterAuBilanAnnotationsDn", () => {
 
     expect(bilan).toEqual({
       controles: 1,
-      ecritures: { avisImpot: 1, typeMenage: 0, tauxSubvention: 1 },
+      ecritures: { avisImpot: 1, typeMenage: 0, tauxSubvention: 1, lienFpa: 0 },
       aJour: 0,
       echecs: 0,
+      echecsLienFpa: 0,
       verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
     });
   });
@@ -26,10 +27,25 @@ describe("ajouterAuBilanAnnotationsDn", () => {
 
     expect(bilan).toMatchObject({
       controles: 3,
-      ecritures: { avisImpot: 0, typeMenage: 1, tauxSubvention: 0 },
+      ecritures: { avisImpot: 0, typeMenage: 1, tauxSubvention: 0, lienFpa: 0 },
       aJour: 1,
       echecs: 1,
       verdicts: { coherent: 2, a_verifier: 0, non_verifiable: 0 },
+    });
+  });
+
+  it("compte le lien FPA à part, sans en faire un contrôle", () => {
+    let bilan = bilanAnnotationsDnVide();
+    bilan = ajouterAuBilanAnnotationsDn(bilan, { issue: null, annotationsEcrites: ["lienFpa", "lienFpa"] }, null);
+    bilan = ajouterAuBilanAnnotationsDn(bilan, { issue: null, annotationsEcrites: [], echecLienFpa: true }, null);
+    bilan = ajouterAuBilanAnnotationsDn(bilan, { issue: "inchangee", annotationsEcrites: ["lienFpa"] }, "coherent");
+
+    expect(bilan).toMatchObject({
+      controles: 1,
+      ecritures: { avisImpot: 0, typeMenage: 0, tauxSubvention: 0, lienFpa: 3 },
+      aJour: 1,
+      echecs: 0,
+      echecsLienFpa: 1,
     });
   });
 

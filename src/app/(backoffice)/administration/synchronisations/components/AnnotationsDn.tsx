@@ -11,10 +11,11 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
       </p>
     );
   }
+  const aucuneActivite = bilan.controles === 0 && bilan.ecritures.lienFpa === 0 && bilan.echecsLienFpa === 0;
   return (
     <div className="fr-callout fr-mb-4w">
       <h2 className="fr-callout__title fr-h6">Annotations DN</h2>
-      {bilan.controles === 0 ? (
+      {aucuneActivite ? (
         <p className="fr-callout__text">Aucun contrôle de l&apos;avis d&apos;imposition n&apos;a été lancé.</p>
       ) : (
         <ul className="fr-callout__text fr-text--sm">
@@ -25,6 +26,7 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
           <li>
             Annotations écrites :{" "}
             {ANNOTATIONS_DN.map((a) => `${LIBELLES_ANNOTATIONS_DN[a]} ${bilan.ecritures[a]}`).join(" · ")}
+            {bilan.echecsLienFpa > 0 && ` · Échecs du lien FPA : ${bilan.echecsLienFpa}`}
           </li>
           <li>
             Verdicts : {VERDICTS_CONTROLE_DN.map((v) => `${LIBELLES_VERDICTS_DN[v]} ${bilan.verdicts[v]}`).join(" · ")}
@@ -35,16 +37,21 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
   );
 }
 
-/** Ce que le contrôle a fait sur un dossier : les annotations écrites, jamais leur valeur. */
+/** Ce que le CRON a fait sur un parcours : l'issue, les annotations écrites, jamais leur valeur. */
 export function AnnotationsDnBadges({ entree }: { entree: AnnotationsDnEntree | null }) {
   if (!entree) return <>-</>;
-  if (entree.issue === "echec") return <span className="fr-badge fr-badge--sm fr-badge--error">Échec</span>;
-  if (entree.issue === "inchangee") return <span className="fr-badge fr-badge--sm">À jour</span>;
+  const badges: Array<{ libelle: string; classe: string }> = [];
+  if (entree.issue === "echec") badges.push({ libelle: "Échec", classe: "fr-badge--error" });
+  if (entree.issue === "inchangee") badges.push({ libelle: "À jour", classe: "" });
+  for (const annotation of new Set(entree.annotationsEcrites)) {
+    badges.push({ libelle: LIBELLES_ANNOTATIONS_DN[annotation], classe: "fr-badge--info" });
+  }
+  if (entree.echecLienFpa) badges.push({ libelle: "Échec du lien FPA", classe: "fr-badge--error" });
   return (
     <ul className="fr-badges-group">
-      {entree.annotationsEcrites.map((a) => (
-        <li key={a}>
-          <span className="fr-badge fr-badge--sm fr-badge--info">{LIBELLES_ANNOTATIONS_DN[a]}</span>
+      {badges.map((b) => (
+        <li key={b.libelle}>
+          <span className={`fr-badge fr-badge--sm ${b.classe}`}>{b.libelle}</span>
         </li>
       ))}
     </ul>
