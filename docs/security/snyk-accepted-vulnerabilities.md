@@ -469,6 +469,16 @@ Le binaire natif se charge après le bump (`sharp` 0.35.5, libvips 8.18.7).
 | `braces` <=3.0.3       | High     | devDep | `eslint-config-next > … > @typescript-eslint/typescript-estree > fast-glob > micromatch > braces` | `GHSA-vfj7-8cjw-p6xm`, épuisement de pile sur des motifs profondément imbriqués. N'entre que sur les globs de la configuration ESLint du dépôt, jamais sur une entrée externe, et rien de tout ça n'est déployé. **Aucune version corrigée publiée** : à reprendre dès qu'il y en a une (override), ou avec le lot Next 16 / ESLint 10                                     |
 | `source-map-js` <1.2.2 | High     | build  | `next > postcss > source-map-js` (aussi via `@socialgouv/matomo-next`, `tailwindcss`)             | `GHSA-68fv-2mgg-jv7q`. Ne tourne qu'au build, sur les sources CSS du dépôt, jamais sur une entrée externe. Correctif publié (`1.2.2`, le 2026-09-30 à 14 h 08 UTC) mais bloqué par `minimumReleaseAge` jusqu'au **2026-10-07 à 14 h 08 UTC** : ajouter alors l'override `source-map-js: ^1.2.2` dans `pnpm-workspace.yaml` (et le checksum du lockfile dans `.talismanrc`) |
 
+## Refresh — octobre 2026 (branche `feat/proconnect-2fa`)
+
+Ajout d'une dépendance runtime pour vérifier la signature des jetons ProConnect (ADR de la double
+authentification). Aucune vulnérabilité nouvelle : `pnpm audit` est identique à celui du refresh
+précédent (`braces`, `source-map-js`, `uuid`, déjà acceptées ci-dessus).
+
+- **`jose` 6.2.12** (runtime) : vérification JWT / JWKS, maintenue par l'auteur de
+  `node-oidc-provider`, **sans aucune dépendance transitive**, aucune vulnérabilité connue.
+  Préférée à une implémentation maison de la vérification RS256 / JWKS.
+
 ## Prochaine revue
 
 - **Lors de l'upgrade Next 16** (PR dédiée) : réévaluer next, eslint-config-next, ESLint 10,

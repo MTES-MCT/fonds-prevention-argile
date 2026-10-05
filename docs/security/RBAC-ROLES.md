@@ -21,8 +21,15 @@ Le `middleware.ts` aiguille selon la route demandée : `/mon-compte`,
 `/espace-agent/*` → connexion ProConnect. L'accès agent vérifie donc **deux
 choses** : `checkProConnectAccess()` (bonne méthode d'auth) **et** le rôle.
 
+> **Double authentification obligatoire (ADR-0045).** Tout agent doit se connecter avec un
+> second facteur : la requête `/authorize` exige un `acr` parmi `eidas0-mfa`, `eidas1-mfa`,
+> `eidas2`, `eidas3` (paramètre `claims`), et le callback refuse toute autre valeur **avant**
+> d'écrire quoi que ce soit en base, sur un `id_token` dont la signature, l'émetteur,
+> l'audience et le nonce ont été vérifiés. Forcé dans tous les environnements. Voir §2.2.
+
 > `AUTH_METHODS.PASSWORD` existe encore dans les constantes mais n'est pas utilisé
-> en production (fallback legacy/test). La dépendance `argon2` a été retirée : aucun code
+> en production (fallback legacy/test). Une session de cette méthode est refusée par
+> `getSession` (aucune preuve MFA). La dépendance `argon2` a été retirée : aucun code
 > applicatif ne hashait de mot de passe.
 
 > **Se connecter en agent hors production** passe donc toujours par ProConnect — en local et sur
@@ -97,6 +104,24 @@ structures (`entreprises_amo.emails`, `allers_vers.emails`) vivent hors de la ta
 et ne sont synchronisées par rien : la désactivation y retire l'adresse explicitement, dans
 la même transaction — sauf si c'est la **dernière** de la structure, auquel cas elle est
 conservée et signalée (une liste vide couperait tous les mails de la structure en silence).
+
+### 2.2 Session sans preuve de double authentification — refusée partout (ADR-0045)
+
+L'`acr` validé au callback est écrit, signé, dans le JWT de session (`proConnectAcr`).
+`getSession` (`auth/services/session.service.ts`) le contrôle par `estSessionConforme`
+(`auth/domain/value-objects/session-mfa.ts`) : une session dont la méthode n'est pas
+FranceConnect, ou dont le rôle est agent, sans `acr` MFA vaut **absence de session**. Toutes
+les gardes — layouts, pages, `generateMetadata`, Server Actions — passent par ce point, via
+`getCurrentUser` → `checkUserAccess` ou directement. Conséquence voulue : les sessions ouvertes
+avant la 2FA tombent au **déploiement**, sans attendre leurs 8 h.
+
+- Le **middleware** décode la session (sans vérifier la signature, faute de crypto Node en
+  Edge) uniquement pour écarter et effacer une session non conforme ; il n'en authentifie
+  aucune. Sans lui, une ancienne session bouclait entre `/connexion/agent` et l'espace agent.
+- La **déconnexion** ProConnect lit la session signée **sans** juger sa conformité
+  (`lireSessionSignee`) : une ancienne session doit pouvoir se fermer chez ProConnect.
+- La MFA **ne remplace aucune autorisation** : rôle, périmètre et propriété restent vérifiés
+  ensuite, inchangés.
 
 ---
 
@@ -574,6 +599,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Service RBAC (onglets)                      | `src/features/auth/permissions/services/rbac.service.ts`                                                                                                 |
 | Config des routes / redirections            | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                        |
 | Aiguillage auth                             | `src/middleware.ts`                                                                                                                                      |
+| Double authentification ProConnect          | `auth/domain/value-objects/session-mfa.ts` (`estSessionConforme`) + `adapters/proconnect/proconnect-oidc.ts` + `session.service.ts` (`getSession`)       |
 | Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
 | Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
 | Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |
