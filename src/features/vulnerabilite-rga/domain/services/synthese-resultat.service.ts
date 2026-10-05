@@ -37,6 +37,10 @@ function phrasePoints(critiques: number, vigilances: number): string {
   return `Nous avons identifié ${partCritique} et ${partVigilance}.`;
 }
 
+// La carte d'aléa est une estimation : hors zone, on relativise les points sans les retirer.
+const PHRASE_HORS_ZONE =
+  "Hors zone argileuse, ces points ont a priori peu d'impact sur votre maison. La carte d'aléa reste une estimation : s'il y a malgré tout de l'argile sous vos fondations, ils redeviennent déterminants.";
+
 export function getNiveauSynthese(compte: ComptePoints): NiveauSynthese {
   if (compte.critique > 0) return "critique";
   if (compte.vigilance > 0) return "vigilance";
@@ -46,7 +50,12 @@ export function getNiveauSynthese(compte: ComptePoints): NiveauSynthese {
 /** Synthèse du résultat, partagée entre l'écran et le PDF. L'aléa n'y est qu'une donnée de contexte. */
 export function buildSyntheseResultat(aleaRga: ReponseAleaRga | undefined, compte: ComptePoints): SyntheseResultat {
   const niveau = getNiveauSynthese(compte);
-  const phrases = [aleaRga ? PHRASES_ALEA[aleaRga] : null, phrasePoints(compte.critique, compte.vigilance)];
+  const aDesPointsATraiter = compte.critique + compte.vigilance + compte.a_verifier > 0;
+  const phrases = [
+    aleaRga ? PHRASES_ALEA[aleaRga] : null,
+    phrasePoints(compte.critique, compte.vigilance),
+    aleaRga === "nul" && aDesPointsATraiter ? PHRASE_HORS_ZONE : null,
+  ];
 
   return { niveau, titre: TITRES[niveau], texte: phrases.filter(Boolean).join(" ") };
 }

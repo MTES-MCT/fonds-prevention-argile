@@ -37,6 +37,15 @@ describe("buildSyntheseResultat", () => {
     expect(buildSyntheseResultat("nul", compte(0, 0)).texte).toMatch(/^Votre maison est située hors zone argileuse\./);
   });
 
+  it("relativise les points hors zone argileuse, sans les retirer", () => {
+    const synthese = buildSyntheseResultat("nul", compte(1, 0));
+
+    expect(synthese.texte).toContain("Nous avons identifié 1 point critique");
+    expect(synthese.texte).toContain("ont a priori peu d'impact");
+    expect(buildSyntheseResultat("nul", compte(0, 0)).texte).not.toContain("peu d'impact");
+    expect(buildSyntheseResultat("fort", compte(1, 0)).texte).not.toContain("peu d'impact");
+  });
+
   it("se passe de la phrase d'aléa quand il est inconnu", () => {
     expect(buildSyntheseResultat(undefined, compte(0, 1)).texte).toMatch(/^Nous n'avons identifié/);
   });
