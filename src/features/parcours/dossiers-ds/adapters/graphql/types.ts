@@ -237,7 +237,12 @@ export interface DossierAvisImpot {
 }
 
 /** Valeur d'annotation, un seul type de champ à la fois (`AnnotationValueInput @oneOf`). */
-export type ValeurAnnotationDn = { text: string } | { textarea: string } | { dropDownList: string };
+export type ValeurAnnotationDn =
+  | { text: string }
+  | { textarea: string }
+  | { dropDownList: string }
+  // `@oneOf` refuse `null` : un nombre ne se vide pas par l'API.
+  | { integerNumber: number };
 
 export interface ModificationAnnotationsDn {
   dossierId: string;

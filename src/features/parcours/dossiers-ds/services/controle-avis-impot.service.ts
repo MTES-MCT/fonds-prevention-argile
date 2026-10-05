@@ -15,7 +15,7 @@ import {
   texteAnnotationControle,
   type ResultatControleAvisImpot,
 } from "../domain/avis-impot";
-import { calculerTrancheDossier, texteTauxSubvention, type TrancheDossier } from "../domain/tranche-revenu";
+import { calculerTrancheDossier, valeurTauxSubvention, type TrancheDossier } from "../domain/tranche-revenu";
 import { estInstructionAutomatiqueActive, idsAnnotationsInstruction } from "../domain/value-objects/ds-annotations";
 import { lireAvisImpotDossier } from "./avis-impot.service";
 import { enregistrerControleAvisImpot } from "./dossier-ds.service";
@@ -38,8 +38,9 @@ export interface ControleAvisImpotDossier {
 
 export interface AnnotationInstruction {
   cle: AnnotationDn;
-  nom: "Contrôle avis d'imposition" | "Type de ménage" | "Taux de subvention";
+  nom: "Contrôle avis d'imposition" | "Tranche de revenus" | "Taux de subvention";
   id: string;
+  /** Valeur telle que DN la relit (`stringValue`). */
   valeur: string;
   value: ValeurAnnotationDn;
 }
@@ -51,7 +52,7 @@ function annotationsInstruction(
 ): AnnotationInstruction[] {
   if (!demarcheNumero) return [];
   const ids = idsAnnotationsInstruction(demarcheNumero);
-  const taux = texteTauxSubvention(tranche);
+  const taux = valeurTauxSubvention(tranche);
   const candidates: Array<AnnotationInstruction | null> = [
     ids.avisImpot
       ? {
@@ -65,19 +66,20 @@ function annotationsInstruction(
     ids.typeMenage
       ? {
           cle: "typeMenage",
-          nom: "Type de ménage",
+          nom: "Tranche de revenus",
           id: ids.typeMenage,
           valeur: tranche.typeMenage,
           value: { dropDownList: tranche.typeMenage },
         }
       : null,
-    ids.tauxSubvention
+    // Taux incalculable : rien à écrire, DN ne sait pas vider un nombre ; la tranche dit « Non calculable ».
+    ids.tauxSubvention && taux !== null
       ? {
           cle: "tauxSubvention",
           nom: "Taux de subvention",
           id: ids.tauxSubvention,
-          valeur: taux,
-          value: { text: taux },
+          valeur: String(taux),
+          value: { integerNumber: taux },
         }
       : null,
   ];

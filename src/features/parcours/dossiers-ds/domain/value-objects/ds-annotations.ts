@@ -43,12 +43,12 @@ export const DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE: Record<number, strin
   146377: "Q2hhbXAtNzAyMDIwNw==", // préprod
 };
 
-/** « Type de ménage » (liste déroulante : TMO, MO, INT, Hors plafond, Non calculable). */
+/** « Tranche de revenus » (liste déroulante : TMO, MO, INT, Hors plafond, Non calculable). */
 export const DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE: Record<number, string> = {
   146377: "Q2hhbXAtNzAzMDU1Mw==", // préprod
 };
 
-/** « Taux de subvention » (texte court, ex. « 90 % »). */
+/** « Taux de subvention (en pourcentage) » (nombre entier). */
 export const DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE: Record<number, string> = {
   146377: "Q2hhbXAtNzAzMDU1NQ==", // préprod
 };

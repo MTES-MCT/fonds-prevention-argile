@@ -6,7 +6,7 @@ import type {
 
 export const LIBELLES_ANNOTATIONS_DN: Record<AnnotationDn, string> = {
   avisImpot: "Avis d'imposition",
-  typeMenage: "Type de ménage",
+  typeMenage: "Tranche de revenus",
   tauxSubvention: "Taux",
 };
 

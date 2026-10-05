@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import contenuAccueil from "@/app/(main)/(home)/content/content.json";
 import { SEUILS_HORS_IDF, SEUILS_IDF } from "@/features/simulateur/domain/types/rga-revenus.types";
-import { TAUX_SUBVENTION, TYPES_MENAGE, calculerTrancheDossier, texteTauxSubvention } from "./tranche-revenu";
+import { TAUX_SUBVENTION, TYPES_MENAGE, calculerTrancheDossier, valeurTauxSubvention } from "./tranche-revenu";
 
 const GERS = "32";
 const PARIS = "75";
@@ -56,13 +56,13 @@ describe("calculerTrancheDossier", () => {
   });
 });
 
-describe("texteTauxSubvention", () => {
+describe("valeurTauxSubvention", () => {
   it.each([
-    [{ typeMenage: TYPES_MENAGE.TMO, tauxSubvention: 90 }, "90 %"],
-    [{ typeMenage: TYPES_MENAGE.HORS_PLAFOND, tauxSubvention: null }, "Non éligible"],
-    [{ typeMenage: TYPES_MENAGE.NON_CALCULABLE, tauxSubvention: null }, "Non calculable"],
-  ] as const)("%o → %s", (tranche, texte) => {
-    expect(texteTauxSubvention(tranche)).toBe(texte);
+    [{ typeMenage: TYPES_MENAGE.TMO, tauxSubvention: 90 }, 90],
+    [{ typeMenage: TYPES_MENAGE.HORS_PLAFOND, tauxSubvention: null }, 0],
+    [{ typeMenage: TYPES_MENAGE.NON_CALCULABLE, tauxSubvention: null }, null],
+  ] as const)("%o → %s", (tranche, valeur) => {
+    expect(valeurTauxSubvention(tranche)).toBe(valeur);
   });
 });
 

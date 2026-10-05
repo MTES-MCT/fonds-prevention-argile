@@ -29,7 +29,7 @@ describe("BilanAnnotationsDnEncart", () => {
     expect(
       screen.getByText(/Contrôles lancés : 4 · Dossiers mis à jour : 2 · Déjà à jour : 1 · Échecs : 1/)
     ).toBeTruthy();
-    expect(screen.getByText(/Avis d'imposition 2 · Type de ménage 3 · Taux 3/)).toBeTruthy();
+    expect(screen.getByText(/Avis d'imposition 2 · Tranche de revenus 3 · Taux 3/)).toBeTruthy();
     expect(screen.getByText(/Cohérent 1 · À vérifier 1 · Non vérifiable 1/)).toBeTruthy();
   });
 
@@ -52,7 +52,7 @@ describe("AnnotationsDnBadges", () => {
 
     expect(screen.getByText("Avis d'imposition")).toBeTruthy();
     expect(screen.getByText("Taux")).toBeTruthy();
-    expect(screen.queryByText("Type de ménage")).toBeNull();
+    expect(screen.queryByText("Tranche de revenus")).toBeNull();
   });
 
   it.each([

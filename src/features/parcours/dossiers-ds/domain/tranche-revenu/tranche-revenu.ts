@@ -3,7 +3,7 @@ import { calculerTrancheRevenu, type TrancheRevenuRga } from "@/features/simulat
 // Départements d'Île-de-France : DN expose le département de la commune, pas sa région.
 export const DEPARTEMENTS_IDF: ReadonlySet<string> = new Set(["75", "77", "78", "91", "92", "93", "94", "95"]);
 
-/** Libellés contractuels : ce sont les options de la liste déroulante « Type de ménage » dans DN. */
+/** Libellés contractuels : ce sont les options de la liste déroulante « Tranche de revenus » dans DN. */
 export const TYPES_MENAGE = {
   TMO: "TMO",
   MO: "MO",
@@ -55,8 +55,8 @@ export function calculerTrancheDossier(params: {
   return { typeMenage, tauxSubvention };
 }
 
-/** Valeur de l'annotation « Taux de subvention » (texte court). */
-export function texteTauxSubvention(tranche: TrancheDossier): string {
-  if (tranche.tauxSubvention !== null) return `${tranche.tauxSubvention} %`;
-  return tranche.typeMenage === TYPES_MENAGE.HORS_PLAFOND ? "Non éligible" : "Non calculable";
+/** Valeur de l'annotation « Taux de subvention » (nombre entier) : 0 hors plafond, null si incalculable. */
+export function valeurTauxSubvention(tranche: TrancheDossier): number | null {
+  if (tranche.tauxSubvention !== null) return tranche.tauxSubvention;
+  return tranche.typeMenage === TYPES_MENAGE.HORS_PLAFOND ? 0 : null;
 }

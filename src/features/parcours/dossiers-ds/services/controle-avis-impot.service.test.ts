@@ -229,7 +229,7 @@ describe("annotations de tranche de revenu", () => {
   const COHERENT = "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.";
 
   const ecrites = () =>
-    client.modifierAnnotations.mock.calls[0][0].annotations as Array<{ id: string; value: Record<string, string> }>;
+    client.modifierAnnotations.mock.calls[0][0].annotations as Array<{ id: string; value: Record<string, unknown> }>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -249,7 +249,7 @@ describe("annotations de tranche de revenu", () => {
     expect(ecrites()).toEqual([
       { id: ANNOTATION_PREPROD, value: { textarea: COHERENT } },
       { id: TYPE_MENAGE, value: { dropDownList: "TMO" } },
-      { id: TAUX, value: { text: "90 %" } },
+      { id: TAUX, value: { integerNumber: 90 } },
     ]);
   });
 
@@ -273,12 +273,12 @@ describe("annotations de tranche de revenu", () => {
       annotations: [
         { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
         { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
-        { champDescriptorId: TAUX, stringValue: "85 %" },
+        { champDescriptorId: TAUX, stringValue: "85" },
       ],
     });
 
     await expect(controlerEtAnnoterAvisImpot(1, options)).resolves.toMatchObject({ issue: "ecrite" });
-    expect(ecrites()).toEqual([{ id: TAUX, value: { text: "90 %" } }]);
+    expect(ecrites()).toEqual([{ id: TAUX, value: { integerNumber: 90 } }]);
   });
 
   it("calcule la tranche sur le RFR déclaré même quand l'avis en indique un autre", async () => {
@@ -290,22 +290,30 @@ describe("annotations de tranche de revenu", () => {
     expect(ecrites()).toContainEqual({ id: TYPE_MENAGE, value: { dropDownList: "TMO" } });
   });
 
-  it("écrit « Non calculable » sans commune dans le dossier", async () => {
+  it("écrit « Non calculable » sans commune dans le dossier, sans toucher au taux resté vide", async () => {
     client.getDossierAvisImpot.mockResolvedValue(
       dossierAvisFictif({ nombrePersonnes: 3, revenuFiscalReference: 18500, codeDepartement: null })
     );
 
     await controlerEtAnnoterAvisImpot(1, options);
 
-    expect(ecrites()).toEqual(
-      expect.arrayContaining([
-        { id: TYPE_MENAGE, value: { dropDownList: "Non calculable" } },
-        { id: TAUX, value: { text: "Non calculable" } },
-      ])
-    );
+    expect(ecrites()).toContainEqual({ id: TYPE_MENAGE, value: { dropDownList: "Non calculable" } });
+    expect(ecrites().map((a) => a.id)).not.toContain(TAUX);
   });
 
-  it("écrit « Hors plafond » et « Non éligible » au-delà du plafond intermédiaire", async () => {
+  it("laisse en place un taux devenu incalculable, que DN ne sait pas vider", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...dossierAvisFictif({ nombrePersonnes: 3, revenuFiscalReference: 18500, codeDepartement: null }),
+      annotations: [{ champDescriptorId: TAUX, stringValue: "90" }],
+    });
+
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(controle?.annotations.map((a) => a.cle)).not.toContain("tauxSubvention");
+    expect(ecrites().map((a) => a.id)).not.toContain(TAUX);
+  });
+
+  it("écrit « Hors plafond » et un taux de 0 au-delà du plafond intermédiaire", async () => {
     client.getDossierAvisImpot.mockResolvedValue(
       dossierAvisFictif({ nombrePersonnes: 1, revenuFiscalReference: 90000 })
     );
@@ -315,7 +323,7 @@ describe("annotations de tranche de revenu", () => {
     expect(ecrites()).toEqual(
       expect.arrayContaining([
         { id: TYPE_MENAGE, value: { dropDownList: "Hors plafond" } },
-        { id: TAUX, value: { text: "Non éligible" } },
+        { id: TAUX, value: { integerNumber: 0 } },
       ])
     );
   });

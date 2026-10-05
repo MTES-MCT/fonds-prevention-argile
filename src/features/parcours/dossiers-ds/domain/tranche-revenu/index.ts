@@ -4,7 +4,7 @@ export {
   TYPES_MENAGE,
   calculerTrancheDossier,
   estDepartementIDF,
-  texteTauxSubvention,
+  valeurTauxSubvention,
   type TrancheDossier,
   type TypeMenage,
 } from "./tranche-revenu";

@@ -85,7 +85,7 @@ function estimerPersonnes(avis: AvisImpotExtrait, nombreParts: number): { min: n
   };
 }
 
-// Barème lu sur le département du dossier DN, comme l'annotation « Type de ménage ».
+// Barème lu sur le département du dossier DN, comme l'annotation « Tranche de revenus ».
 function tranche(revenu: number, personnes: number | null, codeDepartement: string | null): TrancheRevenuRga | null {
   if (!codeDepartement || !personnes || personnes < 1) return null;
   return calculerTrancheRevenu(revenu, personnes, estDepartementIDF(codeDepartement));
