@@ -119,7 +119,7 @@ function afficherControle(donnees: DonneesAvisImpotDossier): void {
 async function afficherLocalisation(donnees: DonneesAvisImpotDossier): Promise<void> {
   const { localiserMaison } = await import("@/features/parcours/dossiers-ds/services/adresse-maison.service");
   const localisation = await localiserMaison(donnees.adresseMaison);
-  const forme = localisation.point ? "repère sur le point géocodé" : "recherche de l'adresse en texte";
+  const forme = localisation.point ? "Street View au point géocodé" : "recherche de l'adresse en texte";
   const lien = !localisation.lienCarte ? "aucun" : AFFICHER_VALEURS ? localisation.lienCarte : forme;
   console.log(`Adresse : ${localisation.point ? "géocodée" : "non géocodée"}`);
   console.log(`      Zone d'aléa                    ${localisation.zoneAlea ?? "non écrite"}`);

@@ -168,9 +168,10 @@ renseignée » (Hors zone, Faible, Moyen, Fort).
 - **Adresse du dépôt, pas de la simulation** : le demandeur peut la modifier dans DN après le
   préremplissage, et c'est elle que la DDT instruit. Elle est géocodée par la BAN dans la commune
   déclarée, et retenue seulement au numéro de rue avec un score suffisant.
-- **Un seul point pour les deux** : le lien Google Maps pose un repère sur le point géocodé, la
+- **Un seul point pour les deux** : le lien ouvre Google Street View sur le point géocodé, la
   zone est lue sur ce même point dans les polygones RGA 2026 déjà importés (même calcul que le
-  simulateur). Lien public sans clé ; Street View reste à un clic, mais n'existe pas partout.
+  simulateur). Lien public sans clé, en Street View direct, demandé par la DDT pour voir la façade.
+  Sans prise de vue à cet endroit, Google affiche la plus proche ou la carte.
 - **Sans point sûr, pas de zone** : la liste n'a pas d'option « inconnue » et « Hors zone » serait
   une fausse information. Le lien retombe sur une recherche Google de l'adresse en texte.
 - **Données** : l'adresse transite par l'API publique BAN, déjà appelée par le simulateur, et

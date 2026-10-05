@@ -9,7 +9,7 @@ vi.mock("../adapters/graphql/client", () => ({ graphqlClient: client }));
 const enregistrerControleAvisImpot = vi.hoisted(() => vi.fn());
 vi.mock("./dossier-ds.service", () => ({ enregistrerControleAvisImpot }));
 
-const LIEN_CARTE = "https://www.google.com/maps/search/?api=1&query=43.648545,0.592896";
+const LIEN_CARTE = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=43.648545,0.592896";
 const LOCALISEE = { point: { lat: 43.648545, lon: 0.592896 }, zoneAlea: "Fort", lienCarte: LIEN_CARTE };
 const localiserMaison = vi.hoisted(() => vi.fn());
 vi.mock("./adresse-maison.service", () => ({ localiserMaison }));

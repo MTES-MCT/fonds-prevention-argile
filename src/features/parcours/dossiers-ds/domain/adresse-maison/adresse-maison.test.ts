@@ -39,9 +39,9 @@ describe("pointFiable", () => {
 });
 
 describe("lienGoogleMaps", () => {
-  it("pose un repère sur le point géocodé", () => {
+  it("ouvre Street View sur le point géocodé", () => {
     expect(lienGoogleMaps({ lat: 43.648545, lon: 0.592896 }, ADRESSE)).toBe(
-      "https://www.google.com/maps/search/?api=1&query=43.648545,0.592896"
+      "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=43.648545,0.592896"
     );
   });
 

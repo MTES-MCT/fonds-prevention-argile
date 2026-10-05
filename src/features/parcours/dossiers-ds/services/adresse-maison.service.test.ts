@@ -11,7 +11,7 @@ vi.mock("@/shared/database/repositories", () => ({ rgaZonesRepository: zones }))
 import { localiserMaison } from "./adresse-maison.service";
 
 const ADRESSE = { texte: "5 avenue de l'Yser", communeCode: "32013", communeNom: "Auch" };
-const POINT = "https://www.google.com/maps/search/?api=1&query=43.648545,0.592896";
+const POINT = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=43.648545,0.592896";
 const TEXTE = "https://www.google.com/maps/search/?api=1&query=5%20avenue%20de%20l'Yser%2C%20Auch";
 
 function feature(proprietes: Record<string, unknown> = {}) {

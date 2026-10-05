@@ -529,14 +529,14 @@ formulaire DN seul (`calculerTrancheDossier`, `domain/tranche-revenu/`) :
 **dépôt** (« Adresse postale de la maison », texte libre, et « Commune »), que le demandeur a pu
 modifier après le préremplissage (`localiserMaison`, `services/adresse-maison.service.ts`) :
 
-| Annotation                                               | Type DN          | Valeur                                                               |
-| -------------------------------------------------------- | ---------------- | -------------------------------------------------------------------- |
-| Lien vers google map pour voir la maison…                | texte court      | `google.com/maps/search/?api=1&query=<lat>,<lon>`, sinon l'adresse   |
-| Vérification de la zone d'aléa avec l'adresse renseignée | liste déroulante | `Fort`, `Moyen`, `Faible`, `Hors zone` (polygones RGA 2026 importés) |
+| Annotation                                               | Type DN          | Valeur                                                                |
+| -------------------------------------------------------- | ---------------- | --------------------------------------------------------------------- |
+| Lien vers google map pour voir la maison…                | texte court      | Street View `…map_action=pano&viewpoint=<lat>,<lon>`, sinon l'adresse |
+| Vérification de la zone d'aléa avec l'adresse renseignée | liste déroulante | `Fort`, `Moyen`, `Faible`, `Hors zone` (polygones RGA 2026 importés)  |
 
 - **Géocodage BAN dans la commune déclarée** (filtre sur son code INSEE), retenu seulement au
   numéro de rue et avec un score d'au moins 0,6 (`pointFiable`). Le lien et la zone partent du
-  même point : la DDT regarde la maison qui a servi au calcul.
+  même point : la DDT voit en Street View la maison qui a servi au calcul.
 - **Sans point sûr**, le lien retombe sur une recherche Google de l'adresse en texte, et **aucune
   zone n'est écrite** : la liste n'a pas d'option « inconnue », et « Hors zone » serait faux. Le cas
   est compté dans le bilan (« Adresse non géocodée »).

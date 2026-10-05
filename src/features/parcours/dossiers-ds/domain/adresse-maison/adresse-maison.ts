@@ -48,11 +48,13 @@ export function pointFiable(resultat: ResultatGeocodage | null, communeCode: str
   return resultat.point;
 }
 
+const GOOGLE_STREET_VIEW = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=";
 const GOOGLE_MAPS_RECHERCHE = "https://www.google.com/maps/search/?api=1&query=";
 
-/** URL publique Google Maps (sans clé) : repère sur le point géocodé, sinon recherche de l'adresse en texte. */
+/** URL publique Google Maps (sans clé) : Street View au point géocodé, sinon recherche de l'adresse en texte. */
 export function lienGoogleMaps(point: PointGps | null, adresse: AdresseMaisonDeclaree): string | null {
-  if (point) return `${GOOGLE_MAPS_RECHERCHE}${point.lat},${point.lon}`;
+  // Street View exige des coordonnées : sans point fiable, seule la recherche en texte reste possible.
+  if (point) return `${GOOGLE_STREET_VIEW}${point.lat},${point.lon}`;
   const texte = adresse.texte?.trim();
   if (!texte) return null;
   const requete = adresse.communeNom ? `${texte}, ${adresse.communeNom}` : texte;

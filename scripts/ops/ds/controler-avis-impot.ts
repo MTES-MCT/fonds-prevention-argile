@@ -43,8 +43,8 @@ const afficher = (texte: string) => (AFFICHER_VALEURS ? texte : masquerMontants(
 // Le lien porte l'adresse ou les coordonnées de la maison : on ne dit que sa forme.
 const afficherAnnotation = ({ cle, valeur }: { cle: string; valeur: string }) => {
   if (AFFICHER_VALEURS || cle !== "lienCarte") return afficher(valeur);
-  return /query=-?\d+(\.\d+)?,-?\d/.test(valeur)
-    ? "lien masqué, repère sur le point géocodé"
+  return valeur.includes("map_action=pano")
+    ? "lien masqué, Street View au point géocodé"
     : "lien masqué, recherche en texte";
 };
 const TOUS = hasFlag("tous");
