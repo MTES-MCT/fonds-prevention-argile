@@ -18,6 +18,7 @@ import {
 import { calculerTrancheDossier, valeurTauxSubvention, type TrancheDossier } from "../domain/tranche-revenu";
 import { estInstructionAutomatiqueActive, idsAnnotationsInstruction } from "../domain/value-objects/ds-annotations";
 import { lireAvisImpotDossier } from "./avis-impot.service";
+import { localiserMaison, type LocalisationMaison } from "./adresse-maison.service";
 import { enregistrerControleAvisImpot } from "./dossier-ds.service";
 
 export type IssueAnnotationControle = "ecrite" | "inchangee" | "simulation" | "annotation_non_configuree";
@@ -26,6 +27,8 @@ export interface ControleAvisImpotDossier {
   numero: number;
   resultat: ResultatControleAvisImpot;
   tranche: TrancheDossier;
+  /** Null quand ni le lien carte ni la zone d'aléa ne sont répertoriés pour la démarche. */
+  localisation: LocalisationMaison | null;
   champsModifiesAt: string | null;
   /** Texte de l'annotation de l'avis : une phrase métier, avec les deux montants en cas d'écart. */
   texte: string;
@@ -38,7 +41,12 @@ export interface ControleAvisImpotDossier {
 
 export interface AnnotationInstruction {
   cle: AnnotationDn;
-  nom: "Contrôle avis d'imposition" | "Tranche de revenus" | "Taux de subvention";
+  nom:
+    | "Contrôle avis d'imposition"
+    | "Tranche de revenus"
+    | "Taux de subvention"
+    | "Lien vers google map"
+    | "Vérification de la zone d'aléa";
   id: string;
   /** Valeur telle que DN la relit (`stringValue`). */
   valeur: string;
@@ -48,10 +56,13 @@ export interface AnnotationInstruction {
 function annotationsInstruction(
   demarcheNumero: number | null,
   texteAvis: string,
-  tranche: TrancheDossier
+  tranche: TrancheDossier,
+  localisation: LocalisationMaison | null
 ): AnnotationInstruction[] {
   if (!demarcheNumero) return [];
   const ids = idsAnnotationsInstruction(demarcheNumero);
+  const lienCarte = localisation?.lienCarte ?? null;
+  const zoneAlea = localisation?.zoneAlea ?? null;
   const taux = valeurTauxSubvention(tranche);
   const candidates: Array<AnnotationInstruction | null> = [
     ids.avisImpot
@@ -82,6 +93,25 @@ function annotationsInstruction(
           value: { integerNumber: taux },
         }
       : null,
+    ids.lienCarte && lienCarte
+      ? {
+          cle: "lienCarte",
+          nom: "Lien vers google map",
+          id: ids.lienCarte,
+          valeur: lienCarte,
+          value: { text: lienCarte },
+        }
+      : null,
+    // Sans point sûr, aucune zone : la liste n'a pas d'option « inconnue », et « Hors zone » serait faux.
+    ids.zoneAlea && zoneAlea
+      ? {
+          cle: "zoneAlea",
+          nom: "Vérification de la zone d'aléa",
+          id: ids.zoneAlea,
+          valeur: zoneAlea,
+          value: { dropDownList: zoneAlea },
+        }
+      : null,
   ];
   return candidates.filter((a): a is AnnotationInstruction => a !== null);
 }
@@ -108,11 +138,15 @@ export async function controlerEtAnnoterAvisImpot(
     codeDepartement: donnees.codeDepartement,
   });
   const texte = texteAnnotationControle(resultat);
-  const annotations = annotationsInstruction(donnees.demarcheNumero, texte, tranche);
+  const ids = donnees.demarcheNumero ? idsAnnotationsInstruction(donnees.demarcheNumero) : {};
+  // Géocodage seulement si l'une des deux annotations l'utilise : c'est un appel BAN par contrôle.
+  const localisation = ids.lienCarte || ids.zoneAlea ? await localiserMaison(donnees.adresseMaison) : null;
+  const annotations = annotationsInstruction(donnees.demarcheNumero, texte, tranche, localisation);
   const controle = {
     numero,
     resultat,
     tranche,
+    localisation,
     texte,
     annotations,
     annotationsEcrites: [] as AnnotationDn[],
@@ -199,8 +233,13 @@ export async function controlerAvisImpotApresSync(params: {
     maintenant: params.maintenant,
   });
   if (!controle || (controle.issue !== "ecrite" && controle.issue !== "inchangee")) return null;
+  const adresseNonGeocodee = controle.localisation !== null && controle.localisation.point === null;
   return {
-    entree: { issue: controle.issue, annotationsEcrites: controle.annotationsEcrites },
+    entree: {
+      issue: controle.issue,
+      annotationsEcrites: controle.annotationsEcrites,
+      ...(adresseNonGeocodee && { adresseNonGeocodee }),
+    },
     verdict: statutAnnotationControle(controle.resultat),
   };
 }

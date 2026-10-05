@@ -1,4 +1,5 @@
 import type { DossierState } from "../../adapters/graphql/types";
+import type { AdresseMaisonDeclaree } from "../adresse-maison";
 
 /** Un avis d'imposition déposé, avec ce que DN a lu dans son 2D-Doc (null si non lu). */
 export interface AvisImpotExtrait {
@@ -35,6 +36,7 @@ export interface DonneesAvisImpotDossier {
   declaratif: DeclaratifFoyer;
   /** Département de la commune du logement : décide du barème (IdF ou non). */
   codeDepartement: string | null;
+  adresseMaison: AdresseMaisonDeclaree;
   avis: AvisImpotExtrait[];
   /** Valeur actuelle de chaque annotation privée, par id de descripteur. */
   annotations: Record<string, string | null>;

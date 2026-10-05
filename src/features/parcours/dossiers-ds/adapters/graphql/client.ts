@@ -339,7 +339,8 @@ export class DemarchesSimplifieesClient {
             label
             updatedAt
             ... on IntegerNumberChamp { valeurEntiere: value }
-            ... on CommuneChamp { departement { code } }
+            ... on TextChamp { valeurTexte: value }
+            ... on CommuneChamp { departement { code } commune { code name } }
             ...PieceAvisImpot
             ... on RepetitionChamp {
               rows {

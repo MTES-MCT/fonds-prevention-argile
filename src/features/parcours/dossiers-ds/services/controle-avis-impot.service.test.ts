@@ -9,6 +9,11 @@ vi.mock("../adapters/graphql/client", () => ({ graphqlClient: client }));
 const enregistrerControleAvisImpot = vi.hoisted(() => vi.fn());
 vi.mock("./dossier-ds.service", () => ({ enregistrerControleAvisImpot }));
 
+const LIEN_CARTE = "https://www.google.com/maps/search/?api=1&query=43.648545,0.592896";
+const LOCALISEE = { point: { lat: 43.648545, lon: 0.592896 }, zoneAlea: "Fort", lienCarte: LIEN_CARTE };
+const localiserMaison = vi.hoisted(() => vi.fn());
+vi.mock("./adresse-maison.service", () => ({ localiserMaison }));
+
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import {
@@ -31,6 +36,7 @@ const options = { appliquer: true, maintenant: MAINTENANT };
 describe("controlerEtAnnoterAvisImpot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localiserMaison.mockResolvedValue(LOCALISEE);
     client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
   });
 
@@ -119,13 +125,17 @@ describe("controlerAvisImpotApresSync", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localiserMaison.mockResolvedValue(LOCALISEE);
     client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT["ecart-revenu"]);
     client.modifierAnnotations.mockResolvedValue(undefined);
   });
 
   it("contrôle un dossier déposé jamais contrôlé, écrit l'annotation et enregistre le verdict", async () => {
     await expect(appeler()).resolves.toEqual({
-      entree: { issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage", "tauxSubvention"] },
+      entree: {
+        issue: "ecrite",
+        annotationsEcrites: ["avisImpot", "typeMenage", "tauxSubvention", "lienCarte", "zoneAlea"],
+      },
       verdict: "a_verifier",
     });
 
@@ -226,6 +236,8 @@ describe("controlerAvisImpotApresSync", () => {
 describe("annotations de tranche de revenu", () => {
   const TYPE_MENAGE = "Q2hhbXAtNzAzMDU1Mw==";
   const TAUX = "Q2hhbXAtNzAzMDU1NQ==";
+  const LIEN = "Q2hhbXAtNzAzNTUwNw==";
+  const ZONE = "Q2hhbXAtNzAzNTUwOA==";
   const COHERENT = "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.";
 
   const ecrites = () =>
@@ -233,6 +245,7 @@ describe("annotations de tranche de revenu", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localiserMaison.mockResolvedValue(LOCALISEE);
     client.modifierAnnotations.mockResolvedValue(undefined);
     client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
   });
@@ -241,7 +254,7 @@ describe("annotations de tranche de revenu", () => {
     delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
   });
 
-  it("écrit les trois annotations dans une seule mutation, d'après le RFR déclaré", async () => {
+  it("écrit toutes les annotations dans une seule mutation, tranche d'après le RFR déclaré", async () => {
     const controle = await controlerEtAnnoterAvisImpot(1, options);
 
     expect(controle?.tranche).toEqual({ typeMenage: "TMO", tauxSubvention: 90 });
@@ -250,6 +263,8 @@ describe("annotations de tranche de revenu", () => {
       { id: ANNOTATION_PREPROD, value: { textarea: COHERENT } },
       { id: TYPE_MENAGE, value: { dropDownList: "TMO" } },
       { id: TAUX, value: { integerNumber: 90 } },
+      { id: LIEN, value: { text: LIEN_CARTE } },
+      { id: ZONE, value: { dropDownList: "Fort" } },
     ]);
   });
 
@@ -259,6 +274,8 @@ describe("annotations de tranche de revenu", () => {
       annotations: [
         { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
         { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
+        { champDescriptorId: LIEN, stringValue: LIEN_CARTE },
+        { champDescriptorId: ZONE, stringValue: "Fort" },
       ],
     });
 
@@ -274,6 +291,8 @@ describe("annotations de tranche de revenu", () => {
         { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
         { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
         { champDescriptorId: TAUX, stringValue: "85" },
+        { champDescriptorId: LIEN, stringValue: LIEN_CARTE },
+        { champDescriptorId: ZONE, stringValue: "Fort" },
       ],
     });
 
@@ -336,5 +355,72 @@ describe("annotations de tranche de revenu", () => {
 
     expect(DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[999]).toBeUndefined();
     expect(ecrites()).toEqual([{ id: TYPE_MENAGE, value: { dropDownList: "TMO" } }]);
+  });
+});
+
+describe("lien carte et zone d'aléa", () => {
+  const LIEN = "Q2hhbXAtNzAzNTUwNw==";
+  const ZONE = "Q2hhbXAtNzAzNTUwOA==";
+  const ecrites = () =>
+    (client.modifierAnnotations.mock.calls[0][0].annotations as Array<{ id: string }>).map((a) => a.id);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localiserMaison.mockResolvedValue(LOCALISEE);
+    client.modifierAnnotations.mockResolvedValue(undefined);
+    client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
+  });
+
+  it("situe la maison avec l'adresse et la commune lues dans DN", async () => {
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(localiserMaison).toHaveBeenCalledWith({
+      texte: "5 avenue de l'Yser",
+      communeCode: "32013",
+      communeNom: "Auch",
+    });
+  });
+
+  it("écrit le lien en recherche texte mais aucune zone sans point sûr", async () => {
+    const lienTexte = "https://www.google.com/maps/search/?api=1&query=5%20avenue%20de%20l'Yser%2C%20Auch";
+    localiserMaison.mockResolvedValue({ point: null, zoneAlea: null, lienCarte: lienTexte });
+
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(ecrites()).toContain(LIEN);
+    expect(ecrites()).not.toContain(ZONE);
+    expect(controle?.annotations.find((a) => a.cle === "lienCarte")?.valeur).toBe(lienTexte);
+  });
+
+  it("signale au CRON une adresse non géocodée", async () => {
+    localiserMaison.mockResolvedValue({ point: null, zoneAlea: null, lienCarte: null });
+
+    const resultat = await controlerAvisImpotApresSync({
+      dossier: {
+        id: "d1",
+        step: Step.ELIGIBILITE,
+        dsNumber: "1",
+        dsDemarcheId: "146377",
+        avisImpotControleAt: null,
+        avisImpotChampsModifiesAt: null,
+      },
+      dsStatus: DSStatus.EN_CONSTRUCTION,
+      champsModifiesAt: "2026-09-29T15:41:02+02:00",
+      maintenant: MAINTENANT,
+    });
+
+    expect(resultat?.entree).toMatchObject({ adresseNonGeocodee: true });
+    expect(resultat?.entree.annotationsEcrites).not.toContain("lienCarte");
+  });
+
+  it("ne géocode pas sur une démarche où ni le lien ni la zone ne sont répertoriés", async () => {
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = "Q2hhbXAtNzAzMDU1Mw==";
+    client.getDossierAvisImpot.mockResolvedValue({ ...FIXTURES_AVIS_IMPOT.lu, demarche: { number: 999 } });
+
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(localiserMaison).not.toHaveBeenCalled();
+    expect(controle?.localisation).toBeNull();
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
   });
 });

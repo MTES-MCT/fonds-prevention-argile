@@ -8,6 +8,8 @@ export const LIBELLES_ANNOTATIONS_DN: Record<AnnotationDn, string> = {
   avisImpot: "Avis d'imposition",
   typeMenage: "Tranche de revenus",
   tauxSubvention: "Taux",
+  lienCarte: "Lien carte",
+  zoneAlea: "Zone d'aléa",
   lienFpa: "Lien FPA",
 };
 

@@ -6,10 +6,11 @@ import { bilanAnnotationsDnVide } from "@/shared/domain/value-objects/bilan-anno
 
 const BILAN = {
   controles: 4,
-  ecritures: { avisImpot: 2, typeMenage: 3, tauxSubvention: 3, lienFpa: 0 },
+  ecritures: { avisImpot: 2, typeMenage: 3, tauxSubvention: 3, lienCarte: 2, zoneAlea: 1, lienFpa: 0 },
   aJour: 1,
   echecs: 1,
   echecsLienFpa: 0,
+  adressesNonGeocodees: 1,
   verdicts: { coherent: 1, a_verifier: 1, non_verifiable: 1 },
 };
 
@@ -38,7 +39,12 @@ describe("BilanAnnotationsDnEncart", () => {
     expect(
       screen.getByText(/Contrôles lancés : 4 · Dossiers mis à jour : 2 · Déjà à jour : 1 · Échecs : 1/)
     ).toBeTruthy();
-    expect(screen.getByText(/Avis d'imposition 2 · Tranche de revenus 3 · Taux 3 · Lien FPA 0/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Avis d'imposition 2 · Tranche de revenus 3 · Taux 3 · Lien carte 2 · Zone d'aléa 1 · Lien FPA 0/
+      )
+    ).toBeTruthy();
+    expect(screen.getByText(/Adresses non géocodées .* : 1/)).toBeTruthy();
     expect(screen.getByText(/Cohérent 1 · À vérifier 1 · Non vérifiable 1/)).toBeTruthy();
   });
 
@@ -93,6 +99,15 @@ describe("AnnotationsDnBadges", () => {
     expect(screen.getByText("À jour")).toBeTruthy();
     expect(screen.getAllByText("Lien FPA")).toHaveLength(1);
     expect(screen.getByText("Échec du lien FPA")).toBeTruthy();
+  });
+
+  it("signale une adresse non géocodée", () => {
+    render(
+      <AnnotationsDnBadges entree={{ issue: "ecrite", annotationsEcrites: ["lienCarte"], adresseNonGeocodee: true }} />
+    );
+
+    expect(screen.getByText("Lien carte")).toBeTruthy();
+    expect(screen.getByText("Adresse non géocodée")).toBeTruthy();
   });
 
   it("affiche un tiret sans contrôle", () => {

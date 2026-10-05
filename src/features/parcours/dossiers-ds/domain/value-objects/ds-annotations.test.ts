@@ -45,11 +45,13 @@ describe("idsAnnotationsInstruction", () => {
     delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
   });
 
-  it("renvoie les trois annotations de la préprod", () => {
+  it("renvoie les cinq annotations de la préprod", () => {
     expect(idsAnnotationsInstruction(146377)).toEqual({
       avisImpot: "Q2hhbXAtNzAyMDIwNw==",
       typeMenage: "Q2hhbXAtNzAzMDU1Mw==",
       tauxSubvention: "Q2hhbXAtNzAzMDU1NQ==",
+      lienCarte: "Q2hhbXAtNzAzNTUwNw==",
+      zoneAlea: "Q2hhbXAtNzAzNTUwOA==",
     });
   });
 

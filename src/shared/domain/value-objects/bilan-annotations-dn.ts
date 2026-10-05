@@ -1,5 +1,12 @@
 /** Annotations privées écrites par le CRON, désignées par leur nom, jamais par leur valeur. */
-export const ANNOTATIONS_DN = ["avisImpot", "typeMenage", "tauxSubvention", "lienFpa"] as const;
+export const ANNOTATIONS_DN = [
+  "avisImpot",
+  "typeMenage",
+  "tauxSubvention",
+  "lienCarte",
+  "zoneAlea",
+  "lienFpa",
+] as const;
 export type AnnotationDn = (typeof ANNOTATIONS_DN)[number];
 
 export const ISSUES_ANNOTATIONS_DN = ["ecrite", "inchangee", "echec"] as const;
@@ -15,6 +22,8 @@ export interface AnnotationsDnEntree {
   /** Un `lienFpa` par dossier complété. */
   annotationsEcrites: AnnotationDn[];
   echecLienFpa?: boolean;
+  /** Adresse de la maison sans point BAN sûr : lien en recherche texte, zone d'aléa non écrite. */
+  adresseNonGeocodee?: boolean;
 }
 
 /** Totaux d'un run, agrégés et non nominatifs : le verdict n'est compté qu'ici. */
@@ -24,16 +33,18 @@ export interface BilanAnnotationsDn {
   aJour: number;
   echecs: number;
   echecsLienFpa: number;
+  adressesNonGeocodees: number;
   verdicts: Record<VerdictControleDn, number>;
 }
 
 export function bilanAnnotationsDnVide(): BilanAnnotationsDn {
   return {
     controles: 0,
-    ecritures: { avisImpot: 0, typeMenage: 0, tauxSubvention: 0, lienFpa: 0 },
+    ecritures: { avisImpot: 0, typeMenage: 0, tauxSubvention: 0, lienCarte: 0, zoneAlea: 0, lienFpa: 0 },
     aJour: 0,
     echecs: 0,
     echecsLienFpa: 0,
+    adressesNonGeocodees: 0,
     verdicts: { coherent: 0, a_verifier: 0, non_verifiable: 0 },
   };
 }
@@ -53,6 +64,7 @@ export function ajouterAuBilanAnnotationsDn(
     aJour: bilan.aJour + (entree.issue === "inchangee" ? 1 : 0),
     echecs: bilan.echecs + (entree.issue === "echec" ? 1 : 0),
     echecsLienFpa: bilan.echecsLienFpa + (entree.echecLienFpa ? 1 : 0),
+    adressesNonGeocodees: bilan.adressesNonGeocodees + (entree.adresseNonGeocodee ? 1 : 0),
     verdicts,
   };
 }

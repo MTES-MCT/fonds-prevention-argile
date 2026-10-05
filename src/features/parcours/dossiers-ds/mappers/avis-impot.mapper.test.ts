@@ -120,6 +120,22 @@ describe("mapDossierAvisImpot", () => {
     expect(donnees.annotations).toEqual({ "Q2hhbXAtNzAyMDIwNw==": "Cohérent" });
   });
 
+  it("lit l'adresse de la maison et sa commune, code INSEE compris", () => {
+    expect(mapDossierAvisImpot(FIXTURES_AVIS_IMPOT.lu).adresseMaison).toEqual({
+      texte: "5 avenue de l'Yser",
+      communeCode: "32013",
+      communeNom: "Auch",
+    });
+  });
+
+  it("laisse l'adresse vide quand le champ n'est pas renseigné", () => {
+    const donnees = mapDossierAvisImpot(
+      dossierAvisFictif({ nombrePersonnes: 2, revenuFiscalReference: 15000, adresse: "  ", codeDepartement: null })
+    );
+
+    expect(donnees.adresseMaison).toEqual({ texte: null, communeCode: null, communeNom: null });
+  });
+
   it("laisse les déclaratifs à null quand le demandeur ne les a pas saisis", () => {
     const donnees = mapDossierAvisImpot(dossierAvisFictif({ nombrePersonnes: null, revenuFiscalReference: null }));
 

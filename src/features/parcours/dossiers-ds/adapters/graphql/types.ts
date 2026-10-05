@@ -226,10 +226,19 @@ export interface CommuneChampDn {
   label: string;
   updatedAt: string;
   departement?: { code: string } | null;
+  commune?: { code: string; name: string } | null;
+}
+
+export interface TextChampDn {
+  __typename: "TextChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  valeurTexte?: string | null;
 }
 
 export type ChampAvisImpotDn =
-  PieceJustificativeChampDn | IntegerNumberChampDn | RepetitionChampDn | CommuneChampDn | AutreChampDn;
+  PieceJustificativeChampDn | IntegerNumberChampDn | RepetitionChampDn | CommuneChampDn | TextChampDn | AutreChampDn;
 
 /** Projection d'un dossier d'éligibilité pour le contrôle de l'avis d'imposition. */
 export interface DossierAvisImpot {
