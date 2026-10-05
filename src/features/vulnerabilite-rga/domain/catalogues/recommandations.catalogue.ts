@@ -15,7 +15,7 @@ export interface RecommandationDef {
 
 /**
  * Catalogue des recommandations. Une fiche ne se déclenche que sur des réponses classées
- * critique, vigilance ou à vérifier — vérifié par `recommandations.catalogue.test.ts`.
+ * critique, vigilance ou à surveiller — vérifié par `recommandations.catalogue.test.ts`.
  */
 export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
@@ -163,5 +163,20 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
       "Un arrosage léger et régulier en période de sécheresse peut aider à stabiliser l'humidité du sol (à éviter en cas d'arrêté sécheresse)",
     ],
     illustrationId: "ensoleillement",
+  },
+  {
+    id: "divers-source-chaleur",
+    critereId: "source_chaleur_sous_sol",
+    reponsesDeclenchantes: ["oui_mur_non_isole", "oui_mur_isole"],
+    titre: "Limiter la chaleur transmise au sol par le mur du sous-sol",
+    problemes: [
+      "Une chaudière ou une autre source de chaleur contre un mur donnant sur l'extérieur chauffe le sol de l'autre côté, toute l'année",
+      "Le sol argileux s'y assèche plus vite qu'ailleurs autour de la maison, ce qui crée un risque de tassement localisé sous ce mur",
+    ],
+    ameliorations: [
+      "Isoler le mur du sous-sol derrière la source de chaleur, ou vérifier que l'isolation existante est continue et en bon état",
+      "Lors d'un remplacement d'équipement, l'éloigner des murs donnant sur l'extérieur",
+    ],
+    illustrationId: "source-chaleur",
   },
 ];

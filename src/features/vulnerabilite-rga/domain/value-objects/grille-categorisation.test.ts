@@ -49,7 +49,7 @@ describe("grille-categorisation", () => {
   it("les labels suivent les quatre catégories affichées, sans_objet n'en a pas", () => {
     expect(getCategorieAffichage("critique")?.label).toBe("Point critique");
     expect(getCategorieAffichage("vigilance")?.label).toBe("Point de vigilance");
-    expect(getCategorieAffichage("a_verifier")?.label).toBe("À vérifier");
+    expect(getCategorieAffichage("a_verifier")?.label).toBe("À surveiller");
     expect(getCategorieAffichage("bonne_pratique")?.label).toBe("Bonne pratique en place");
     expect(getCategorieAffichage("sans_objet")).toBeNull();
     expect(getCategorieAffichage(null)).toBeNull();

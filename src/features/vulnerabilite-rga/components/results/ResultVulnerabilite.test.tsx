@@ -79,15 +79,19 @@ describe("ResultVulnerabilite — renvoi vers le simulateur d'éligibilité", ()
 });
 
 describe("ResultVulnerabilite — sections de fiches", () => {
-  it("range les fiches sous critiques, vigilance puis à vérifier, et masque les sections vides", () => {
+  it("range les fiches sous critiques, vigilance puis à surveiller, et masque les sections vides", () => {
     rendre({
       ...ELIGIBLE,
       eaux: { pente_terrain: "ne_sais_pas", gouttieres: "absentes_ou_debordantes" },
       vegetation: { vegetation_pied_facade: "presente" },
     });
 
-    const titres = screen.getAllByRole("heading", { level: 2, name: /^Points (critiques|de vigilance|à vérifier)$/ });
-    expect(titres.map((t) => t.textContent)).toEqual(["Points critiques", "Points de vigilance", "Points à vérifier"]);
+    const titres = screen.getAllByRole("heading", { level: 2, name: /^Points (critiques|de vigilance|à surveiller)$/ });
+    expect(titres.map((t) => t.textContent)).toEqual([
+      "Points critiques",
+      "Points de vigilance",
+      "Points à surveiller",
+    ]);
 
     const critiques = titres[0].closest("section")!;
     expect(within(critiques).getByText("Supprimer la végétation en pied de façade")).toBeInTheDocument();
@@ -97,15 +101,24 @@ describe("ResultVulnerabilite — sections de fiches", () => {
   it("n'affiche aucune section quand tout est en bonne pratique", () => {
     rendre({ ...ELIGIBLE, eaux: { reseaux_enterres: "eloignes" } });
 
-    expect(screen.queryByRole("heading", { name: /^Points (critiques|de vigilance|à vérifier)$/ })).toBeNull();
-    expect(screen.getByText(/Aucun point critique, de vigilance ou à vérifier/)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^Points (critiques|de vigilance|à surveiller)$/ })).toBeNull();
+    expect(screen.getByText(/Aucun point critique, de vigilance ou à surveiller/)).toBeInTheDocument();
   });
 
-  it("mentionne sans fiche un point critique que le catalogue ne couvre pas", () => {
+  it("donne une fiche à la source de chaleur contre un mur non isolé", () => {
     rendre({ ...ELIGIBLE, divers: { mitoyennete: "pas_mitoyen", source_chaleur_sous_sol: "oui_mur_non_isole" } });
 
     const critiques = screen.getByRole("heading", { level: 2, name: "Points critiques" }).closest("section")!;
-    expect(within(critiques).getByText("Source de chaleur en sous-sol")).toBeInTheDocument();
-    expect(within(critiques).getByText(/Oui, sur un mur non isolé/)).toBeInTheDocument();
+    expect(
+      within(critiques).getByRole("heading", { name: "Limiter la chaleur transmise au sol par le mur du sous-sol" })
+    ).toBeInTheDocument();
+  });
+
+  it("mentionne sans fiche un point que le catalogue ne couvre pas, sous l'explication de sa section", () => {
+    rendre({ ...ELIGIBLE, eaux: { gravier_proprete: "absent" } });
+
+    const section = screen.getByRole("heading", { level: 2, name: "Points à surveiller" }).closest("section")!;
+    expect(within(section).getByText(/peut en faire un point critique/)).toBeInTheDocument();
+    expect(within(section).getByText(/Absent/)).toBeInTheDocument();
   });
 });

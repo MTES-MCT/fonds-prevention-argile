@@ -5,6 +5,7 @@ import { VulnerabiliteLayout } from "./VulnerabiliteLayout";
 import { NavigationButtons } from "./NavigationButtons";
 import { CategorieBadge } from "./CategorieBadge";
 import { getCategorieReponse } from "../../domain/services/categorisation.service";
+import { getCategorieAffichage } from "../../domain/value-objects/grille-categorisation";
 
 export interface QuestionOption<TValue extends string> {
   value: TValue;
@@ -63,6 +64,7 @@ export function QuestionStep<TValue extends string>({
           // Catégorie affichée UNIQUEMENT sur l'option sélectionnée : montrer un badge sur
           // chaque option alourdirait l'écran et casserait la simplicité recherchée.
           const categorie = isSelected ? getCategorieReponse(critereId, option.value) : null;
+          const explication = getCategorieAffichage(categorie)?.explication;
 
           return (
             <div className="fr-fieldset__element" key={option.value}>
@@ -77,6 +79,7 @@ export function QuestionStep<TValue extends string>({
                 <label className="fr-label" htmlFor={`${fieldsetName}-${option.value}`}>
                   {option.label}
                   <CategorieBadge categorie={categorie} />
+                  {explication && <span className="fr-hint-text">{explication}</span>}
                 </label>
               </div>
             </div>

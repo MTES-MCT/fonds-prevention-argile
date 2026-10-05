@@ -17,6 +17,7 @@ export interface PointSansCarte {
 export interface SectionRecommandations {
   categorie: CategorieATraiter;
   titre: string;
+  explication?: string;
   recommandations: RecommandationDef[];
   /** Points de la catégorie qu'aucune fiche du catalogue ne couvre : listés sans conseil. */
   pointsSansCarte: PointSansCarte[];
@@ -27,7 +28,7 @@ function trouverRecommandation(critereId: string, reponse: string): Recommandati
 }
 
 /**
- * Regroupe les fiches en trois sections — critiques, vigilance, à vérifier — dans cet ordre,
+ * Regroupe les fiches en trois sections — critiques, vigilance, à surveiller — dans cet ordre,
  * chacune omise si elle est vide. L'ordre des fiches suit celui des questions.
  */
 export function getSectionsRecommandations(points: PointVulnerabilite[]): SectionRecommandations[] {
@@ -51,11 +52,12 @@ export function getSectionsRecommandations(points: PointVulnerabilite[]): Sectio
     }
 
     if (recommandations.length === 0 && pointsSansCarte.length === 0) return [];
-    return [{ categorie, titre: CATEGORIES_AFFICHAGE[categorie].pluriel, recommandations, pointsSansCarte }];
+    const { pluriel, explication } = CATEGORIES_AFFICHAGE[categorie];
+    return [{ categorie, titre: pluriel, explication, recommandations, pointsSansCarte }];
   });
 }
 
-/** Réponses classées critique, vigilance ou à vérifier qu'aucune fiche ne couvre (`critereId/reponse`). */
+/** Réponses classées critique, vigilance ou à surveiller qu'aucune fiche ne couvre (`critereId/reponse`). */
 export function getReponsesSansCarte(): string[] {
   return CRITERES_CONFIG.flatMap((critere) =>
     critere.reponses

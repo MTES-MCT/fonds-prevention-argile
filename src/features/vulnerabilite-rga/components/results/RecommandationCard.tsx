@@ -8,6 +8,7 @@ import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
 import schemaHaies from "../illustrations/SchemaHaies.svg";
 import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
 import schemaEnsoleillement from "../illustrations/SchemaEnsoleillement.svg";
+import schemaSourceChaleurSousSol from "../illustrations/SchemaSourceChaleurSousSol.svg";
 import type { RecommandationDef } from "../../domain/catalogues/recommandations.catalogue";
 
 const ILLUSTRATIONS: Record<string, StaticImageData> = {
@@ -20,6 +21,7 @@ const ILLUSTRATIONS: Record<string, StaticImageData> = {
   haies: schemaHaies,
   "pied-facade": schemaVegetationPiedFacade,
   ensoleillement: schemaEnsoleillement,
+  "source-chaleur": schemaSourceChaleurSousSol,
 };
 
 interface RecommandationCardProps {

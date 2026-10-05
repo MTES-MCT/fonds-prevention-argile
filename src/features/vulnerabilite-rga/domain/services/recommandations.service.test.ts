@@ -1,9 +1,10 @@
+import { QUESTION_LABELS } from "../value-objects/vulnerabilite-critere-fields";
 import { describe, it, expect } from "vitest";
 import { getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
 import { categoriserReponses } from "./categorisation.service";
 
 describe("getSectionsRecommandations", () => {
-  it("regroupe les fiches en trois sections, dans l'ordre critiques, vigilance, à vérifier", () => {
+  it("regroupe les fiches en trois sections, dans l'ordre critiques, vigilance, à surveiller", () => {
     const sections = getSectionsRecommandations(
       categoriserReponses({
         pente_terrain: "ne_sais_pas",
@@ -15,7 +16,7 @@ describe("getSectionsRecommandations", () => {
     expect(sections.map((s) => [s.categorie, s.titre])).toEqual([
       ["critique", "Points critiques"],
       ["vigilance", "Points de vigilance"],
-      ["a_verifier", "Points à vérifier"],
+      ["a_verifier", "Points à surveiller"],
     ]);
     expect(sections[0].recommandations.map((r) => r.id)).toEqual(["veg-haies"]);
     expect(sections[1].recommandations.map((r) => r.id)).toEqual(["eaux-gouttieres"]);
@@ -62,19 +63,16 @@ describe("getSectionsRecommandations", () => {
   });
 
   it("liste sans conseil un point qu'aucune fiche ne couvre", () => {
-    const sections = getSectionsRecommandations(categoriserReponses({ source_chaleur_sous_sol: "oui_mur_non_isole" }));
+    const sections = getSectionsRecommandations(categoriserReponses({ gravier_proprete: "absent" }));
 
     expect(sections).toEqual([
       {
-        categorie: "critique",
-        titre: "Points critiques",
+        categorie: "a_verifier",
+        titre: "Points à surveiller",
+        explication: expect.stringContaining("peut en faire un point critique"),
         recommandations: [],
         pointsSansCarte: [
-          {
-            critereId: "source_chaleur_sous_sol",
-            question: "Source de chaleur en sous-sol",
-            reponse: "Oui, sur un mur non isolé",
-          },
+          { critereId: "gravier_proprete", question: QUESTION_LABELS.gravier_proprete, reponse: "Absent" },
         ],
       },
     ]);
@@ -89,8 +87,6 @@ describe("getReponsesSansCarte", () => {
       "pente_terrain/eloignee_facade",
       "gravier_proprete/absent",
       "recuperateur_eau/present_bon_etat",
-      "source_chaleur_sous_sol/oui_mur_isole",
-      "source_chaleur_sous_sol/oui_mur_non_isole",
     ]);
   });
 });

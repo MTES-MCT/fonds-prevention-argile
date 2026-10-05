@@ -4,7 +4,7 @@ import { CATEGORIES_A_TRAITER } from "../value-objects/grille-categorisation";
 import { getCategorieReponse } from "../services/categorisation.service";
 
 describe("RECOMMANDATIONS_CATALOGUE", () => {
-  it("ne se déclenche que sur des réponses classées critique, vigilance ou à vérifier", () => {
+  it("ne se déclenche que sur des réponses classées critique, vigilance ou à surveiller", () => {
     for (const reco of RECOMMANDATIONS_CATALOGUE) {
       for (const reponse of reco.reponsesDeclenchantes) {
         expect(CATEGORIES_A_TRAITER, `${reco.id} / ${reponse}`).toContain(getCategorieReponse(reco.critereId, reponse));

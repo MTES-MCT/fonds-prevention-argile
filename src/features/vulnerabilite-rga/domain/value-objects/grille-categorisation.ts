@@ -36,12 +36,20 @@ export interface CategorieAffichage {
   pluriel: string;
   /** Fond du badge, repris du code couleur des anciens labels d'impact. */
   couleur: string;
+  /** Explication affichée sous la réponse sélectionnée et sous le titre de la section de résultat. */
+  explication?: string;
 }
 
 export const CATEGORIES_AFFICHAGE: Record<CategorieAffichee, CategorieAffichage> = {
   critique: { label: "Point critique", pluriel: "Points critiques", couleur: "#FFC7C7" },
   vigilance: { label: "Point de vigilance", pluriel: "Points de vigilance", couleur: "#FEECC2" },
-  a_verifier: { label: "À vérifier", pluriel: "Points à vérifier", couleur: "#E8EDFF" },
+  a_verifier: {
+    label: "À surveiller",
+    pluriel: "Points à surveiller",
+    couleur: "#E8EDFF",
+    explication:
+      "A priori sans problème si tout est en bon état. Mais une fuite, un défaut d'entretien ou un changement autour de la maison peut en faire un point critique : assurez-vous de votre réponse et contrôlez-le régulièrement.",
+  },
   bonne_pratique: { label: "Bonne pratique en place", pluriel: "Bonnes pratiques en place", couleur: "#B8FEC9" },
 };
 

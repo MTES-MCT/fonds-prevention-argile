@@ -163,6 +163,7 @@ export function VulnerabilitePdfDocument({ synthese, sections }: VulnerabilitePd
           {sections.map((section) => (
             <View style={styles.section} key={section.categorie}>
               <Text style={styles.sectionTitle}>{section.titre}</Text>
+              {section.explication && <Text style={styles.paragraph}>{section.explication}</Text>}
               {section.recommandations.map((recommandation) => (
                 <View style={styles.card} key={recommandation.id}>
                   <Text style={styles.cardTitle}>{recommandation.titre}</Text>
