@@ -30,27 +30,49 @@ describe("jwt.utils — secret de signature", () => {
     ["absent", undefined],
     ["vide", ""],
     ["trop court", "a".repeat(31)],
-  ])("refuse de signer quand JWT_SECRET est %s", (_cas, valeur) => {
+  ])("refuse de signer et de vérifier quand JWT_SECRET est %s", (_cas, valeur) => {
+    const jeton = createToken(PAYLOAD);
     vi.stubEnv("JWT_SECRET", valeur);
 
     expect(() => createToken(PAYLOAD)).toThrow(/JWT_SECRET absent ou trop court/);
+    // Lever plutôt que répondre « pas de session » : la panne de configuration doit se voir.
+    expect(() => verifyToken(jeton)).toThrow(/JWT_SECRET absent ou trop court/);
   });
 
-  it("refuse de vérifier sans secret au lieu de répondre « pas de session »", () => {
-    const jeton = createToken(PAYLOAD);
-    vi.stubEnv("JWT_SECRET", undefined);
+  it("accepte un secret d'exactement 32 caractères", () => {
+    vi.stubEnv("JWT_SECRET", "s".repeat(32));
 
-    expect(() => verifyToken(jeton)).toThrow(/JWT_SECRET absent ou trop court/);
+    expect(verifyToken(createToken(PAYLOAD))).toMatchObject({ userId: "agent-123" });
+  });
+
+  it("lit le secret à chaque appel : un jeton signé avant rotation devient invalide", () => {
+    const jeton = createToken(PAYLOAD);
+    vi.stubEnv("JWT_SECRET", "nouveau-secret-apres-rotation-de-32-car");
+
+    expect(verifyToken(jeton)).toBeNull();
   });
 
   it.each([
     ["même longueur", (s: string) => (s[0] === "A" ? "B" : "A") + s.slice(1)],
     ["tronquée", (s: string) => s.slice(0, -1)],
     ["rallongée", (s: string) => `${s}A`],
+    ["avec padding", (s: string) => `${s}=`],
   ])("rejette une signature altérée (%s) sans lever", (_cas, alterer) => {
     const [entete, charge, signature] = createToken(PAYLOAD).split(".");
 
     expect(verifyToken(`${entete}.${charge}.${alterer(signature)}`)).toBeNull();
+  });
+
+  it("rejette une variante base64url qui décode vers le même HMAC", () => {
+    const [entete, charge, signature] = createToken(PAYLOAD).split(".");
+    const octets = Buffer.from(signature, "base64url");
+    // 43 caractères pour 32 octets : les 2 bits de poids faible du dernier sont ignorés au décodage.
+    const variante = Array.from({ length: 128 }, (_, code) => signature.slice(0, -1) + String.fromCharCode(code)).find(
+      (candidat) => candidat !== signature && Buffer.from(candidat, "base64url").equals(octets)
+    );
+
+    expect(variante).toBeDefined();
+    expect(verifyToken(`${entete}.${charge}.${variante}`)).toBeNull();
   });
 
   it("rejette un jeton signé avec l'ancien secret par défaut", () => {
