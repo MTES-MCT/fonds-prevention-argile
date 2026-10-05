@@ -6,6 +6,7 @@ import type {
   IntegerNumberChampDn,
   PieceJustificativeChampDn,
   RepetitionChampDn,
+  TextChampDn,
 } from "../adapters/graphql/types";
 import type { AvisImpotExtrait, DonneesAvisImpotDossier } from "../domain/avis-impot";
 import { DS_FIELD_IDS } from "../domain/value-objects/ds-field-ids";
@@ -69,6 +70,10 @@ function estCommune(champ: ChampAvisImpotDn): champ is CommuneChampDn {
   return champ.__typename === "CommuneChamp";
 }
 
+function estTexte(champ: ChampAvisImpotDn): champ is TextChampDn {
+  return champ.__typename === "TextChamp";
+}
+
 function extraireAvis(piece: PieceJustificativeChampDn, dansRepetition: boolean): AvisImpotExtrait {
   const parAttribut = new Map<string, ColonneDn>();
   const attributsInconnus: string[] = [];
@@ -118,12 +123,22 @@ export function mapDossierAvisImpot(dossier: DossierAvisImpot): DonneesAvisImpot
   const avis: AvisImpotExtrait[] = [];
   const entiers = new Map<string, number | null>();
   let codeDepartement: string | null = null;
+  const adresseMaison = {
+    texte: null as string | null,
+    communeCode: null as string | null,
+    communeNom: null as string | null,
+  };
 
   for (const champ of dossier.champs) {
     if (estPiece(champ) && champ.nature === NATURE_AVIS_IMPOT) avis.push(extraireAvis(champ, false));
     if (estEntier(champ)) entiers.set(champ.champDescriptorId, versNombre(champ.valeurEntiere));
     if (estCommune(champ) && champ.champDescriptorId === DS_FIELD_IDS.ELIGIBILITE.COMMUNE) {
       codeDepartement = versTexte(champ.departement?.code);
+      adresseMaison.communeCode = versTexte(champ.commune?.code);
+      adresseMaison.communeNom = versTexte(champ.commune?.name);
+    }
+    if (estTexte(champ) && champ.champDescriptorId === DS_FIELD_IDS.ELIGIBILITE.ADRESSE_MAISON_TEXTE) {
+      adresseMaison.texte = versTexte(champ.valeurTexte);
     }
     if (estRepetition(champ)) {
       for (const ligne of champ.rows) {
@@ -146,6 +161,7 @@ export function mapDossierAvisImpot(dossier: DossierAvisImpot): DonneesAvisImpot
       revenuFiscalReference: entiers.get(DS_FIELD_IDS.ELIGIBILITE.REVENU_FISCAL_REFERENCE) ?? null,
     },
     codeDepartement,
+    adresseMaison,
     avis,
     annotations: Object.fromEntries(
       (dossier.annotations ?? []).map((a) => [a.champDescriptorId, a.stringValue ?? null])

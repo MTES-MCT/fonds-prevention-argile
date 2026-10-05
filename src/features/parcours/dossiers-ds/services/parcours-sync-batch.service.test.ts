@@ -477,10 +477,11 @@ describe("runSyncBatch", () => {
         expect.objectContaining({
           bilanAnnotationsDn: {
             controles: 1,
-            ecritures: { avisImpot: 1, typeMenage: 1, tauxSubvention: 0, lienFpa: 0 },
+            ecritures: { avisImpot: 1, typeMenage: 1, tauxSubvention: 0, lienCarte: 0, zoneAlea: 0, lienFpa: 0 },
             aJour: 0,
             echecs: 0,
             echecsLienFpa: 0,
+            adressesNonGeocodees: 0,
             verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
           },
         })

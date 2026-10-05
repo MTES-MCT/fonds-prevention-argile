@@ -96,6 +96,8 @@ export function dossierAvisFictif(options: {
   revenuFiscalReference: number | null;
   /** Département de la commune du logement : 32 (Gers, hors IdF) par défaut, null sans commune. */
   codeDepartement?: string | null;
+  /** « Adresse postale de la maison » : une adresse d'Auch par défaut, null pour un champ vide. */
+  adresse?: string | null;
   dernierAvis?: PieceJustificativeChampDn;
   avisRepetes?: PieceJustificativeChampDn[];
 }): DossierAvisImpot {
@@ -123,6 +125,14 @@ export function dossierAvisFictif(options: {
       label: "Commune",
       updatedAt: MIS_A_JOUR,
       departement: options.codeDepartement === null ? null : { code: options.codeDepartement ?? "32" },
+      commune: options.codeDepartement === null ? null : { code: "32013", name: "Auch" },
+    },
+    {
+      __typename: "TextChamp",
+      champDescriptorId: DS_FIELD_IDS.ELIGIBILITE.ADRESSE_MAISON_TEXTE,
+      label: "Adresse postale de la maison concernée par le dossier d'aide",
+      updatedAt: MIS_A_JOUR,
+      valeurTexte: options.adresse === undefined ? "5 avenue de l'Yser" : options.adresse,
     },
     {
       __typename: "RepetitionChamp",

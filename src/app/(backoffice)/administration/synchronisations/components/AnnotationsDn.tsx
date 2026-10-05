@@ -28,6 +28,12 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
             {ANNOTATIONS_DN.map((a) => `${LIBELLES_ANNOTATIONS_DN[a]} ${bilan.ecritures[a]}`).join(" · ")}
             {bilan.echecsLienFpa > 0 && ` · Échecs du lien FPA : ${bilan.echecsLienFpa}`}
           </li>
+          {bilan.adressesNonGeocodees > 0 && (
+            <li>
+              Adresses non géocodées (lien en recherche texte, zone d&apos;aléa non écrite) :{" "}
+              {bilan.adressesNonGeocodees}
+            </li>
+          )}
           <li>
             Verdicts : {VERDICTS_CONTROLE_DN.map((v) => `${LIBELLES_VERDICTS_DN[v]} ${bilan.verdicts[v]}`).join(" · ")}
           </li>
@@ -47,6 +53,7 @@ export function AnnotationsDnBadges({ entree }: { entree: AnnotationsDnEntree | 
     badges.push({ libelle: LIBELLES_ANNOTATIONS_DN[annotation], classe: "fr-badge--info" });
   }
   if (entree.echecLienFpa) badges.push({ libelle: "Échec du lien FPA", classe: "fr-badge--error" });
+  if (entree.adresseNonGeocodee) badges.push({ libelle: "Adresse non géocodée", classe: "fr-badge--warning" });
   return (
     <ul className="fr-badges-group">
       {badges.map((b) => (

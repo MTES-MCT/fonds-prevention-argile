@@ -158,6 +158,31 @@ que les annotations dont la valeur change. Seule la préprod est concernée : la
 aucune annotation répertoriée, donc aucun contrôle passé. Les scripts masquent désormais les
 montants de la phrase par défaut (`--afficher-valeurs` pour les voir).
 
+## Amendement — Lien Google Maps et zone d'aléa de la maison (octobre 2026)
+
+Le même passage écrit deux annotations de plus, demandées par la DDT pour une première
+vérification à distance : « Lien vers google map pour voir la maison et son environnement »
+(mitoyenneté, niveaux, âge, désordres visibles) et « Vérification de la zone d'aléa avec l'adresse
+renseignée » (Hors zone, Faible, Moyen, Fort).
+
+- **Adresse du dépôt, pas de la simulation** : le demandeur peut la modifier dans DN après le
+  préremplissage, et c'est elle que la DDT instruit. Elle est géocodée par la BAN dans la commune
+  déclarée, et retenue seulement au numéro de rue avec un score suffisant.
+- **Un seul point pour les deux** : le lien ouvre Google Street View sur le point géocodé, la
+  zone est lue sur ce même point dans les polygones RGA 2026 déjà importés (même calcul que le
+  simulateur). Lien public sans clé, en Street View direct, demandé par la DDT pour voir la façade.
+  Sans prise de vue à cet endroit, Google affiche la plus proche ou la carte.
+- **Sans point sûr, pas de zone** : la liste n'a pas d'option « inconnue » et « Hors zone » serait
+  une fausse information. Le lien retombe sur une recherche Google de l'adresse en texte.
+- **Données** : l'adresse transite par l'API publique BAN, déjà appelée par le simulateur, et
+  n'est ni stockée ni journalisée. Les scripts masquent le lien par défaut.
+
+Alternative écartée : les coordonnées du bâtiment choisi dans la simulation. Plus précises, elles
+ignoreraient pourtant une adresse corrigée au dépôt, que le contrôle d'aléa doit justement vérifier.
+
+Comme pour la tranche, un dossier déjà contrôlé ne reçoit ces annotations que si ses champs
+bougent : relancer `pnpm ds:controler-avis-impot --tous --apply` une fois après le déploiement.
+
 ## Liens
 
 - Code : `src/features/parcours/dossiers-ds/domain/avis-impot/`,
