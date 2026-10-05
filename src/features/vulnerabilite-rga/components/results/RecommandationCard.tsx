@@ -1,28 +1,6 @@
-import Image, { type StaticImageData } from "next/image";
-import schemaPenteTerrain from "../illustrations/SchemaPenteTerrain.svg";
-import schemaReseauxEnterres from "../illustrations/SchemaReseauxEnterres.svg";
-import schemaGravierProprete from "../illustrations/SchemaGravierProprete.svg";
-import schemaGouttieres from "../illustrations/SchemaGouttieres.svg";
-import schemaRecuperateurEau from "../illustrations/SchemaRecuperateurEau.svg";
-import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
-import schemaHaies from "../illustrations/SchemaHaies.svg";
-import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
-import schemaEnsoleillement from "../illustrations/SchemaEnsoleillement.svg";
-import schemaSourceChaleurSousSol from "../illustrations/SchemaSourceChaleurSousSol.svg";
+import Image from "next/image";
+import { ILLUSTRATIONS_RECOMMANDATIONS } from "../illustrations/illustrations-recommandations";
 import type { RecommandationDef } from "../../domain/catalogues/recommandations.catalogue";
-
-const ILLUSTRATIONS: Record<string, StaticImageData> = {
-  pente: schemaPenteTerrain,
-  reseaux: schemaReseauxEnterres,
-  gravier: schemaGravierProprete,
-  gouttieres: schemaGouttieres,
-  "recuperateur-eau": schemaRecuperateurEau,
-  arbre: schemaArbreProximite,
-  haies: schemaHaies,
-  "pied-facade": schemaVegetationPiedFacade,
-  ensoleillement: schemaEnsoleillement,
-  "source-chaleur": schemaSourceChaleurSousSol,
-};
 
 interface RecommandationCardProps {
   recommandation: RecommandationDef;
@@ -30,7 +8,7 @@ interface RecommandationCardProps {
 
 export function RecommandationCard({ recommandation }: RecommandationCardProps) {
   const { titre, problemes, ameliorations, illustrationId } = recommandation;
-  const illustration = illustrationId ? ILLUSTRATIONS[illustrationId] : undefined;
+  const illustration = illustrationId ? ILLUSTRATIONS_RECOMMANDATIONS[illustrationId] : undefined;
 
   return (
     <div className="fr-card fr-card--no-arrow fr-mb-3w">
