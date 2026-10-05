@@ -19,12 +19,12 @@ Sensibiliser le grand public au risque de retrait-gonflement des argiles à part
 environnement proche de la maison**, expliquer les bonnes pratiques et déclencher des actions à
 moindre coût. Ce n'est **pas** un diagnostic, et ce n'est **pas** le simulateur d'éligibilité :
 
-|                | `/simulateur` (éligibilité)                      | `/vulnerabilite-rga` (vulnérabilité)                  |
-| -------------- | ------------------------------------------------ | ----------------------------------------------------- |
-| Question posée | « Ai-je droit au Fonds ? »                       | « Qu'est-ce qui fragilise ma maison, et que faire ? » |
-| Sortie         | éligible / non éligible, entrée dans le parcours | points critiques / de vigilance / à vérifier + fiches |
-| Sujet          | logement, revenus, aléa                          | environnement proche : eaux, végétation, exposition   |
-| Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                           |
+|                | `/simulateur` (éligibilité)                      | `/vulnerabilite-rga` (vulnérabilité)                    |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------- |
+| Question posée | « Ai-je droit au Fonds ? »                       | « Qu'est-ce qui fragilise ma maison, et que faire ? »   |
+| Sortie         | éligible / non éligible, entrée dans le parcours | points critiques / de vigilance / à surveiller + fiches |
+| Sujet          | logement, revenus, aléa                          | environnement proche : eaux, végétation, exposition     |
+| Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                             |
 
 Le questionnaire ne porte volontairement **ni sur le bâti** (année, niveaux, fondations) **ni sur les
 revenus** : 13 questions, observables depuis le jardin ou le sous-sol.
@@ -119,16 +119,20 @@ lue dans `grille-categorisation.ts` :
 | ---------------- | ----------------------- | ----------------------------------------- |
 | `critique`       | Point critique          | compté dans la synthèse, section en tête  |
 | `vigilance`      | Point de vigilance      | compté dans la synthèse, deuxième section |
-| `a_verifier`     | À vérifier              | troisième section                         |
+| `a_verifier`     | À surveiller            | troisième section                         |
 | `bonne_pratique` | Bonne pratique en place | aucun                                     |
 | `sans_objet`     | aucun                   | aucun — ni affichée ni comptée            |
 
-Trois règles à connaître :
+Quatre règles à connaître :
 
 - **L'aléa RGA n'est pas une question.** Donnée de contexte issue de la carte, il est cité dans la
   synthèse et ne produit aucun point.
 - **L'essence de l'arbre est posée mais sans catégorie** (`sansCategorie`), en attente des études
   par essence. C'est « arbre proche = oui » qui porte le point critique.
+- **« À surveiller » s'explique** : un point sans problème a priori, qui peut devenir critique
+  (fuite, défaut d'entretien). L'explication (`CATEGORIES_AFFICHAGE.a_verifier.explication`)
+  s'affiche sous la réponse sélectionnée et sous le titre de la section de résultat. L'id
+  `a_verifier` est conservé : les statistiques le relisent.
 - **Un test échoue si une réponse n'a pas de catégorie** (`grille-categorisation.test.ts`), hors
   question marquée `sansCategorie`.
 
@@ -139,12 +143,14 @@ Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
 - **Synthèse** (`SyntheseResultat`) : mise en avant DSFR (`fr-callout`, pas une alerte — c'est un
   contenu éditorial, pas un retour système). Accent `pink-tuile` dès qu'un point est critique,
   `yellow-moutarde` s'il n'y a que de la vigilance, `green-emeraude` sinon. L'icône et le titre
-  doublent la couleur.
+  doublent la couleur. Hors zone argileuse (aléa `nul`), une phrase relativise les points sans
+  les retirer : la carte d'aléa est une estimation, et ils redeviennent déterminants s'il y a
+  de l'argile sous les fondations.
 - **Callout expert** : toujours affiché. Seul son bouton vers `/simulateur` est conditionnel —
   département éligible, aléa fort, maison non mitoyenne (`remplitCriteresEligibiliteFonds`, qui
   appelle les règles du simulateur d'éligibilité).
 - **Fiches** : celles du catalogue, regroupées en « Points critiques », « Points de vigilance »,
-  « Points à vérifier », une section vide étant omise. Un point qu'aucune fiche ne couvre est
+  « Points à surveiller », une section vide étant omise. Un point qu'aucune fiche ne couvre est
   listé sous sa section, sans conseil.
 
 ---
