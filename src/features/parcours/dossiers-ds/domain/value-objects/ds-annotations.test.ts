@@ -55,6 +55,17 @@ describe("idsAnnotationsInstruction", () => {
     });
   });
 
+  it("renvoie les cinq annotations de la prod, relevées sur la démarche 126061", () => {
+    expect(idsAnnotationsInstruction(126061)).toEqual({
+      avisImpot: "Q2hhbXAtNzAzNTg1Mw==",
+      typeMenage: "Q2hhbXAtNzAzNTg3MQ==",
+      tauxSubvention: "Q2hhbXAtNzAzNTg4Ng==",
+      lienCarte: "Q2hhbXAtNzAzNTkyNQ==",
+      zoneAlea: "Q2hhbXAtNzAzNTkzMA==",
+    });
+    expect(estInstructionAutomatiqueActive(126061)).toBe(true);
+  });
+
   it("active chaque annotation séparément", () => {
     DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = "Q2hhbXAtMQ==";
 
@@ -68,6 +79,6 @@ describe("idsAnnotationsInstruction", () => {
 
   it("considère active une démarche dès qu'une annotation y est répertoriée", () => {
     expect(estInstructionAutomatiqueActive(146377)).toBe(true);
-    expect(estInstructionAutomatiqueActive(126061)).toBe(false);
+    expect(estInstructionAutomatiqueActive(999)).toBe(false);
   });
 });
