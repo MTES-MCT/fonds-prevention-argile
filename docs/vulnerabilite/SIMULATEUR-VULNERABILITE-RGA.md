@@ -188,8 +188,17 @@ partagé.
 (`View`/`Text`/`Svg`), le CSS/DSFR n'étant pas disponible dans ce rendu — y compris le triangle
 d'alerte « Problème », dessiné en SVG plutôt qu'en glyphe unicode (les polices standard PDFKit
 n'ont pas « ▲ »). La synthèse et les sections sont calculées une fois et passées aux deux rendus ; les
-textes (callout, pédagogie) sont partagés via `resultat-content.const.ts`. Aucune illustration dans le PDF (non demandé, et les schémas SVG
-du dossier `illustrations/` ne sont pas conçus pour ce second moteur de rendu).
+textes (callout, pédagogie) sont partagés via `resultat-content.const.ts`.
+
+**Illustrations des fiches.** `@react-pdf/renderer` n'accepte que PNG et JPEG : le bouton
+convertit d'abord les schémas SVG en PNG dans le navigateur (`rasteriser-illustrations.ts`,
+canvas au double de la taille native) et ne monte le document qu'ensuite. Une illustration
+en échec est omise, sans bloquer le PDF. La table `illustrationId → SVG` est partagée avec
+l'écran (`illustrations/illustrations-recommandations.ts`).
+
+**Sauts de page.** Une fiche ne se coupe jamais (`wrap={false}`), pas plus qu'une puce, la
+synthèse ou le callout. Le titre d'une section est attaché à sa première fiche dans un même bloc
+insécable : `minPresenceAhead` a été essayé et ne l'empêchait pas de rester seul en bas de page.
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
 que tout le reste de la page, alors que le bouton n'apparaît qu'à la 15e étape. `ResultVulnerabilite`
