@@ -7,6 +7,8 @@ const env = vi.hoisted(() => ({
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: vi.fn(() => env) }));
 const client = vi.hoisted(() => ({ modifierAnnotations: vi.fn() }));
 vi.mock("../adapters/graphql/client", () => ({ graphqlClient: client }));
+const tentatives = vi.hoisted(() => ({ findByDsNumber: vi.fn() }));
+vi.mock("@/shared/database/repositories", () => ({ dossiersDsTentativesRepo: tentatives }));
 
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { completerLienFpa } from "./lien-fpa.service";
@@ -21,6 +23,7 @@ function completer(step: Step, annotations: Array<{ champDescriptorId: string; s
   return completerLienFpa({
     parcoursId: PARCOURS,
     step,
+    dsNumber: "456",
     dsDemarcheId: "146377",
     dossierDnId: "RG9zc2llci0x",
     annotations,
@@ -31,6 +34,7 @@ describe("completerLienFpa", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     client.modifierAnnotations.mockResolvedValue(undefined);
+    tentatives.findByDsNumber.mockResolvedValue({ dsNumber: "456", parcoursId: PARCOURS });
   });
 
   it.each([null, "", "   "])("écrit le permalien du parcours dans une annotation vide (%o)", async (vide) => {
@@ -60,6 +64,27 @@ describe("completerLienFpa", () => {
       false
     );
     expect(client.modifierAnnotations).not.toHaveBeenCalled();
+  });
+
+  it("n'écrit rien sur un dossier enregistré pour un autre parcours", async () => {
+    tentatives.findByDsNumber.mockResolvedValue({
+      dsNumber: "456",
+      parcoursId: "00000000-0000-4000-8000-000000000000",
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(completer(Step.DIAGNOSTIC, [{ champDescriptorId: DIAGNOSTIC, stringValue: null }])).resolves.toBe(
+      false
+    );
+    expect(client.modifierAnnotations).not.toHaveBeenCalled();
+  });
+
+  it("écrit sur un dossier absent du registre, antérieur à son amorçage", async () => {
+    tentatives.findByDsNumber.mockResolvedValue(null);
+
+    await expect(completer(Step.DIAGNOSTIC, [{ champDescriptorId: DIAGNOSTIC, stringValue: null }])).resolves.toBe(
+      true
+    );
   });
 
   it("ne fait rien quand l'annotation est absente du dossier ou l'étape sans lien", async () => {

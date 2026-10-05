@@ -1,5 +1,6 @@
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { getServerEnv } from "@/shared/config/env.config";
+import { dossiersDsTentativesRepo } from "@/shared/database/repositories";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { graphqlClient } from "../adapters/graphql/client";
 import type { AnnotationLue } from "../adapters/graphql/types";
@@ -17,6 +18,7 @@ export function lienDossierFpa(parcoursId: string): string {
 export async function completerLienFpa(params: {
   parcoursId: string;
   step: Step;
+  dsNumber: string;
   dsDemarcheId: string;
   dossierDnId: string;
   annotations: AnnotationLue[];
@@ -26,6 +28,12 @@ export async function completerLienFpa(params: {
   const annotation = params.annotations.find((a) => a.champDescriptorId === id);
   // Une valeur existante n'est jamais écrasée : elle peut désigner un autre parcours (ADR-0027).
   if (!annotation || annotation.stringValue?.trim()) return false;
+  // Pointeur incohérent avec le registre : écrire ce lien fabriquerait le conflit que la réconciliation doit voir.
+  const tentative = await dossiersDsTentativesRepo.findByDsNumber(params.dsNumber);
+  if (tentative && tentative.parcoursId !== params.parcoursId) {
+    console.warn(`Lien FPA non écrit : dossier ${params.dsNumber} enregistré pour un autre parcours`);
+    return false;
+  }
 
   await graphqlClient.modifierAnnotations({
     dossierId: params.dossierDnId,

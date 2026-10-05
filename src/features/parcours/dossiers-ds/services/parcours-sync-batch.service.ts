@@ -236,6 +236,7 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
         const ecrit = await completerLienFpa({
           parcoursId,
           step: dossier.step,
+          dsNumber: dossier.dsNumber,
           dsDemarcheId: dossier.dsDemarcheId,
           dossierDnId: result.data.dossierDnId,
           annotations: result.data.annotations,

@@ -575,6 +575,7 @@ describe("runSyncBatch", () => {
       expect(mockedCompleterLienFpa).toHaveBeenCalledWith({
         parcoursId: "p1",
         step: Step.DIAGNOSTIC,
+        dsNumber: "456",
         dsDemarcheId: "1",
         dossierDnId: "RG9zc2llci0x",
         annotations: sync.data.annotations,
