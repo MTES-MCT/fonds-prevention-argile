@@ -1,4 +1,4 @@
-export * from "./VulnerabiliteGauge";
+export * from "./SyntheseResultat";
 export * from "./CalloutExpertRga";
 export * from "./ComprendreSourcesVulnerabilite";
 export * from "./RecommandationCard";

@@ -119,7 +119,7 @@ export function StepAdresseVulnerabilite({
   }, [selectedAddress, buildingData, onSubmit]);
 
   // aleaIndetermine bloque : getRgaRiskLevel(null) rendrait "nul" (= hors zone) un aléa qu'on
-  // n'a pas pu déterminer, faussant la pondération du score et la simulation enregistrée.
+  // n'a pas pu déterminer, faussant la synthèse du résultat et la simulation enregistrée.
   const aleaIndetermine = Boolean(buildingData?.aleaIndetermine);
   const isValid = selectedAddress !== null && buildingData !== null && !aleaIndetermine;
 

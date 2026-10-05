@@ -1,6 +1,6 @@
 import { VulnerabiliteStep } from "../value-objects/vulnerabilite-step.enum";
 import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
-import type { VulnerabiliteScoreResult } from "../services/scoring.service";
+import type { VulnerabiliteResultat } from "../services/categorisation.service";
 
 /**
  * État complet du parcours de vulnérabilité en cours.
@@ -11,7 +11,7 @@ export interface VulnerabiliteState {
   /** Historique de navigation (pour le bouton retour). */
   history: VulnerabiliteStep[];
   /** Résultat calculé une fois arrivé à l'étape RESULTAT. */
-  result: VulnerabiliteScoreResult | null;
+  result: VulnerabiliteResultat | null;
   startedAt: string;
   updatedAt: string;
 }

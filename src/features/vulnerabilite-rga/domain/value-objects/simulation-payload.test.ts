@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { vulnerabiliteSimulationPayloadSchema, toSimulationPayload } from "./simulation-payload";
-import { CRITERES_CONFIG, ESSENCES_AGRESSIVITE } from "./grille-ponderation";
+import { CRITERES_CONFIG } from "./grille-categorisation";
 import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
 
 const ANSWERS: PartialVulnerabiliteReponses = {
@@ -42,13 +42,9 @@ describe("toSimulationPayload", () => {
 });
 
 describe("vulnerabiliteSimulationPayloadSchema — dérivé de la grille", () => {
-  it("accepte toutes les réponses du barème de chaque critère", () => {
+  it("accepte toutes les réponses de chaque question de la grille", () => {
     for (const critere of CRITERES_CONFIG) {
-      const essences = Object.keys(ESSENCES_AGRESSIVITE);
-      const bareme = critere.bareme.map((b) => b.reponse);
-      const valeurs = bareme.length > 0 ? bareme : essences;
-
-      for (const valeur of valeurs) {
+      for (const { reponse: valeur } of critere.reponses) {
         const result = vulnerabiliteSimulationPayloadSchema.safeParse({
           codeDepartement: "36",
           reponses: { [critere.id]: valeur },
@@ -56,6 +52,17 @@ describe("vulnerabiliteSimulationPayloadSchema — dérivé de la grille", () =>
         expect(result.success, `${critere.id} = ${valeur}`).toBe(true);
       }
     }
+  });
+
+  it("accepte l'aléa issu de la carte, hors grille de catégorisation", () => {
+    for (const aleaRga of ["fort", "moyen", "faible", "nul"]) {
+      const result = vulnerabiliteSimulationPayloadSchema.safeParse({ codeDepartement: "36", reponses: { aleaRga } });
+      expect(result.success, aleaRga).toBe(true);
+    }
+    expect(
+      vulnerabiliteSimulationPayloadSchema.safeParse({ codeDepartement: "36", reponses: { aleaRga: "extreme" } })
+        .success
+    ).toBe(false);
   });
 
   it("rejette une réponse hors barème", () => {
@@ -75,14 +82,14 @@ describe("vulnerabiliteSimulationPayloadSchema — dérivé de la grille", () =>
     expect(vulnerabiliteSimulationPayloadSchema.safeParse({ codeDepartement: "974", reponses: {} }).success).toBe(true);
   });
 
-  it("ignore un score envoyé par le client (jamais lu, jamais stocké)", () => {
+  it("ignore une catégorie envoyée par le client (jamais lue, jamais stockée)", () => {
     const result = vulnerabiliteSimulationPayloadSchema.safeParse({
       codeDepartement: "36",
       reponses: {},
-      scoreGlobal: 0,
+      points: [],
     });
 
     expect(result.success).toBe(true);
-    expect(result.data).not.toHaveProperty("scoreGlobal");
+    expect(result.data).not.toHaveProperty("points");
   });
 });

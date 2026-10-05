@@ -51,7 +51,11 @@ const answers: PartialVulnerabiliteReponses = {
     haies: "proches_denses",
     vegetation_pied_facade: "presente",
   },
-  divers: { mitoyennete: "mitoyen_voisin_sans_travaux", ensoleillement: "fort_sud" },
+  divers: {
+    mitoyennete: "mitoyen_voisin_sans_travaux",
+    ensoleillement: "fort_sud",
+    source_chaleur_sous_sol: "oui_mur_non_isole",
+  },
 };
 const payload = toSimulationPayload(answers);
 
@@ -93,7 +97,7 @@ describe("enregistrerResultatVulnerabiliteAction", () => {
     );
   });
 
-  it("recalcule le score côté serveur et n'écrit que les colonnes de la table anonyme", async () => {
+  it("n'écrit que les colonnes de la table anonyme", async () => {
     mockedSession.mockResolvedValue(null as never);
     mockCookieStore();
 
@@ -103,19 +107,20 @@ describe("enregistrerResultatVulnerabiliteAction", () => {
     expect(inserted.codeDepartement).toBe("36");
     expect(inserted.aleaRga).toBe("fort");
     expect(inserted.penteTerrain).toBe("vers_facade");
-    // Toutes les réponses au pire barème : le score recalculé doit être maximal.
-    expect(inserted.scoreGlobal).toBe(100);
+    expect(inserted.sourceChaleurSousSol).toBe("oui_mur_non_isole");
     expect(JSON.stringify(inserted)).not.toContain("1 rue Test");
     expect(JSON.stringify(inserted)).not.toContain("clef-test");
   });
 
-  it("ignore un score falsifié envoyé par le client", async () => {
+  it("ne stocke ni score ni catégorie, même envoyés par le client", async () => {
     mockedSession.mockResolvedValue(null as never);
     mockCookieStore();
 
-    await enregistrerResultatVulnerabiliteAction({ ...payload, scoreGlobal: 0, scoreParCategorie: { sol: 0 } });
+    await enregistrerResultatVulnerabiliteAction({ ...payload, scoreGlobal: 0, points: [] });
 
-    expect(mockedCreate.mock.calls[0][0].scoreGlobal).toBe(100);
+    const inserted = mockedCreate.mock.calls[0][0];
+    expect(inserted).not.toHaveProperty("scoreGlobal");
+    expect(inserted).not.toHaveProperty("points");
   });
 
   it("rejette une charge utile hors barème sans rien écrire", async () => {

@@ -1,7 +1,7 @@
 # ADR-0041 : Calcul de vulnérabilité sans pondération en cascade, moyenne quadratique
 
 **Date** : 2026-09-29
-**Statut** : Accepté
+**Statut** : Remplacé par [ADR-0045](0045-categorisation-qualitative-vulnerabilite.md)
 
 ## Contexte
 

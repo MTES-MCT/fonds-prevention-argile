@@ -1,7 +1,7 @@
 import { VulnerabiliteStep } from "../value-objects/vulnerabilite-step.enum";
 import { getNextStep } from "../rules/navigation/step-flow.rules";
 import { createInitialVulnerabiliteState, type VulnerabiliteState } from "../entities/vulnerabilite-state.entity";
-import { computeScoreResult } from "./scoring.service";
+import { computeResultat } from "./categorisation.service";
 import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
 
 /**
@@ -37,6 +37,7 @@ const STEP_SPECIFIC_KEYS: Partial<
   [VulnerabiliteStep.VEGETATION_PIED_FACADE]: { section: "vegetation", keys: ["vegetation_pied_facade"] },
   [VulnerabiliteStep.MITOYENNETE]: { section: "divers", keys: ["mitoyennete"] },
   [VulnerabiliteStep.ENSOLEILLEMENT]: { section: "divers", keys: ["ensoleillement"] },
+  [VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL]: { section: "divers", keys: ["source_chaleur_sous_sol"] },
 };
 
 function clearAnswersForStep(
@@ -62,7 +63,7 @@ function clearAnswersForStep(
 /**
  * Service de transition d'état du parcours de vulnérabilité — même esprit que
  * `SimulationService` du simulateur d'éligibilité, mais sans early-exit : ici on
- * avance toujours étape par étape, jusqu'au calcul du score à la dernière étape.
+ * avance toujours étape par étape, jusqu'à la catégorisation des réponses à la dernière étape.
  */
 export const VulnerabiliteFlowService = {
   create(): VulnerabiliteState {
@@ -97,7 +98,7 @@ export const VulnerabiliteFlowService = {
         answers: newAnswers,
         currentStep: VulnerabiliteStep.RESULTAT,
         history: [...state.history, state.currentStep],
-        result: computeScoreResult(newAnswers),
+        result: computeResultat(newAnswers),
         updatedAt: new Date().toISOString(),
       };
     }

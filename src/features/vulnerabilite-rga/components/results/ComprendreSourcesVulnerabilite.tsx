@@ -7,7 +7,7 @@ import {
 
 /**
  * Pédagogie RGA déplacée depuis l'écran d'accueil (`StepIntro`) vers l'écran de résultat :
- * plus utile une fois le score connu que comme préambule avant de démarrer. Texte partagé
+ * plus utile une fois le résultat connu que comme préambule avant de démarrer. Texte partagé
  * avec le PDF téléchargeable (`resultat-content.const.ts`).
  */
 export function ComprendreSourcesVulnerabilite() {

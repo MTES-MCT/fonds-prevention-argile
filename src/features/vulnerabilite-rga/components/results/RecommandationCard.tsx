@@ -1,35 +1,14 @@
-import Image, { type StaticImageData } from "next/image";
-import schemaPenteTerrain from "../illustrations/SchemaPenteTerrain.svg";
-import schemaReseauxEnterres from "../illustrations/SchemaReseauxEnterres.svg";
-import schemaGravierProprete from "../illustrations/SchemaGravierProprete.svg";
-import schemaGouttieres from "../illustrations/SchemaGouttieres.svg";
-import schemaRecuperateurEau from "../illustrations/SchemaRecuperateurEau.svg";
-import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
-import schemaHaies from "../illustrations/SchemaHaies.svg";
-import schemaVegetationPiedFacade from "../illustrations/SchemaVegetationPiedFacade.svg";
-import schemaEnsoleillement from "../illustrations/SchemaEnsoleillement.svg";
-import { ImpactBadge } from "../shared/ImpactBadge";
-import type { RecommandationPrioritaire } from "../../domain/services/recommandations.service";
-
-const ILLUSTRATIONS: Record<string, StaticImageData> = {
-  pente: schemaPenteTerrain,
-  reseaux: schemaReseauxEnterres,
-  gravier: schemaGravierProprete,
-  gouttieres: schemaGouttieres,
-  "recuperateur-eau": schemaRecuperateurEau,
-  arbre: schemaArbreProximite,
-  haies: schemaHaies,
-  "pied-facade": schemaVegetationPiedFacade,
-  ensoleillement: schemaEnsoleillement,
-};
+import Image from "next/image";
+import { ILLUSTRATIONS_RECOMMANDATIONS } from "../illustrations/illustrations-recommandations";
+import type { RecommandationDef } from "../../domain/catalogues/recommandations.catalogue";
 
 interface RecommandationCardProps {
-  recommandation: RecommandationPrioritaire;
+  recommandation: RecommandationDef;
 }
 
 export function RecommandationCard({ recommandation }: RecommandationCardProps) {
-  const { titre, problemes, ameliorations, illustrationId } = recommandation.def;
-  const illustration = illustrationId ? ILLUSTRATIONS[illustrationId] : undefined;
+  const { titre, problemes, ameliorations, illustrationId } = recommandation;
+  const illustration = illustrationId ? ILLUSTRATIONS_RECOMMANDATIONS[illustrationId] : undefined;
 
   return (
     <div className="fr-card fr-card--no-arrow fr-mb-3w">
@@ -40,9 +19,6 @@ export function RecommandationCard({ recommandation }: RecommandationCardProps) 
               simple <div> (order:0 par défaut) passerait avant le titre. fr-card__desc (order:3)
               garantit sa position après le titre sans dépendre de l'ordre dans le DOM. */}
           <div className="fr-card__desc">
-            <div className="fr-mb-3w">
-              <ImpactBadge score={recommandation.score} context="solution" inline={false} />
-            </div>
             {illustration && (
               <div style={{ maxWidth: "260px", marginInline: "auto" }}>
                 <Image src={illustration} alt="" className="w-full h-auto" />

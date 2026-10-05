@@ -1,5 +1,8 @@
-import { VulnerabiliteGauge } from "@/features/vulnerabilite-rga/components/results/VulnerabiliteGauge";
-import { ImpactBadge } from "@/features/vulnerabilite-rga/components/shared/ImpactBadge";
+import { CategorieBadge } from "@/features/vulnerabilite-rga/components/shared/CategorieBadge";
+import {
+  CATEGORIES_AFFICHAGE,
+  CATEGORIES_A_TRAITER,
+} from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
 import { formatDate } from "@/shared/utils";
 import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/shared/services/build-info-vulnerabilite.service";
 
@@ -9,8 +12,7 @@ interface InfoVulnerabiliteProps {
 
 /**
  * Carte « Vulnérabilité au RGA » — résultat du simulateur public rattaché au compte du demandeur.
- * Une seule carte compacte (score + réponses), pas de découpage par catégorie comme dans
- * l'onglet admin.
+ * Une seule carte compacte : le décompte des points, puis chaque réponse avec sa catégorie.
  */
 export function InfoVulnerabilite({ data }: InfoVulnerabiliteProps) {
   return (
@@ -27,16 +29,18 @@ export function InfoVulnerabilite({ data }: InfoVulnerabiliteProps) {
         </p>
       </div>
 
-      <div className="flex justify-center fr-my-2w">
-        <VulnerabiliteGauge score={data.scoreGlobal} size={160} />
-      </div>
+      <p className="fr-text--sm fr-my-2w fr-ml-4w">
+        {CATEGORIES_A_TRAITER.map(
+          (categorie) => `${CATEGORIES_AFFICHAGE[categorie].pluriel} : ${data.compte[categorie]}`
+        ).join(" · ")}
+      </p>
 
       {data.reponses.length > 0 && (
         <ul className="fr-ml-3w fr-text--sm">
           {data.reponses.map((reponse) => (
             <li key={reponse.label} className="fr-mb-2v">
               {reponse.label} — {reponse.valeur}
-              {reponse.impactScore !== null && <ImpactBadge score={reponse.impactScore} />}
+              <CategorieBadge categorie={reponse.categorie} />
             </li>
           ))}
         </ul>
