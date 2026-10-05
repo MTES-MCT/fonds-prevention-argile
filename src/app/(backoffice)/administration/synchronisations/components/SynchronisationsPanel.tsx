@@ -9,6 +9,7 @@ import {
 import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import type { SyncRun } from "@/shared/database/schema/sync-runs";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
+import { resumerBilanAnnotationsDn } from "./annotations-dn.format";
 
 const PAGE_SIZE = 20;
 /** Au-delà de 30 min, un run pending est considéré zombie (cf. STALE_RUN_THRESHOLD_MS du service). */
@@ -233,6 +234,7 @@ export default function SynchronisationsPanel() {
                             <th>Scannés</th>
                             <th>Mis à jour</th>
                             <th>Erreurs</th>
+                            <th>Annotations DN</th>
                             <th>Détail</th>
                           </tr>
                         </thead>
@@ -256,6 +258,7 @@ export default function SynchronisationsPanel() {
                                 <td>{run.totalParcoursScanned}</td>
                                 <td>{run.totalParcoursUpdated}</td>
                                 <td>{run.totalErrors}</td>
+                                <td className="fr-text--sm">{resumerBilanAnnotationsDn(run.bilanAnnotationsDn)}</td>
                                 <td>
                                   <Link
                                     href={`/administration/synchronisations/${run.id}`}

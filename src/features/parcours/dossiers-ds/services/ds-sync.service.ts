@@ -1,4 +1,5 @@
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
+import type { AnnotationLue } from "../adapters/graphql/types";
 import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
 import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
@@ -24,6 +25,9 @@ interface SyncResult {
   notObserved?: boolean;
   /** Dernière modification des champs par l'usager, qui décide de relancer le contrôle de l'avis. */
   champsModifiesAt?: string;
+  /** Id GraphQL et annotations du dossier, pour compléter le lien FPA sans relire DN. */
+  dossierDnId?: string;
+  annotations?: AnnotationLue[];
 }
 
 /**
@@ -120,6 +124,8 @@ export async function syncDossierStatus(
         oldStatus,
         newStatus,
         champsModifiesAt: dsResult.dateDerniereModificationChamps,
+        dossierDnId: dsResult.id,
+        annotations: dsResult.annotations,
       },
     };
   }
@@ -136,6 +142,8 @@ export async function syncDossierStatus(
       oldStatus,
       newStatus: oldStatus,
       champsModifiesAt: dsResult.dateDerniereModificationChamps,
+      dossierDnId: dsResult.id,
+      annotations: dsResult.annotations,
     },
   };
 }

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   DS_ANNOTATION_LIEN_FPA_ELIGIBILITE,
-  getAnnotationControleAvisImpot,
+  DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE,
+  estInstructionAutomatiqueActive,
+  idsAnnotationsInstruction,
   getAnnotationLienFpaEligibilite,
 } from "./ds-annotations";
 
@@ -38,19 +40,32 @@ describe("getAnnotationLienFpaEligibilite", () => {
   });
 });
 
-describe("getAnnotationControleAvisImpot", () => {
+describe("idsAnnotationsInstruction", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
   });
 
-  it("renvoie l'id de préprod pour la démarche 146377", () => {
-    expect(getAnnotationControleAvisImpot(146377)).toBe("Q2hhbXAtNzAyMDIwNw==");
+  it("renvoie les trois annotations de la préprod", () => {
+    expect(idsAnnotationsInstruction(146377)).toEqual({
+      avisImpot: "Q2hhbXAtNzAyMDIwNw==",
+      typeMenage: "Q2hhbXAtNzAzMDU1Mw==",
+      tauxSubvention: "Q2hhbXAtNzAzMDU1NQ==",
+    });
   });
 
-  it("renvoie null et avertit pour une démarche non répertoriée", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("active chaque annotation séparément", () => {
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = "Q2hhbXAtMQ==";
 
-    expect(getAnnotationControleAvisImpot(999)).toBeNull();
-    expect(warn).toHaveBeenCalledOnce();
+    expect(idsAnnotationsInstruction(999)).toEqual({
+      avisImpot: undefined,
+      typeMenage: "Q2hhbXAtMQ==",
+      tauxSubvention: undefined,
+    });
+    expect(estInstructionAutomatiqueActive(999)).toBe(true);
+  });
+
+  it("considère active une démarche dès qu'une annotation y est répertoriée", () => {
+    expect(estInstructionAutomatiqueActive(146377)).toBe(true);
+    expect(estInstructionAutomatiqueActive(126061)).toBe(false);
   });
 });

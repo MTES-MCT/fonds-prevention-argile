@@ -4,12 +4,11 @@
  *
  * Affiche aussi le verdict du contrôle de cohérence ; son détail (montants) seulement avec
  * --afficher-valeurs. Valeurs MASQUÉES par défaut : ce sont des données fiscales.
- * --region=<code INSEE> permet de calculer l'effet d'un écart de revenu sur la tranche.
  *
  * Usage :
  *   pnpm ds:inspecter-avis-impot --dossier=33301642
  *   pnpm ds:inspecter-avis-impot --dossier=33301642,33306423 --afficher-valeurs
- *   pnpm ds:inspecter-avis-impot --fixture=ecart-revenu --region=32 --afficher-valeurs
+ *   pnpm ds:inspecter-avis-impot --fixture=ecart-revenu --afficher-valeurs
  *   (fixture = réponse DN fictive, sans appel réseau)
  *
  * Fixtures : lu, doublon, deux-foyers, ecart-revenu, non-lu, sans-avis.
@@ -22,10 +21,12 @@ import {
   LIBELLES_STATUT_CONTROLE,
   controlerAvisImpot,
   formaterDetailControle,
+  masquerMontants,
   texteAnnotationControle,
   type AvisImpotExtrait,
   type DonneesAvisImpotDossier,
 } from "@/features/parcours/dossiers-ds/domain/avis-impot";
+import { calculerTrancheDossier, valeurTauxSubvention } from "@/features/parcours/dossiers-ds/domain/tranche-revenu";
 import { mapDossierAvisImpot } from "@/features/parcours/dossiers-ds/mappers/avis-impot.mapper";
 import {
   FIXTURES_AVIS_IMPOT,
@@ -35,7 +36,6 @@ import {
 const DOSSIERS_ARG = getArg("dossier");
 const FIXTURE_ARG = getArg("fixture");
 const AFFICHER_VALEURS = hasFlag("afficher-valeurs");
-const REGION = getArg("region") ?? null;
 
 function valeur(v: string | number | null): string {
   if (v === null) return "vide";
@@ -83,8 +83,17 @@ function afficher(donnees: DonneesAvisImpotDossier): void {
 }
 
 function afficherControle(donnees: DonneesAvisImpotDossier): void {
-  const resultat = controlerAvisImpot(donnees, { codeRegion: REGION, maintenant: new Date() });
-  console.log(`Annotation DN : « ${texteAnnotationControle(resultat)} »`);
+  const resultat = controlerAvisImpot(donnees, { maintenant: new Date() });
+  const tranche = calculerTrancheDossier({
+    revenuFiscalReference: donnees.declaratif.revenuFiscalReference,
+    nombrePersonnes: donnees.declaratif.nombrePersonnes,
+    codeDepartement: donnees.codeDepartement,
+  });
+  const texte = texteAnnotationControle(resultat);
+  console.log(`Annotation DN : « ${AFFICHER_VALEURS ? texte : masquerMontants(texte)} »`);
+  console.log(
+    `Tranche de revenus : ${tranche.typeMenage} — taux de subvention : ${valeurTauxSubvention(tranche) ?? "vide"}`
+  );
   console.log(`Contrôle : ${LIBELLES_STATUT_CONTROLE[resultat.statut]}`);
   if (AFFICHER_VALEURS) {
     console.log(formaterDetailControle(resultat).replace(/^/gm, "      "));

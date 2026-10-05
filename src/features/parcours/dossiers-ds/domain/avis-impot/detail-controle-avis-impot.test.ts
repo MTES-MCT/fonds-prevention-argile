@@ -9,18 +9,18 @@ import {
   type NomFixtureAvisImpot,
 } from "../../mappers/avis-impot.fixtures";
 
-const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: new Date("2026-09-29T12:00:00Z") };
+const HORS_IDF: ContexteControle = { maintenant: new Date("2026-09-29T12:00:00Z") };
 
 function detail(nom: NomFixtureAvisImpot, contexte: ContexteControle = HORS_IDF): string {
   return formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(FIXTURES_AVIS_IMPOT[nom]), contexte));
 }
 
 describe("formaterDetailControle", () => {
-  it("détaille un contrôle cohérent, doublon compris", () => {
+  it("détaille un contrôle cohérent, lu dans le bloc répété", () => {
     expect(detail("doublon")).toBe(
       [
         "Contrôle : Cohérent",
-        "Avis lus : 1 sur 2 pièces, 1 doublon ignoré",
+        "Avis lus : 1 sur 1 pièce (bloc répété)",
         "Revenu fiscal de référence : cohérent (déclaré 18 500 €, avis 18 500 €)",
         "Personnes du ménage : cohérent (3 déclarées, 2,5 parts pour 2 déclarants, soit 3 estimées)",
         "Année des revenus : cohérente (2025)",
@@ -34,9 +34,12 @@ describe("formaterDetailControle", () => {
     );
   });
 
-  it("dit pourquoi la tranche manque sans région", () => {
-    expect(detail("ecart-revenu", { ...HORS_IDF, codeRegion: null })).toContain(
-      "tranche non calculée (région inconnue)"
+  it("dit pourquoi la tranche manque sans commune", () => {
+    const ecart = FIXTURES_AVIS_IMPOT["ecart-revenu"];
+    const sansCommune = { ...ecart, champs: ecart.champs.filter((c) => c.__typename !== "CommuneChamp") };
+
+    expect(formaterDetailControle(controlerAvisImpot(mapDossierAvisImpot(sansCommune), HORS_IDF))).toContain(
+      "tranche non calculée (commune inconnue)"
     );
   });
 
@@ -44,7 +47,7 @@ describe("formaterDetailControle", () => {
     expect(detail("non-lu")).toBe(
       [
         "Contrôle : Non vérifiable",
-        "Avis lus : 0 sur 1 pièce, 1 non lu",
+        "Avis lus : 0 sur 1 pièce (« Dernier avis », bloc répété vide), 1 non lu",
         "Aucun 2D-Doc lu (avis scanné, photographié ou sans code) : vérification manuelle.",
       ].join("\n")
     );

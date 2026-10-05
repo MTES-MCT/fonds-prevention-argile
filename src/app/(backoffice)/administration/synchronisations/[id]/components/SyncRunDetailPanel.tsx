@@ -10,6 +10,7 @@ import { DS_STATUS_LABELS } from "@/features/parcours/dossiers-ds/domain/value-o
 import { STEP_LABELS } from "@/shared/domain/value-objects/step.enum";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
+import { AnnotationsDnBadges, BilanAnnotationsDnEncart } from "../../components/AnnotationsDn";
 
 const STATUS_LABELS_RUN: Record<SyncRunStatus, string> = {
   [SyncRunStatus.SUCCESS]: "Succès",
@@ -155,6 +156,8 @@ export default function SyncRunDetailPanel({ runId }: Props) {
             </div>
           </div>
 
+          <BilanAnnotationsDnEncart bilan={run.bilanAnnotationsDn} />
+
           {run.errorSummary && (
             <details className="fr-mb-4w">
               <summary>Résumé des erreurs</summary>
@@ -169,8 +172,8 @@ export default function SyncRunDetailPanel({ runId }: Props) {
           {entries.length === 0 ? (
             <div className="fr-callout">
               <p className="fr-callout__text">
-                Aucun parcours n&apos;a été modifié pendant ce run (aucun changement DS, aucune progression, aucune
-                erreur).
+                Aucun parcours n&apos;a été modifié pendant ce run (aucun changement DS, aucune progression, aucun
+                contrôle de l&apos;avis, aucun lien FPA complété, aucune erreur).
               </p>
             </div>
           ) : (
@@ -186,6 +189,7 @@ export default function SyncRunDetailPanel({ runId }: Props) {
                           <th>Statut interne</th>
                           <th>Changements DS</th>
                           <th>Étape avancée</th>
+                          <th>Annotations DN</th>
                           <th>Erreur</th>
                           <th>Date</th>
                         </tr>
@@ -206,6 +210,9 @@ export default function SyncRunDetailPanel({ runId }: Props) {
                             <td>{renderStatusTransition(entry.statusBefore, entry.statusAfter)}</td>
                             <td style={{ whiteSpace: "pre-line" }}>{renderDsChanges(entry.dsStatusChanges)}</td>
                             <td>{entry.stepAdvanced ? "Oui" : "Non"}</td>
+                            <td>
+                              <AnnotationsDnBadges entree={entry.annotationsDn} />
+                            </td>
                             <td>
                               {entry.error ? (
                                 <span style={{ color: "var(--text-default-error)" }}>{entry.error}</span>

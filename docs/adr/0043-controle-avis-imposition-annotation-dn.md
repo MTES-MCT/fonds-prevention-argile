@@ -113,6 +113,51 @@ aucun avis n'a encore été déposé.
 3. Mesurer les dossiers ouverts avec `pnpm ds:controler-avis-impot --tous` (dry-run) : le premier
    CRON les annote tous.
 
+## Amendement — Type de ménage et taux de subvention (octobre 2026)
+
+Le même passage écrit deux annotations de plus, demandées par la DDT : « Type de ménage » (liste
+déroulante TMO, MO, INT, Hors plafond, Non calculable) et « Taux de subvention » (texte court, taux
+des phases étude et travaux : 90, 85 ou 70 %).
+
+- **Calcul sur le RFR déclaré** et le nombre de personnes du formulaire, avec le barème du
+  simulateur : la tranche affichée à la DDT est celle annoncée au demandeur. Retenir le RFR de
+  l'avis aurait fait dépendre la tranche d'une lecture de 2D-Doc qui échoue souvent ; l'écart est
+  de toute façon signalé par l'annotation du contrôle.
+- **Île-de-France lue sur le département de la commune DN**, pour ces annotations comme pour
+  l'écart du contrôle : la région de la simulation FPA n'est plus lue.
+- **Activation par annotation** et non plus par démarche : chacune part dès que son id est
+  répertorié, dans la même mutation que les autres.
+
+Conséquence : les seuils ANAH restent codés en dur, et leur mise à jour annuelle change désormais
+aussi ce qui est écrit dans DN.
+
+## Amendement — Montants, bloc répété et taux en nombre (octobre 2026)
+
+- **L'incohérence est chiffrée** : la phrase d'alerte se termine par « montant déclaré = X € et
+  montant indiqué dans l'avis d'imposition = Y € » (« dans les avis d'imposition (somme de N avis) »
+  quand il y en a plusieurs). Demandé par la DDT, qui sinon rouvrait les pièces pour savoir de
+  combien. Le RFR seul y figure, et seulement en cas d'écart : les deux autres phrases restent
+  sans chiffre, et la base ne stocke toujours aucune valeur fiscale.
+- **La somme ne lit plus que le bloc répété** « Tous les Avis d'imposition du foyer », un avis
+  par ligne. « Dernier avis » ne sert qu'en repli, quand le bloc est vide (dossiers déposés avant
+  lui). Le champ invitait à y mettre plusieurs avis, alors que DN ne décode qu'un 2D-Doc par
+  champ ; et une seule pièce illisible y rendait tout le contrôle non vérifiable, même avec un
+  bloc complet et lisible.
+- **« Taux de subvention » est devenu un nombre entier** côté DN (90, 85, 70, et 0 hors plafond).
+  Le texte « 90 % » faisait refuser **toute** la mutation, les trois annotations partant
+  ensemble. L'API ne sait pas vider un nombre (`AnnotationValueInput` est `@oneOf`, `null`
+  refusé, vérifié en préprod) : un taux devenu incalculable reste en place, la tranche affichant
+  « Non calculable ».
+- « Type de ménage » s'appelle désormais **« Tranche de revenus »** dans DN (même id, mêmes
+  options).
+
+**Rattrapage au déploiement.** Un dossier déjà contrôlé n'est recontrôlé que si ses champs
+bougent : ni la nouvelle règle de somme, ni les deux nouvelles annotations ne l'atteignent seules.
+Après le déploiement, lancer une fois `pnpm ds:controler-avis-impot --tous --apply`, qui n'envoie
+que les annotations dont la valeur change. Seule la préprod est concernée : la prod n'a encore
+aucune annotation répertoriée, donc aucun contrôle passé. Les scripts masquent désormais les
+montants de la phrase par défaut (`--afficher-valeurs` pour les voir).
+
 ## Liens
 
 - Code : `src/features/parcours/dossiers-ds/domain/avis-impot/`,

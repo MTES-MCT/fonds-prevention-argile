@@ -5,6 +5,7 @@ import { parcoursPrevention } from "./parcours-prevention";
 import { stepPgEnum, statusPgEnum } from "../enums/enums";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import type { AnnotationsDnEntree } from "@/shared/domain/value-objects/bilan-annotations-dn";
 
 /**
  * Détail des changements DS détectés pendant la synchro d'un parcours.
@@ -39,6 +40,9 @@ export const syncRunEntries = pgTable(
     stepAdvanced: boolean("step_advanced").notNull().default(false),
 
     error: text("error"),
+
+    // Issue du contrôle de l'avis et noms des annotations écrites, jamais leur valeur.
+    annotationsDn: jsonb("annotations_dn").$type<AnnotationsDnEntree>(),
 
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },

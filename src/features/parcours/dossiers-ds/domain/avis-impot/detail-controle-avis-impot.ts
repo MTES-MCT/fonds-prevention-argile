@@ -7,7 +7,7 @@ export const LIBELLES_STATUT_CONTROLE: Record<StatutControle, string> = {
 };
 
 // Espace simple plutôt que l'espace fine de toLocaleString, lisible dans n'importe quel terminal.
-function euros(montant: number): string {
+export function euros(montant: number): string {
   return `${String(Math.abs(montant)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €`;
 }
 
@@ -22,7 +22,8 @@ function accord(nombre: number, singulier: string, plurielForme = `${singulier}s
 function ligneAvis(r: ResultatControleAvisImpot): string {
   const doublons = r.doublonsIgnores > 0 ? `, ${r.doublonsIgnores} ${accord(r.doublonsIgnores, "doublon")} ignoré` : "";
   const nonLus = r.avisNonLus > 0 ? `, ${r.avisNonLus} non ${accord(r.avisNonLus, "lu")}` : "";
-  return `Avis lus : ${r.avisLus} sur ${r.avisDeposes} ${accord(r.avisDeposes, "pièce")}${nonLus}${doublons}`;
+  const source = r.source === "bloc_repete" ? "bloc répété" : "« Dernier avis », bloc répété vide";
+  return `Avis lus : ${r.avisLus} sur ${r.avisDeposes} ${accord(r.avisDeposes, "pièce")} (${source})${nonLus}${doublons}`;
 }
 
 function ligneRevenu({ revenu }: ResultatControleAvisImpot): string {
@@ -33,7 +34,7 @@ function ligneRevenu({ revenu }: ResultatControleAvisImpot): string {
   if (revenu.ecart === 0) return `${titre} : cohérent (${valeurs})`;
 
   const signe = (revenu.ecart ?? 0) > 0 ? "+" : "-";
-  let impact = "tranche non calculée (région inconnue)";
+  let impact = "tranche non calculée (commune inconnue)";
   if (revenu.trancheDeclaree && revenu.trancheAvis) {
     if (revenu.trancheAvis === "supérieure") impact = "devient inéligible (tranche supérieure)";
     else if (revenu.trancheDeclaree === revenu.trancheAvis) impact = `tranche inchangée (${revenu.trancheAvis})`;

@@ -5,7 +5,7 @@ import { mapDossierAvisImpot } from "../../mappers/avis-impot.mapper";
 import { FIXTURES_AVIS_IMPOT } from "../../mappers/avis-impot.fixtures";
 
 const { COHERENT, A_VERIFIER, NON_VERIFIABLE } = STATUTS_CONTROLE;
-const HORS_IDF: ContexteControle = { codeRegion: "32", maintenant: new Date("2026-09-29T12:00:00Z") };
+const HORS_IDF: ContexteControle = { maintenant: new Date("2026-09-29T12:00:00Z") };
 
 function avis(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
   return {
@@ -26,14 +26,25 @@ function avis(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
   };
 }
 
+function repete(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
+  return avis({
+    champDescriptorId: "Q2hhbXAtNzAxNDgyNQ==",
+    libelleChamp: "Avis d'imposition",
+    dansRepetition: true,
+    ...valeurs,
+  });
+}
+
 function donnees(
   listeAvis: AvisImpotExtrait[],
-  declaratif: Partial<DonneesAvisImpotDossier["declaratif"]> = {}
-): Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot"> {
+  declaratif: Partial<DonneesAvisImpotDossier["declaratif"]> = {},
+  codeDepartement: string | null = "32"
+): Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot" | "codeDepartement"> {
   return {
     declaratif: { nombrePersonnes: 3, revenuFiscalReference: 18500, ...declaratif },
     avis: listeAvis,
     dateDepot: "2026-09-29T15:41:02+02:00",
+    codeDepartement,
   };
 }
 
@@ -58,14 +69,45 @@ describe("controlerAvisImpot — revenu fiscal de référence", () => {
     expect(statut).toBe(A_VERIFIER);
   });
 
-  it("ne compte qu'une fois le même avis déposé dans les deux champs", () => {
-    const resultat = controlerAvisImpot(
-      donnees([avis(), avis({ dansRepetition: true, champDescriptorId: "Q2hhbXAtNzAxNDgyNQ==" })]),
-      HORS_IDF
-    );
+  it("ne compte qu'une fois le même avis déposé sur deux lignes du bloc", () => {
+    const resultat = controlerAvisImpot(donnees([repete(), repete()]), HORS_IDF);
 
     expect(resultat.revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
     expect(resultat).toMatchObject({ avisDeposes: 2, avisLus: 1, doublonsIgnores: 1 });
+  });
+
+  it("retient le bloc répété et ignore « Dernier avis », même illisible", () => {
+    const illisible = avis({ lu: false, referenceAvis: null, revenuFiscalReference: null });
+    const resultat = controlerAvisImpot(donnees([illisible, repete()]), HORS_IDF);
+
+    expect(resultat).toMatchObject({ source: "bloc_repete", avisDeposes: 1, avisNonLus: 0 });
+    expect(resultat.revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
+  });
+
+  it("n'ajoute pas un « Dernier avis » absent du bloc", () => {
+    const autreAnnee = avis({ referenceAvis: "2500A00000009", revenuFiscalReference: 17000 });
+    const { revenu } = controlerAvisImpot(donnees([autreAnnee, repete()]), HORS_IDF);
+
+    expect(revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
+  });
+
+  it("se rabat sur « Dernier avis » quand le bloc est vide", () => {
+    const resultat = controlerAvisImpot(
+      donnees([avis(), repete({ nombreFichiers: 0, lu: false, revenuFiscalReference: null })]),
+      HORS_IDF
+    );
+
+    expect(resultat).toMatchObject({ source: "dernier_avis", avisDeposes: 1 });
+    expect(resultat.revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
+  });
+
+  it("reste non vérifiable quand une ligne du bloc est illisible", () => {
+    const resultat = controlerAvisImpot(
+      donnees([avis(), repete(), repete({ lu: false, referenceAvis: null, revenuFiscalReference: null })]),
+      HORS_IDF
+    );
+
+    expect(resultat.revenu.statut).toBe(NON_VERIFIABLE);
   });
 
   it("additionne les avis de plusieurs foyers fiscaux", () => {
@@ -96,23 +138,17 @@ describe("controlerAvisImpot — revenu fiscal de référence", () => {
     expect(revenu.trancheAvis).toBe("supérieure");
   });
 
-  it("applique le barème IdF", () => {
+  it("applique le barème IdF d'après le département de la commune", () => {
     const { revenu } = controlerAvisImpot(
-      donnees([avis({ revenuFiscalReference: 35000 })], { revenuFiscalReference: 30000 }),
-      {
-        ...HORS_IDF,
-        codeRegion: "11",
-      }
+      donnees([avis({ revenuFiscalReference: 35000 })], { revenuFiscalReference: 30000 }, "75"),
+      HORS_IDF
     );
 
     expect(revenu).toMatchObject({ trancheDeclaree: "très modeste", trancheAvis: "très modeste" });
   });
 
-  it("ne calcule pas de tranche sans région", () => {
-    const { revenu } = controlerAvisImpot(donnees([avis({ revenuFiscalReference: 35000 })]), {
-      ...HORS_IDF,
-      codeRegion: null,
-    });
+  it("ne calcule pas de tranche sans commune", () => {
+    const { revenu } = controlerAvisImpot(donnees([avis({ revenuFiscalReference: 35000 })], {}, null), HORS_IDF);
 
     expect(revenu).toMatchObject({ statut: A_VERIFIER, trancheDeclaree: null, trancheAvis: null });
   });

@@ -1,8 +1,5 @@
-import {
-  calculerTrancheRevenu,
-  isRegionIDF,
-  type TrancheRevenuRga,
-} from "@/features/simulateur/domain/types/rga-revenus.types";
+import { calculerTrancheRevenu, type TrancheRevenuRga } from "@/features/simulateur/domain/types/rga-revenus.types";
+import { estDepartementIDF } from "../tranche-revenu";
 import type { AvisImpotExtrait, DonneesAvisImpotDossier } from "./avis-impot.types";
 
 export const STATUTS_CONTROLE = {
@@ -38,8 +35,12 @@ export interface ControleAnnee {
   lues: number[];
 }
 
+export type SourceAvis = "bloc_repete" | "dernier_avis";
+
 export interface ResultatControleAvisImpot {
   statut: StatutControle;
+  /** Champ dont les avis ont été retenus ; l'autre est ignoré. */
+  source: SourceAvis;
   avisDeposes: number;
   avisLus: number;
   avisNonLus: number;
@@ -50,14 +51,19 @@ export interface ResultatControleAvisImpot {
 }
 
 export interface ContexteControle {
-  /** Région du logement (simulation FPA) : sans elle, pas de calcul de tranche. */
-  codeRegion: string | null;
   maintenant: Date;
 }
 
 const { COHERENT, A_VERIFIER, NON_VERIFIABLE } = STATUTS_CONTROLE;
 
-// Même avis déposé dans « Dernier avis » et dans le bloc répété : une seule fois dans la somme.
+// Un avis par ligne du bloc répété ; « Dernier avis », qui peut en mêler plusieurs, ne sert qu'aux dossiers d'avant le bloc.
+function avisRetenus(avis: AvisImpotExtrait[]): { source: SourceAvis; deposes: AvisImpotExtrait[] } {
+  const repetes = avis.filter((a) => a.dansRepetition && a.nombreFichiers > 0);
+  if (repetes.length > 0) return { source: "bloc_repete", deposes: repetes };
+  return { source: "dernier_avis", deposes: avis.filter((a) => !a.dansRepetition && a.nombreFichiers > 0) };
+}
+
+// Même avis déposé sur deux lignes du bloc : une seule fois dans la somme.
 function cleAvis(avis: AvisImpotExtrait): string {
   return avis.referenceAvis ?? `${avis.declarant1}|${avis.anneeRevenus}|${avis.revenuFiscalReference}`;
 }
@@ -90,16 +96,17 @@ function estimerPersonnes(avis: AvisImpotExtrait, nombreParts: number): { min: n
   };
 }
 
-function tranche(revenu: number, personnes: number | null, codeRegion: string | null): TrancheRevenuRga | null {
-  if (!codeRegion || !personnes || personnes < 1) return null;
-  return calculerTrancheRevenu(revenu, personnes, isRegionIDF(codeRegion));
+// Barème lu sur le département du dossier DN, comme l'annotation « Tranche de revenus ».
+function tranche(revenu: number, personnes: number | null, codeDepartement: string | null): TrancheRevenuRga | null {
+  if (!codeDepartement || !personnes || personnes < 1) return null;
+  return calculerTrancheRevenu(revenu, personnes, estDepartementIDF(codeDepartement));
 }
 
 function controlerRevenu(
   declaratif: DonneesAvisImpotDossier["declaratif"],
   avis: AvisImpotExtrait[],
   complet: boolean,
-  codeRegion: string | null
+  codeDepartement: string | null
 ): ControleRevenu {
   const declare = declaratif.revenuFiscalReference;
   const montants = avis.map((a) => a.revenuFiscalReference);
@@ -117,8 +124,8 @@ function controlerRevenu(
     declare,
     avis: somme,
     ecart,
-    trancheDeclaree: ecart === 0 ? null : tranche(declare, declaratif.nombrePersonnes, codeRegion),
-    trancheAvis: ecart === 0 ? null : tranche(somme, declaratif.nombrePersonnes, codeRegion),
+    trancheDeclaree: ecart === 0 ? null : tranche(declare, declaratif.nombrePersonnes, codeDepartement),
+    trancheAvis: ecart === 0 ? null : tranche(somme, declaratif.nombrePersonnes, codeDepartement),
   };
 }
 
@@ -155,16 +162,16 @@ function controlerAnnee(avis: AvisImpotExtrait[], dateDepot: string | null, main
 }
 
 export function controlerAvisImpot(
-  donnees: Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot">,
+  donnees: Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot" | "codeDepartement">,
   contexte: ContexteControle
 ): ResultatControleAvisImpot {
-  const deposes = donnees.avis.filter((a) => a.nombreFichiers > 0);
+  const { source, deposes } = avisRetenus(donnees.avis);
   const lus = deposes.filter((a) => a.lu);
   const distincts = dedoublonner(lus);
   const avisNonLus = deposes.length - lus.length;
   const complet = avisNonLus === 0;
 
-  const revenu = controlerRevenu(donnees.declaratif, distincts, complet, contexte.codeRegion);
+  const revenu = controlerRevenu(donnees.declaratif, distincts, complet, donnees.codeDepartement);
   const foyer = controlerFoyer(donnees.declaratif.nombrePersonnes, distincts, complet);
   const annee = controlerAnnee(distincts, donnees.dateDepot, contexte.maintenant);
 
@@ -177,6 +184,7 @@ export function controlerAvisImpot(
 
   return {
     statut,
+    source,
     avisDeposes: deposes.length,
     avisLus: distincts.length,
     avisNonLus,

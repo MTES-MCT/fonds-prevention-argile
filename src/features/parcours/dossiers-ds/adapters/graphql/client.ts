@@ -11,6 +11,7 @@ import type {
   DossierInspection,
   DossierAvisImpot,
   ModificationAnnotationsDn,
+  AnnotationLue,
 } from "./types";
 
 /**
@@ -338,6 +339,7 @@ export class DemarchesSimplifieesClient {
             label
             updatedAt
             ... on IntegerNumberChamp { valeurEntiere: value }
+            ... on CommuneChamp { departement { code } }
             ...PieceAvisImpot
             ... on RepetitionChamp {
               rows {
@@ -497,6 +499,7 @@ export class DemarchesSimplifieesClient {
           }
           annotations {
             id
+            champDescriptorId
             label
             stringValue
           }
@@ -524,20 +527,28 @@ export class DemarchesSimplifieesClient {
    * Récupère le statut et les dates clés d'un dossier par son numéro
    */
   async getDossierStatus(dossierNumber: number): Promise<{
+    /** Id GraphQL du dossier, attendu par les mutations. */
+    id: string;
     state: string;
     datePassageEnConstruction?: string;
     datePassageEnInstruction?: string;
     dateTraitement?: string;
     dateDerniereModificationChamps?: string;
+    annotations: AnnotationLue[];
   } | null> {
     const dossier = await this.getDossier(dossierNumber);
     if (!dossier) return null;
     return {
+      id: dossier.id,
       state: dossier.state,
       datePassageEnConstruction: dossier.datePassageEnConstruction,
       datePassageEnInstruction: dossier.datePassageEnInstruction,
       dateTraitement: dossier.dateTraitement,
       dateDerniereModificationChamps: dossier.dateDerniereModificationChamps,
+      annotations: (dossier.annotations ?? []).map((a) => ({
+        champDescriptorId: a.champDescriptorId ?? "",
+        stringValue: a.stringValue ?? null,
+      })),
     };
   }
 

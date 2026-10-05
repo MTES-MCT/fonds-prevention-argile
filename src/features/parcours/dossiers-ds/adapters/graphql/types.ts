@@ -94,6 +94,8 @@ export interface Champ {
 
 export interface Annotation {
   id: string;
+  /** Id du descripteur, commun à tous les dossiers d'une démarche (l'`id` change d'un dossier à l'autre). */
+  champDescriptorId?: string;
   label: string;
   stringValue?: string;
   instructeur?: Instructeur;
@@ -126,6 +128,12 @@ export interface Attachment {
 }
 
 /** Annotation réduite à ce qui sert au rattachement (ADR-0027). */
+/** Annotation relue par la synchro : de quoi savoir si un champ est vide. */
+export interface AnnotationLue {
+  champDescriptorId: string;
+  stringValue: string | null;
+}
+
 export interface AnnotationReconciliation {
   champDescriptorId: string;
   stringValue?: string | null;
@@ -212,7 +220,16 @@ export interface AutreChampDn {
   updatedAt: string;
 }
 
-export type ChampAvisImpotDn = PieceJustificativeChampDn | IntegerNumberChampDn | RepetitionChampDn | AutreChampDn;
+export interface CommuneChampDn {
+  __typename: "CommuneChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  departement?: { code: string } | null;
+}
+
+export type ChampAvisImpotDn =
+  PieceJustificativeChampDn | IntegerNumberChampDn | RepetitionChampDn | CommuneChampDn | AutreChampDn;
 
 /** Projection d'un dossier d'éligibilité pour le contrôle de l'avis d'imposition. */
 export interface DossierAvisImpot {
@@ -228,7 +245,12 @@ export interface DossierAvisImpot {
 }
 
 /** Valeur d'annotation, un seul type de champ à la fois (`AnnotationValueInput @oneOf`). */
-export type ValeurAnnotationDn = { text: string } | { textarea: string };
+export type ValeurAnnotationDn =
+  | { text: string }
+  | { textarea: string }
+  | { dropDownList: string }
+  // `@oneOf` refuse `null` : un nombre ne se vide pas par l'API.
+  | { integerNumber: number };
 
 export interface ModificationAnnotationsDn {
   dossierId: string;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const env = vi.hoisted(() => ({ DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID: "SW5zdHJ1Y3RldXItMQ==" }));
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: vi.fn(() => env) }));
@@ -17,12 +17,16 @@ import {
   controlerEtEnregistrerAvisImpot,
   type DossierApresSync,
 } from "./controle-avis-impot.service";
-import { FIXTURES_AVIS_IMPOT } from "../mappers/avis-impot.fixtures";
+import { FIXTURES_AVIS_IMPOT, dossierAvisFictif } from "../mappers/avis-impot.fixtures";
+import {
+  DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE,
+  DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE,
+} from "../domain/value-objects/ds-annotations";
 import { STATUTS_CONTROLE } from "../domain/avis-impot";
 
 const ANNOTATION_PREPROD = "Q2hhbXAtNzAyMDIwNw==";
 const MAINTENANT = new Date("2026-09-29T12:00:00Z");
-const options = { codeRegion: "32", appliquer: true, maintenant: MAINTENANT };
+const options = { appliquer: true, maintenant: MAINTENANT };
 
 describe("controlerEtAnnoterAvisImpot", () => {
   beforeEach(() => {
@@ -37,14 +41,14 @@ describe("controlerEtAnnoterAvisImpot", () => {
     expect(client.modifierAnnotations).toHaveBeenCalledWith({
       dossierId: FIXTURES_AVIS_IMPOT.lu.id,
       instructeurId: "SW5zdHJ1Y3RldXItMQ==",
-      annotations: [
+      annotations: expect.arrayContaining([
         {
           id: ANNOTATION_PREPROD,
           value: {
             textarea: "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.",
           },
         },
-      ],
+      ]),
     });
   });
 
@@ -59,7 +63,7 @@ describe("controlerEtAnnoterAvisImpot", () => {
     const premier = await controlerEtAnnoterAvisImpot(1, { ...options, appliquer: false });
     client.getDossierAvisImpot.mockResolvedValue({
       ...FIXTURES_AVIS_IMPOT.lu,
-      annotations: [{ champDescriptorId: ANNOTATION_PREPROD, stringValue: premier?.texte }],
+      annotations: (premier?.annotations ?? []).map((a) => ({ champDescriptorId: a.id, stringValue: a.valeur })),
     });
     client.modifierAnnotations.mockClear();
 
@@ -92,10 +96,6 @@ describe("controlerEtAnnoterAvisImpot", () => {
 
 describe("controlerAvisImpotApresSync", () => {
   const CHAMPS_MODIFIES_AT = "2026-09-29T15:41:02+02:00";
-  const parcours = {
-    rgaSimulationData: { logement: { code_region: "32" } },
-    rgaSimulationDataAgent: null,
-  } as unknown as Parameters<typeof controlerAvisImpotApresSync>[0]["parcours"];
 
   function dossier(valeurs: Partial<DossierApresSync> = {}): DossierApresSync {
     return {
@@ -111,7 +111,6 @@ describe("controlerAvisImpotApresSync", () => {
 
   const appeler = (valeurs: Partial<DossierApresSync> = {}, dsStatus: DSStatus | null = DSStatus.EN_CONSTRUCTION) =>
     controlerAvisImpotApresSync({
-      parcours,
       dossier: dossier(valeurs),
       dsStatus,
       champsModifiesAt: CHAMPS_MODIFIES_AT,
@@ -125,7 +124,10 @@ describe("controlerAvisImpotApresSync", () => {
   });
 
   it("contrôle un dossier déposé jamais contrôlé, écrit l'annotation et enregistre le verdict", async () => {
-    await expect(appeler()).resolves.toBe("ecrite");
+    await expect(appeler()).resolves.toEqual({
+      entree: { issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage", "tauxSubvention"] },
+      verdict: "a_verifier",
+    });
 
     expect(client.getDossierAvisImpot).toHaveBeenCalledWith(33301642);
     expect(enregistrerControleAvisImpot).toHaveBeenCalledWith("d1", {
@@ -139,7 +141,7 @@ describe("controlerAvisImpotApresSync", () => {
     await appeler();
 
     expect(client.modifierAnnotations.mock.calls[0][0].annotations[0].value.textarea).toBe(
-      "Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition."
+      "Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition : montant déclaré = 30 000 € et montant indiqué dans l'avis d'imposition = 35 000 €."
     );
   });
 
@@ -197,7 +199,7 @@ describe("controlerAvisImpotApresSync", () => {
   });
 
   it("n'enregistre rien quand l'annotation n'est pas écrite (dry-run)", async () => {
-    await controlerEtEnregistrerAvisImpot({ parcours, dossierId: "d1", dsNumber: "1", appliquer: false });
+    await controlerEtEnregistrerAvisImpot({ dossierId: "d1", dsNumber: "1", appliquer: false });
 
     expect(client.modifierAnnotations).not.toHaveBeenCalled();
     expect(enregistrerControleAvisImpot).not.toHaveBeenCalled();
@@ -205,16 +207,134 @@ describe("controlerAvisImpotApresSync", () => {
 
   it("enregistre aussi un contrôle dont l'annotation était déjà à jour", async () => {
     const premier = await controlerEtAnnoterAvisImpot(1, {
-      codeRegion: "32",
       appliquer: false,
       maintenant: MAINTENANT,
     });
     client.getDossierAvisImpot.mockResolvedValue({
       ...FIXTURES_AVIS_IMPOT["ecart-revenu"],
-      annotations: [{ champDescriptorId: ANNOTATION_PREPROD, stringValue: premier?.texte }],
+      annotations: (premier?.annotations ?? []).map((a) => ({ champDescriptorId: a.id, stringValue: a.valeur })),
     });
 
-    await expect(appeler()).resolves.toBe("inchangee");
+    await expect(appeler()).resolves.toEqual({
+      entree: { issue: "inchangee", annotationsEcrites: [] },
+      verdict: "a_verifier",
+    });
     expect(enregistrerControleAvisImpot).toHaveBeenCalledOnce();
+  });
+});
+
+describe("annotations de tranche de revenu", () => {
+  const TYPE_MENAGE = "Q2hhbXAtNzAzMDU1Mw==";
+  const TAUX = "Q2hhbXAtNzAzMDU1NQ==";
+  const COHERENT = "Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition.";
+
+  const ecrites = () =>
+    client.modifierAnnotations.mock.calls[0][0].annotations as Array<{ id: string; value: Record<string, unknown> }>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.modifierAnnotations.mockResolvedValue(undefined);
+    client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT.lu);
+  });
+
+  afterEach(() => {
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
+  });
+
+  it("écrit les trois annotations dans une seule mutation, d'après le RFR déclaré", async () => {
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(controle?.tranche).toEqual({ typeMenage: "TMO", tauxSubvention: 90 });
+    expect(client.modifierAnnotations).toHaveBeenCalledOnce();
+    expect(ecrites()).toEqual([
+      { id: ANNOTATION_PREPROD, value: { textarea: COHERENT } },
+      { id: TYPE_MENAGE, value: { dropDownList: "TMO" } },
+      { id: TAUX, value: { integerNumber: 90 } },
+    ]);
+  });
+
+  it("ne rapporte comme écrites que les annotations envoyées", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...FIXTURES_AVIS_IMPOT.lu,
+      annotations: [
+        { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
+        { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
+      ],
+    });
+
+    await expect(controlerEtAnnoterAvisImpot(1, options)).resolves.toMatchObject({
+      annotationsEcrites: ["tauxSubvention"],
+    });
+  });
+
+  it("n'envoie que les annotations dont la valeur change", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...FIXTURES_AVIS_IMPOT.lu,
+      annotations: [
+        { champDescriptorId: ANNOTATION_PREPROD, stringValue: COHERENT },
+        { champDescriptorId: TYPE_MENAGE, stringValue: "TMO" },
+        { champDescriptorId: TAUX, stringValue: "85" },
+      ],
+    });
+
+    await expect(controlerEtAnnoterAvisImpot(1, options)).resolves.toMatchObject({ issue: "ecrite" });
+    expect(ecrites()).toEqual([{ id: TAUX, value: { integerNumber: 90 } }]);
+  });
+
+  it("calcule la tranche sur le RFR déclaré même quand l'avis en indique un autre", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(FIXTURES_AVIS_IMPOT["ecart-revenu"]);
+
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(controle?.tranche.typeMenage).toBe("TMO");
+    expect(ecrites()).toContainEqual({ id: TYPE_MENAGE, value: { dropDownList: "TMO" } });
+  });
+
+  it("écrit « Non calculable » sans commune dans le dossier, sans toucher au taux resté vide", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(
+      dossierAvisFictif({ nombrePersonnes: 3, revenuFiscalReference: 18500, codeDepartement: null })
+    );
+
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(ecrites()).toContainEqual({ id: TYPE_MENAGE, value: { dropDownList: "Non calculable" } });
+    expect(ecrites().map((a) => a.id)).not.toContain(TAUX);
+  });
+
+  it("laisse en place un taux devenu incalculable, que DN ne sait pas vider", async () => {
+    client.getDossierAvisImpot.mockResolvedValue({
+      ...dossierAvisFictif({ nombrePersonnes: 3, revenuFiscalReference: 18500, codeDepartement: null }),
+      annotations: [{ champDescriptorId: TAUX, stringValue: "90" }],
+    });
+
+    const controle = await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(controle?.annotations.map((a) => a.cle)).not.toContain("tauxSubvention");
+    expect(ecrites().map((a) => a.id)).not.toContain(TAUX);
+  });
+
+  it("écrit « Hors plafond » et un taux de 0 au-delà du plafond intermédiaire", async () => {
+    client.getDossierAvisImpot.mockResolvedValue(
+      dossierAvisFictif({ nombrePersonnes: 1, revenuFiscalReference: 90000 })
+    );
+
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(ecrites()).toEqual(
+      expect.arrayContaining([
+        { id: TYPE_MENAGE, value: { dropDownList: "Hors plafond" } },
+        { id: TAUX, value: { integerNumber: 0 } },
+      ])
+    );
+  });
+
+  it("fonctionne sur une démarche où seule l'annotation de tranche est répertoriée", async () => {
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = TYPE_MENAGE;
+    client.getDossierAvisImpot.mockResolvedValue({ ...FIXTURES_AVIS_IMPOT.lu, demarche: { number: 999 } });
+
+    await controlerEtAnnoterAvisImpot(1, options);
+
+    expect(DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[999]).toBeUndefined();
+    expect(ecrites()).toEqual([{ id: TYPE_MENAGE, value: { dropDownList: "TMO" } }]);
   });
 });

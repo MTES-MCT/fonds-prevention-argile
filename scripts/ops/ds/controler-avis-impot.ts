@@ -8,8 +8,8 @@
  *   --tous                dossiers d'éligibilité déposés et sans décision, sur les démarches activées
  *
  * Options :
- *   --region=<code INSEE> force la région ; sinon lue dans la simulation du parcours
  *   --apply               écrit l'annotation et enregistre le verdict en base
+ *   --afficher-valeurs    montants de l'annotation en clair (masqués par défaut)
  *
  * Usage :
  *   pnpm ds:controler-avis-impot --tous
@@ -20,12 +20,15 @@
 import "../lib/env";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { db, rawClient } from "@/shared/database/client";
-import { dossiersDemarchesSimplifiees, parcoursPrevention } from "@/shared/database/schema";
+import { dossiersDemarchesSimplifiees } from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
-import type { getEffectiveRGAData } from "@/features/parcours/core/services/rga-data.service";
-import { LIBELLES_STATUT_CONTROLE, statutAnnotationControle } from "@/features/parcours/dossiers-ds/domain/avis-impot";
-import { estControleAvisImpotActive } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
+import {
+  LIBELLES_STATUT_CONTROLE,
+  masquerMontants,
+  statutAnnotationControle,
+} from "@/features/parcours/dossiers-ds/domain/avis-impot";
+import { estInstructionAutomatiqueActive } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
 import {
   controlerEtAnnoterAvisImpot,
   controlerEtEnregistrerAvisImpot,
@@ -35,14 +38,15 @@ import {
 import { getArg, hasFlag } from "../lib/args";
 
 const APPLIQUER = hasFlag("apply");
+const AFFICHER_VALEURS = hasFlag("afficher-valeurs");
+const afficher = (texte: string) => (AFFICHER_VALEURS ? texte : masquerMontants(texte));
 const TOUS = hasFlag("tous");
-const REGION = getArg("region") ?? null;
 const NUMEROS = (getArg("dossier") ?? "")
   .split(",")
   .map((n) => n.trim())
   .filter(Boolean);
 const PAUSE_MS = 150;
-const USAGE = "Usage : --dossier=<numéro>[,<numéro>] ou --tous [--region=<code>] [--apply]";
+const USAGE = "Usage : --dossier=<numéro>[,<numéro>] ou --tous [--apply]";
 
 const LIBELLES_ISSUE: Record<IssueAnnotationControle, string> = {
   ecrite: "annotation écrite",
@@ -51,13 +55,10 @@ const LIBELLES_ISSUE: Record<IssueAnnotationControle, string> = {
   annotation_non_configuree: "démarche sans id d'annotation connu, rien écrit",
 };
 
-type ParcoursSimulation = Parameters<typeof getEffectiveRGAData>[0];
-
 interface Cible {
   dsNumber: string;
   /** Null pour un numéro absent de la base : contrôlé, mais rien à y enregistrer. */
   dossierId: string | null;
-  parcours: ParcoursSimulation | null;
 }
 
 async function ciblesDepuisBase(): Promise<Cible[]> {
@@ -70,11 +71,8 @@ async function ciblesDepuisBase(): Promise<Cible[]> {
       dossierId: dossiersDemarchesSimplifiees.id,
       dsNumber: dossiersDemarchesSimplifiees.dsNumber,
       dsDemarcheId: dossiersDemarchesSimplifiees.dsDemarcheId,
-      rgaSimulationData: parcoursPrevention.rgaSimulationData,
-      rgaSimulationDataAgent: parcoursPrevention.rgaSimulationDataAgent,
     })
     .from(dossiersDemarchesSimplifiees)
-    .innerJoin(parcoursPrevention, eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id))
     .where(
       and(
         eq(dossiersDemarchesSimplifiees.step, Step.ELIGIBILITE),
@@ -83,29 +81,24 @@ async function ciblesDepuisBase(): Promise<Cible[]> {
       )
     );
 
-  const actives = lignes.filter((l) => estControleAvisImpotActive(Number(l.dsDemarcheId)));
+  const actives = lignes.filter((l) => estInstructionAutomatiqueActive(Number(l.dsDemarcheId)));
   if (actives.length < lignes.length) {
     console.log(`${lignes.length - actives.length} dossier(s) ignoré(s) : contrôle non activé sur leur démarche`);
   }
-  const cibles: Cible[] = actives.map((l) => ({ dsNumber: l.dsNumber ?? "", dossierId: l.dossierId, parcours: l }));
+  const cibles: Cible[] = actives.map((l) => ({ dsNumber: l.dsNumber ?? "", dossierId: l.dossierId }));
 
   const connus = new Set(lignes.map((l) => l.dsNumber));
   for (const numero of TOUS ? [] : NUMEROS) {
-    if (!connus.has(numero)) cibles.push({ dsNumber: numero, dossierId: null, parcours: null });
+    if (!connus.has(numero)) cibles.push({ dsNumber: numero, dossierId: null });
   }
   return cibles;
 }
 
 function controler(cible: Cible): Promise<ControleAvisImpotDossier | null> {
-  const parcours: ParcoursSimulation = REGION
-    ? ({ rgaSimulationData: { logement: { code_region: REGION } }, rgaSimulationDataAgent: null } as ParcoursSimulation)
-    : (cible.parcours ?? { rgaSimulationData: null, rgaSimulationDataAgent: null });
-
   if (!cible.dossierId) {
-    return controlerEtAnnoterAvisImpot(Number(cible.dsNumber), { codeRegion: REGION, appliquer: APPLIQUER });
+    return controlerEtAnnoterAvisImpot(Number(cible.dsNumber), { appliquer: APPLIQUER });
   }
   return controlerEtEnregistrerAvisImpot({
-    parcours,
     dossierId: cible.dossierId,
     dsNumber: cible.dsNumber,
     appliquer: APPLIQUER,
@@ -135,7 +128,10 @@ async function main(): Promise<void> {
       } else {
         const statut = LIBELLES_STATUT_CONTROLE[statutAnnotationControle(controle.resultat)];
         console.log(`\nDossier ${cible.dsNumber} : ${statut} — ${LIBELLES_ISSUE[controle.issue]}${horsBase}`);
-        console.log(`      « ${controle.texte} »`);
+        if (controle.annotations.length === 0) console.log(`      « ${afficher(controle.texte)} »`);
+        for (const annotation of controle.annotations) {
+          console.log(`      ${annotation.nom} : « ${afficher(annotation.valeur)} »`);
+        }
         compter(statut);
       }
     } catch (error) {
