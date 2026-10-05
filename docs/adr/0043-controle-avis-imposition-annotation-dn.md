@@ -131,6 +131,26 @@ des phases étude et travaux : 90, 85 ou 70 %).
 Conséquence : les seuils ANAH restent codés en dur, et leur mise à jour annuelle change désormais
 aussi ce qui est écrit dans DN.
 
+## Amendement — Montants, bloc répété et taux en nombre (octobre 2026)
+
+- **L'incohérence est chiffrée** : la phrase d'alerte se termine par « montant déclaré = X € et
+  montant indiqué dans l'avis d'imposition = Y € » (« dans les avis d'imposition (somme de N avis) »
+  quand il y en a plusieurs). Demandé par la DDT, qui sinon rouvrait les pièces pour savoir de
+  combien. Le RFR seul y figure, et seulement en cas d'écart : les deux autres phrases restent
+  sans chiffre, et la base ne stocke toujours aucune valeur fiscale.
+- **La somme ne lit plus que le bloc répété** « Tous les Avis d'imposition du foyer », un avis
+  par ligne. « Dernier avis » ne sert qu'en repli, quand le bloc est vide (dossiers déposés avant
+  lui). Le champ invitait à y mettre plusieurs avis, alors que DN ne décode qu'un 2D-Doc par
+  champ ; et une seule pièce illisible y rendait tout le contrôle non vérifiable, même avec un
+  bloc complet et lisible.
+- **« Taux de subvention » est devenu un nombre entier** côté DN (90, 85, 70, et 0 hors plafond).
+  Le texte « 90 % » faisait refuser **toute** la mutation, les trois annotations partant
+  ensemble. L'API ne sait pas vider un nombre (`AnnotationValueInput` est `@oneOf`, `null`
+  refusé, vérifié en préprod) : un taux devenu incalculable reste en place, la tranche affichant
+  « Non calculable ».
+- « Type de ménage » s'appelle désormais **« Tranche de revenus »** dans DN (même id, mêmes
+  options).
+
 ## Liens
 
 - Code : `src/features/parcours/dossiers-ds/domain/avis-impot/`,
