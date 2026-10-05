@@ -22,6 +22,7 @@ import EntonnoirEligibilite from "./simulateur/EntonnoirEligibilite";
 import DetailEtapesFunnel from "./simulateur/DetailEtapesFunnel";
 import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
+import SimulationsParDepartementTable from "./simulateur/SimulationsParDepartementTable";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
@@ -258,15 +259,13 @@ export default function AcquisitionPanel() {
                     title="Top 5 simulations par departement"
                     columnLabel="Departements"
                     tooltip="Données Matomo (toutes simulations, y compris anonymes)"
-                    rows={
-                      topDepartementsMatomo
-                        ?.sort((a, b) => b.simulations - a.simulations)
-                        .slice(0, 5)
-                        .map((d) => ({
-                          label: `${d.codeDepartement} ${d.nomDepartement}`,
-                          simulations: d.simulations,
-                        })) ?? []
-                    }
+                    rows={[...(topDepartementsMatomo ?? [])]
+                      .sort((a, b) => b.simulations - a.simulations)
+                      .slice(0, 5)
+                      .map((d) => ({
+                        label: `${d.codeDepartement} ${d.nomDepartement}`,
+                        simulations: d.simulations,
+                      }))}
                     loading={topDeptsLoading}
                   />
                 </div>
@@ -284,6 +283,14 @@ export default function AcquisitionPanel() {
                     loading={topCommunesLoading}
                   />
                 </div>
+              </div>
+
+              <div className="fr-mt-4w">
+                <SimulationsParDepartementTable
+                  departements={topDepartementsMatomo}
+                  loading={topDeptsLoading}
+                  periodeId={periodeId}
+                />
               </div>
             </div>
           )}
