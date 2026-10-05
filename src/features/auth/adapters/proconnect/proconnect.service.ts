@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { getProConnectConfig } from "./proconnect.config";
-import { createToken, decodeToken } from "../../utils/jwt.utils";
+import { createToken } from "../../utils/jwt.utils";
 import type {
   ProConnectTokenResponse,
   ProConnectUserInfo,
@@ -14,8 +14,15 @@ import type { ErrorCode } from "../../domain/errors/authErrors";
 import { JWTPayload } from "../../domain/entities";
 import { agentsRepo } from "@/shared/database/repositories";
 import { PC_ERROR_MAPPING, PC_USER_ERROR_MESSAGES, createPCError } from "./proconnect.errors";
-import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
+import { generateSecureRandomString } from "../../utils/oauth.utils";
 import { AgentRole } from "@/shared/domain/value-objects";
+import {
+  getContexteVerificationProConnect,
+  JetonProConnectInvalideError,
+  lireUserInfoProConnect,
+  verifierIdTokenProConnect,
+  type ContexteVerificationProConnect,
+} from "./proconnect-oidc";
 
 /**
  * Génère l'URL d'autorisation ProConnect
@@ -91,27 +98,6 @@ export async function verifyState(state: string): Promise<boolean> {
   cookieStore.delete(COOKIE_NAMES.PC_STATE);
 
   return true;
-}
-
-/**
- * Vérifie le nonce dans l'id_token ProConnect
- */
-export async function verifyNonce(idToken: string): Promise<boolean> {
-  const decoded = decodeToken(idToken);
-
-  if (!decoded?.nonce) {
-    console.error("[ProConnect] Pas de nonce dans l'id_token");
-    return false;
-  }
-
-  const storedNonce = await getStoredNonce();
-
-  if (!storedNonce) {
-    console.error("[ProConnect] Pas de nonce stocké");
-    return false;
-  }
-
-  return decoded.nonce === storedNonce;
 }
 
 /**
@@ -192,18 +178,19 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     // 2. Échanger le code contre les tokens
     const tokens = await exchangeCodeForTokens(code);
 
-    // 3. Vérifier le nonce dans l'id_token
-    const isValidNonce = await verifyNonce(tokens.id_token);
-    if (!isValidNonce) {
+    // 3. Vérifier l'id_token (signature, émetteur, audience, dates) et le nonce
+    const contexte = getContexteVerificationProConnect();
+    const claims = await verifierIdTokenProConnect(tokens.id_token, await getStoredNonce(), contexte);
+
+    // 4. Récupérer les infos utilisateur, rattachées au même sujet que l'id_token (OIDC Core 5.3.2)
+    const userInfo = await getUserInfo(tokens.access_token, contexte);
+    if (userInfo.sub !== claims.sub) {
       return {
         success: false,
-        error: "Vérification de sécurité échouée (nonce)",
+        error: "Vérification de sécurité échouée (sub)",
         shouldLogout: true,
       };
     }
-
-    // 4. Récupérer les infos utilisateur
-    const userInfo = await getUserInfo(tokens.access_token);
 
     // 5. Valider les données obligatoires
     if (!validateProConnectUserInfo(userInfo)) {
@@ -243,6 +230,10 @@ export async function handleProConnectCallback(code: string, state: string): Pro
 
     return { success: true, role: agent.role };
   } catch (error) {
+    if (error instanceof JetonProConnectInvalideError) {
+      console.error(error.message);
+      return { success: false, error: "Vérification de sécurité échouée", shouldLogout: true };
+    }
     console.error("[ProConnect] Erreur callback:", error);
     return {
       success: false,
@@ -283,7 +274,10 @@ export function handleProConnectError(
 /**
  * Récupère les informations utilisateur (méthode privée)
  */
-async function getUserInfo(accessToken: string): Promise<ProConnectUserInfo> {
+async function getUserInfo(
+  accessToken: string,
+  contexte: ContexteVerificationProConnect
+): Promise<Partial<ProConnectUserInfo>> {
   const config = getProConnectConfig();
 
   const response = await fetch(config.urls.userinfo, {
@@ -296,5 +290,5 @@ async function getUserInfo(accessToken: string): Promise<ProConnectUserInfo> {
     throw createPCError.userInfo("Impossible de récupérer les informations utilisateur");
   }
 
-  return parseJSONorJWT<ProConnectUserInfo>(response);
+  return (await lireUserInfoProConnect(await response.text(), contexte)) as Partial<ProConnectUserInfo>;
 }
