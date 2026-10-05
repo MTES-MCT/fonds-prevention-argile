@@ -38,8 +38,6 @@
 <path d="M434 191Q436.25 188 438.5 191T443 191T447.5 191T452 191" stroke="#E1000F" stroke-width="2" stroke-linecap="round"/>
 <path d="M434 198Q436.25 195 438.5 198T443 198T447.5 198T452 198" stroke="#E1000F" stroke-width="2" stroke-linecap="round"/>
 <path d="M434 205Q436.25 202 438.5 205T443 205T447.5 205T452 205" stroke="#E1000F" stroke-width="2" stroke-linecap="round"/>
-<path d="M463 181L459 189L464 195L461 204" stroke="#745B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M479 185L482 192L478 198L480 206" stroke="#745B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M458 146L441.4 167.5" stroke="#E1000F" stroke-width="3" stroke-linecap="round"/>
 <path d="M431 181L448.2 172.8L434.6 162.3L431 181Z" fill="#E1000F"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M465.009 118.5L476.123 137.75C476.331 138.111 476.331 138.556 476.123 138.917C475.915 139.278 475.53 139.5 475.113 139.5H452.885C452.469 139.5 452.083 139.278 451.875 138.917C451.667 138.556 451.667 138.111 451.875 137.75L462.989 118.5C463.197 118.139 463.582 117.917 463.999 117.917C464.416 117.917 464.801 118.139 465.009 118.5ZM462.832 133.667V136H465.166V133.667H462.832ZM462.832 125.5V131.334H465.166V125.5H462.832Z" fill="#E1000F"/>
