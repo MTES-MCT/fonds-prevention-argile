@@ -57,6 +57,7 @@ import {
   formaterDateMatomo,
 } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
 import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import { regrouperSimulationsParDepartement } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
@@ -1076,7 +1077,7 @@ export async function getTopDepartementsMatomo(
   }
 
   // Récupérer simulations Matomo par département + données BDD en parallèle
-  const [matomoByDept, bddStats] = await Promise.all([
+  const [matomoParValeur, bddStats] = await Promise.all([
     fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
       period: "range",
       date: dateRange,
@@ -1084,6 +1085,7 @@ export async function getTopDepartementsMatomo(
     }),
     getTopDepartementsStats(debut, fin, partner),
   ]);
+  const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
 
   if (matomoByDept.size === 0) {
     console.warn("[getTopDepartementsMatomo] Matomo n'a retourné aucune donnée, fallback BDD");
