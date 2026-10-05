@@ -5,18 +5,28 @@
 import crypto from "crypto";
 import { JWTPayload } from "../domain/entities";
 
-const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret";
+// Même règle que JWT_SECRET dans env.config.ts, lue à part : getServerEnv exige tout le schéma serveur.
+const LONGUEUR_MIN_JWT_SECRET = 32;
+
+function lireJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < LONGUEUR_MIN_JWT_SECRET) {
+    throw new Error(`JWT_SECRET absent ou trop court (${LONGUEUR_MIN_JWT_SECRET} caractères minimum)`);
+  }
+  return secret;
+}
 
 /**
  * Crée un token JWT (serveur uniquement)
  */
 export function createToken(payload: JWTPayload): string {
+  const secret = lireJwtSecret();
   const header = { alg: "HS256", typ: "JWT" };
   const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url");
   const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
 
   const dataToSign = `${encodedHeader}.${encodedPayload}`;
-  const signature = crypto.createHmac("sha256", JWT_SECRET).update(dataToSign).digest("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(dataToSign).digest("base64url");
 
   return `${dataToSign}.${signature}`;
 }
@@ -25,14 +35,13 @@ export function createToken(payload: JWTPayload): string {
  * Vérifie un token JWT (serveur uniquement)
  */
 export function verifyToken(token: string): JWTPayload | null {
+  // Hors du try : un secret manquant doit casser bruyamment, pas déconnecter tout le monde en silence.
+  const secret = lireJwtSecret();
   try {
     const [header, payload, signature] = token.split(".");
     if (!header || !payload || !signature) return null;
 
-    const expectedSignature = crypto
-      .createHmac("sha256", JWT_SECRET)
-      .update(`${header}.${payload}`)
-      .digest("base64url");
+    const expectedSignature = crypto.createHmac("sha256", secret).update(`${header}.${payload}`).digest("base64url");
 
     if (signature !== expectedSignature) return null;
 
