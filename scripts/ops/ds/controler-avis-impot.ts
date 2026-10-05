@@ -9,7 +9,7 @@
  *
  * Options :
  *   --apply               écrit l'annotation et enregistre le verdict en base
- *   --afficher-valeurs    montants de l'annotation en clair (masqués par défaut)
+ *   --afficher-valeurs    montants et lien carte en clair (masqués par défaut)
  *
  * Usage :
  *   pnpm ds:controler-avis-impot --tous
@@ -40,6 +40,13 @@ import { getArg, hasFlag } from "../lib/args";
 const APPLIQUER = hasFlag("apply");
 const AFFICHER_VALEURS = hasFlag("afficher-valeurs");
 const afficher = (texte: string) => (AFFICHER_VALEURS ? texte : masquerMontants(texte));
+// Le lien porte l'adresse ou les coordonnées de la maison : on ne dit que sa forme.
+const afficherAnnotation = ({ cle, valeur }: { cle: string; valeur: string }) => {
+  if (AFFICHER_VALEURS || cle !== "lienCarte") return afficher(valeur);
+  return /query=-?\d+(\.\d+)?,-?\d/.test(valeur)
+    ? "lien masqué, repère sur le point géocodé"
+    : "lien masqué, recherche en texte";
+};
 const TOUS = hasFlag("tous");
 const NUMEROS = (getArg("dossier") ?? "")
   .split(",")
@@ -130,7 +137,7 @@ async function main(): Promise<void> {
         console.log(`\nDossier ${cible.dsNumber} : ${statut} — ${LIBELLES_ISSUE[controle.issue]}${horsBase}`);
         if (controle.annotations.length === 0) console.log(`      « ${afficher(controle.texte)} »`);
         for (const annotation of controle.annotations) {
-          console.log(`      ${annotation.nom} : « ${afficher(annotation.valeur)} »`);
+          console.log(`      ${annotation.nom} : « ${afficherAnnotation(annotation)} »`);
         }
         compter(statut);
       }

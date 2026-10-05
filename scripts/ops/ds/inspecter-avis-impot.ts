@@ -2,8 +2,9 @@
  * Inspecte, en LECTURE SEULE, ce que DN a extrait des avis d'imposition d'un dossier
  * d'éligibilité (2D-Doc lu par DocumentIA), à côté des déclaratifs du foyer.
  *
- * Affiche aussi le verdict du contrôle de cohérence ; son détail (montants) seulement avec
- * --afficher-valeurs. Valeurs MASQUÉES par défaut : ce sont des données fiscales.
+ * Affiche aussi le verdict du contrôle de cohérence, et en mode --dossier la localisation de la
+ * maison (géocodage, zone d'aléa, lien carte). Valeurs MASQUÉES par défaut (données fiscales et
+ * adresse) : --afficher-valeurs pour les voir.
  *
  * Usage :
  *   pnpm ds:inspecter-avis-impot --dossier=33301642
@@ -71,6 +72,8 @@ function afficher(donnees: DonneesAvisImpotDossier): void {
   console.log("Déclaratif du foyer :");
   console.log(`      ${"Nombre de personnes".padEnd(30)} ${valeur(donnees.declaratif.nombrePersonnes)}`);
   console.log(`      ${"Revenu fiscal de référence".padEnd(30)} ${valeur(donnees.declaratif.revenuFiscalReference)}`);
+  console.log(`      ${"Adresse de la maison".padEnd(30)} ${valeur(donnees.adresseMaison.texte)}`);
+  console.log(`      ${"Commune (code INSEE)".padEnd(30)} ${donnees.adresseMaison.communeCode ?? "vide"}`);
 
   if (donnees.avis.length === 0) {
     console.log("Avis d'imposition : aucune pièce de nature AVIS_IMPOT sur ce dossier");
@@ -112,6 +115,17 @@ function afficherControle(donnees: DonneesAvisImpotDossier): void {
   );
 }
 
+/** Mode --dossier seulement : géocode l'adresse (BAN) et lit la zone d'aléa (base). */
+async function afficherLocalisation(donnees: DonneesAvisImpotDossier): Promise<void> {
+  const { localiserMaison } = await import("@/features/parcours/dossiers-ds/services/adresse-maison.service");
+  const localisation = await localiserMaison(donnees.adresseMaison);
+  const forme = localisation.point ? "repère sur le point géocodé" : "recherche de l'adresse en texte";
+  const lien = !localisation.lienCarte ? "aucun" : AFFICHER_VALEURS ? localisation.lienCarte : forme;
+  console.log(`Adresse : ${localisation.point ? "géocodée" : "non géocodée"}`);
+  console.log(`      Zone d'aléa                    ${localisation.zoneAlea ?? "non écrite"}`);
+  console.log(`      Lien carte                     ${lien}`);
+}
+
 async function main(): Promise<void> {
   if (FIXTURE_ARG) {
     if (!(FIXTURE_ARG in FIXTURES_AVIS_IMPOT)) {
@@ -134,8 +148,10 @@ async function main(): Promise<void> {
   for (const numero of numeros) {
     try {
       const donnees = await lireAvisImpotDossier(numero);
-      if (donnees) afficher(donnees);
-      else console.log(`\nDossier ${numero} : introuvable ou invisible (brouillon non déposé ?)`);
+      if (donnees) {
+        afficher(donnees);
+        await afficherLocalisation(donnees);
+      } else console.log(`\nDossier ${numero} : introuvable ou invisible (brouillon non déposé ?)`);
     } catch (error) {
       console.log(`\nDossier ${numero} : lecture DN impossible (${error instanceof Error ? error.message : "erreur"})`);
     }
