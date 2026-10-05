@@ -26,6 +26,15 @@ function avis(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
   };
 }
 
+function repete(valeurs: Partial<AvisImpotExtrait> = {}): AvisImpotExtrait {
+  return avis({
+    champDescriptorId: "Q2hhbXAtNzAxNDgyNQ==",
+    libelleChamp: "Avis d'imposition",
+    dansRepetition: true,
+    ...valeurs,
+  });
+}
+
 function donnees(
   listeAvis: AvisImpotExtrait[],
   declaratif: Partial<DonneesAvisImpotDossier["declaratif"]> = {},
@@ -60,14 +69,45 @@ describe("controlerAvisImpot — revenu fiscal de référence", () => {
     expect(statut).toBe(A_VERIFIER);
   });
 
-  it("ne compte qu'une fois le même avis déposé dans les deux champs", () => {
-    const resultat = controlerAvisImpot(
-      donnees([avis(), avis({ dansRepetition: true, champDescriptorId: "Q2hhbXAtNzAxNDgyNQ==" })]),
-      HORS_IDF
-    );
+  it("ne compte qu'une fois le même avis déposé sur deux lignes du bloc", () => {
+    const resultat = controlerAvisImpot(donnees([repete(), repete()]), HORS_IDF);
 
     expect(resultat.revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
     expect(resultat).toMatchObject({ avisDeposes: 2, avisLus: 1, doublonsIgnores: 1 });
+  });
+
+  it("retient le bloc répété et ignore « Dernier avis », même illisible", () => {
+    const illisible = avis({ lu: false, referenceAvis: null, revenuFiscalReference: null });
+    const resultat = controlerAvisImpot(donnees([illisible, repete()]), HORS_IDF);
+
+    expect(resultat).toMatchObject({ source: "bloc_repete", avisDeposes: 1, avisNonLus: 0 });
+    expect(resultat.revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
+  });
+
+  it("n'ajoute pas un « Dernier avis » absent du bloc", () => {
+    const autreAnnee = avis({ referenceAvis: "2500A00000009", revenuFiscalReference: 17000 });
+    const { revenu } = controlerAvisImpot(donnees([autreAnnee, repete()]), HORS_IDF);
+
+    expect(revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
+  });
+
+  it("se rabat sur « Dernier avis » quand le bloc est vide", () => {
+    const resultat = controlerAvisImpot(
+      donnees([avis(), repete({ nombreFichiers: 0, lu: false, revenuFiscalReference: null })]),
+      HORS_IDF
+    );
+
+    expect(resultat).toMatchObject({ source: "dernier_avis", avisDeposes: 1 });
+    expect(resultat.revenu).toMatchObject({ statut: COHERENT, avis: 18500 });
+  });
+
+  it("reste non vérifiable quand une ligne du bloc est illisible", () => {
+    const resultat = controlerAvisImpot(
+      donnees([avis(), repete(), repete({ lu: false, referenceAvis: null, revenuFiscalReference: null })]),
+      HORS_IDF
+    );
+
+    expect(resultat.revenu.statut).toBe(NON_VERIFIABLE);
   });
 
   it("additionne les avis de plusieurs foyers fiscaux", () => {

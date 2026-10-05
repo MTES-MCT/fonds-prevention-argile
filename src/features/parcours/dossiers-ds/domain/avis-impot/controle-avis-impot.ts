@@ -35,8 +35,12 @@ export interface ControleAnnee {
   lues: number[];
 }
 
+export type SourceAvis = "bloc_repete" | "dernier_avis";
+
 export interface ResultatControleAvisImpot {
   statut: StatutControle;
+  /** Champ dont les avis ont été retenus ; l'autre est ignoré. */
+  source: SourceAvis;
   avisDeposes: number;
   avisLus: number;
   avisNonLus: number;
@@ -52,7 +56,14 @@ export interface ContexteControle {
 
 const { COHERENT, A_VERIFIER, NON_VERIFIABLE } = STATUTS_CONTROLE;
 
-// Même avis déposé dans « Dernier avis » et dans le bloc répété : une seule fois dans la somme.
+// Un avis par ligne du bloc répété ; « Dernier avis », qui peut en mêler plusieurs, ne sert qu'aux dossiers d'avant le bloc.
+function avisRetenus(avis: AvisImpotExtrait[]): { source: SourceAvis; deposes: AvisImpotExtrait[] } {
+  const repetes = avis.filter((a) => a.dansRepetition && a.nombreFichiers > 0);
+  if (repetes.length > 0) return { source: "bloc_repete", deposes: repetes };
+  return { source: "dernier_avis", deposes: avis.filter((a) => !a.dansRepetition && a.nombreFichiers > 0) };
+}
+
+// Même avis déposé sur deux lignes du bloc : une seule fois dans la somme.
 function cleAvis(avis: AvisImpotExtrait): string {
   return avis.referenceAvis ?? `${avis.declarant1}|${avis.anneeRevenus}|${avis.revenuFiscalReference}`;
 }
@@ -154,7 +165,7 @@ export function controlerAvisImpot(
   donnees: Pick<DonneesAvisImpotDossier, "declaratif" | "avis" | "dateDepot" | "codeDepartement">,
   contexte: ContexteControle
 ): ResultatControleAvisImpot {
-  const deposes = donnees.avis.filter((a) => a.nombreFichiers > 0);
+  const { source, deposes } = avisRetenus(donnees.avis);
   const lus = deposes.filter((a) => a.lu);
   const distincts = dedoublonner(lus);
   const avisNonLus = deposes.length - lus.length;
@@ -173,6 +184,7 @@ export function controlerAvisImpot(
 
   return {
     statut,
+    source,
     avisDeposes: deposes.length,
     avisLus: distincts.length,
     avisNonLus,

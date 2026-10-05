@@ -22,7 +22,8 @@ function accord(nombre: number, singulier: string, plurielForme = `${singulier}s
 function ligneAvis(r: ResultatControleAvisImpot): string {
   const doublons = r.doublonsIgnores > 0 ? `, ${r.doublonsIgnores} ${accord(r.doublonsIgnores, "doublon")} ignoré` : "";
   const nonLus = r.avisNonLus > 0 ? `, ${r.avisNonLus} non ${accord(r.avisNonLus, "lu")}` : "";
-  return `Avis lus : ${r.avisLus} sur ${r.avisDeposes} ${accord(r.avisDeposes, "pièce")}${nonLus}${doublons}`;
+  const source = r.source === "bloc_repete" ? "bloc répété" : "« Dernier avis », bloc répété vide";
+  return `Avis lus : ${r.avisLus} sur ${r.avisDeposes} ${accord(r.avisDeposes, "pièce")} (${source})${nonLus}${doublons}`;
 }
 
 function ligneRevenu({ revenu }: ResultatControleAvisImpot): string {

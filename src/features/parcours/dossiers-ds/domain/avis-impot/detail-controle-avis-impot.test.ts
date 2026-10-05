@@ -16,11 +16,11 @@ function detail(nom: NomFixtureAvisImpot, contexte: ContexteControle = HORS_IDF)
 }
 
 describe("formaterDetailControle", () => {
-  it("détaille un contrôle cohérent, doublon compris", () => {
+  it("détaille un contrôle cohérent, lu dans le bloc répété", () => {
     expect(detail("doublon")).toBe(
       [
         "Contrôle : Cohérent",
-        "Avis lus : 1 sur 2 pièces, 1 doublon ignoré",
+        "Avis lus : 1 sur 1 pièce (bloc répété)",
         "Revenu fiscal de référence : cohérent (déclaré 18 500 €, avis 18 500 €)",
         "Personnes du ménage : cohérent (3 déclarées, 2,5 parts pour 2 déclarants, soit 3 estimées)",
         "Année des revenus : cohérente (2025)",
@@ -47,7 +47,7 @@ describe("formaterDetailControle", () => {
     expect(detail("non-lu")).toBe(
       [
         "Contrôle : Non vérifiable",
-        "Avis lus : 0 sur 1 pièce, 1 non lu",
+        "Avis lus : 0 sur 1 pièce (« Dernier avis », bloc répété vide), 1 non lu",
         "Aucun 2D-Doc lu (avis scanné, photographié ou sans code) : vérification manuelle.",
       ].join("\n")
     );
