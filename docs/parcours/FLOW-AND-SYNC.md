@@ -500,7 +500,8 @@ Trois règles à connaître :
   décision DDT, l'annotation n'est plus touchée.
 - **Activation par annotation** : chacune s'active dès que son id est répertorié pour la démarche
   (`idsAnnotationsInstruction`, `ds-annotations.ts`), sans attendre les autres ; une démarche sans
-  aucune annotation est ignorée sans bruit. Toutes partent dans la **même mutation**, et seules
+  aucune annotation est ignorée sans bruit. Les cinq sont répertoriées en préprod (146377) et en
+  prod (126061). Toutes partent dans la **même mutation**, et seules
   celles dont la valeur change sont envoyées. Aucune valeur fiscale n'est stockée ni journalisée.
 
 **Tranche de revenus et taux de subvention.** Deux annotations de plus, calculées depuis le
