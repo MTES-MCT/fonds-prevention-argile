@@ -525,10 +525,32 @@ formulaire DN seul (`calculerTrancheDossier`, `domain/tranche-revenu/`) :
 - **Taux** : `TAUX_SUBVENTION` reprend le tableau « Taux de subvention de l'État » de la page
   d'accueil ; un test échoue si les deux divergent.
 
+**Lien Google Maps et zone d'aléa de la maison.** Deux annotations de plus, tirées de l'adresse du
+**dépôt** (« Adresse postale de la maison », texte libre, et « Commune »), que le demandeur a pu
+modifier après le préremplissage (`localiserMaison`, `services/adresse-maison.service.ts`) :
+
+| Annotation                                               | Type DN          | Valeur                                                               |
+| -------------------------------------------------------- | ---------------- | -------------------------------------------------------------------- |
+| Lien vers google map pour voir la maison…                | texte court      | `google.com/maps/search/?api=1&query=<lat>,<lon>`, sinon l'adresse   |
+| Vérification de la zone d'aléa avec l'adresse renseignée | liste déroulante | `Fort`, `Moyen`, `Faible`, `Hors zone` (polygones RGA 2026 importés) |
+
+- **Géocodage BAN dans la commune déclarée** (filtre sur son code INSEE), retenu seulement au
+  numéro de rue et avec un score d'au moins 0,6 (`pointFiable`). Le lien et la zone partent du
+  même point : la DDT regarde la maison qui a servi au calcul.
+- **Sans point sûr**, le lien retombe sur une recherche Google de l'adresse en texte, et **aucune
+  zone n'est écrite** : la liste n'a pas d'option « inconnue », et « Hors zone » serait faux. Le cas
+  est compté dans le bilan (« Adresse non géocodée »).
+- **Une panne n'est jamais « Hors zone »** : `getAleaByCoordinates` renvoie `null` dans les deux
+  cas, le service appelle donc le dépôt, qui lève sur une erreur.
+- Le géocodage n'a lieu que si l'une des deux annotations est répertoriée pour la démarche, et
+  seulement quand un contrôle tourne. L'adresse part vers l'API publique BAN, déjà utilisée par
+  le simulateur ; elle n'est ni stockée ni journalisée.
+
 > Outils : `pnpm ds:inspecter-avis-impot --dossier=<n>` (lecture, valeurs masquées),
 > `pnpm ds:controler-avis-impot --dossier=<n> | --tous [--apply]` (dry-run par défaut, rattrapage :
 > à relancer avec `--tous --apply` quand les règles ou les annotations changent, un dossier déjà
-> contrôlé n'étant recontrôlé que si ses champs bougent ; montants masqués sans `--afficher-valeurs`),
+> contrôlé n'étant recontrôlé que si ses champs bougent ; montants et lien carte masqués sans
+> `--afficher-valeurs`),
 > `pnpm ds:lister-instructeurs <numero>` (id et groupes de chaque instructeur).
 
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
@@ -1362,7 +1384,8 @@ URL : `/administration/synchronisations` (réservée `SUPER_ADMINISTRATEUR`).
 
 **Bilan des annotations DN** (§ 2.6.3). La liste porte une colonne « Annotations DN »
 (« 4 contrôlés · 3 mis à jour · 2 liens FPA complétés »), le détail un encart de synthèse et une
-colonne de badges (annotations écrites, « À jour », « Échec », « Échec du lien FPA »). Un lien FPA
+colonne de badges (annotations écrites, « À jour », « Échec », « Échec du lien FPA », « Adresse non
+géocodée »). Un lien FPA
 complété sans contrôle de l'avis laisse l'issue à `null` : il n'est pas compté comme un contrôle.
 Trois règles :
 
@@ -1751,6 +1774,7 @@ retrouvé déposé.
 | Lien FPA complété par le CRON                  | `dossiers-ds/services/lien-fpa.service.ts` (`completerLienFpa`)                                             |
 | Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
 | Contrôle de l'avis d'imposition (ADR-0043)     | `dossiers-ds/domain/avis-impot/`, `services/controle-avis-impot.service.ts`, `mappers/avis-impot.mapper.ts` |
+| Lien Google Maps et zone d'aléa de la maison   | `dossiers-ds/domain/adresse-maison/`, `services/adresse-maison.service.ts` (`localiserMaison`)              |
 | Tranche de revenus et taux de subvention       | `dossiers-ds/domain/tranche-revenu/` (`calculerTrancheDossier`, `TAUX_SUBVENTION`)                          |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
