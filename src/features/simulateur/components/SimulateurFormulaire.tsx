@@ -32,6 +32,7 @@ import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
 import { useSimulateurContext } from "./shared/SimulateurContext";
 import { getClientEnv } from "@/shared/config/env.config";
 import type { MatomoCustomDimension } from "@/shared/components/Matomo/useMatomo";
+import { empreinteSimulation, nomEvenementResultat, premierSuiviDeLaSession } from "../domain/utils/suivi-resultat";
 
 interface SimulateurFormulaireProps {
   /**
@@ -109,6 +110,8 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
     if (previousStepRef.current === currentStep) return;
     previousStepRef.current = currentStep;
     if (isFirstRender) return;
+    // Une correction (agent ou demandeur) n'est pas une simulation : elle fausserait les stats.
+    if (editMode || onSave) return;
 
     // Lire answers depuis le store (pas via closure pour éviter les re-fires)
     const currentAnswers = useSimulateurStore.getState().simulation.answers;
@@ -128,18 +131,20 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
 
     // Tracker selon l'étape
     if (currentStep === SimulateurStep.RESULTAT) {
-      if (isEligible) {
-        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, undefined, customDimensions);
-      } else {
-        trackEvent(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, undefined, customDimensions);
-      }
+      // Revenir sur une étape puis au résultat sans rien changer ne refait pas une simulation.
+      if (!premierSuiviDeLaSession(empreinteSimulation(currentAnswers))) return;
+      trackEvent(
+        isEligible ? MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE : MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE,
+        nomEvenementResultat(codeDepartement),
+        customDimensions
+      );
     } else if (currentStep !== SimulateurStep.INTRO) {
       const eventName = SIMULATEUR_STEP_EVENTS[currentStep];
       if (eventName) {
         trackEvent(eventName, undefined, customDimensions);
       }
     }
-  }, [currentStep, isEligible, trackEvent]);
+  }, [currentStep, isEligible, trackEvent, editMode, onSave]);
 
   // Wrapper pour start avec tracking
   const handleStart = () => {
