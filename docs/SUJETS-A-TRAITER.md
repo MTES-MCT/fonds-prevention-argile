@@ -20,11 +20,24 @@ chaque entrée renvoie.
   parcours archivés ou complétés, et `pnpm ds:backfill-processed-at` ne sélectionne que les dossiers
   déjà finaux en base. Ceux-là restent donc faux.
 - **Préalable** : mesurer en production avec `pnpm ds:analyser-ecarts` (cause « état DN absent de
-  l'enum ds_status »), après le déploiement de #392 et un premier run du CRON.
+  l'enum ds_status »), après le déploiement de #392 et un premier run du CRON. Ce script vit sur la
+  branche `feat/audit-ecarts-dn`, pas encore mergée : il faut la merger d'abord.
 - **À faire si des dossiers restent** : un script ops ponctuel, dry-run par défaut, qui écrit le
   statut traduit (`dsStatusFromEtatDn`) et les dates DN, **sans** progression ni réouverture du
   parcours.
 - **Référence** : [FLOW-AND-SYNC §3.2](parcours/FLOW-AND-SYNC.md#32-mapping-ds--interne).
+
+### Transition d'étape conditionnée à l'étape attendue
+
+- **Constat** : la synchro (CRON comme demandeur) relit l'étape avant d'appeler `moveToNextStep`,
+  mais une progression concurrente peut encore s'intercaler entre cette relecture et l'écriture. Le
+  parcours avancerait alors depuis une étape dont le dossier n'a pas été relu, voire serait marqué
+  complété.
+- **Pourquoi reporté** : la fenêtre est de quelques millisecondes (CRON trois fois par jour contre une
+  synchro demandeur), et la fermer change le contrat de `moveToNextStep` et du repository.
+- **À faire** : passer l'étape attendue à `moveToNextStep` et conditionner l'UPDATE
+  (`WHERE current_step = <attendue>`), sur le modèle de `markAsCompleted` (`WHERE completed_at IS NULL`).
+- **Référence** : [FLOW-AND-SYNC §6.1](parcours/FLOW-AND-SYNC.md#61-auto-progression-automatique-cron--sync-ui-demandeur).
 
 ### Purge de l'historique des synchros et flag « parcours complété »
 

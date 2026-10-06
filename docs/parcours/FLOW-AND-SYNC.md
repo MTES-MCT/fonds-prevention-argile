@@ -1304,7 +1304,7 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
    b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
    c. Appelle `recomputeParcoursStatus` une fois.
-   d. Si `current_status === VALIDE` **et que le dossier de l'étape courante a pu être relu**, appelle `moveToNextStep` qui :
+   d. Si `current_status === VALIDE`, que la synchro du dossier de l'étape courante n'a **pas échoué** (une étape sans dossier numéroté n'est pas un échec) et que l'étape n'a pas changé pendant la synchro, appelle `moveToNextStep` qui :
    - avance à l'étape suivante si non finale ;
    - sinon (étape `factures`) appelle `markAsCompleted` (set `completed_at`).
      e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
@@ -1430,7 +1430,9 @@ dossier de l'étape courante échoue (API DN, UPDATE refusé), le `VALIDE` lu en
 périmé — un dossier accepté puis classé sans suite côté DN, par exemple. Le CRON, `syncUserDossierStatus`
 et `syncAllUserDossiers` n'appellent alors pas `moveToNextStep` : avancer sur la dernière étape
 marquerait le parcours complété et le sortirait du CRON pour de bon. Un échec sur un dossier
-d'étape **passée** ne bloque rien. Côté demandeur, `syncAllDossiers` nomme les étapes en échec au
+d'étape **passée** ne bloque rien, pas plus qu'une étape sans dossier numéroté (`choix_amo`),
+qui n'a rien à relire. Même retenue si l'étape a changé pendant la synchro (progression concurrente
+du CRON et du demandeur) : la nouvelle étape n'a pas été relue. Côté demandeur, `syncAllDossiers` nomme les étapes en échec au
 lieu de renvoyer un succès muet, et `ParcoursProvider` ne date plus `lastSync` sur une synchro
 partielle.
 
