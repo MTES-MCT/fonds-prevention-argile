@@ -19,6 +19,7 @@ et d'où elle vient. **À mettre à jour dans la même PR que toute modification
 - **Back-office** : les `n` derniers jours calendaires, aujourd'hui compris (`getFenetrePeriode`) ; « Depuis le début » part
   du 16/10/2025. La variation compare à la période précédente de même durée.
 - **Onglets Demandeurs** : fenêtre glissante calculée dans le navigateur (`maintenant − n × 24 h`), pas alignée sur minuit.
+- **Simulations** : le back-office les lit dans le nom de l'évènement de résultat, seule unité qui s'additionne par département (ADR-0046).
 - **Matomo** : jamais de `period=range` pour un comptage additif ; la fenêtre est découpée en jours, semaines ou mois
   (`decouperPeriodeMatomo`, ADR-0033).
 

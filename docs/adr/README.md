@@ -73,5 +73,6 @@ purement cosmétique.
 | 0043 | [Contrôle de l'avis d'imposition écrit dans DN](0043-controle-avis-imposition-annotation-dn.md)                                         | Accepté               |
 | 0044 | [La demande de paiement du diagnostic est initiée par l'AMO mandataire financier](0044-demande-paiement-diagnostic-initiee-par-amo.md)  | Accepté               |
 | 0045 | [Catégorisation qualitative des réponses de vulnérabilité, sans score](0045-categorisation-qualitative-vulnerabilite.md)                | Accepté               |
+| 0046 | [Compter des simulations, pas des visites, et porter le département dans l'évènement](0046-unite-de-mesure-des-simulations.md)          | Accepté               |
 
 <!-- Ajouter chaque nouvel ADR ici -->
