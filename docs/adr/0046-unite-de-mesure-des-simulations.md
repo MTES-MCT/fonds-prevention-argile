@@ -21,8 +21,8 @@ Une première version a fait du **nom de l'évènement** la seule source, compt�
 > avec l'entonnoir est expliqué à l'écran.
 
 - **Lecture** : `fetchMatomoEvents` alimente l'entonnoir, le rapport de la dimension département alimente
-  le tableau. La limite de 100 lignes est levée (`filter_limit=-1`) et les codes `3` et `03` sont
-  regroupés (PR #394).
+  le tableau. La limite de 100 lignes est levée pour les seuls rapports par département
+  (`toutesLesLignes`, `filter_limit=-1`) et les codes `3` et `03` sont regroupés (PR #394).
 - **Libellés** : « simulations » désigne des visites. Les infobulles et la note de `/stats` le disent.
 - **Suivi** : porter le département dans le nom de l'évènement, pour basculer plus tard vers un comptage
   additif, n'est pas livré avec cet ADR. Voir `docs/SUJETS-A-TRAITER.md`.
