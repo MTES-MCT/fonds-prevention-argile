@@ -2,7 +2,7 @@ import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import type { AnnotationLue } from "../adapters/graphql/types";
 import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
-import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
+import { DS_TO_INTERNAL_STATUS, DSStatus, dsStatusFromEtatDn } from "../domain/value-objects/ds-status";
 import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
@@ -93,7 +93,10 @@ export async function syncDossierStatus(
   // Verdict DN observé (succès) : état réel renvoyé par DN.
   await recordDnProbeState(localDossier.id, dsResult.state);
 
-  const newStatus = dsResult.state as DSStatus;
+  const newStatus = dsStatusFromEtatDn(dsResult.state);
+  if (!newStatus) {
+    return { success: false, error: `Dossier ${dsNumber} : état DN inconnu « ${dsResult.state} »` };
+  }
   const oldStatus = localDossier.dsStatus as DSStatus;
 
   const dates = {

@@ -5,6 +5,7 @@ import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { emitBrevoEvent, BREVO_EVENTS, BREVO_ATTRS } from "@/shared/email/brevo";
+import { dsStatusPgEnum } from "@/shared/database/enums/enums";
 
 vi.mock("./dossier-ds.service", () => ({
   getDossierByStep: vi.fn(),
@@ -233,5 +234,63 @@ describe("syncDossierStatus — date de modification des champs", () => {
     const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
 
     expect(result.success && result.data?.champsModifiesAt).toBe("2026-09-29T15:41:02+02:00");
+  });
+});
+
+// DN nomme `sans_suite` l'état que notre enum Postgres nomme `classe_sans_suite`.
+describe("syncDossierStatus — dossier classé sans suite côté DN", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedUpdateDossierStatus.mockResolvedValue({ success: true, data: { updated: true } });
+    mockedRecordDnProbeState.mockResolvedValue(undefined);
+  });
+
+  it("écrit classe_sans_suite, valeur acceptée par l'enum ds_status, avec la date de décision", async () => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never);
+    mockedGetDossierStatus.mockResolvedValue({
+      ...DOSSIER_DN,
+      state: "sans_suite",
+      datePassageEnConstruction: "2026-06-10T00:00:00Z",
+      datePassageEnInstruction: "2026-06-12T00:00:00Z",
+      dateTraitement: "2026-06-22T00:00:00Z",
+    });
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    const [, statutEcrit, dates] = mockedUpdateDossierStatus.mock.calls[0];
+    expect(dsStatusPgEnum.enumValues).toContain(statutEcrit);
+    expect(statutEcrit).toBe(DSStatus.CLASSE_SANS_SUITE);
+    expect(dates).toEqual(expect.objectContaining({ processedAt: new Date("2026-06-22T00:00:00Z") }));
+    expect(result.success && result.data?.newStatus).toBe(DSStatus.CLASSE_SANS_SUITE);
+  });
+
+  it("garde le verdict brut de DN dans dn_probe_state", async () => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never);
+    mockedGetDossierStatus.mockResolvedValue({ ...DOSSIER_DN, state: "sans_suite" });
+
+    await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    expect(mockedRecordDnProbeState).toHaveBeenCalledWith("d1", "sans_suite");
+  });
+
+  it("ne réécrit ni ne renotifie un dossier déjà classé sans suite", async () => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.CLASSE_SANS_SUITE } as never);
+    mockedGetDossierStatus.mockResolvedValue({ ...DOSSIER_DN, state: "sans_suite" });
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    expect(result.success && result.data?.updated).toBe(false);
+    expect(mockedUpdateDossierStatus).not.toHaveBeenCalled();
+    expect(mockedEmit).not.toHaveBeenCalled();
+  });
+
+  it("refuse d'écrire un état que DN aurait ajouté depuis", async () => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never);
+    mockedGetDossierStatus.mockResolvedValue({ ...DOSSIER_DN, state: "en_attente" as never });
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    expect(result.success).toBe(false);
+    expect(mockedUpdateDossierStatus).not.toHaveBeenCalled();
   });
 });
