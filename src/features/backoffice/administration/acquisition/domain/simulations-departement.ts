@@ -1,16 +1,6 @@
-import {
-  DEPARTEMENTS,
-  normalizeCodeDepartement,
-  toOfficialCodeDepartement,
-} from "@/shared/constants/departements.constants";
+import { DEPARTEMENTS, normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 import { isDepartementEligible } from "@/shared/constants/rga.constants";
 import type { DepartementStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
-
-export interface CompteurSimulations {
-  total: number;
-  eligible: number;
-  nonEligible: number;
-}
 
 export type PerimetreDepartements = "tous" | "pilotes" | "hors-pilotes";
 
@@ -33,24 +23,6 @@ export type TotalSimulationsDepartements = Omit<
 
 export function estCodeDepartementConnu(code: string): boolean {
   return DEPARTEMENTS[normalizeCodeDepartement(code)] !== undefined;
-}
-
-/** Fusionne les variantes d'un même code ("3" / "03") et écarte les valeurs qui ne sont pas un département. */
-export function regrouperSimulationsParDepartement(
-  parValeur: Map<string, CompteurSimulations>
-): Map<string, CompteurSimulations> {
-  const regroupe = new Map<string, CompteurSimulations>();
-  for (const [valeur, compteur] of parValeur) {
-    if (!estCodeDepartementConnu(valeur)) continue;
-    const code = toOfficialCodeDepartement(valeur);
-    const cumul = regroupe.get(code) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    regroupe.set(code, {
-      total: cumul.total + compteur.total,
-      eligible: cumul.eligible + compteur.eligible,
-      nonEligible: cumul.nonEligible + compteur.nonEligible,
-    });
-  }
-  return regroupe;
 }
 
 function pourcentage(part: number, total: number): number {

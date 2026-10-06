@@ -392,3 +392,32 @@ describe("fetchMatomoSimulationsTerminees", () => {
     );
   });
 });
+
+describe("fetchMatomoEventsByDepartment — compteur choisi", () => {
+  beforeEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  const lignes = [{ label: "simulateur_result_eligible", nb_visits: 3, nb_events: 5 }];
+
+  it("compte des visites par défaut", async () => {
+    mockFetchResponse(lignes);
+
+    const evenements = await fetchMatomoEventsByDepartment("63", 1, { period: "day", date: "2026-10-01" });
+
+    expect(evenements.get("simulateur_result_eligible")).toBe(3);
+  });
+
+  it("compte des évènements sur demande, comme la lecture par nom de l'évènement", async () => {
+    mockFetchResponse(lignes);
+
+    const evenements = await fetchMatomoEventsByDepartment("63", 1, {
+      period: "day",
+      date: "2026-10-01",
+      metrique: "nb_events",
+    });
+
+    expect(evenements.get("simulateur_result_eligible")).toBe(5);
+  });
+});

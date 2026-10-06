@@ -102,7 +102,7 @@ export function TableauDeBord() {
       const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined);
       if (!cancelled) {
         if (result.success) {
-          setTopDepartementsMatomo(result.data);
+          setTopDepartementsMatomo(result.data.departements);
         }
         setTopDeptsLoading(false);
       }

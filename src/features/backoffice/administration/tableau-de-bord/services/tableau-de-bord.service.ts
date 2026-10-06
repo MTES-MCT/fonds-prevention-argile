@@ -26,6 +26,7 @@ import type {
   DemandesIneligiblesStats,
   DemandeArchiveeDetail,
   DepartementStats,
+  TopDepartementsMatomo,
   CommuneSimulationsStats,
   MotifArchivage,
   MotifIneligibilite,
@@ -44,20 +45,20 @@ import {
 } from "@/shared/constants/departements.constants";
 import { asString } from "@/shared/utils/object.utils";
 import {
-  fetchMatomoEvents,
-  fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
-  fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
-import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
 import {
-  decouperPeriodeMatomo,
-  formaterDateMatomo,
-} from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
-import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
-import { regrouperSimulationsParDepartement } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
+  getSimulationsTerminees,
+  getSimulationsTermineesDepartement,
+} from "@/features/backoffice/administration/acquisition/services/simulations-terminees.service";
+import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
+import { formaterDateMatomo } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
+import {
+  totalSimulationsTerminees,
+  type CompteurResultats,
+} from "@/features/backoffice/administration/acquisition/domain/simulations-terminees";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
@@ -65,7 +66,6 @@ import {
   type FenetrePeriode,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/periode-window";
 import type { PartnerKey } from "@/shared/domain/partners";
-import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getClientEnv } from "@/shared/config/env.config";
 
 const getDateRange = getFenetrePeriode;
@@ -98,15 +98,9 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
 }
 
 /**
- * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
- * Utilise les events par département si un code département est spécifié.
- *
- * Requête en `day`/`week`/`month` (granularité adaptée à la durée, cf. `getGranulariteForPeriode`)
- * plutôt qu'en `period=range`, que Matomo ne pré-archive pas — la cause principale des timeouts
- * dès qu'un département est filtré sur une longue période. Le comptage reste exact parce que la
- * fenêtre est d'abord découpée en plages alignées sur les bornes des buckets Matomo
- * (`decouperPeriodeMatomo`) : sans ce découpage, les semaines/mois de bord déborderaient de la
- * période demandée et seraient comptés dans la période courante comme dans la précédente.
+ * Simulations terminées (évènements de résultat), de la même source que le tableau par département.
+ * Requête en `day`/`week`/`month` découpés (`decouperPeriodeMatomo`), jamais en `period=range` :
+ * Matomo ne pré-archive pas un range, cause principale des timeouts au changement de filtre.
  */
 async function getSimulationsMatomo(
   fenetre: FenetrePeriode,
@@ -114,33 +108,10 @@ async function getSimulationsMatomo(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<SimulationsMatomoResult> {
-  const sousPeriodes = decouperPeriodeMatomo(fenetre.debut, fenetre.dernierJour, granularite);
-  const partnerSegment = buildPartnerSegment(partner);
-
-  let dimensionId: number | null = null;
-  if (codeDepartement) {
-    const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
-    dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
-    if (!dimensionId) return { eligible: 0, nonEligible: 0, total: 0 };
-  }
-
-  // Promise.all et non allSettled : un total partiel serait indiscernable d'une vraie baisse,
-  // l'appelant preferant afficher "Indisponible" (cf. logMatomoFailure).
-  const compteursParAppel = await Promise.all(
-    sousPeriodes.map(({ period, date }) =>
-      codeDepartement && dimensionId
-        ? fetchMatomoEventsByDepartment(toOfficialCodeDepartement(codeDepartement), dimensionId, {
-            period,
-            date,
-            extraSegment: partnerSegment,
-          })
-        : fetchMatomoEvents({ period, date, segment: partnerSegment })
-    )
-  );
-
-  const events = cumulerCompteurs(compteursParAppel);
-  const eligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE) ?? 0;
-  const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
+  // Promise.all en aval : un total partiel serait indiscernable d'une vraie baisse (cf. logMatomoFailure).
+  const { eligible, nonEligible } = codeDepartement
+    ? await getSimulationsTermineesDepartement(fenetre, granularite, codeDepartement, partner)
+    : totalSimulationsTerminees(await getSimulationsTerminees(fenetre, granularite, partner));
 
   return { eligible, nonEligible, total: eligible + nonEligible };
 }
@@ -1054,81 +1025,71 @@ async function getTopDepartementsStats(
   return result;
 }
 
+function statsDepartement(
+  code: string,
+  simulations: CompteurResultats,
+  bdd: DepartementStats | undefined
+): DepartementStats {
+  const total = simulations.eligible + simulations.nonEligible;
+  const dossiersDN = bdd?.dossiersDN ?? 0;
+  return {
+    codeDepartement: code,
+    nomDepartement: getDepartementName(code) ?? bdd?.nomDepartement ?? code,
+    simulations: total,
+    simulationsEligibles: simulations.eligible,
+    pourcentageEligibles: total > 0 ? Math.round((simulations.eligible / total) * 100) : 0,
+    comptesCrees: bdd?.comptesCrees ?? 0,
+    dossiersDN,
+    transformationGlobale: total > 0 ? Math.round((dossiersDN / total) * 10000) / 100 : 0,
+  };
+}
+
 /**
- * Récupère les simulations par département depuis Matomo (toutes simulations, y compris anonymes).
- * Fusionne avec les données BDD pour comptes créés et dossiers DN.
+ * Simulations terminées par département (toutes, anonymes comprises), même source que l'entonnoir :
+ * départements et non-renseigné en font exactement le total. Comptes et dossiers DN viennent de la BDD.
  */
 export async function getTopDepartementsMatomo(
   periodeId: PeriodeId,
   codeDepartement?: string,
   partner?: PartnerKey | null
-): Promise<DepartementStats[]> {
+): Promise<TopDepartementsMatomo> {
   const fenetre = getDateRange(periodeId);
-  const { debut, fin } = fenetre;
-  const dateRange = formatMatomoDateRange(fenetre);
-  const partnerSegment = buildPartnerSegment(partner);
+  const granularite = getGranulariteForPeriode(periodeId);
+  const bddStats = getTopDepartementsStats(fenetre.debut, fenetre.fin, partner);
 
-  const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
-  const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
-
-  if (!dimensionId) {
-    console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
-    return getTopDepartementsStats(debut, fin, partner);
-  }
-
-  // Récupérer simulations Matomo par département + données BDD en parallèle
-  const [matomoParValeur, bddStats] = await Promise.all([
-    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    }),
-    getTopDepartementsStats(debut, fin, partner),
-  ]);
-  const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
-
-  if (matomoByDept.size === 0) {
-    console.warn("[getTopDepartementsMatomo] Matomo n'a retourné aucune donnée, fallback BDD");
-    return bddStats;
-  }
-
-  // Indexer les données BDD par code département pour fusion rapide
-  const bddByDept = new Map(bddStats.map((d) => [d.codeDepartement, d]));
-
-  // Fusionner : simulations Matomo + comptes/DN BDD
-  const allCodes = new Set([...matomoByDept.keys(), ...bddByDept.keys()]);
-  const result: DepartementStats[] = [];
-
-  for (const code of allCodes) {
-    const matomo = matomoByDept.get(code);
-    const bdd = bddByDept.get(code);
-    const officialCode = toOfficialCodeDepartement(code);
-    const nom = getDepartementName(code) ?? bdd?.nomDepartement ?? code;
-
-    const simulations = matomo?.total ?? bdd?.simulations ?? 0;
-    const simulationsEligibles = matomo?.eligible ?? bdd?.simulationsEligibles ?? 0;
-    const comptesCrees = bdd?.comptesCrees ?? 0;
-    const dossiersDN = bdd?.dossiersDN ?? 0;
-
-    result.push({
-      codeDepartement: officialCode,
-      nomDepartement: nom,
-      simulations,
-      simulationsEligibles,
-      pourcentageEligibles: simulations > 0 ? Math.round((simulationsEligibles / simulations) * 100) : 0,
-      comptesCrees,
-      dossiersDN,
-      transformationGlobale: simulations > 0 ? Math.round((dossiersDN / simulations) * 10000) / 100 : 0,
-    });
-  }
-
-  // Filtrer par département si demandé
   if (codeDepartement) {
-    const normalizedFilter = normalizeCodeDepartement(codeDepartement);
-    return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
+    const code = toOfficialCodeDepartement(codeDepartement);
+    const [simulations, bdd] = await Promise.all([
+      getSimulationsTermineesDepartement(fenetre, granularite, code, partner),
+      bddStats,
+    ]);
+    return {
+      departements: [
+        statsDepartement(
+          code,
+          simulations,
+          bdd.find((d) => d.codeDepartement === code)
+        ),
+      ],
+      nonRenseigne: { simulations: 0, simulationsEligibles: 0 },
+    };
   }
 
-  return result;
+  const [simulations, bdd] = await Promise.all([getSimulationsTerminees(fenetre, granularite, partner), bddStats]);
+  const bddParDepartement = new Map(bdd.map((d) => [d.codeDepartement, d]));
+  const codes = new Set([...simulations.parDepartement.keys(), ...bddParDepartement.keys()]);
+  const { eligible, nonEligible } = simulations.nonRenseigne;
+
+  return {
+    departements: [...codes].map((code) =>
+      statsDepartement(
+        code,
+        simulations.parDepartement.get(code) ?? { eligible: 0, nonEligible: 0 },
+        bddParDepartement.get(code)
+      )
+    ),
+    nonRenseigne: { simulations: eligible + nonEligible, simulationsEligibles: eligible },
+  };
 }
 
 /**

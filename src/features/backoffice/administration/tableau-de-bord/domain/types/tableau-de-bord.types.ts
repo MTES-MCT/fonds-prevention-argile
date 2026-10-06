@@ -78,6 +78,13 @@ export interface DepartementStats {
   transformationGlobale: number;
 }
 
+/** Départements et non-renseigné font exactement le total des simulations terminées de l'entonnoir. */
+export interface TopDepartementsMatomo {
+  departements: DepartementStats[];
+  /** Résultats sans département : antérieurs au suivi par département (octobre 2026) ou sans adresse. */
+  nonRenseigne: { simulations: number; simulationsEligibles: number };
+}
+
 export type TopDepartementsTriColumn =
   | "simulations"
   | "simulationsEligibles"

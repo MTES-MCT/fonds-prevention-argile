@@ -317,14 +317,18 @@ function requestVisitsSummary(period: string, date: string, segment?: string): P
 type MatomoEventActionApiResponse = MatomoEventActionResponse[] | Record<string, MatomoEventActionResponse[]>;
 
 /**
- * Cumule les `nb_visits` par label d'event, à travers une ou plusieurs sous-périodes.
+ * Cumule un compteur (`nb_visits` par défaut) par label d'event, à travers une ou plusieurs sous-périodes.
  * Un `nb_visits` par event est un comptage, additif entre sous-périodes disjointes —
  * contrairement aux visiteurs uniques, qui exigent une déduplication.
  *
  * Toute anomalie de structure ou de compteur lève au lieu d'être ignorée : un total amputé
  * d'une sous-période est indiscernable d'une vraie baisse une fois affiché.
  */
-function sumEventCounts(data: MatomoEventActionApiResponse, methode: string): Map<string, number> {
+function sumEventCounts(
+  data: MatomoEventActionApiResponse,
+  methode: string,
+  metrique: "nb_visits" | "nb_events" = "nb_visits"
+): Map<string, number> {
   const eventCounts = new Map<string, number>();
   const rowsPerPeriode = Array.isArray(data) ? [data] : Object.values(data ?? {});
 
@@ -335,7 +339,7 @@ function sumEventCounts(data: MatomoEventActionApiResponse, methode: string): Ma
     for (const row of rows) {
       // Number(...) : sur une reponse multi-sous-periode, Matomo serialise parfois nb_visits en
       // string — sans conversion, `0 + "234"` concatene ("0234") au lieu d'additionner.
-      const valeur = Number(row.nb_visits);
+      const valeur = Number(row[metrique]);
       if (!Number.isFinite(valeur)) {
         throw new Error(`Reponse Matomo inattendue (${methode}): compteur non numerique`);
       }
@@ -428,7 +432,7 @@ export async function fetchMatomoEvents(options?: {
 export async function fetchMatomoEventsByDepartment(
   codeDepartement: string,
   dimensionId: number,
-  options?: { period?: string; date?: string; extraSegment?: string }
+  options?: { period?: string; date?: string; extraSegment?: string; metrique?: "nb_visits" | "nb_events" }
 ): Promise<Map<string, number>> {
   const config = getMatomoConfig();
   const baseSegment = `dimension${dimensionId}==${codeDepartement}`;
@@ -449,7 +453,7 @@ export async function fetchMatomoEventsByDepartment(
     config.apiUrl
   );
 
-  return sumEventCounts(data, "Events.getAction (departement)");
+  return sumEventCounts(data, "Events.getAction (departement)", options?.metrique);
 }
 
 /**
@@ -604,14 +608,4 @@ export async function fetchMatomoCountByDimension(
     result.set(value, (result.get(value) ?? 0) + (Number(row.nb_visits) || 0));
   }
   return result;
-}
-
-/**
- * Alias pour la rétrocompatibilité — récupère les simulations groupées par département.
- */
-export async function fetchMatomoSimulationsGroupedByDepartment(
-  dimensionId: number,
-  options?: { period?: string; date?: string; extraSegment?: string }
-): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
-  return fetchMatomoSimulationsGroupedByDimension(dimensionId, options);
 }

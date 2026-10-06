@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   construireLignesSimulationsDepartement,
+  estCodeDepartementConnu,
   filtrerParPerimetre,
-  regrouperSimulationsParDepartement,
   totaliserSimulations,
   versCsvSimulationsDepartement,
-  type CompteurSimulations,
 } from "./simulations-departement";
 import type { DepartementStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -22,24 +21,13 @@ function stats(code: string, nom: string, simulations: number, eligibles: number
   };
 }
 
-describe("regrouperSimulationsParDepartement", () => {
-  it("fusionne les variantes d'un même code au format officiel", () => {
-    const parValeur = new Map<string, CompteurSimulations>([
-      ["3", { total: 4, eligible: 1, nonEligible: 3 }],
-      ["03", { total: 6, eligible: 2, nonEligible: 4 }],
-    ]);
-
-    expect(regrouperSimulationsParDepartement(parValeur).get("03")).toEqual({ total: 10, eligible: 3, nonEligible: 7 });
+describe("estCodeDepartementConnu", () => {
+  it("reconnaît les codes, avec ou sans zéro initial, Corse et outre-mer compris", () => {
+    expect(["3", "03", "63", "2A", "2B", "971"].every(estCodeDepartementConnu)).toBe(true);
   });
 
-  it("écarte les valeurs qui ne sont pas un département", () => {
-    const parValeur = new Map<string, CompteurSimulations>([
-      ["Value not defined", { total: 50, eligible: 0, nonEligible: 50 }],
-      ["2A", { total: 1, eligible: 0, nonEligible: 1 }],
-      ["971", { total: 2, eligible: 0, nonEligible: 2 }],
-    ]);
-
-    expect([...regrouperSimulationsParDepartement(parValeur).keys()].sort()).toEqual(["2A", "971"]);
+  it("refuse ce qui n'est pas un département", () => {
+    expect(["Nom d'événement indéfini", "-", "", "999"].some(estCodeDepartementConnu)).toBe(false);
   });
 });
 

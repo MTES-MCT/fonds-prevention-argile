@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getMatomoSimulationsStats } from "./tableau-de-bord.service";
+import { getMatomoSimulationsStats, getTopDepartementsMatomo } from "./tableau-de-bord.service";
 import {
-  fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
+  fetchMatomoSimulationsTerminees,
   fetchMatomoUniqueVisitors,
 } from "../../acquisition/adapters/matomo-api.adapter";
+import type { SimulationsTerminees } from "../../acquisition/domain/simulations-terminees";
 import { db } from "@/shared/database/client";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 
@@ -13,10 +14,9 @@ vi.mock("@/shared/database/client", () => ({
 }));
 
 vi.mock("../../acquisition/adapters/matomo-api.adapter", () => ({
-  fetchMatomoEvents: vi.fn(),
   fetchMatomoEventsByDepartment: vi.fn(),
+  fetchMatomoSimulationsTerminees: vi.fn(),
   fetchMatomoUniqueVisitors: vi.fn(),
-  fetchMatomoSimulationsGroupedByDepartment: vi.fn(),
   fetchMatomoSimulationsGroupedByDimension: vi.fn(),
   buildPartnerSegment: vi.fn(() => undefined),
 }));
@@ -33,16 +33,30 @@ vi.mock("@/shared/config/env.config", async (importOriginal) => {
   };
 });
 
-// countComptesCrees fait db.select().from().where() et lit [{ count }]
+// countComptesCrees lit [{ count }] ; les stats par département de la BDD n'y trouvent aucune simulation.
 function mockComptesCrees(nombre: number) {
   vi.mocked(db.select).mockReturnValue({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockResolvedValue([{ count: nombre }]),
+      innerJoin: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
     }),
   } as never);
 }
 
-const eventsAvecSimulations = new Map<string, number>([
+function simulations(
+  parDepartement: Record<string, [number, number]>,
+  nonRenseigne: [number, number] = [0, 0]
+): SimulationsTerminees {
+  return {
+    parDepartement: new Map(
+      Object.entries(parDepartement).map(([code, [eligible, nonEligible]]) => [code, { eligible, nonEligible }])
+    ),
+    nonRenseigne: { eligible: nonRenseigne[0], nonEligible: nonRenseigne[1] },
+  };
+}
+
+const eventsAvecSimulations = simulations({ "63": [10, 5], "36": [2, 3] });
+const evenementsDepartement = new Map<string, number>([
   [MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, 12],
   [MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, 8],
 ]);
@@ -59,7 +73,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
   });
 
   it("renvoie null (et non 0) quand Matomo est injoignable", async () => {
-    vi.mocked(fetchMatomoEvents).mockRejectedValue(new Error("Erreur API Matomo: token_auth invalide"));
+    vi.mocked(fetchMatomoSimulationsTerminees).mockRejectedValue(new Error("Erreur API Matomo: token_auth invalide"));
     vi.mocked(fetchMatomoUniqueVisitors).mockRejectedValue(new Error("Erreur API Matomo: token_auth invalide"));
 
     const stats = await getMatomoSimulationsStats("30j");
@@ -73,7 +87,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
 
   it("trace la cause de la panne dans les logs", async () => {
     const erreur = new Error("Erreur API Matomo: token_auth invalide");
-    vi.mocked(fetchMatomoEvents).mockRejectedValue(erreur);
+    vi.mocked(fetchMatomoSimulationsTerminees).mockRejectedValue(erreur);
     vi.mocked(fetchMatomoUniqueVisitors).mockRejectedValue(erreur);
 
     await getMatomoSimulationsStats("30j");
@@ -85,7 +99,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
   });
 
   it("distingue un vrai zero Matomo d'une panne", async () => {
-    vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map());
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({}));
     vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
 
     const stats = await getMatomoSimulationsStats("30j");
@@ -95,7 +109,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
   });
 
   it("renvoie les visiteurs uniques meme si les simulations echouent", async () => {
-    vi.mocked(fetchMatomoEvents).mockRejectedValue(new Error("timeout"));
+    vi.mocked(fetchMatomoSimulationsTerminees).mockRejectedValue(new Error("timeout"));
     vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(4955);
 
     const stats = await getMatomoSimulationsStats("30j");
@@ -105,7 +119,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
   });
 
   it("renvoie les valeurs Matomo quand tout repond", async () => {
-    vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(eventsAvecSimulations);
     vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(4955);
 
     const stats = await getMatomoSimulationsStats("30j");
@@ -148,8 +162,8 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockComptesCrees(5);
-    vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
-    vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(eventsAvecSimulations);
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(eventsAvecSimulations);
+    vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(evenementsDepartement);
     vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
   });
 
@@ -161,12 +175,14 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
   it("n'utilise jamais period=range pour les simulations", async () => {
     await getMatomoSimulationsStats("12m");
 
-    const periodes = vi.mocked(fetchMatomoEvents).mock.calls.map(([options]) => options?.period);
+    const periodes = vi.mocked(fetchMatomoSimulationsTerminees).mock.calls.map(([options]) => options?.period);
     expect(periodes).not.toContain("range");
     expect(periodes.length).toBeGreaterThan(0);
   });
 
   it("interroge exactement les 90 jours demandés, sans déborder sur les semaines de bord", async () => {
+    // Résultats sans nom : chaque sous-période retombe sur la dimension, dont on vérifie la fenêtre.
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({}, [1, 1]));
     // Sans découpage, `period=week` sur cette fenêtre ferait renvoyer par Matomo les semaines
     // pleines 08-14/06 et 07-13/09, soit 9 jours hors période comptés dans le total.
     await getMatomoSimulationsStats("90j", "36");
@@ -184,7 +200,9 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
   it("ne fait partager aucune journée entre la période courante et la précédente", async () => {
     await getMatomoSimulationsStats("90j");
 
-    const jours = joursInterroges(vi.mocked(fetchMatomoEvents).mock.calls.map(([options]) => options ?? {}));
+    const jours = joursInterroges(
+      vi.mocked(fetchMatomoSimulationsTerminees).mock.calls.map(([options]) => options ?? {})
+    );
 
     // Les deux fenêtres sont demandées dans le même appel de service : un doublon ici signifierait
     // qu'une journée est comptée dans la période courante ET dans la précédente.
@@ -193,21 +211,79 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
   });
 
   it("cumule les sous-périodes en un seul total", async () => {
-    vi.mocked(fetchMatomoEvents).mockResolvedValue(
-      new Map([
-        [MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, 3],
-        [MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE, 1],
-      ])
-    );
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({ "63": [2, 1] }, [1, 0]));
 
     const stats = await getMatomoSimulationsStats("90j");
     const nombreAppelsCourants = vi
-      .mocked(fetchMatomoEvents)
+      .mocked(fetchMatomoSimulationsTerminees)
       .mock.calls.map(([options]) => options?.date ?? "")
       .filter((date) => date >= "2026-06-11").length;
 
     expect(nombreAppelsCourants).toBeGreaterThan(1);
     expect(stats.simulationsEligibles?.valeur).toBe(3 * nombreAppelsCourants);
     expect(stats.simulationsNonEligibles?.valeur).toBe(1 * nombreAppelsCourants);
+  });
+});
+
+describe("simulations terminées : une seule source pour l'entonnoir et les départements", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 20, 10, 0));
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockComptesCrees(0);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("fait tomber la somme des départements et du non-renseigné exactement sur l'entonnoir", async () => {
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({ "63": [4, 2], "75": [0, 3] }, [1, 5]));
+
+    const [entonnoir, top] = await Promise.all([getMatomoSimulationsStats("30j"), getTopDepartementsMatomo("30j")]);
+
+    const somme = top.departements.reduce((s, d) => s + d.simulations, 0) + top.nonRenseigne.simulations;
+    const sommeEligibles =
+      top.departements.reduce((s, d) => s + d.simulationsEligibles, 0) + top.nonRenseigne.simulationsEligibles;
+    expect(somme).toBe(entonnoir.simulationsMatomo?.valeur);
+    expect(sommeEligibles).toBe(entonnoir.simulationsEligibles?.valeur);
+  });
+
+  it("lit la ligne du département sans requête segmentée quand tous les résultats sont nommés", async () => {
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({ "63": [4, 2], "75": [0, 3] }));
+
+    const [entonnoir, top] = await Promise.all([
+      getMatomoSimulationsStats("30j", "63"),
+      getTopDepartementsMatomo("30j", "63"),
+    ]);
+
+    expect(fetchMatomoEventsByDepartment).not.toHaveBeenCalled();
+    expect(top.departements.map((d) => [d.codeDepartement, d.simulations])).toEqual([
+      ["63", entonnoir.simulationsMatomo?.valeur],
+    ]);
+  });
+
+  it("retombe sur la dimension, comptée en évènements, pour une sous-période antérieure au suivi", async () => {
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({}, [3, 3]));
+    vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(evenementsDepartement);
+
+    await getMatomoSimulationsStats("7j", "63");
+
+    expect(fetchMatomoEventsByDepartment).toHaveBeenCalledWith(
+      "63",
+      7,
+      expect.objectContaining({ metrique: "nb_events" })
+    );
+  });
+
+  it("ne complète plus un département inconnu de Matomo avec les simulations de la BDD", async () => {
+    vi.mocked(fetchMatomoSimulationsTerminees).mockResolvedValue(simulations({ "63": [1, 0] }));
+
+    const top = await getTopDepartementsMatomo("30j");
+
+    expect(top.departements.every((d) => d.codeDepartement === "63")).toBe(true);
   });
 });

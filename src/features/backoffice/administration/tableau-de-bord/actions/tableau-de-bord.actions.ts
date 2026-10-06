@@ -20,7 +20,7 @@ import type {
   MatomoSimulationsStats,
   PeriodeId,
   DemandeArchiveeDetail,
-  DepartementStats,
+  TopDepartementsMatomo,
   CommuneSimulationsStats,
 } from "../domain/types/tableau-de-bord.types";
 import type { EligibiliteStats } from "../domain/types/eligibilite-stats.types";
@@ -174,7 +174,7 @@ export async function getTopDepartementsMatomoAction(
   periodeId: PeriodeId,
   codeDepartement?: string,
   partner?: PartnerKey | null
-): Promise<ActionResult<DepartementStats[]>> {
+): Promise<ActionResult<TopDepartementsMatomo>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
   if (!permissionCheck.hasAccess) {

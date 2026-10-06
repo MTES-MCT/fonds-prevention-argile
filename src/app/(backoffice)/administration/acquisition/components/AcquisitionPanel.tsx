@@ -132,7 +132,7 @@ export default function AcquisitionPanel() {
       const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined, partner);
       if (!cancelled) {
         if (result.success) {
-          setTopDepartementsMatomo(result.data);
+          setTopDepartementsMatomo(result.data.departements);
         }
         setTopDeptsLoading(false);
       }
