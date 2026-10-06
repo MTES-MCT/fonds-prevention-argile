@@ -1203,6 +1203,14 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
+Note : **l'état DN n'est jamais recopié tel quel.** L'API GraphQL nomme `sans_suite` ce que
+`ds_status` nomme `classe_sans_suite` : `dsStatusFromEtatDn` (`ds-status.ts`) traduit, et un état
+inconnu est refusé en erreur de synchro plutôt qu'écrit. Avant octobre 2026, la synchro castait
+l'état brut ; Postgres refusait l'UPDATE, mais l'échec était avalé : le dossier restait figé à son
+ancien état, sans `processed_at`, et chaque run comptait un faux changement et réémettait
+`dn_update` vers Brevo. Un UPDATE refusé remonte désormais en erreur. `dn_probe_state`, lui,
+garde le verdict **brut** de DN (`sans_suite`), que lisent le diagnostic et `ds-anomaly.ts`.
+
 Note : **un prérempli non déposé n'est pas une erreur de sync** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)).
 DN masque à l'API instructeur un dossier que l'usager n'a pas transmis : `getDossier` répond
 `Dossier not found`. Quand le dossier local n'a **ni `last_sync_at` ni `submitted_at`**,
