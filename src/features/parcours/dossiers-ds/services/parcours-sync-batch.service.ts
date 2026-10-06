@@ -292,8 +292,9 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   //   de findActiveForSync au prochain run.
   let stepAdvanced = false;
   let final = afterSync;
-  // Un VALIDE lu en base sans avoir pu relire DN peut être périmé : on n'avance pas sur lui.
-  if (afterSync.currentStatus === Status.VALIDE && !etapeCouranteNonRelue) {
+  // Un VALIDE non relu dans DN peut être périmé ; une étape changée en cours de synchro n'a pas été relue.
+  const etapeConfirmee = !etapeCouranteNonRelue && afterSync.currentStep === before.currentStep;
+  if (afterSync.currentStatus === Status.VALIDE && etapeConfirmee) {
     const progression = await moveToNextStep(userId);
     if (progression.success && !progression.data.complete) {
       stepAdvanced = true;

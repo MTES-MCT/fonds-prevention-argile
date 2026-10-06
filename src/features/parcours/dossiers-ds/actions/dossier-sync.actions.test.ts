@@ -4,6 +4,7 @@ import { getSession } from "@/features/auth/server";
 import { recomputeParcoursStatus, syncDossierStatus, syncAllDossiers } from "../services/ds-sync.service";
 import { getDossierByStep, getAllDossiersByParcours } from "../services/dossier-ds.service";
 import { getParcoursComplet, moveToNextStep } from "../../core/services";
+import { parcoursRepo } from "@/shared/database/repositories";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
@@ -18,6 +19,7 @@ vi.mock("../services/dossier-ds.service", () => ({
   getDossierByStep: vi.fn(),
   getAllDossiersByParcours: vi.fn(),
 }));
+vi.mock("@/shared/database/repositories", () => ({ parcoursRepo: { findById: vi.fn() } }));
 vi.mock("../../core/services", () => ({
   getParcoursComplet: vi.fn(),
   moveToNextStep: vi.fn(),
@@ -40,6 +42,7 @@ describe("dossier-sync.actions — pas de progression sur une étape que DN n'a 
     vi.mocked(getAllDossiersByParcours).mockResolvedValue([
       { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" },
     ] as never);
+    vi.mocked(parcoursRepo.findById).mockResolvedValue({ id: "p1", currentStep: Step.ELIGIBILITE } as never);
     vi.mocked(recomputeParcoursStatus).mockResolvedValue({ success: true, data: { updated: false } });
     mockedMoveToNextStep.mockResolvedValue({
       success: true,
@@ -86,5 +89,18 @@ describe("dossier-sync.actions — pas de progression sur une étape que DN n'a 
     const result = await syncAllUserDossiers();
 
     expect(result).toEqual({ success: true, data: { totalUpdated: 0, totalErreurs: 1, stepAdvanced: true } });
+  });
+
+  it.each([
+    ["syncUserDossierStatus", () => syncUserDossierStatus(Step.ELIGIBILITE)],
+    ["syncAllUserDossiers", () => syncAllUserDossiers()],
+  ])("%s n'avance pas quand l'étape a changé pendant la synchro", async (_nom, appel) => {
+    mockedSyncDossierStatus.mockResolvedValue({ success: true, data: { updated: false } });
+    mockedSyncAllDossiers.mockResolvedValue({ success: true, data: { totalUpdated: 0, etapesEnErreur: [] } });
+    vi.mocked(parcoursRepo.findById).mockResolvedValue({ id: "p1", currentStep: Step.DIAGNOSTIC } as never);
+
+    await appel();
+
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
   });
 });

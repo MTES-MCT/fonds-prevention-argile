@@ -332,6 +332,20 @@ describe("runSyncBatch", () => {
     expect(result.totalErrors).toBe(1);
   });
 
+  it("étape changée pendant la synchro (progression concurrente) → aucune progression", async () => {
+    const before = fakeParcours({ currentStep: Step.DEVIS, currentStatus: Status.VALIDE });
+    const avanceAilleurs = fakeParcours({ currentStep: Step.FACTURES, currentStatus: Status.VALIDE });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
+    mockedParcoursRepo.findById.mockResolvedValueOnce(before as never).mockResolvedValueOnce(avanceAilleurs as never);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.FACTURES, dsNumber: "123" } as never]);
+    mockedSyncDossierStatus.mockResolvedValue({ success: false, error: "Sync dossier 123 échouée" } as never);
+
+    await runSyncBatch(SyncRunTrigger.CRON);
+
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+  });
+
   it("étape VALIDE et échec sur un dossier d'une étape passée → la progression a lieu", async () => {
     const parcours = fakeParcours({ currentStep: Step.DIAGNOSTIC, currentStatus: Status.VALIDE });
     const afterProgress = fakeParcours({ currentStep: Step.DEVIS, currentStatus: Status.TODO });
