@@ -1,4 +1,4 @@
-import { count, and, gte, lt, eq, isNotNull, isNull, inArray, desc, sql } from "drizzle-orm";
+import { count, and, gte, lt, eq, isNotNull, isNull, inArray, desc, sql, or } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   parcoursPrevention,
@@ -55,6 +55,7 @@ import {
 } from "@/features/backoffice/administration/acquisition/services/simulations-terminees.service";
 import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
 import { formaterDateMatomo } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
+import { libelleMotifArchivage, MOTIF_SANS_MOTIF } from "../domain/motif-archivage";
 import {
   totalSimulationsTerminees,
   type CompteurResultats,
@@ -557,14 +558,16 @@ async function getArchiveReasonsDistribution(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
-  partner?: PartnerKey | null
+  partner?: PartnerKey | null,
+  // Les alertes de hausse ne portent que sur des motifs ; le tableau, lui, doit retomber sur « Dossiers archivés ».
+  inclureSansMotif = false
 ): Promise<Map<string, number>> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
-    isNotNull(parcoursPrevention.archiveReason),
     gte(parcoursPrevention.archivedAt, debut),
     lt(parcoursPrevention.archivedAt, fin),
   ];
+  if (!inclureSansMotif) conditions.push(isNotNull(parcoursPrevention.archiveReason));
 
   if (codeDepartement) {
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
@@ -584,9 +587,9 @@ async function getArchiveReasonsDistribution(
 
   const distribution = new Map<string, number>();
   for (const row of rows) {
-    if (row.reason) {
-      distribution.set(row.reason, row.count);
-    }
+    const motif = libelleMotifArchivage(row.reason);
+    if (motif === MOTIF_SANS_MOTIF && !inclureSansMotif) continue;
+    distribution.set(motif, (distribution.get(motif) ?? 0) + row.count);
   }
   return distribution;
 }
@@ -604,9 +607,9 @@ async function getDemandesArchiveesDetail(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<DemandesArchiveesStats> {
-  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner);
+  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner, true);
   const distributionPrecedente = previousRange
-    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner)
+    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner, true)
     : new Map<string, number>();
 
   // Total archivées sur la période
@@ -665,13 +668,19 @@ export async function getAutresDemandesArchiveesDetail(
     return { total: 0, demandes: [] };
   }
 
-  // Récupérer les parcours individuels ayant ces motifs
+  // Récupérer les parcours individuels ayant ces motifs (« Sans motif » = raison vide en base)
+  const raisonsEnBase = autresRaisons.filter((r) => r !== MOTIF_SANS_MOTIF);
+  const filtresRaison = [
+    ...(raisonsEnBase.length > 0 ? [inArray(parcoursPrevention.archiveReason, raisonsEnBase)] : []),
+    ...(autresRaisons.includes(MOTIF_SANS_MOTIF)
+      ? [isNull(parcoursPrevention.archiveReason), eq(parcoursPrevention.archiveReason, "")]
+      : []),
+  ];
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
-    isNotNull(parcoursPrevention.archiveReason),
     gte(parcoursPrevention.archivedAt, debut),
     lt(parcoursPrevention.archivedAt, fin),
-    inArray(parcoursPrevention.archiveReason, autresRaisons),
+    or(...filtresRaison)!,
   ];
 
   if (codeDepartement) {
@@ -724,7 +733,7 @@ export async function getAutresDemandesArchiveesDetail(
     agent: row.agentGivenName ? [row.agentGivenName, row.agentUsualName].filter(Boolean).join(" ") : null,
     structureAmo: row.entrepriseAmoNom ?? null,
     archivedAt: row.archivedAt!,
-    raison: row.archiveReason!,
+    raison: libelleMotifArchivage(row.archiveReason),
   }));
 
   return { total: demandes.length, demandes };

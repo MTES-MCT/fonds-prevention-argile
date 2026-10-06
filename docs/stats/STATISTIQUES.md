@@ -59,7 +59,7 @@ Filtres : période, département (pas de filtre partenaire). Service : `tableau-
 | Dossiers déposés sur DN       | Formulaires transmis pendant la période, toutes étapes confondues.                                                     | BDD `submitted_at`             |
 | Dossiers acceptés par la DDT  | Formulaires acceptés pendant la période, toutes étapes confondues.                                                     | BDD `processed_at`             |
 | Alerte « motifs en hausse »   | Motifs d'archivage en hausse de plus de 10 % par rapport à la période précédente (absente sur « Depuis le début »).    | BDD                            |
-| Demandes archivées (N)        | Archivages ventilés par motif (top 5 puis « Autre ») ; N exclut les archivages sans motif.                             | BDD `archive_reason`           |
+| Demandes archivées (N)        | Archivages ventilés par motif (top 5 puis « Autre »), archivages sans motif compris : N égale « Dossiers archivés ».   | BDD `archive_reason`           |
 | Demandes inéligibles (N)      | Parcours archivés pour inéligibilité, ventilés par raison de qualification ; une demande peut avoir plusieurs raisons. | BDD `prospect_qualifications`  |
 | Top 5 départements            | Par département : simulations terminées (Matomo), comptes et dossiers DN créés (BDD), et dossiers DN ÷ simulations.    | Matomo + BDD                   |
 
@@ -75,7 +75,7 @@ Filtres : période, département, partenaire. Composant : `acquisition/component
 | Simulations éligibles / non éligibles | Les mêmes, selon le verdict affiché.                                                                                                                                | Matomo, `Events.getName`          |
 | Comptes créés                         | Parcours rattachés à un utilisateur, créés sur la période.                                                                                                          | BDD                               |
 | Transfo. simu. → comptes              | Comptes créés ÷ simulations terminées.                                                                                                                              | Calculé                           |
-| Détail des étapes du tunnel           | Pour chaque étape du simulateur, visites qui l'atteignent, qui passent à la suivante ou qui abandonnent ; sur les 7 derniers jours, sans filtre.                    | Matomo Funnels                    |
+| Détail des étapes du tunnel           | Pour chaque étape du simulateur, visites qui l'atteignent, qui passent à la suivante ou qui abandonnent ; 7 derniers jours, aujourd'hui compris, sans filtre.       | Matomo Funnels                    |
 | Motifs d'inéligibilité                | Raisons de qualification des parcours archivés pour inéligibilité (même donnée que le Tableau de bord), pas les motifs du simulateur.                               | BDD                               |
 | Top 5 simulations par département     | Les cinq départements qui comptent le plus de simulations terminées.                                                                                                | Matomo, `Events.getName`          |
 | Top 5 simulations par communes        | Visites ayant affiché un résultat dans la commune ; ignore le filtre département.                                                                                   | Matomo, dimension commune         |
@@ -98,7 +98,7 @@ viennent du Tableau de bord national.
 | Données des N demandeurs            | Demandeurs créés sur la période.                                                                                                 | Liste                      |
 | Évolution des demandeurs            | Demandeurs créés par jour (période ≤ 30 jours) ou par semaine.                                                                   | Liste                      |
 | Demandes par étape                  | Demandeurs non archivés, par étape en cours.                                                                                     | Liste                      |
-| Délais moyens par étape             | Temps moyen entre deux jalons ; « Éligibilité » mesure en fait le délai de réponse de l'AMO (choix → validation).                | Liste                      |
+| Délais moyens par étape             | Temps moyen entre deux jalons : choix de l'AMO, réponse de l'AMO, puis dépôts successifs (diagnostic, devis, factures).          | Liste                      |
 | Répartitions demandes d'AMO         | Demandes envoyées, validées, en attente et refusées par une AMO.                                                                 | Liste                      |
 | Répartition dossiers DN             | Formulaires DN en création, déposés (`en_construction`), en instruction, et instruits (acceptés, refusés ou classés sans suite). | Liste                      |
 | Sources d'acquisition               | Comment les demandeurs disent avoir connu le dispositif.                                                                         | Liste `source_acquisition` |
@@ -125,7 +125,7 @@ viennent du Tableau de bord national.
 | -------------------------------- | --------------------------------------------------------------------------- | --------------------- |
 | Simulations réalisées            | Simulations de vulnérabilité enregistrées (table anonyme).                  | BDD                   |
 | Points par simulation (moyennes) | Moyenne des points critiques, de vigilance, à vérifier et bonnes pratiques. | BDD + grille courante |
-| Détail des étapes du tunnel      | Visites par étape sur 7 jours.                                              | Matomo Funnels        |
+| Détail des étapes du tunnel      | Visites par étape, 7 derniers jours aujourd'hui compris.                    | Matomo Funnels        |
 | Simulations par département      | Visites ayant affiché un résultat de vulnérabilité, par département.        | Matomo, dimension     |
 | Répartition des réponses         | Part de chaque réponse, parmi les simulations ayant répondu à la question.  | BDD                   |
 
@@ -149,7 +149,3 @@ Des statistiques au libellé proche ne comptent pas la même chose. À corriger 
 - **Top 5 par communes** : visites Matomo (Acquisition) contre simulations rattachées à un compte (Demandeurs).
 - **Comptes créés** : tous les parcours (public) contre parcours rattachés à un utilisateur (back-office).
 - **Dossiers déposés / validés** : éligibilité seule (public), toutes étapes (Tableau de bord), statut `en_construction` (Demandeurs).
-- **Visites présentées comme des visiteurs** : colonne « VU » du tunnel, sous-titre du graphique du site vitrine.
-- **Tunnel « 7 derniers jours »** : la plage couvre en réalité 8 jours, en UTC.
-- **Entonnoir « Comptes créés »** : variation affichée en points alors que c'est un pourcentage.
-- **Dossiers archivés** contre **Demandes archivées (N)** : le second exclut les archivages sans motif.

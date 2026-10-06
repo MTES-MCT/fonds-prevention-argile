@@ -22,6 +22,7 @@ import { transformMatomoFunnelData } from "@/features/backoffice/administration/
 import type { FunnelStatistiques } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
 import { toOfficialCodeDepartement, getDepartementName } from "@/shared/constants/departements.constants";
 import { getClientEnv } from "@/shared/config/env.config";
+import { plageDerniersJours } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type {
@@ -166,10 +167,7 @@ export async function getVulnerabiliteFunnel(): Promise<FunnelStatistiques | nul
   if (!funnelId) return null;
 
   try {
-    const fin = new Date().toISOString().slice(0, 10);
-    const debut = new Date();
-    debut.setDate(debut.getDate() - FUNNEL_PERIODE_JOURS);
-    const dateRange = `${debut.toISOString().slice(0, 10)},${fin}`;
+    const dateRange = plageDerniersJours(FUNNEL_PERIODE_JOURS);
 
     const data = await fetchMatomoFunnel(funnelId, "range", dateRange);
     return transformMatomoFunnelData(data);

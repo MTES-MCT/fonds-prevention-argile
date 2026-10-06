@@ -100,7 +100,6 @@ export default function EntonnoirEligibilite({
             value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
             label="Comptes créés"
             variation={stats?.comptesCrees.variation ?? null}
-            variationType="points"
             loading={loading}
             compact
             tooltip="Données base de données"

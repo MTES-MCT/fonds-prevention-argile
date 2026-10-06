@@ -95,3 +95,8 @@ export function decouperPeriodeMatomo(debut: Date, fin: Date, granulariteMax: Gr
     ...decouperPeriodeMatomo(ajouterJours(finInterne, 1), dernierJour, granulariteInferieure),
   ];
 }
+
+/** Les `jours` derniers jours calendaires, aujourd'hui compris, au format `date` de Matomo (heure locale). */
+export function plageDerniersJours(jours: number, maintenant: Date = new Date()): string {
+  return `${formaterDateMatomo(ajouterJours(maintenant, -(jours - 1)))},${formaterDateMatomo(maintenant)}`;
+}
