@@ -107,11 +107,11 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
               Information
             </button>
             <span className="fr-tooltip fr-placement" id={tooltipGraphId} role="tooltip">
-              Données Matomo
+              Données Matomo : visites (et non visiteurs uniques) sur l&apos;ensemble du site
             </span>
           </h2>
           <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-            Visiteurs uniques du site vitrine, {labelGranularite}
+            Visites sur l&apos;ensemble du site, {labelGranularite}
           </p>
         </div>
         <div className="fr-p-2w">

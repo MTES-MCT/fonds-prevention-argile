@@ -13,7 +13,7 @@ interface DetailEtapesFunnelProps {
 
 /**
  * Carte "Detail des etapes du tunnel" — tableau des etapes du simulateur RGA.
- * Colonnes : Étape, VU (visiteurs uniques), Conv., Abandons.
+ * Colonnes : Étape, Visites, Conv., Abandons.
  * Fixé sur les 7 derniers jours (limite API Matomo Funnels).
  */
 export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunnelProps) {
@@ -48,7 +48,7 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
             Information
           </button>
           <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-            Données Matomo Funnels — visiteurs uniques par étape
+            Données Matomo Funnels — visites ayant atteint chaque étape
           </span>
         </h2>
         <p className="fr-mt-2w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
@@ -73,12 +73,12 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
             Information
           </button>
           <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-            Données Matomo Funnels — visiteurs uniques par étape (un visiteur qui fait plusieurs simulations n'est compté
-            qu'une fois)
+            Données Matomo Funnels — visites ayant atteint chaque étape (une visite qui refait la simulation n&apos;est
+            comptée qu&apos;une fois par étape)
           </span>
         </h2>
         <p className="fr-text--sm fr-mb-0 fr-mt-1v" style={{ color: "var(--text-mention-grey)" }}>
-          Visiteurs uniques par étape du simulateur — non impacté par le filtre période
+          Visites par étape du simulateur, aujourd&apos;hui compris — non impacté par le filtre période
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function DetailEtapesFunnel({ funnel, loading }: DetailEtapesFunn
                   <tr>
                     <th scope="col">Étape</th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      VU
+                      Visites
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
                       Conv.

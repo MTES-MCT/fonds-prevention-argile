@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { decouperPeriodeMatomo, formaterDateMatomo, type SousPeriodeMatomo } from "./decoupage-periode";
+import {
+  decouperPeriodeMatomo,
+  formaterDateMatomo,
+  plageDerniersJours,
+  type SousPeriodeMatomo,
+} from "./decoupage-periode";
 
 function jour(iso: string): Date {
   const [annee, mois, date] = iso.split("-").map(Number);
@@ -91,5 +96,15 @@ describe("decouperPeriodeMatomo — alignement sur les bornes de calendrier Mato
     const precedente = joursCouverts(decouperPeriodeMatomo(jour("2026-03-13"), jour("2026-06-10"), "week"));
 
     expect(courante.filter((j) => precedente.includes(j))).toEqual([]);
+  });
+});
+
+describe("plageDerniersJours", () => {
+  it("couvre exactement les jours demandés, aujourd'hui compris", () => {
+    expect(plageDerniersJours(7, new Date(2026, 9, 6, 15, 0))).toBe("2026-09-30,2026-10-06");
+  });
+
+  it("reste sur le jour local même juste après minuit, là où l'UTC donnerait la veille", () => {
+    expect(plageDerniersJours(1, new Date(2026, 9, 6, 0, 30))).toBe("2026-10-06,2026-10-06");
   });
 });

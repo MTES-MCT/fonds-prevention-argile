@@ -178,7 +178,7 @@ export function TableauDeBord() {
               variation={simulationsEligiblesValue?.variation ?? null}
               loading={false}
               compact
-              tooltip="Simulations éligibles / simulations terminées sur la période — données Matomo"
+              tooltip="Données Matomo : visites ayant affiché un résultat éligible / visites ayant affiché un résultat, sur la période. Une visite qui obtient les deux verdicts compte deux fois au total."
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}

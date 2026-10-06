@@ -258,7 +258,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par departement"
                     columnLabel="Departements"
-                    tooltip="Données Matomo (toutes simulations, y compris anonymes)"
+                    tooltip="Données Matomo : visites ayant affiché un résultat, anonymes comprises"
                     rows={[...(topDepartementsMatomo ?? [])]
                       .sort((a, b) => b.simulations - a.simulations)
                       .slice(0, 5)
@@ -273,7 +273,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
-                    tooltip="Données Matomo (toutes simulations, y compris anonymes)"
+                    tooltip="Données Matomo : visites ayant affiché un résultat, anonymes comprises"
                     rows={
                       topCommunesMatomo?.map((c) => ({
                         label: c.commune,
