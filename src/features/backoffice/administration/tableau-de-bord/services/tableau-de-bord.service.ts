@@ -57,6 +57,7 @@ import {
   formaterDateMatomo,
 } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
 import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import { regrouperSimulationsParDepartement } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
@@ -1070,63 +1071,48 @@ export async function getTopDepartementsMatomo(
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
 
-  if (!dimensionId) {
-    console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
-    return getTopDepartementsStats(debut, fin, partner);
-  }
-
-  // Récupérer simulations Matomo par département + données BDD en parallèle
-  const [matomoByDept, bddStats] = await Promise.all([
-    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    }),
+  const [matomoParValeur, bddStats] = await Promise.all([
+    dimensionId
+      ? fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
+          period: "range",
+          date: dateRange,
+          extraSegment: partnerSegment,
+        })
+      : Promise.resolve(new Map<string, { total: number; eligible: number; nonEligible: number }>()),
     getTopDepartementsStats(debut, fin, partner),
   ]);
-
+  const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
   if (matomoByDept.size === 0) {
-    console.warn("[getTopDepartementsMatomo] Matomo n'a retourné aucune donnée, fallback BDD");
-    return bddStats;
+    console.warn("[getTopDepartementsMatomo] aucune simulation Matomo par département : colonne Simulations à 0");
   }
 
-  // Indexer les données BDD par code département pour fusion rapide
+  // Les simulations viennent de Matomo seul : un département absent n'est pas complété par des parcours BDD (autre unité).
   const bddByDept = new Map(bddStats.map((d) => [d.codeDepartement, d]));
-
-  // Fusionner : simulations Matomo + comptes/DN BDD
   const allCodes = new Set([...matomoByDept.keys(), ...bddByDept.keys()]);
   const result: DepartementStats[] = [];
 
   for (const code of allCodes) {
     const matomo = matomoByDept.get(code);
     const bdd = bddByDept.get(code);
-    const officialCode = toOfficialCodeDepartement(code);
-    const nom = getDepartementName(code) ?? bdd?.nomDepartement ?? code;
-
-    const simulations = matomo?.total ?? bdd?.simulations ?? 0;
-    const simulationsEligibles = matomo?.eligible ?? bdd?.simulationsEligibles ?? 0;
-    const comptesCrees = bdd?.comptesCrees ?? 0;
+    const simulations = matomo?.total ?? 0;
+    const simulationsEligibles = matomo?.eligible ?? 0;
     const dossiersDN = bdd?.dossiersDN ?? 0;
 
     result.push({
-      codeDepartement: officialCode,
-      nomDepartement: nom,
+      codeDepartement: toOfficialCodeDepartement(code),
+      nomDepartement: getDepartementName(code) ?? bdd?.nomDepartement ?? code,
       simulations,
       simulationsEligibles,
       pourcentageEligibles: simulations > 0 ? Math.round((simulationsEligibles / simulations) * 100) : 0,
-      comptesCrees,
+      comptesCrees: bdd?.comptesCrees ?? 0,
       dossiersDN,
       transformationGlobale: simulations > 0 ? Math.round((dossiersDN / simulations) * 10000) / 100 : 0,
     });
   }
 
-  // Filtrer par département si demandé
-  if (codeDepartement) {
-    const normalizedFilter = normalizeCodeDepartement(codeDepartement);
-    return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
-  }
-
-  return result;
+  if (!codeDepartement) return result;
+  const normalizedFilter = normalizeCodeDepartement(codeDepartement);
+  return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
 }
 
 /**
