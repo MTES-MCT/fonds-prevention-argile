@@ -1203,6 +1203,18 @@ Source : `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`.
 
 Note : `REFUSE` repasse en `EN_INSTRUCTION` interne (et non `VALIDE`) — c'est volontaire, un dossier refusé n'avance pas l'étape.
 
+Note : **l'état DN n'est jamais recopié tel quel.** L'API GraphQL nomme `sans_suite` ce que
+`ds_status` nomme `classe_sans_suite` : `dsStatusFromEtatDn` (`ds-status.ts`) traduit, et un état
+inconnu est refusé en erreur de synchro plutôt qu'écrit. Avant octobre 2026, la synchro castait
+l'état brut ; Postgres refusait l'UPDATE, mais l'échec était avalé : le dossier restait figé à son
+ancien état, sans `processed_at`, et chaque run comptait un faux changement et réémettait
+`dn_update` vers Brevo. Un UPDATE refusé remonte désormais en erreur. `dn_probe_state`, lui,
+garde le verdict **brut** de DN (`sans_suite`) ; `ds-anomaly.ts` compare après traduction et classe
+une décision déjà reflétée en base « Décision synchronisée », plus en désynchronisation.
+
+Les parcours archivés ou complétés, hors du CRON, ne sont pas rattrapés : sujet reporté, voir
+[SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md).
+
 Note : **un prérempli non déposé n'est pas une erreur de sync** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)).
 DN masque à l'API instructeur un dossier que l'usager n'a pas transmis : `getDossier` répond
 `Dossier not found`. Quand le dossier local n'a **ni `last_sync_at` ni `submitted_at`**,
@@ -1292,7 +1304,7 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
    b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
    c. Appelle `recomputeParcoursStatus` une fois.
-   d. Si `current_status === VALIDE`, appelle `moveToNextStep` qui :
+   d. Si `current_status === VALIDE`, que la synchro du dossier de l'étape courante n'a **pas échoué** (une étape sans dossier numéroté n'est pas un échec) et que l'étape n'a pas changé pendant la synchro, appelle `moveToNextStep` qui :
    - avance à l'étape suivante si non finale ;
    - sinon (étape `factures`) appelle `markAsCompleted` (set `completed_at`).
      e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
@@ -1413,6 +1425,17 @@ Server actions : `src/features/backoffice/administration/synchronisations/action
 
 **Décision** : quand `current_status` devient `VALIDE` après recompute, on appelle `moveToNextStep` automatiquement, **dans le CRON comme dans la sync UI demandeur** (`syncUserDossierStatus` / `syncAllUserDossiers`). Pas de bouton de confirmation côté demandeur. `moveToNextStep` est idempotent et no-op (aucune écriture) si l'étape courante n'est pas `valide`, donc l'appeler systématiquement après recompute est sans risque.
 
+**Exception : pas de progression sur une étape que DN n'a pas confirmée.** Si la relecture du
+dossier de l'étape courante échoue (API DN, UPDATE refusé), le `VALIDE` lu en base peut être
+périmé — un dossier accepté puis classé sans suite côté DN, par exemple. Le CRON, `syncUserDossierStatus`
+et `syncAllUserDossiers` n'appellent alors pas `moveToNextStep` : avancer sur la dernière étape
+marquerait le parcours complété et le sortirait du CRON pour de bon. Un échec sur un dossier
+d'étape **passée** ne bloque rien, pas plus qu'une étape sans dossier numéroté (`choix_amo`),
+qui n'a rien à relire. Même retenue si l'étape a changé pendant la synchro (progression concurrente
+du CRON et du demandeur) : la nouvelle étape n'a pas été relue. Côté demandeur, `syncAllDossiers` nomme les étapes en échec au
+lieu de renvoyer un succès muet, et `ParcoursProvider` ne date plus `lastSync` sur une synchro
+partielle.
+
 **Justification** : à l'origine, il fallait une action utilisateur (visite + clic) pour propager ; si personne ne se connectait, le parcours restait figé indéfiniment, même après acceptation DS. Le CRON a résolu ce cas. Mais tant que la sync UI ne faisait que `recomputeParcoursStatus` (sans `moveToNextStep`), un demandeur **connecté** qui voyait son éligibilité acceptée restait coincé sur `eligibilite/valide` jusqu'au prochain run CRON (jusqu'à plusieurs heures), au lieu de passer immédiatement à `diagnostic/todo`. C'était le symptôme QA (« validé mais pas passé à l'étape suivante »). En appelant `moveToNextStep` aussi côté UI, le parcours avance dès que le demandeur rafraîchit/navigue, et le CRON reste le filet pour les parcours dont personne ne se connecte.
 
 **Alternatives écartées** :
@@ -1512,6 +1535,7 @@ type SyncRunResult =
 ### 6.10 Non-décisions / dette technique connue
 
 - **Pas de purge automatique de l'historique** : `sync_runs` et `sync_run_entries` grossissent indéfiniment. Prévoir un CRON de purge (>90 jours par exemple) en complément.
+- **Rattrapage des dossiers classés sans suite hors CRON** : voir [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md).
 - **Pas de flag explicite « parcours complété » dans `sync_run_entries`** : la complétion se déduit de `stepAfter = factures && statusAfter = valide`. À ajouter si on veut filtrer/agréger sur ce critère dans la vue admin.
 
 ---

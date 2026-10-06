@@ -2,7 +2,7 @@ import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import type { AnnotationLue } from "../adapters/graphql/types";
 import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
 import type { Step } from "../../core/domain/value-objects/step";
-import { DS_TO_INTERNAL_STATUS, DSStatus } from "../domain/value-objects/ds-status";
+import { DS_TO_INTERNAL_STATUS, DSStatus, dsStatusFromEtatDn } from "../domain/value-objects/ds-status";
 import { parcoursRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
@@ -93,7 +93,10 @@ export async function syncDossierStatus(
   // Verdict DN observé (succès) : état réel renvoyé par DN.
   await recordDnProbeState(localDossier.id, dsResult.state);
 
-  const newStatus = dsResult.state as DSStatus;
+  const newStatus = dsStatusFromEtatDn(dsResult.state);
+  if (!newStatus) {
+    return { success: false, error: `Dossier ${dsNumber} : état DN inconnu « ${dsResult.state} »` };
+  }
   const oldStatus = localDossier.dsStatus as DSStatus;
 
   const dates = {
@@ -104,7 +107,11 @@ export async function syncDossierStatus(
   };
 
   if (newStatus !== oldStatus) {
-    await updateDossierStatus(localDossier.id, newStatus, dates);
+    // Sans ce contrôle, un UPDATE refusé passait pour un changement et renotifiait Brevo à chaque run.
+    const ecriture = await updateDossierStatus(localDossier.id, newStatus, dates);
+    if (!ecriture.success) {
+      return { success: false, error: `Dossier ${dsNumber} : écriture du statut ${newStatus} échouée` };
+    }
 
     // Synchro Brevo (flux) : évènement d'update DN. Best-effort, uniquement sur
     // changement réel de ds_status (même condition que sync_run_entries).
@@ -132,7 +139,10 @@ export async function syncDossierStatus(
 
   // Statut inchangé mais on met à jour les dates si pas encore renseignées
   if (dates.submittedAt || dates.instructedAt || dates.processedAt) {
-    await updateDossierStatus(localDossier.id, newStatus, dates);
+    const ecriture = await updateDossierStatus(localDossier.id, newStatus, dates);
+    if (!ecriture.success) {
+      return { success: false, error: `Dossier ${dsNumber} : écriture des dates échouée` };
+    }
   }
 
   return {
@@ -214,9 +224,10 @@ export async function recomputeParcoursStatus(parcoursId: string): Promise<Actio
 export async function syncAllDossiers(
   parcoursId: string,
   dossiers: Array<{ id: string; step: Step; dsNumber: string | null }>
-): Promise<ActionResult<{ totalUpdated: number }>> {
+): Promise<ActionResult<{ totalUpdated: number; etapesEnErreur: Step[] }>> {
   try {
     let totalUpdated = 0;
+    const etapesEnErreur: Step[] = [];
 
     for (const dossier of dossiers) {
       if (!dossier.dsNumber) continue;
@@ -225,6 +236,8 @@ export async function syncAllDossiers(
 
       if (result.success && result.data?.updated) {
         totalUpdated++;
+      } else if (!result.success) {
+        etapesEnErreur.push(dossier.step);
       }
     }
 
@@ -233,7 +246,7 @@ export async function syncAllDossiers(
 
     return {
       success: true,
-      data: { totalUpdated },
+      data: { totalUpdated, etapesEnErreur },
     };
   } catch (error) {
     console.error("Erreur syncAllDossiers:", error);
