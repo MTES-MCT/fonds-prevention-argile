@@ -185,7 +185,12 @@ export function ParcoursProvider({ children, autoSync = false, syncInterval = 30
       const result = await syncAllUserDossiers();
 
       if (result.success && result.data) {
-        setLastSync(new Date());
+        // Une synchro partielle ne date pas lastSync : les dossiers en échec n'ont pas été relus.
+        if (result.data.totalErreurs > 0) {
+          setError("Certains dossiers n'ont pas pu être synchronisés");
+        } else {
+          setLastSync(new Date());
+        }
 
         if (result.data.totalUpdated > 0 || result.data.stepAdvanced) {
           await refreshParcours();

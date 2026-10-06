@@ -224,9 +224,10 @@ export async function recomputeParcoursStatus(parcoursId: string): Promise<Actio
 export async function syncAllDossiers(
   parcoursId: string,
   dossiers: Array<{ id: string; step: Step; dsNumber: string | null }>
-): Promise<ActionResult<{ totalUpdated: number }>> {
+): Promise<ActionResult<{ totalUpdated: number; etapesEnErreur: Step[] }>> {
   try {
     let totalUpdated = 0;
+    const etapesEnErreur: Step[] = [];
 
     for (const dossier of dossiers) {
       if (!dossier.dsNumber) continue;
@@ -235,6 +236,8 @@ export async function syncAllDossiers(
 
       if (result.success && result.data?.updated) {
         totalUpdated++;
+      } else if (!result.success) {
+        etapesEnErreur.push(dossier.step);
       }
     }
 
@@ -243,7 +246,7 @@ export async function syncAllDossiers(
 
     return {
       success: true,
-      data: { totalUpdated },
+      data: { totalUpdated, etapesEnErreur },
     };
   } catch (error) {
     console.error("Erreur syncAllDossiers:", error);

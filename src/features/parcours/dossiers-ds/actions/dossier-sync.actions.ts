@@ -80,6 +80,10 @@ export async function syncUserDossierStatus(step: Step): Promise<ActionResult<Sy
     // `moveToNextStep` est idempotent et no-op (aucune écriture) si le statut n'est pas
     // VALIDE. Voir FLOW-AND-SYNC §6.1.
     const stepBefore = parcours.parcours.currentStep;
+    if (!syncResult.success && step === stepBefore) {
+      // Même règle que le CRON : pas de progression sur un statut que DN n'a pas confirmé.
+      return syncResult;
+    }
     const moveResult = await moveToNextStep(session.userId);
     const stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
 
@@ -103,7 +107,9 @@ export async function syncUserDossierStatus(step: Step): Promise<ActionResult<Sy
 /**
  * Synchronise tous les dossiers de l'utilisateur
  */
-export async function syncAllUserDossiers(): Promise<ActionResult<{ totalUpdated: number; stepAdvanced?: boolean }>> {
+export async function syncAllUserDossiers(): Promise<
+  ActionResult<{ totalUpdated: number; totalErreurs: number; stepAdvanced?: boolean }>
+> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -134,18 +140,21 @@ export async function syncAllUserDossiers(): Promise<ActionResult<{ totalUpdated
       }))
     );
 
-    // Auto-progression côté UI (no-op si l'étape courante n'est pas VALIDE). Voir §6.1.
-    const stepBefore = parcours.parcours.currentStep;
-    const moveResult = await moveToNextStep(session.userId);
-    const stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
-
     if (!result.success) {
       return result;
     }
 
+    // Auto-progression côté UI (no-op si l'étape courante n'est pas VALIDE). Voir §6.1.
+    const stepBefore = parcours.parcours.currentStep;
+    let stepAdvanced = false;
+    if (!result.data.etapesEnErreur.includes(stepBefore)) {
+      const moveResult = await moveToNextStep(session.userId);
+      stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
+    }
+
     return {
       success: true,
-      data: { ...result.data, stepAdvanced },
+      data: { totalUpdated: result.data.totalUpdated, totalErreurs: result.data.etapesEnErreur.length, stepAdvanced },
     };
   } catch (error) {
     console.error("Erreur syncAllUserDossiers:", error);

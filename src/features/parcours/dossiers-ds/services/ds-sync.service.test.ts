@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { syncDossierStatus } from "./ds-sync.service";
+import { syncDossierStatus, syncAllDossiers } from "./ds-sync.service";
 import { getDossierByStep, updateDossierStatus, recordDnProbeState } from "./dossier-ds.service";
 import { graphqlClient, DsGraphQLError } from "../adapters/graphql/client";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -31,6 +31,10 @@ vi.mock("../adapters/graphql/client", () => {
 // module quelle que soit la façon dont il est importé plus bas dans le graphe — mocker le
 // fichier racine suffit (même pattern que amo-selection/amo-auto/amo-validation.service.test.ts).
 vi.mock("@/shared/database/client", () => ({ db: {} }));
+
+vi.mock("@/shared/database/repositories", () => ({
+  parcoursRepo: { findById: vi.fn().mockResolvedValue(null), updateStatus: vi.fn() },
+}));
 
 vi.mock("@/shared/email/brevo", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/shared/email/brevo")>()),
@@ -318,5 +322,35 @@ describe("syncDossierStatus — dossier classé sans suite côté DN", () => {
 
     expect(result.success).toBe(false);
     expect(mockedEmit).not.toHaveBeenCalled();
+  });
+});
+
+describe("syncAllDossiers — échecs individuels", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedRecordDnProbeState.mockResolvedValue(undefined);
+  });
+
+  it("compte les mises à jour et nomme les étapes en échec au lieu de les taire", async () => {
+    mockedGetDossierByStep.mockImplementation(async (_pid, step) =>
+      step === Step.ELIGIBILITE
+        ? ({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never)
+        : ({ id: "d2", dsStatus: DSStatus.EN_CONSTRUCTION } as never)
+    );
+    mockedGetDossierStatus.mockImplementation(async (numero) =>
+      numero === 111
+        ? { ...DOSSIER_DN, state: "sans_suite" as const }
+        : { ...DOSSIER_DN, state: "en_instruction" as const }
+    );
+    mockedUpdateDossierStatus.mockImplementation(async (id) =>
+      id === "d1" ? { success: false, error: "refusé" } : { success: true, data: { updated: true } }
+    );
+
+    const result = await syncAllDossiers("p1", [
+      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "111" },
+      { id: "d2", step: Step.DIAGNOSTIC, dsNumber: "222" },
+    ]);
+
+    expect(result).toEqual({ success: true, data: { totalUpdated: 1, etapesEnErreur: [Step.ELIGIBILITE] } });
   });
 });
