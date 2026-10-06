@@ -115,6 +115,10 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   `docs/ARCHITECTURE.md`, `docs/security/RBAC-ROLES.md`, `docs/parcours/FLOW-AND-SYNC.md`,
   `README.md`, et créer un ADR (`/adr`) si une décision structurante est prise.
   Pas de doc inutile : ne documenter que ce qui change réellement.
+- **Toute modification d'une statistique** (calcul, source, unité, libellé, filtre), publique ou
+  interne, met à jour `docs/stats/STATISTIQUES.md` dans la même PR : une ligne par statistique, ce
+  qu'elle compte en une ou deux phrases. Une statistique ajoutée y entre, une supprimée en sort, et un
+  écart corrigé quitte la section « Écarts connus ».
 - Vérifier les vulnérabilités à chaque fonctionnalité (groupe de commits) : lancer
   `pnpm audit` (et `pnpm audit --prod` pour isoler le runtime). Toute vulnérabilité
   nouvelle ou acceptée doit être tracée dans `docs/security/snyk-accepted-vulnerabilities.md`
@@ -473,5 +477,6 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @docs/security/RBAC-TEST-PLAN.md — Plan de couverture RBAC (anti-fuite / anti-accès non désiré)
 - @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
+- [docs/stats/STATISTIQUES.md](docs/stats/STATISTIQUES.md) — Ce que compte chaque statistique, publique et interne (à lire avant de toucher une stat)
 
 Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).
