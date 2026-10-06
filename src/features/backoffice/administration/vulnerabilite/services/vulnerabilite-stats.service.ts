@@ -134,6 +134,7 @@ export async function getVulnerabiliteTopDepartements(periodeId: PeriodeId): Pro
     const counts = await fetchMatomoCountByDimension(dimensionId, "eventAction==vulnerabilite_result", {
       period: "range",
       date: dateRange,
+      toutesLesLignes: true,
     });
 
     const result: VulnerabiliteTopDepartement[] = [];
