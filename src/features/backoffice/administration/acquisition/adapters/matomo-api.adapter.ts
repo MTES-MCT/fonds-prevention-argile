@@ -3,6 +3,12 @@ import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
 import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
 import { PARTNER_REFERRERS, type PartnerKey } from "@/shared/domain/partners";
+import {
+  lireSimulationsTerminees,
+  simulationsTermineesVides,
+  type LigneEvenementNomme,
+  type SimulationsTerminees,
+} from "../domain/simulations-terminees";
 
 /**
  * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
@@ -444,6 +450,43 @@ export async function fetchMatomoEventsByDepartment(
   );
 
   return sumEventCounts(data, "Events.getAction (departement)");
+}
+
+/**
+ * Simulations terminées par département, lues dans le nom de l'évènement de résultat (`nb_events`).
+ * `Events.getName` met les noms au premier niveau (500 lignes archivées) et non en sous-table (100).
+ */
+export async function fetchMatomoSimulationsTerminees(options: {
+  period: string;
+  date: string;
+  segment?: string;
+}): Promise<SimulationsTerminees> {
+  const config = getMatomoConfig();
+
+  const data = await fetchMatomoApi<LigneEvenementNomme[] | Record<string, LigneEvenementNomme[]>>(
+    {
+      module: "API",
+      method: "Events.getName",
+      idSite: config.siteId,
+      period: options.period,
+      date: options.date,
+      format: "JSON",
+      token_auth: config.apiToken,
+      flat: "1",
+      filter_limit: "-1",
+      segment: options.segment,
+    },
+    config.apiUrl
+  );
+
+  const lignesParPeriode = Array.isArray(data) ? [data] : Object.values(data ?? {});
+  const cumul = simulationsTermineesVides();
+  for (const lignes of lignesParPeriode) {
+    if (!Array.isArray(lignes))
+      throw new Error("Reponse Matomo inattendue (Events.getName): sous-periode non tabulaire");
+    lireSimulationsTerminees(lignes, cumul);
+  }
+  return cumul;
 }
 
 // ---------------------------------------------------------------------------

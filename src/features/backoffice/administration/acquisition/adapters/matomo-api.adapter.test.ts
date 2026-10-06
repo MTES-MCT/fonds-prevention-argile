@@ -18,6 +18,7 @@ import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
+  fetchMatomoSimulationsTerminees,
   fetchMatomoUniqueVisitors,
   fetchMatomoUniqueVisitorsSeries,
   fetchMatomoUniqueVisitorsStrict,
@@ -328,5 +329,66 @@ describe("visiteurs uniques", () => {
     mockFetchResponse({ "2025-10-01,2025-10-31": "n/a" });
 
     await expect(fetchMatomoUniqueVisitorsSeries("month", "2025-10-01,2025-10-31")).rejects.toThrow(/non numerique/);
+  });
+});
+
+describe("fetchMatomoSimulationsTerminees", () => {
+  beforeEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  const ligne = (nom: string, action: string, nb_events: number | string) => ({
+    label: `${nom} - ${action}`,
+    Events_EventName: nom,
+    Events_EventAction: action,
+    nb_events,
+    nb_visits: 1,
+  });
+
+  it("lit les noms au premier niveau, sans plafond de lignes, en nombre d'évènements", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoSimulationsTerminees({ period: "day", date: "2026-10-01", segment: "referrerName==maif.fr" });
+
+    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+    const body = new URLSearchParams(init.body as string);
+    expect(body.get("method")).toBe("Events.getName");
+    expect(body.get("flat")).toBe("1");
+    expect(body.get("filter_limit")).toBe("-1");
+    expect(body.get("segment")).toBe("referrerName==maif.fr");
+  });
+
+  it("répartit les résultats par département et range le reste en non renseigné", async () => {
+    mockFetchResponse([
+      ligne("63", "simulateur_result_eligible", 10),
+      ligne("63", "simulateur_result_non_eligible", "4"),
+      ligne("Nom d'événement indéfini", "simulateur_result_non_eligible", 6),
+      ligne("Nom d'événement indéfini", "simulateur_step_adresse", 50),
+    ]);
+
+    const simulations = await fetchMatomoSimulationsTerminees({ period: "range", date: "2026-09-07,2026-10-06" });
+
+    expect(simulations.parDepartement.get("63")).toEqual({ eligible: 10, nonEligible: 4 });
+    expect(simulations.nonRenseigne).toEqual({ eligible: 0, nonEligible: 6 });
+  });
+
+  it("additionne une réponse découpée par sous-période", async () => {
+    mockFetchResponse({
+      "2026-10-01": [ligne("03", "simulateur_result_eligible", 2)],
+      "2026-10-02": [ligne("3", "simulateur_result_eligible", 3)],
+    });
+
+    const simulations = await fetchMatomoSimulationsTerminees({ period: "day", date: "2026-10-01,2026-10-02" });
+
+    expect(simulations.parDepartement.get("03")).toEqual({ eligible: 5, nonEligible: 0 });
+  });
+
+  it("refuse une sous-période qui n'est pas un tableau", async () => {
+    mockFetchResponse({ "2026-10-01": { result: "error" } });
+
+    await expect(fetchMatomoSimulationsTerminees({ period: "day", date: "2026-10-01,2026-10-02" })).rejects.toThrow(
+      /non tabulaire/
+    );
   });
 });
