@@ -68,6 +68,15 @@ describe("fetchMatomoCountByDimension", () => {
     expect(body.get("method")).toBe("CustomDimensions.getCustomDimension");
   });
 
+  it("lève la limite de lignes Matomo (100 par défaut), qui tronquait la liste des départements", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result");
+
+    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+    expect(new URLSearchParams(init.body as string).get("filter_limit")).toBe("-1");
+  });
+
   it("un seul appel HTTP (contrairement à fetchMatomoSimulationsGroupedByDimension qui en fait 2)", async () => {
     mockFetchResponse([]);
 

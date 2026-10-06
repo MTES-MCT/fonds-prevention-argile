@@ -486,6 +486,8 @@ async function fetchMatomoDimensionRows(
       format: "JSON",
       token_auth: config.apiToken,
       flat: "1",
+      // Une ligne par couple valeur × URL : la limite par défaut (100) tronquait les départements.
+      filter_limit: "-1",
       segment: combineSegments(eventActionSegment, options?.extraSegment) ?? "",
     },
     config.apiUrl
