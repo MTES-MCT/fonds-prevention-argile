@@ -45,12 +45,46 @@ chaque entrée renvoie.
 
 ---
 
+## Statistiques
+
+Écarts de définition entre statistiques au libellé proche, listés dans
+[STATISTIQUES.md § Écarts connus](stats/STATISTIQUES.md#9-écarts-connus). Chacun attend un arbitrage
+produit : le code est simple une fois la définition choisie.
+
+### Simulations terminées sur `/stats` : visites ou simulations
+
+- **Constat** : la page publique compte des visites ayant fait au moins une simulation, le back-office
+  des simulations depuis l'ADR-0046 (environ 1,6 simulation par visite).
+- **Préalable** : décider si le chiffre public passe en simulations (+60 %, à annoncer) ou garde les
+  visites avec un libellé explicite.
+- **À faire** : `getSimulationsTotals` (`public-stats.service.ts`) sur `fetchMatomoSimulationsTerminees`.
+
+### Comptes créés : tous les parcours ou ceux rattachés à un utilisateur
+
+- **Constat** : `/stats` compte tous les parcours, le back-office seulement ceux qui ont un `userId`.
+- **Préalable** : choisir la définition ; la recommandation est celle du back-office.
+
+### Dossiers déposés / validés : trois définitions
+
+- **Constat** : éligibilité seule (`/stats`), toutes étapes sur `submitted_at` (Tableau de bord), statut
+  `en_construction` seul (Demandeurs).
+- **Préalable** : choisir ; la recommandation est d'aligner Demandeurs sur le Tableau de bord.
+
+### Top 5 communes : visites Matomo ou simulations rattachées à un compte
+
+- **Constat** : Acquisition compte des visites (dimension commune), Demandeurs des parcours.
+- **Préalable** : renommer celui de Demandeurs ; compter des simulations par commune demanderait de
+  porter la commune dans l'évènement, ce que l'ADR-0046 n'a pas fait (un seul nom par évènement).
+
+---
+
 ## Sécurité et dépendances
 
 ### Vulnérabilité High `source-map-js` (`pnpm audit --prod`)
 
 - **Constat** : `source-map-js` <1.2.2 (GHSA-68fv-2mgg-jv7q, DoS), transitif via
-  `@socialgouv/matomo-next > next > postcss`, apparu après le refresh d'octobre 2026 et non tracé.
+  `@socialgouv/matomo-next > next > postcss`, apparu après le refresh d'octobre 2026. Tracé comme
+  accepté par la PR #391 : le correctif n'est installable qu'à partir du 7 octobre (`minimumReleaseAge`).
 - **À faire** : override `source-map-js: ^1.2.2`, checksum `.talismanrc`, section « Refresh » de
   [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md).
 
