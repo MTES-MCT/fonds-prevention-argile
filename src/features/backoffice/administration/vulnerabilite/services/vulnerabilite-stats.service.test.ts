@@ -43,8 +43,7 @@ function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): Vulnerabilit
     vegetationPiedFacade: null,
     mitoyennete: null,
     ensoleillement: null,
-    scoreGlobal: 50,
-    scoreParCategorie: { sol: 100, eaux: 30, vegetation: null, divers: 40 },
+    sourceChaleurSousSol: null,
     ...overrides,
   };
 }
@@ -60,8 +59,7 @@ describe("getVulnerabiliteStatsBdd", () => {
     const stats = await getVulnerabiliteStatsBdd("30j");
 
     expect(stats.totalSimulations).toBe(0);
-    expect(stats.scoreMoyen.global).toBeNull();
-    expect(stats.scoreMoyen.parCategorie).toEqual({ sol: null, eaux: null, vegetation: null, divers: null });
+    expect(stats.pointsMoyens).toEqual({ critique: null, vigilance: null, a_verifier: null, bonne_pratique: null });
     for (const critere of stats.reponses) {
       expect(critere.reponses).toEqual([]);
       expect(critere.total).toBe(0);
@@ -93,7 +91,7 @@ describe("getVulnerabiliteStatsBdd", () => {
     expect(essence.reponses).toEqual([]);
   });
 
-  it("résout le libellé d'essence d'arbre depuis ESSENCES_AGRESSIVITE (barème vide dans CRITERES_CONFIG)", async () => {
+  it("résout le libellé d'essence d'arbre, question sans catégorie", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
       makeRow({ arbreProximite: "oui", arbreEssence: "peuplier" }),
       makeRow({ arbreProximite: "oui", arbreEssence: "peuplier" }),
@@ -108,17 +106,19 @@ describe("getVulnerabiliteStatsBdd", () => {
     expect(peuplier).toMatchObject({ label: "Peuplier", count: 2, pourcentage: 67 });
   });
 
-  it("calcule le score moyen global et par catégorie en ignorant les catégories non applicables (null)", async () => {
+  it("calcule le nombre moyen de points par catégorie et par simulation, aléa exclu", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ scoreGlobal: 40, scoreParCategorie: { sol: 100, eaux: 20, vegetation: null, divers: 30 } }),
-      makeRow({ scoreGlobal: 60, scoreParCategorie: { sol: 50, eaux: 40, vegetation: 80, divers: 10 } }),
+      // 2 critiques (réseaux, arbre), 1 vigilance (pente) ; l'essence et l'aléa ne comptent pas.
+      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "peuplier" }),
+      // 1 critique (haies), 1 à vérifier (pente), 1 bonne pratique (réseaux), 1 sans objet.
+      makeRow({ penteTerrain: "plat", haies: "proches_denses", reseauxEnterres: "eloignes", ensoleillement: "modere" }),
+      // 1 vigilance (pente).
+      makeRow(),
     ]);
 
     const stats = await getVulnerabiliteStatsBdd("30j");
 
-    expect(stats.scoreMoyen.global).toBe(50); // (40 + 60) / 2
-    expect(stats.scoreMoyen.parCategorie.sol).toBe(75); // (100 + 50) / 2
-    expect(stats.scoreMoyen.parCategorie.vegetation).toBe(80); // une seule valeur non-null
+    expect(stats.pointsMoyens).toEqual({ critique: 1, vigilance: 0.7, a_verifier: 0.3, bonne_pratique: 0.3 });
   });
 });
 

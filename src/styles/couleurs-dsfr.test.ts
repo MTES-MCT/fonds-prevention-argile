@@ -34,7 +34,7 @@ const SURFACES_NON_THEMEES = [
   "/pdf/", // react-pdf : aucune variable CSS
   "RgaMap.tsx", // superposition sur les tuiles de carte
   "RgaMapLegend.tsx",
-  "ImpactBadge.tsx", // texte sur une couleur d'aléa
+  "CategorieBadge.tsx", // texte sur une couleur de catégorie
   "AleaBadgeDisplay.tsx",
   "NombreDemandesParEtape.tsx", // palette de graphique
 ];

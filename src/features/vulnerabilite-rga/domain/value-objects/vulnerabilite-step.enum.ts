@@ -17,6 +17,7 @@ export const VulnerabiliteStep = {
   VEGETATION_PIED_FACADE: "vegetation_pied_facade",
   MITOYENNETE: "mitoyennete",
   ENSOLEILLEMENT: "ensoleillement",
+  SOURCE_CHALEUR_SOUS_SOL: "source_chaleur_sous_sol",
   RESULTAT: "resultat",
 } as const;
 
@@ -41,6 +42,7 @@ const ETAPES_NUMEROTEES_BASE: VulnerabiliteStep[] = [
   VulnerabiliteStep.VEGETATION_PIED_FACADE,
   VulnerabiliteStep.MITOYENNETE,
   VulnerabiliteStep.ENSOLEILLEMENT,
+  VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL,
 ];
 
 function isArbreEssenceApplicable(answers: PartialVulnerabiliteReponses): boolean {
@@ -59,7 +61,7 @@ export function getNumeroEtape(step: VulnerabiliteStep, answers: PartialVulnerab
   return index >= 0 ? index + 1 : null;
 }
 
-/** Nombre total d'étapes numérotées affichées (10 ou 11 selon le branchement arbre). */
+/** Nombre total d'étapes numérotées affichées (12 ou 13 selon le branchement arbre). */
 export function getTotalEtapes(answers: PartialVulnerabiliteReponses): number {
   return getEtapesNumerotees(answers).length;
 }

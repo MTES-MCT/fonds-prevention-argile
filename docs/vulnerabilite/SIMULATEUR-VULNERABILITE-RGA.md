@@ -1,13 +1,14 @@
 # Simulateur de vulnérabilité RGA
 
 Document de référence du second simulateur public (`/vulnerabilite-rga`) : périmètre, disponibilité
-par environnement, architecture, méthode de calcul, et **backlog des améliorations à faire** avant
+par environnement, architecture, méthode de catégorisation, et **backlog des améliorations à faire** avant
 d'envisager une mise en production.
 
 > À lire avant toute évolution de la feature `src/features/vulnerabilite-rga/`, de l'onglet
 > `/administration/vulnerabilite` ou de la carte « Vulnérabilité au RGA » de l'espace agent.
 > Décisions structurantes : [ADR-0030](../adr/0030-simulateur-vulnerabilite-rga.md) (architecture),
 > [ADR-0031](../adr/0031-stats-vulnerabilite-matomo-bdd.md) (stats),
+> [ADR-0045](../adr/0045-categorisation-qualitative-vulnerabilite.md) (catégorisation, sans score),
 > [ADR-0032](../adr/0032-rattachement-simulation-vulnerabilite-compte.md) (rattachement au compte).
 
 ---
@@ -18,23 +19,23 @@ Sensibiliser le grand public au risque de retrait-gonflement des argiles à part
 environnement proche de la maison**, expliquer les bonnes pratiques et déclencher des actions à
 moindre coût. Ce n'est **pas** un diagnostic, et ce n'est **pas** le simulateur d'éligibilité :
 
-|                | `/simulateur` (éligibilité)                      | `/vulnerabilite-rga` (vulnérabilité)                  |
-| -------------- | ------------------------------------------------ | ----------------------------------------------------- |
-| Question posée | « Ai-je droit au Fonds ? »                       | « Qu'est-ce qui fragilise ma maison, et que faire ? » |
-| Sortie         | éligible / non éligible, entrée dans le parcours | score 0-100 + recommandations priorisées              |
-| Sujet          | logement, revenus, aléa                          | environnement proche : eaux, végétation, exposition   |
-| Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                           |
+|                | `/simulateur` (éligibilité)                      | `/vulnerabilite-rga` (vulnérabilité)                    |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------- |
+| Question posée | « Ai-je droit au Fonds ? »                       | « Qu'est-ce qui fragilise ma maison, et que faire ? »   |
+| Sortie         | éligible / non éligible, entrée dans le parcours | points critiques / de vigilance / à surveiller + fiches |
+| Sujet          | logement, revenus, aléa                          | environnement proche : eaux, végétation, exposition     |
+| Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                             |
 
 Le questionnaire ne porte volontairement **ni sur le bâti** (année, niveaux, fondations) **ni sur les
-revenus** : 12 questions, toutes observables depuis le jardin.
+revenus** : 13 questions, observables depuis le jardin ou le sous-sol.
 
 ---
 
 ## 2. Disponibilité par environnement
 
-**La feature n'est pas déployée en production.** Sa grille de pondération n'est pas validée par un
-expert RGA : publier un score de vulnérabilité non validé engagerait le produit sur une méthode
-qu'il ne peut pas défendre.
+**La feature n'est pas déployée en production.** Sa grille de catégorisation n'est pas encore complète (essences d'arbre
+sans catégorie, fiches conseil manquantes) : publier un résultat partiel engagerait le produit sur
+une méthode qu'il ne peut pas encore défendre.
 
 Bascule unique : `isVulnerabiliteRgaActive()`
 (`domain/value-objects/vulnerabilite-disponibilite.ts`), dérivée de `NEXT_PUBLIC_APP_ENV` —
@@ -64,11 +65,11 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 
 **Pour la mettre en ligne**, quatre choses à faire ensemble, jamais séparément :
 
-1. faire valider la grille (`grille-ponderation.ts` + `ESSENCES_AGRESSIVITE`) par l'expert RGA ;
+1. faire valider la grille (`grille-categorisation.ts`) par l'expert RGA, essences comprises ;
 2. **limiter le débit de `enregistrerResultatVulnerabiliteAction`** : endpoint public, non
    authentifié, sans plafond ni déduplication — tant que la feature est hors production le risque
    est théorique (l'action est un no-op avant tout accès base), il devient réel le jour de la
-   bascule, sur les données mêmes qui servent à calibrer la grille ;
+   bascule ;
 3. basculer `isVulnerabiliteRgaActive()` (ajouter `"production"` à `ENVIRONNEMENTS_ACTIFS`) ;
 4. retirer le `noindex` des deux pages **et** les entrées correspondantes de `src/app/robots.ts`.
 
@@ -76,24 +77,25 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 
 ## 3. Architecture
 
-Feature DDD-lite autonome, sans dépendance vers `features/simulateur` (cf. ADR-0030) — seules les
-briques déjà génériques sont réutilisées telles quelles : `shared/adapters/ban`,
-`shared/services/bdnb`, `features/rga-map`, route `/api/rga/alea`.
+Feature DDD-lite autonome. Elle réutilise les briques génériques (`shared/adapters/ban`,
+`shared/services/bdnb`, `features/rga-map`, route `/api/rga/alea`) et, seule dépendance vers
+`features/simulateur`, ses trois règles d'éligibilité pures (cf. ADR-0045).
 
 ```
 domain/
-  value-objects/grille-ponderation.ts      ← LA méthode (poids + barèmes). Seul fichier à ajuster.
+  value-objects/grille-categorisation.ts   ← LA méthode (catégorie par réponse). Seul fichier à ajuster.
   value-objects/simulation-payload.ts      ← charge utile + validation Zod, dérivée de la grille
   value-objects/vulnerabilite-critere-fields.ts  ← critère ↔ colonne DB ↔ réponse aplatie
   value-objects/vulnerabilite-disponibilite.ts   ← bascule d'environnement
-  services/scoring.service.ts              ← calcul du score (aucun chiffre métier, sauf les seuils)
-  services/recommandations.service.ts      ← priorisation `poidsGlobal × score`
+  services/categorisation.service.ts       ← réponses → points catégorisés, décompte
+  services/synthese-resultat.service.ts    ← phrase et niveau du callout, partagés HTML + PDF
+  services/eligibilite-fonds.service.ts    ← renvoi vers `/simulateur`, règles importées
+  services/recommandations.service.ts      ← fiches regroupées en trois sections
   catalogues/recommandations.catalogue.ts  ← fiches conseil, par critère et réponse déclenchante
   rules/navigation/step-flow.rules.ts      ← ordre des étapes + branchement arbre → essence
   value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
-  value-objects/niveau-badge.const.ts      ← labels/couleurs des badges de niveau, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 14 étapes, 10 illustrations SVG, jauge, recommandations
+components/                                ← 15 étapes, 11 illustrations SVG, synthèse, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
@@ -102,43 +104,54 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 ### Parcours
 
 `intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (+ essence si arbre proche) →
-haies → végétation en pied de façade → mitoyenneté → ensoleillement → résultat`
+haies → végétation en pied de façade → mitoyenneté → ensoleillement → source de chaleur en
+sous-sol → résultat`
 
 Seule bifurcation : `arbre_essence` n'est posée que si `arbre_proximite === "oui"`. Le compteur
-d'étapes passe donc de 11 à 12 selon la réponse.
+d'étapes passe donc de 12 à 13 selon la réponse.
 
-### Calcul du score
+### Catégorisation des réponses
 
-Une seule pondération : le barème par réponse (0 = idéal, 100 = risque maximal),
-`grille-ponderation.ts`. Il n'y a **plus** de poids de catégorie ni de poids de critère — la
-cascade catégorie → critère → réponse rendait impossible de savoir si un mauvais score « eaux »
-était plus grave qu'un mauvais score « végétation », donc arbitraire à calibrer. Chaque critère
-répondu compte désormais à égalité.
+Il n'y a plus de score (ADR-0045). Chaque réponse porte une catégorie, fournie par le métier et
+lue dans `grille-categorisation.ts` :
 
-Le score global n'est pas une moyenne arithmétique simple, mais une **moyenne quadratique
-(RMS)** : `racine(moyenne(score²))`, renormalisée sur les seuls critères répondus/applicables
-(un critère non répondu ou non applicable — ex. `arbre_essence` sans arbre proche — est exclu du
-dénominateur, jamais compté comme « bon »). Une moyenne simple dilue le risque quand quelques
-mauvaises réponses sont noyées parmi beaucoup de bonnes (2 critères au pire score sur 12 ne
-donnent que 17/100 en moyenne simple) ; la RMS fait mécaniquement peser plus lourd les scores
-élevés, donc cumuler plusieurs sources de vulnérabilité fait monter le score plus vite que si
-elles étaient isolées (même exemple : 41/100 en RMS). `scoring.service.test.ts` verrouille ce
-comportement.
+| Catégorie        | Label sur la réponse    | Effet sur le résultat                     |
+| ---------------- | ----------------------- | ----------------------------------------- |
+| `critique`       | Point critique          | compté dans la synthèse, section en tête  |
+| `vigilance`      | Point de vigilance      | compté dans la synthèse, deuxième section |
+| `a_verifier`     | À surveiller            | troisième section                         |
+| `bonne_pratique` | Bonne pratique en place | aucun                                     |
+| `sans_objet`     | aucun                   | aucun — ni affichée ni comptée            |
 
-La catégorie `sol` (aléa RGA) compte comme n'importe quel autre critère dans le score (elle
-pesait 30 % via le poids de catégorie, elle pèse désormais 1 critère parmi les ~12). Elle reste
-en revanche marquée `actionnable: false` : elle entre dans le score mais ne génère **jamais**
-de recommandation — on ne demande pas à un ménage de changer son sol.
+Quatre règles à connaître :
 
-`CATEGORIES_CONFIG` (sol/eaux/végétation/divers) survit comme simple regroupement d'affichage
-(filtre `actionnable` des recommandations, cartes « score moyen par catégorie » de
-`/administration/vulnerabilite`) — ces scores par catégorie sont recalculés en RMS non
-pondérée sur les seuls critères de la catégorie, purement informatifs, sans effet sur le score
-global.
+- **L'aléa RGA n'est pas une question.** Donnée de contexte issue de la carte, il est cité dans la
+  synthèse et ne produit aucun point.
+- **L'essence de l'arbre est posée mais sans catégorie** (`sansCategorie`), en attente des études
+  par essence. C'est « arbre proche = oui » qui porte le point critique.
+- **« À surveiller » s'explique** : un point sans problème a priori, qui peut devenir critique
+  (fuite, défaut d'entretien). L'explication (`CATEGORIES_AFFICHAGE.a_verifier.explication`)
+  s'affiche sous la réponse sélectionnée et sous le titre de la section de résultat. L'id
+  `a_verifier` est conservé : les statistiques le relisent.
+- **Un test échoue si une réponse n'a pas de catégorie** (`grille-categorisation.test.ts`), hors
+  question marquée `sansCategorie`.
 
-3 niveaux de vulnérabilité (`faible` / `moyen` / `fort`, `scoring.service.ts`), coupures à
-34 et 67 (tiers égaux de l'échelle 0-100) — remplacent les 4 niveaux précédents
-(`faible`/`modérée`/`élevée`/`très élevée`, coupures 25/50/75).
+### Écran de résultat
+
+Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
+
+- **Synthèse** (`SyntheseResultat`) : mise en avant DSFR (`fr-callout`, pas une alerte — c'est un
+  contenu éditorial, pas un retour système). Accent `pink-tuile` dès qu'un point est critique,
+  `yellow-moutarde` s'il n'y a que de la vigilance, `green-emeraude` sinon. L'icône et le titre
+  doublent la couleur. Hors zone argileuse (aléa `nul`), une phrase relativise les points sans
+  les retirer : la carte d'aléa est une estimation, et ils redeviennent déterminants s'il y a
+  de l'argile sous les fondations.
+- **Callout expert** : toujours affiché. Seul son bouton vers `/simulateur` est conditionnel —
+  département éligible, aléa fort, maison non mitoyenne (`remplitCriteresEligibiliteFonds`, qui
+  appelle les règles du simulateur d'éligibilité).
+- **Fiches** : celles du catalogue, regroupées en « Points critiques », « Points de vigilance »,
+  « Points à surveiller », une section vide étant omise. Un point qu'aucune fiche ne couvre est
+  listé sous sa section, sans conseil.
 
 ---
 
@@ -146,40 +159,49 @@ global.
 
 Chaque simulation terminée écrit une ligne dans `vulnerabilite_simulations` — table **strictement
 anonyme** : pas de FK `users`, pas d'adresse, pas de commune, pas de coordonnées, pas
-d'identifiant de visiteur. Seuls le code département, les réponses et les scores.
+d'identifiant de visiteur. Seuls le code département et les réponses : les catégories se relisent
+dans la grille en vigueur, elles ne sont pas stockées.
 
 Deux garde-fous, parce que la page est publique et non authentifiée :
 
 - le navigateur n'envoie qu'une charge utile réduite (`toSimulationPayload`) — l'adresse, les
   coordonnées, la clé BAN et l'identifiant RNB **ne quittent jamais le navigateur** ;
-- le serveur valide chaque réponse contre la grille et **recalcule le score** : rien de ce que le
-  client affirme n'entre dans les stats de calibrage.
+- le serveur valide chaque réponse contre la grille : seule une réponse connue est stockée, et
+  aucune catégorie n'est acceptée du client.
 
 Répartition Matomo / BDD (ADR-0031) : Matomo pour le volume, le funnel et la répartition par
-département ; la table pour la répartition par réponse et le score moyen, que Matomo ne sait pas
-agréger. Onglet `/administration/vulnerabilite`, ouvert à tous les agents (agrégats non nominatifs,
+département ; la table pour la répartition par réponse et le nombre moyen de points par
+catégorie (critiques en tête), que Matomo ne sait pas agréger. Onglet `/administration/vulnerabilite`, ouvert à tous les agents (agrégats non nominatifs,
 même logique qu'ADR-0017).
 
 ### Export PDF
 
 Bouton secondaire « Télécharger les solutions en PDF » sur l'écran de résultat
 (`ResultVulnerabilite.tsx`) : génère et télécharge, **entièrement côté client**
-(`PDFDownloadLink` de `@react-pdf/renderer`), un PDF reprenant le score, le callout d'avertissement
+(`PDFDownloadLink` de `@react-pdf/renderer`), un PDF reprenant la synthèse, le callout d'avertissement
 (sans le CTA vers `/simulateur`, hors-sujet une fois imprimé), la pédagogie RGA et les cartes de
-recommandation — un en-tête façon .gouv.fr (bandeau tricolore + Ministère + « Fonds Prévention
+recommandation par section — un en-tête façon .gouv.fr (bandeau tricolore + Ministère + « Fonds Prévention
 Argile ») en tête de document pour que le lecteur se souvienne d'où il vient une fois imprimé ou
 partagé.
 
 `VulnerabilitePdfDocument.tsx` (`components/pdf/`) reconstitue la mise en page en primitives PDF
 (`View`/`Text`/`Svg`), le CSS/DSFR n'étant pas disponible dans ce rendu — y compris le triangle
 d'alerte « Problème », dessiné en SVG plutôt qu'en glyphe unicode (les polices standard PDFKit
-n'ont pas « ▲ »). Les textes (callout, pédagogie) et les couleurs de badge de niveau sont partagés
-avec le rendu HTML via `resultat-content.const.ts` et `niveau-badge.const.ts`, pour que les deux
-rendus ne puissent pas diverger. Aucune illustration dans le PDF (non demandé, et les schémas SVG
-du dossier `illustrations/` ne sont pas conçus pour ce second moteur de rendu).
+n'ont pas « ▲ »). La synthèse et les sections sont calculées une fois et passées aux deux rendus ; les
+textes (callout, pédagogie) sont partagés via `resultat-content.const.ts`.
+
+**Illustrations des fiches.** `@react-pdf/renderer` n'accepte que PNG et JPEG : le bouton
+convertit d'abord les schémas SVG en PNG dans le navigateur (`rasteriser-illustrations.ts`,
+canvas au double de la taille native) et ne monte le document qu'ensuite. Une illustration
+en échec est omise, sans bloquer le PDF. La table `illustrationId → SVG` est partagée avec
+l'écran (`illustrations/illustrations-recommandations.ts`).
+
+**Sauts de page.** Une fiche ne se coupe jamais (`wrap={false}`), pas plus qu'une puce, la
+synthèse ou le callout. Le titre d'une section est attaché à sa première fiche dans un même bloc
+insécable : `minPresenceAhead` a été essayé et ne l'empêchait pas de rester seul en bas de page.
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
-que tout le reste de la page, alors que le bouton n'apparaît qu'à la 14e étape. `ResultVulnerabilite`
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 15e étape. `ResultVulnerabilite`
 la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
 l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
 compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
@@ -213,49 +235,39 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ### Méthode et contenu
 
-- **P0 — Faire valider la grille par un expert RGA.** `CATEGORIES_CONFIG`, `CRITERES_CONFIG` et
-  `ESSENCES_AGRESSIVITE` sont des valeurs de départ assumées, pas une méthode. Tant que ce point
-  n'est pas levé, le reste de cette liste est secondaire.
-- **P0 — Remplacer `ESSENCES_AGRESSIVITE`** par la table d'agressivité définitive (bloc isolé,
-  aucun autre fichier à toucher).
-- Trou de contenu : `arbre_proximite = "ne_sais_pas"` vaut 50 mais ne déclenche aucune fiche du
-  catalogue — l'utilisateur est pénalisé sans piste d'action. Ajouter une fiche « faire identifier
-  l'arbre / mesurer la distance aux fondations ».
-- Vérifier avec le métier la décision « végétation en pied de façade = à supprimer d'office »,
-  aujourd'hui binaire. Le gravier de propreté distingue désormais présence localisée (60) et
-  présence sur tout le pourtour (100), mais ces deux valeurs restent, comme le reste de la
-  grille, des poids de départ non validés par un expert RGA.
+- **P0 — Catégoriser les essences d'arbre.** La question est posée mais ne produit rien ; les
+  catégories viendront des études par essence. Retirer alors `sansCategorie` de `arbre_essence`
+  et décider si la fiche arbre revient sur cette question.
+- **P0 — Écrire les fiches manquantes.** Six réponses classées à traiter n'ont pas de fiche :
+  pente « plat » et « s'éloigne de la maison », gravier « absent », récupérateur « en bon état »,
+  source de chaleur « mur isolé » et « mur non isolé ». La liste est figée par
+  `recommandations.service.test.ts` (`getReponsesSansCarte`).
+- Préciser à l'écran ce que « proche » veut dire pour l'arbre et la haie.
+- La fiche arbre s'affiche aussi sur « je ne sais pas », alors que son texte suppose un arbre
+  présent : à reformuler ou à dédoubler.
 
 ### Cohérence produit
 
-- Les bandes de la jauge (5 × 36°, coupures à 20/40/60/80) ne correspondent pas aux seuils de
-  niveau (34/67) : un score de 60 est annoncé « moyenne » avec l'aiguille dans une bande de
-  couleur différente. Passer à 3 bandes alignées sur les vrais seuils.
 - Une seconde simulation dans la même session écrase le pointeur du parcours (dernière simulation
   connue). Voulu, mais à revoir si l'espace agent doit un jour montrer une évolution dans le temps.
+- Les libellés des réponses vivent à deux endroits : la grille (stats, espace agent, PDF) et les
+  composants `Step*` (questionnaire). Ils diffèrent légèrement ; à unifier dans la grille.
 
 ### Technique
 
-- Déplacer `SEUILS_NIVEAU` (34/67) de `scoring.service.ts` vers la grille : ces seuils font
-  partie de la méthode, ils pilotent la jauge et tous les badges.
-- Supprimer le cas particulier `arbre_essence` (`bareme: []` + `if (critere.id === "arbre_essence")`
-  dans `scoring.service.ts`, `getReponseLabel` et `simulation-payload.ts`) en générant son barème
-  depuis `ESSENCES_AGRESSIVITE` au chargement du module.
 - `getPreviousStep` et `canGoToStep` (`step-flow.rules.ts`) ne sont appelés que par leurs propres
   tests : la navigation arrière passe par `history`. Du code mort qui a l'air couvert.
-- Remplacer les couleurs en dur de `niveau-badge.const.ts` (badges `ImpactBadge`, jauge et PDF) par
-  les classes/variables DSFR (`fr-badge--success/warning/error`, `--background-contrast-*`) pour
-  suivre le thème sombre — la factorisation dans ce fichier (au lieu de deux composants) facilite
-  ce remplacement le jour venu.
+- Remplacer les couleurs en dur de `CATEGORIES_AFFICHAGE` (badge et PDF) par les classes ou
+  variables DSFR pour suivre un éventuel thème sombre.
 - `ETAPES_NUMEROTEES_BASE` (`vulnerabilite-step.enum.ts`) duplique volontairement l'ordre et la
   règle de branchement de `step-flow.rules.ts` : à dériver si une seconde question conditionnelle
   apparaît.
 - Ajouter un test négatif RBAC sur les trois Server Actions de `vulnerabilite-stats.actions.ts`
   (cf. [RBAC-TEST-PLAN §5](../security/RBAC-TEST-PLAN.md)) — gravité faible (agrégats anonymes),
   mais c'est la règle du repo pour toute nouvelle surface.
-- Créer le funnel Matomo du simulateur et renseigner `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE`
-  sur staging (sans elle, le widget funnel affiche « données non disponibles », le reste de
-  l'onglet fonctionne).
+- Créer le funnel Matomo du simulateur, avec l'étape `vulnerabilite_step_source_chaleur_sous_sol`,
+  et renseigner `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` sur staging (sans elle, le widget
+  funnel affiche « données non disponibles », le reste de l'onglet fonctionne).
 - La limitation de débit de l'écriture anonyme est suivie comme **étape de mise en ligne** (§2),
   pas comme amélioration : elle n'a pas d'objet tant que l'action est un no-op en production.
 
@@ -263,21 +275,22 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ## 7. Fichiers clés
 
-| Rôle                                          | Fichier                                                                                       |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Méthode de calcul (poids, barèmes, essences)  | `vulnerabilite-rga/domain/value-objects/grille-ponderation.ts`                                |
-| Bascule d'environnement                       | `vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite.ts`                       |
-| Charge utile + validation Zod                 | `vulnerabilite-rga/domain/value-objects/simulation-payload.ts`                                |
-| Calcul du score                               | `vulnerabilite-rga/domain/services/scoring.service.ts`                                        |
-| Priorisation des recommandations              | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
-| Navigation et branchement                     | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
-| Orchestrateur des 14 étapes                   | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
-| Écriture anonyme                              | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
-| Table anonyme                                 | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
-| PDF téléchargeable                            | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |
-| Bouton PDF (chargement dynamique)             | `vulnerabilite-rga/components/pdf/TelechargerPdfButton.tsx`                                   |
-| Textes partagés HTML + PDF                    | `vulnerabilite-rga/domain/value-objects/resultat-content.const.ts`                            |
-| Labels/couleurs de niveau partagés HTML + PDF | `vulnerabilite-rga/domain/value-objects/niveau-badge.const.ts`                                |
-| Rattachement à la connexion                   | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
-| Stats back-office                             | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`             |
-| Carte espace agent                            | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                 |
+| Rôle                                   | Fichier                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Méthode (catégorie par réponse)        | `vulnerabilite-rga/domain/value-objects/grille-categorisation.ts`                             |
+| Bascule d'environnement                | `vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite.ts`                       |
+| Charge utile + validation Zod          | `vulnerabilite-rga/domain/value-objects/simulation-payload.ts`                                |
+| Catégorisation et décompte des points  | `vulnerabilite-rga/domain/services/categorisation.service.ts`                                 |
+| Synthèse du résultat (callout)         | `vulnerabilite-rga/domain/services/synthese-resultat.service.ts`                              |
+| Renvoi conditionnel vers `/simulateur` | `vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`                              |
+| Sections de recommandations            | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
+| Navigation et branchement              | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
+| Orchestrateur des 15 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
+| Écriture anonyme                       | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
+| Table anonyme                          | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
+| PDF téléchargeable                     | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |
+| Bouton PDF (chargement dynamique)      | `vulnerabilite-rga/components/pdf/TelechargerPdfButton.tsx`                                   |
+| Textes partagés HTML + PDF             | `vulnerabilite-rga/domain/value-objects/resultat-content.const.ts`                            |
+| Rattachement à la connexion            | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
+| Stats back-office                      | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`             |
+| Carte espace agent                     | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                 |

@@ -18,11 +18,20 @@ import {
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type {
   CritereReponsesStats,
-  VulnerabiliteScoreMoyen,
+  VulnerabilitePointsMoyens,
   VulnerabiliteTopDepartement,
 } from "@/features/backoffice/administration/vulnerabilite/domain/types/vulnerabilite-stats.types";
 import type { FunnelStatistiques } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
-import { CATEGORIES_CONFIG } from "@/features/vulnerabilite-rga/domain/value-objects/grille-ponderation";
+import {
+  CATEGORIES_AFFICHAGE,
+  type CategorieAffichee,
+} from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
+
+const AUTRES_CATEGORIES: CategorieAffichee[] = ["vigilance", "a_verifier", "bonne_pratique"];
+
+function formaterMoyenne(valeur: number | null | undefined): string {
+  return valeur === null || valeur === undefined ? "—" : valeur.toLocaleString("fr-FR");
+}
 
 /**
  * Onglet "Vulnérabilité" — mesure l'usage et l'impact du simulateur `/vulnerabilite-rga`.
@@ -34,7 +43,7 @@ export default function VulnerabilitePanel() {
 
   const [totalSimulations, setTotalSimulations] = useState<number | null>(null);
   const [reponses, setReponses] = useState<CritereReponsesStats[]>([]);
-  const [scoreMoyen, setScoreMoyen] = useState<VulnerabiliteScoreMoyen | null>(null);
+  const [pointsMoyens, setPointsMoyens] = useState<VulnerabilitePointsMoyens | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +64,7 @@ export default function VulnerabilitePanel() {
       if (result.success) {
         setTotalSimulations(result.data.totalSimulations);
         setReponses(result.data.reponses);
-        setScoreMoyen(result.data.scoreMoyen);
+        setPointsMoyens(result.data.pointsMoyens);
       } else {
         setError(result.error);
       }
@@ -156,25 +165,21 @@ export default function VulnerabilitePanel() {
               className="fr-col-12 fr-col-md-6 fr-col-lg-3"
             />
             <DashboardStatCard
-              value={scoreMoyen?.global === null || scoreMoyen === null ? "—" : String(scoreMoyen.global)}
-              label="Score de vulnérabilité moyen (/100)"
+              value={formaterMoyenne(pointsMoyens?.critique)}
+              label="Points critiques par simulation (moyenne)"
               variation={null}
               loading={statsLoading}
-              tooltip="Score global moyen des simulations terminées sur la période — 0 = risque minimal, 100 = risque maximal"
+              tooltip="Nombre moyen de réponses classées « Point critique » par simulation terminée sur la période, selon la grille de catégorisation en vigueur"
               className="fr-col-12 fr-col-md-6 fr-col-lg-3"
             />
           </div>
 
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-2w">
-            {CATEGORIES_CONFIG.map((categorie) => (
+            {AUTRES_CATEGORIES.map((categorie) => (
               <DashboardStatCard
-                key={categorie.id}
-                value={
-                  scoreMoyen === null || scoreMoyen.parCategorie[categorie.id] === null
-                    ? "—"
-                    : String(scoreMoyen.parCategorie[categorie.id])
-                }
-                label={categorie.label}
+                key={categorie}
+                value={formaterMoyenne(pointsMoyens?.[categorie])}
+                label={`${CATEGORIES_AFFICHAGE[categorie].pluriel} par simulation (moyenne)`}
                 variation={null}
                 loading={statsLoading}
                 compact

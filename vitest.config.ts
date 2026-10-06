@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    // Valeur factice : seuls les tests signent avec, jamais un environnement déployé.
+    env: { JWT_SECRET: "jwt-secret-factice-reserve-aux-tests-vitest" },
     globals: true,
     css: true,
     coverage: {

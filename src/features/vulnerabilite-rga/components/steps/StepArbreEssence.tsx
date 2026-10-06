@@ -4,7 +4,7 @@ import { useState } from "react";
 import { QuestionStep } from "../shared/QuestionStep";
 import Image from "next/image";
 import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
-import { ESSENCES_AGRESSIVITE } from "../../domain/value-objects/grille-ponderation";
+import { getCritereConfig } from "../../domain/value-objects/grille-categorisation";
 import type {
   ReponseArbreEssence,
   PartialVulnerabiliteReponses,
@@ -19,7 +19,10 @@ interface StepArbreEssenceProps {
   onBack: () => void;
 }
 
-const OPTIONS = Object.entries(ESSENCES_AGRESSIVITE).map(([value, { label }]) => ({ value, label }));
+const OPTIONS = (getCritereConfig("arbre_essence")?.reponses ?? []).map(({ reponse, label }) => ({
+  value: reponse,
+  label,
+}));
 
 export function StepArbreEssence({
   initialValue,

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { DS_ANNOTATION_LIEN_FPA_ELIGIBILITE, getAnnotationLienFpaEligibilite } from "./ds-annotations";
+import {
+  DS_ANNOTATION_LIEN_FPA_ELIGIBILITE,
+  DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE,
+  estInstructionAutomatiqueActive,
+  idsAnnotationsInstruction,
+  getAnnotationLienFpaEligibilite,
+} from "./ds-annotations";
 
 describe("getAnnotationLienFpaEligibilite", () => {
   afterEach(() => {
@@ -31,5 +37,48 @@ describe("getAnnotationLienFpaEligibilite", () => {
   it("ne réutilise pas l'id des démarches diagnostic/devis", () => {
     // Erreur d'origine de la PR #272 : Champ-6352089 appartient à diagnostic et devis.
     expect(Object.values(DS_ANNOTATION_LIEN_FPA_ELIGIBILITE)).not.toContain("Q2hhbXAtNjM1MjA4OQ==");
+  });
+});
+
+describe("idsAnnotationsInstruction", () => {
+  afterEach(() => {
+    delete DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999];
+  });
+
+  it("renvoie les cinq annotations de la préprod", () => {
+    expect(idsAnnotationsInstruction(146377)).toEqual({
+      avisImpot: "Q2hhbXAtNzAyMDIwNw==",
+      typeMenage: "Q2hhbXAtNzAzMDU1Mw==",
+      tauxSubvention: "Q2hhbXAtNzAzMDU1NQ==",
+      lienCarte: "Q2hhbXAtNzAzNTUwNw==",
+      zoneAlea: "Q2hhbXAtNzAzNTUwOA==",
+    });
+  });
+
+  it("renvoie les cinq annotations de la prod, relevées sur la démarche 126061", () => {
+    expect(idsAnnotationsInstruction(126061)).toEqual({
+      avisImpot: "Q2hhbXAtNzAzNTg1Mw==",
+      typeMenage: "Q2hhbXAtNzAzNTg3MQ==",
+      tauxSubvention: "Q2hhbXAtNzAzNTg4Ng==",
+      lienCarte: "Q2hhbXAtNzAzNTkyNQ==",
+      zoneAlea: "Q2hhbXAtNzAzNTkzMA==",
+    });
+    expect(estInstructionAutomatiqueActive(126061)).toBe(true);
+  });
+
+  it("active chaque annotation séparément", () => {
+    DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[999] = "Q2hhbXAtMQ==";
+
+    expect(idsAnnotationsInstruction(999)).toEqual({
+      avisImpot: undefined,
+      typeMenage: "Q2hhbXAtMQ==",
+      tauxSubvention: undefined,
+    });
+    expect(estInstructionAutomatiqueActive(999)).toBe(true);
+  });
+
+  it("considère active une démarche dès qu'une annotation y est répertoriée", () => {
+    expect(estInstructionAutomatiqueActive(146377)).toBe(true);
+    expect(estInstructionAutomatiqueActive(999)).toBe(false);
   });
 });

@@ -1,12 +1,21 @@
 import { parcoursRepo, syncRunRepo } from "@/shared/database/repositories";
 import { SyncRunStatus, SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
-import type { Step } from "@/shared/domain/value-objects/step.enum";
+import { Step } from "@/shared/domain/value-objects/step.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import type { DsStatusChange } from "@/shared/database/schema/sync-run-entries";
+import {
+  ajouterAuBilanAnnotationsDn,
+  bilanAnnotationsDnVide,
+  type AnnotationDn,
+  type AnnotationsDnEntree,
+  type VerdictControleDn,
+} from "@/shared/domain/value-objects/bilan-annotations-dn";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
+import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
+import { completerLienFpa } from "./lien-fpa.service";
 
 /**
  * Synchronisation batch des parcours (CRON et déclenchement manuel super-admin).
@@ -78,6 +87,7 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
   let totalUpdated = 0;
   let totalErrors = 0;
   const errorMessages: string[] = [];
+  let bilanAnnotationsDn = bilanAnnotationsDnVide();
 
   for (const parcours of parcoursList) {
     try {
@@ -89,8 +99,17 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
         result.statusBefore !== result.statusAfter ||
         result.stepBefore !== result.stepAfter;
       const hadErrors = result.errors.length > 0;
+      // Un contrôle lancé ou un lien complété mérite sa ligne, même sans rien écrire : on voit ce qui a tourné.
+      const controleLance = result.annotationsDn !== null;
+      if (result.annotationsDn) {
+        bilanAnnotationsDn = ajouterAuBilanAnnotationsDn(
+          bilanAnnotationsDn,
+          result.annotationsDn,
+          result.verdictControle
+        );
+      }
 
-      if (changedSomething || hadErrors) {
+      if (changedSomething || hadErrors || controleLance) {
         await syncRunRepo.addEntry({
           syncRunId: run.id,
           parcoursId: parcours.id,
@@ -101,6 +120,7 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
           dsStatusChanges: result.dsChanges,
           stepAdvanced: result.stepAdvanced,
           error: hadErrors ? result.errors.join(" | ") : undefined,
+          annotationsDn: result.annotationsDn ?? undefined,
         });
         if (changedSomething) totalUpdated++;
       }
@@ -151,6 +171,7 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
     totalParcoursUpdated: totalUpdated,
     totalErrors,
     errorSummary: errorMessages.length > 0 ? errorMessages.slice(0, 20).join("\n") : null,
+    bilanAnnotationsDn,
   });
 
   return {
@@ -171,6 +192,9 @@ interface SyncOneResult {
   dsChanges: DsStatusChange[];
   stepAdvanced: boolean;
   errors: string[];
+  /** Null quand le CRON n'a ni contrôlé l'avis ni touché au lien FPA de ce parcours. */
+  annotationsDn: AnnotationsDnEntree | null;
+  verdictControle: VerdictControleDn | null;
 }
 
 async function syncOneParcours(parcoursId: string, userId: string): Promise<SyncOneResult> {
@@ -182,6 +206,10 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   const dossiers = await getAllDossiersByParcours(parcoursId);
   const dsChanges: DsStatusChange[] = [];
   const dossierErrors: string[] = [];
+  let annotationsDn: AnnotationsDnEntree | null = null;
+  let verdictControle: VerdictControleDn | null = null;
+  const liensEcrits: AnnotationDn[] = [];
+  let echecLienFpa = false;
 
   // 1. Synchronise tous les dossiers (sans toucher au current_status du parcours).
   //    On garde tous les dossiers en sync DS pour rester cohérent côté historique,
@@ -201,6 +229,50 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       // de l'ignorer silencieusement, pour le tracer dans l'historique du run.
       dossierErrors.push(`${dossier.step}: ${result.error}`);
     }
+
+    if (result.success && result.data?.dossierDnId && result.data.annotations) {
+      // Hors erreurs du run : un lien manquant ne dit rien de la synchro, et le diagnostic lit ces erreurs.
+      try {
+        const ecrit = await completerLienFpa({
+          parcoursId,
+          step: dossier.step,
+          dsNumber: dossier.dsNumber,
+          dsDemarcheId: dossier.dsDemarcheId,
+          dossierDnId: result.data.dossierDnId,
+          annotations: result.data.annotations,
+        });
+        if (ecrit) liensEcrits.push("lienFpa");
+      } catch (error) {
+        console.warn(`Lien FPA non complété (parcours ${parcoursId}, ${dossier.step}) :`, error);
+        echecLienFpa = true;
+      }
+    }
+
+    if (dossier.step === Step.ELIGIBILITE && result.success && !result.data?.notObserved) {
+      // Best-effort : un échec est tracé dans le run sans bloquer la sync, et retenté au suivant.
+      try {
+        const controle = await controlerAvisImpotApresSync({
+          dossier,
+          dsStatus: (result.data?.newStatus as DSStatus | undefined) ?? null,
+          champsModifiesAt: result.data?.champsModifiesAt,
+        });
+        if (controle) {
+          annotationsDn = controle.entree;
+          verdictControle = controle.verdict;
+        }
+      } catch (error) {
+        dossierErrors.push(`avis-impot: ${error instanceof Error ? error.message : String(error)}`);
+        annotationsDn = { issue: "echec", annotationsEcrites: [] };
+      }
+    }
+  }
+
+  if (liensEcrits.length > 0 || echecLienFpa) {
+    annotationsDn = {
+      issue: annotationsDn?.issue ?? null,
+      annotationsEcrites: [...(annotationsDn?.annotationsEcrites ?? []), ...liensEcrits],
+      ...(echecLienFpa && { echecLienFpa }),
+    };
   }
 
   // 2. Recalcule current_status à partir du dossier de current_step uniquement.
@@ -240,5 +312,7 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     dsChanges,
     stepAdvanced,
     errors: dossierErrors,
+    annotationsDn,
+    verdictControle,
   };
 }

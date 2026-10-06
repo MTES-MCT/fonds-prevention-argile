@@ -73,6 +73,21 @@ describe("useRgaMap", () => {
     expect(indisponible()).toBe("false");
   });
 
+  // maplibre 6.11 lève de nouveau depuis son constructeur quand le contexte WebGL2 manque.
+  it("signale la carte indisponible quand le constructeur lève malgré la détection", () => {
+    constructeurMap.mockImplementationOnce(() => {
+      throw new Error("WebGL2 is required to display this map.");
+    });
+    const erreurConsole = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { unmount } = render(<Carte />);
+
+    expect(indisponible()).toBe("true");
+    expect(erreurConsole).toHaveBeenCalled();
+    expect(() => unmount()).not.toThrow();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   // Régression maplibre 6 : sans WebGL2 son `remove()` lève (`painter` indéfini), et l'erreur
   // partant d'un cleanup d'effet remontait jusqu'à la frontière d'erreur racine - page blanche
   // « Application error » sur tout le simulateur, au moindre changement d'adresse.

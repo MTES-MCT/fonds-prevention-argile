@@ -9,6 +9,9 @@ import type {
   DossierReconciliation,
   DossiersReconciliationConnection,
   DossierInspection,
+  DossierAvisImpot,
+  ModificationAnnotationsDn,
+  AnnotationLue,
 } from "./types";
 
 /**
@@ -315,6 +318,87 @@ export class DemarchesSimplifieesClient {
   }
 
   /**
+   * Champs déclaratifs du foyer et données que DN a extraites des avis d'imposition (2D-Doc).
+   * Les noms de fichier ne sont pas demandés : ils portent souvent le nom du demandeur.
+   */
+  async getDossierAvisImpot(dossierNumber: number): Promise<DossierAvisImpot | null> {
+    const query = `
+      query GetDossierAvisImpot($number: Int!) {
+        dossier(number: $number) {
+          id
+          number
+          state
+          dateDepot
+          dateDerniereModification
+          dateDerniereModificationChamps
+          demarche { number }
+          annotations { champDescriptorId stringValue }
+          champs {
+            __typename
+            champDescriptorId
+            label
+            updatedAt
+            ... on IntegerNumberChamp { valeurEntiere: value }
+            ... on TextChamp { valeurTexte: value }
+            ... on CommuneChamp { departement { code } commune { code name } }
+            ...PieceAvisImpot
+            ... on RepetitionChamp {
+              rows {
+                champs {
+                  __typename
+                  champDescriptorId
+                  label
+                  updatedAt
+                  ...PieceAvisImpot
+                }
+              }
+            }
+          }
+        }
+      }
+
+      fragment PieceAvisImpot on PieceJustificativeChamp {
+        nature
+        files { contentType }
+        columns {
+          __typename
+          id
+          label
+          stringValue
+          ... on IntegerColumn { valeurEntiere: value }
+          ... on DecimalColumn { valeurDecimale: value }
+          ... on DateColumn { valeurDate: value }
+        }
+      }
+    `;
+
+    const data = await this.executeQuery<{ dossier: DossierAvisImpot | null }>(query, { number: dossierNumber });
+    return data.dossier ?? null;
+  }
+
+  /**
+   * Écrit des annotations privées. Exige un token en écriture et un instructeur de la démarche ;
+   * DN renvoie ses refus dans `errors` du payload, pas en erreur GraphQL.
+   */
+  async modifierAnnotations(input: ModificationAnnotationsDn): Promise<void> {
+    const query = `
+      mutation ModifierAnnotations($input: DossierModifierAnnotationsInput!) {
+        dossierModifierAnnotations(input: $input) {
+          errors { message }
+        }
+      }
+    `;
+
+    const data = await this.executeQuery<{
+      dossierModifierAnnotations: { errors?: Array<{ message: string }> | null } | null;
+    }>(query, { input });
+    const erreurs = data.dossierModifierAnnotations?.errors ?? [];
+    if (erreurs.length > 0) {
+      throw new DsGraphQLError(`Annotations refusées : ${erreurs.map((e) => e.message).join(", ")}`);
+    }
+  }
+
+  /**
    * Récupère le schéma d'une démarche avec les descripteurs de champs
    * Fonctionne même pour les démarches en test
    */
@@ -400,6 +484,7 @@ export class DemarchesSimplifieesClient {
           datePassageEnInstruction
           dateTraitement
           dateDerniereCorrectionEnAttente
+          dateDerniereModificationChamps
           motivation
           usager {
             email
@@ -415,6 +500,7 @@ export class DemarchesSimplifieesClient {
           }
           annotations {
             id
+            champDescriptorId
             label
             stringValue
           }
@@ -442,18 +528,28 @@ export class DemarchesSimplifieesClient {
    * Récupère le statut et les dates clés d'un dossier par son numéro
    */
   async getDossierStatus(dossierNumber: number): Promise<{
+    /** Id GraphQL du dossier, attendu par les mutations. */
+    id: string;
     state: string;
     datePassageEnConstruction?: string;
     datePassageEnInstruction?: string;
     dateTraitement?: string;
+    dateDerniereModificationChamps?: string;
+    annotations: AnnotationLue[];
   } | null> {
     const dossier = await this.getDossier(dossierNumber);
     if (!dossier) return null;
     return {
+      id: dossier.id,
       state: dossier.state,
       datePassageEnConstruction: dossier.datePassageEnConstruction,
       datePassageEnInstruction: dossier.datePassageEnInstruction,
       dateTraitement: dossier.dateTraitement,
+      dateDerniereModificationChamps: dossier.dateDerniereModificationChamps,
+      annotations: (dossier.annotations ?? []).map((a) => ({
+        champDescriptorId: a.champDescriptorId ?? "",
+        stringValue: a.stringValue ?? null,
+      })),
     };
   }
 

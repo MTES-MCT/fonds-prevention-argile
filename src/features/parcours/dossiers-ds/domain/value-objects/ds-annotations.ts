@@ -38,6 +38,60 @@ export function getAnnotationLienFpaEligibilite(demarcheNumber: number): string 
   return champId;
 }
 
+/** « Contrôle avis d'imposition » (texte long), écrite par l'application. */
+export const DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTg1Mw==", // prod
+  146377: "Q2hhbXAtNzAyMDIwNw==", // préprod
+};
+
+/** « Tranche de revenus » (liste déroulante : TMO, MO, INT, Hors plafond, Non calculable). */
+export const DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTg3MQ==", // prod
+  146377: "Q2hhbXAtNzAzMDU1Mw==", // préprod
+};
+
+/** « Taux de subvention (en pourcentage) » (nombre entier). */
+export const DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTg4Ng==", // prod
+  146377: "Q2hhbXAtNzAzMDU1NQ==", // préprod
+};
+
+/** « Lien vers google map pour voir la maison et son environnement » (texte court). */
+export const DS_ANNOTATION_LIEN_CARTE_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTkyNQ==", // prod
+  146377: "Q2hhbXAtNzAzNTUwNw==", // préprod
+};
+
+/** « Vérification de la zone d'aléa avec l'adresse renseignée » (liste : Hors zone, Faible, Moyen, Fort). */
+export const DS_ANNOTATION_ZONE_ALEA_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTkzMA==", // prod
+  146377: "Q2hhbXAtNzAzNTUwOA==", // préprod
+};
+
+export interface IdsAnnotationsInstruction {
+  avisImpot?: string;
+  typeMenage?: string;
+  tauxSubvention?: string;
+  lienCarte?: string;
+  zoneAlea?: string;
+}
+
+/** Chaque annotation s'active dès que son id est répertorié pour la démarche, sans attendre les autres. */
+export function idsAnnotationsInstruction(demarcheNumber: number): IdsAnnotationsInstruction {
+  return {
+    avisImpot: DS_ANNOTATION_CONTROLE_AVIS_IMPOT_ELIGIBILITE[demarcheNumber],
+    typeMenage: DS_ANNOTATION_TYPE_MENAGE_ELIGIBILITE[demarcheNumber],
+    tauxSubvention: DS_ANNOTATION_TAUX_SUBVENTION_ELIGIBILITE[demarcheNumber],
+    lienCarte: DS_ANNOTATION_LIEN_CARTE_ELIGIBILITE[demarcheNumber],
+    zoneAlea: DS_ANNOTATION_ZONE_ALEA_ELIGIBILITE[demarcheNumber],
+  };
+}
+
+/** Sans avertissement : une démarche sans aucune annotation n'est simplement pas encore activée. */
+export function estInstructionAutomatiqueActive(demarcheNumber: number): boolean {
+  return Object.values(idsAnnotationsInstruction(demarcheNumber)).some(Boolean);
+}
+
 /**
  * Id du descripteur de l'annotation « lien FPA » pour une étape donnée. Diagnostic et devis
  * partagent le même id (antérieur au clonage) ; l'éligibilité dépend de la démarche.

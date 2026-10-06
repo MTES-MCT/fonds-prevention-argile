@@ -1,6 +1,6 @@
 export interface RecommandationDef {
   id: string;
-  /** Critère de la grille (`grille-ponderation.ts`) qui déclenche cette fiche. */
+  /** Critère de la grille (`grille-categorisation.ts`) qui déclenche cette fiche. */
   critereId: string;
   /** Réponses de ce critère qui déclenchent la fiche. */
   reponsesDeclenchantes: string[];
@@ -14,9 +14,8 @@ export interface RecommandationDef {
 }
 
 /**
- * Catalogue des recommandations. Aucune entrée ne doit référencer un critère de la
- * catégorie "sol" (aléa RGA) : ce n'est pas actionnable par le propriétaire — vérifié
- * par `recommandations.catalogue.test.ts`.
+ * Catalogue des recommandations. Une fiche ne se déclenche que sur des réponses classées
+ * critique, vigilance ou à surveiller — vérifié par `recommandations.catalogue.test.ts`.
  */
 export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
@@ -79,7 +78,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-gouttieres",
     critereId: "gouttieres",
-    reponsesDeclenchantes: ["absentes_ou_debordantes", "entretenues_evacuation_proche", "ne_sais_pas"],
+    reponsesDeclenchantes: ["absentes_ou_debordantes", "ne_sais_pas"],
     titre: "Entretenir les gouttières et éloigner leur évacuation",
     problemes: ["Des gouttières bouchées ou absentes déversent l'eau de pluie directement contre le mur"],
     ameliorations: [
@@ -105,8 +104,9 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   },
   {
     id: "veg-arbre",
-    critereId: "arbre_essence",
-    reponsesDeclenchantes: ["peuplier", "saule", "chene", "frene", "bouleau", "erable", "autre", "ne_sais_pas"],
+    // Portée par la proximité tant que les essences n'ont pas de catégorie.
+    critereId: "arbre_proximite",
+    reponsesDeclenchantes: ["oui", "ne_sais_pas"],
     titre: "Faire expertiser l'arbre proche des fondations",
     problemes: ["Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux"],
     ameliorations: [
@@ -163,5 +163,20 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
       "Un arrosage léger et régulier en période de sécheresse peut aider à stabiliser l'humidité du sol (à éviter en cas d'arrêté sécheresse)",
     ],
     illustrationId: "ensoleillement",
+  },
+  {
+    id: "divers-source-chaleur",
+    critereId: "source_chaleur_sous_sol",
+    reponsesDeclenchantes: ["oui_mur_non_isole", "oui_mur_isole"],
+    titre: "Limiter la chaleur transmise au sol par le mur du sous-sol",
+    problemes: [
+      "Une chaudière ou une autre source de chaleur contre un mur donnant sur l'extérieur chauffe le sol de l'autre côté, toute l'année",
+      "Le sol argileux s'y assèche plus vite qu'ailleurs autour de la maison, ce qui crée un risque de tassement localisé sous ce mur",
+    ],
+    ameliorations: [
+      "Isoler le mur du sous-sol derrière la source de chaleur, ou vérifier que l'isolation existante est continue et en bon état",
+      "Lors d'un remplacement d'équipement, l'éloigner des murs donnant sur l'extérieur",
+    ],
+    illustrationId: "source-chaleur",
   },
 ];

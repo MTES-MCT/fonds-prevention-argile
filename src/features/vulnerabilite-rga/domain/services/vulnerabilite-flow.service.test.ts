@@ -43,11 +43,16 @@ describe("VulnerabiliteFlowService", () => {
 
   it("submitAnswer() calcule le résultat en arrivant à RESULTAT", () => {
     let state = VulnerabiliteFlowService.create();
-    state = { ...state, currentStep: VulnerabiliteStep.ENSOLEILLEMENT, history: [VulnerabiliteStep.MITOYENNETE] };
-    state = VulnerabiliteFlowService.submitAnswer(state, { divers: { ensoleillement: "fort_sud" } });
+    state = {
+      ...state,
+      currentStep: VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL,
+      history: [VulnerabiliteStep.ENSOLEILLEMENT],
+    };
+    state = VulnerabiliteFlowService.submitAnswer(state, { divers: { source_chaleur_sous_sol: "oui_mur_non_isole" } });
     expect(state.currentStep).toBe(VulnerabiliteStep.RESULTAT);
-    expect(state.result).not.toBeNull();
-    expect(state.result?.scoreGlobal).toBeGreaterThan(0);
+    expect(state.result?.points).toEqual([
+      { critereId: "source_chaleur_sous_sol", reponse: "oui_mur_non_isole", categorie: "critique" },
+    ]);
   });
 
   it("goBack() restaure l'étape précédente et efface la réponse de l'étape quittée (pas celle d'avant)", () => {

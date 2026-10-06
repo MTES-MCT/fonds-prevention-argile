@@ -25,51 +25,53 @@ purement cosmétique.
 
 ## Index
 
-| N°   | Titre                                                                                                                                   | Statut  |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 0000 | [_Template_](0000-template.md)                                                                                                          | —       |
-| 0001 | [Next.js 15 (App Router) + React 19](0001-nextjs-15-app-router.md)                                                                      | Accepté |
-| 0002 | [PostgreSQL + Drizzle ORM](0002-postgresql-drizzle-orm.md)                                                                              | Accepté |
-| 0003 | [DSFR comme système de design, Tailwind pour l'appoint](0003-dsfr-tailwind-ui.md)                                                       | Accepté |
-| 0004 | [Démarches Simplifiées comme socle des dossiers](0004-demarches-simplifiees-backbone.md)                                                | Accepté |
-| 0005 | [Authentification OIDC — FranceConnect + ProConnect](0005-auth-oidc-franceconnect-proconnect.md)                                        | Accepté |
-| 0006 | [Architecture DDD-lite organisée par features](0006-architecture-ddd-lite-par-features.md)                                              | Accepté |
-| 0007 | [Modèle d'état du parcours et synchronisation DS par CRON](0007-modele-etat-parcours-sync-ds.md)                                        | Accepté |
-| 0008 | [Robustesse du tracking Matomo du simulateur et critère d'acceptation](0008-tracking-matomo-simulateur-deduplication.md)                | Accepté |
-| 0009 | [Sémantique du statut DS — `en_construction` = déposé, `ds_status` nullable, dates](0009-semantique-statut-ds-depose-vs-brouillon.md)   | Accepté |
-| 0010 | [Actions typées sur les parcours (remplacement des commentaires libres)](0010-actions-typees-parcours.md)                               | Accepté |
-| 0011 | [Instance unique DS (demarche.numerique.gouv.fr) et permissions du token par démarche](0011-instance-unique-ds-et-permissions-token.md) | Accepté |
-| 0012 | [URL de reprise du dossier DS basée sur la date de dépôt (et non le statut)](0012-url-reprise-dossier-basee-sur-depot.md)               | Accepté |
-| 0013 | [Remédiation des dossiers DN en sync-erreur (vérification DN, erreur active)](0013-remediation-dossiers-dn-sync-erreur.md)              | Accepté |
-| 0014 | [Périmètre de données du rôle ANALYSTE (national vs DDT départemental)](0014-perimetre-donnees-role-analyste.md)                        | Accepté |
-| 0015 | [Navigation backoffice unifiée (deux rangées pilotées par rôle)](0015-navigation-backoffice-unifiee.md)                                 | Accepté |
-| 0016 | [Ré-ouverture d'une demande refusée par l'AMO (service partagé, audit, permission)](0016-reouverture-demande-refusee.md)                | Accepté |
-| 0017 | [Ouverture des statistiques nationales aux agents AMO / Allers-Vers (overlay permission)](0017-ouverture-stats-nationales-agents.md)    | Accepté |
-| 0018 | [Arrêt de l'accompagnement AMO et mandataire financier](0018-arret-accompagnement-amo.md)                                               | Accepté |
-| 0019 | [Early exit du simulateur lors d'une création de dossier par un agent](0019-early-exit-simulateur-agent.md)                             | Accepté |
-| 0020 | [Correction d'une simulation agent après verdict d'éligibilité](0020-correction-simulation-agent-post-eligibilite.md)                   | Accepté |
-| 0021 | [Synchro de contacts Brevo pilotée par les Automations (cycle de vie)](0021-synchro-contacts-brevo-cycle-de-vie.md)                     | Accepté |
-| 0022 | [Refus d'accompagnement d'un demandeur éligible par l'AMO](0022-refus-accompagnement-demandeur-eligible.md)                             | Accepté |
-| 0023 | [Remplacement de Crisp par le widget « Messages » de La Suite numérique](0023-remplacement-crisp-par-lasuite-messages.md)               | Accepté |
-| 0024 | [Commentaires/actions ouverts au super-admin dans l'espace agent](0024-commentaires-super-admin-espace-agent.md)                        | Accepté |
-| 0025 | [Lien FPA dans les annotations DN — ids par démarche et permalien parcours](0025-lien-fpa-annotation-eligibilite.md)                    | Accepté |
-| 0026 | [Gel du reset destructif — « Dossier not found » ne prouve pas la disparition](0026-gel-reset-eligibilite-not-found.md)                 | Accepté |
-| 0027 | [Tentative de préremplissage vs dossier confirmé](0027-tentative-prefill-vs-dossier-confirme.md)                                        | Accepté |
-| 0028 | [Actions automatiques sur les décisions AV et les archivages](0028-actions-automatiques-decisions-et-archivage.md)                      | Accepté |
-| 0029 | [Désactivation d'un agent plutôt que suppression](0029-desactivation-agent-plutot-que-suppression.md)                                   | Accepté |
-| 0030 | [Architecture du simulateur de vulnérabilité RGA](0030-simulateur-vulnerabilite-rga.md)                                                 | Accepté |
-| 0031 | [Statistiques d'usage du simulateur de vulnérabilité — hybride Matomo / BDD](0031-stats-vulnerabilite-matomo-bdd.md)                    | Accepté |
-| 0032 | [Rattachement de la simulation de vulnérabilité au compte demandeur](0032-rattachement-simulation-vulnerabilite-compte.md)              | Accepté |
-| 0033 | [Granularité adaptée pour les events Matomo du dashboard](0033-granularite-events-matomo-dashboard.md)                                  | Accepté |
-| 0034 | [Enregistrer et archiver la simulation non éligible du demandeur](0034-simulation-non-eligible-demandeur.md)                            | Accepté |
-| 0035 | [Page de statistiques publiques — sources, cache et absence de faux zéro](0035-page-statistiques-publiques.md)                          | Accepté |
-| 0036 | [Une simulation par compte, modifiable et arbitrée](0036-simulation-unique-par-compte.md)                                               | Accepté |
-| 0037 | [Pas d'autonomie là où l'AMO est obligatoire](0037-pas-d-autonomie-en-amo-obligatoire.md)                                               | Accepté |
-| 0038 | [La qualification de l'Aller-vers décide de l'accompagnement](0038-qualification-aller-vers-pivot-accompagnement.md)                    | Accepté |
-| 0039 | [Classer les pièces justificatives d'après leur libellé DN](0039-classement-pieces-justificatives-par-libelle.md)                       | Accepté |
-| 0040 | [Un tunnel sans navigation pour le simulateur, et l'adresse en deux écrans](0040-tunnel-simulateur-adresse-en-deux-ecrans.md)           | Accepté |
-| 0041 | [Calcul de vulnérabilité sans pondération en cascade, moyenne quadratique](0041-calcul-vulnerabilite-sans-ponderation-cascade.md)       | Accepté |
-| 0042 | [Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un](0042-choix-amo-parmi-plusieurs.md)                                 | Accepté |
-| 0044 | [La demande de paiement du diagnostic est initiée par l'AMO mandataire financier](0044-demande-paiement-diagnostic-initiee-par-amo.md)  | Accepté |
+| N°   | Titre                                                                                                                                   | Statut                |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| 0000 | [_Template_](0000-template.md)                                                                                                          | —                     |
+| 0001 | [Next.js 15 (App Router) + React 19](0001-nextjs-15-app-router.md)                                                                      | Accepté               |
+| 0002 | [PostgreSQL + Drizzle ORM](0002-postgresql-drizzle-orm.md)                                                                              | Accepté               |
+| 0003 | [DSFR comme système de design, Tailwind pour l'appoint](0003-dsfr-tailwind-ui.md)                                                       | Accepté               |
+| 0004 | [Démarches Simplifiées comme socle des dossiers](0004-demarches-simplifiees-backbone.md)                                                | Accepté               |
+| 0005 | [Authentification OIDC — FranceConnect + ProConnect](0005-auth-oidc-franceconnect-proconnect.md)                                        | Accepté               |
+| 0006 | [Architecture DDD-lite organisée par features](0006-architecture-ddd-lite-par-features.md)                                              | Accepté               |
+| 0007 | [Modèle d'état du parcours et synchronisation DS par CRON](0007-modele-etat-parcours-sync-ds.md)                                        | Accepté               |
+| 0008 | [Robustesse du tracking Matomo du simulateur et critère d'acceptation](0008-tracking-matomo-simulateur-deduplication.md)                | Accepté               |
+| 0009 | [Sémantique du statut DS — `en_construction` = déposé, `ds_status` nullable, dates](0009-semantique-statut-ds-depose-vs-brouillon.md)   | Accepté               |
+| 0010 | [Actions typées sur les parcours (remplacement des commentaires libres)](0010-actions-typees-parcours.md)                               | Accepté               |
+| 0011 | [Instance unique DS (demarche.numerique.gouv.fr) et permissions du token par démarche](0011-instance-unique-ds-et-permissions-token.md) | Accepté               |
+| 0012 | [URL de reprise du dossier DS basée sur la date de dépôt (et non le statut)](0012-url-reprise-dossier-basee-sur-depot.md)               | Accepté               |
+| 0013 | [Remédiation des dossiers DN en sync-erreur (vérification DN, erreur active)](0013-remediation-dossiers-dn-sync-erreur.md)              | Accepté               |
+| 0014 | [Périmètre de données du rôle ANALYSTE (national vs DDT départemental)](0014-perimetre-donnees-role-analyste.md)                        | Accepté               |
+| 0015 | [Navigation backoffice unifiée (deux rangées pilotées par rôle)](0015-navigation-backoffice-unifiee.md)                                 | Accepté               |
+| 0016 | [Ré-ouverture d'une demande refusée par l'AMO (service partagé, audit, permission)](0016-reouverture-demande-refusee.md)                | Accepté               |
+| 0017 | [Ouverture des statistiques nationales aux agents AMO / Allers-Vers (overlay permission)](0017-ouverture-stats-nationales-agents.md)    | Accepté               |
+| 0018 | [Arrêt de l'accompagnement AMO et mandataire financier](0018-arret-accompagnement-amo.md)                                               | Accepté               |
+| 0019 | [Early exit du simulateur lors d'une création de dossier par un agent](0019-early-exit-simulateur-agent.md)                             | Accepté               |
+| 0020 | [Correction d'une simulation agent après verdict d'éligibilité](0020-correction-simulation-agent-post-eligibilite.md)                   | Accepté               |
+| 0021 | [Synchro de contacts Brevo pilotée par les Automations (cycle de vie)](0021-synchro-contacts-brevo-cycle-de-vie.md)                     | Accepté               |
+| 0022 | [Refus d'accompagnement d'un demandeur éligible par l'AMO](0022-refus-accompagnement-demandeur-eligible.md)                             | Accepté               |
+| 0023 | [Remplacement de Crisp par le widget « Messages » de La Suite numérique](0023-remplacement-crisp-par-lasuite-messages.md)               | Accepté               |
+| 0024 | [Commentaires/actions ouverts au super-admin dans l'espace agent](0024-commentaires-super-admin-espace-agent.md)                        | Accepté               |
+| 0025 | [Lien FPA dans les annotations DN — ids par démarche et permalien parcours](0025-lien-fpa-annotation-eligibilite.md)                    | Accepté               |
+| 0026 | [Gel du reset destructif — « Dossier not found » ne prouve pas la disparition](0026-gel-reset-eligibilite-not-found.md)                 | Accepté               |
+| 0027 | [Tentative de préremplissage vs dossier confirmé](0027-tentative-prefill-vs-dossier-confirme.md)                                        | Accepté               |
+| 0028 | [Actions automatiques sur les décisions AV et les archivages](0028-actions-automatiques-decisions-et-archivage.md)                      | Accepté               |
+| 0029 | [Désactivation d'un agent plutôt que suppression](0029-desactivation-agent-plutot-que-suppression.md)                                   | Accepté               |
+| 0030 | [Architecture du simulateur de vulnérabilité RGA](0030-simulateur-vulnerabilite-rga.md)                                                 | Accepté               |
+| 0031 | [Statistiques d'usage du simulateur de vulnérabilité — hybride Matomo / BDD](0031-stats-vulnerabilite-matomo-bdd.md)                    | Accepté               |
+| 0032 | [Rattachement de la simulation de vulnérabilité au compte demandeur](0032-rattachement-simulation-vulnerabilite-compte.md)              | Accepté               |
+| 0033 | [Granularité adaptée pour les events Matomo du dashboard](0033-granularite-events-matomo-dashboard.md)                                  | Accepté               |
+| 0034 | [Enregistrer et archiver la simulation non éligible du demandeur](0034-simulation-non-eligible-demandeur.md)                            | Accepté               |
+| 0035 | [Page de statistiques publiques — sources, cache et absence de faux zéro](0035-page-statistiques-publiques.md)                          | Accepté               |
+| 0036 | [Une simulation par compte, modifiable et arbitrée](0036-simulation-unique-par-compte.md)                                               | Accepté               |
+| 0037 | [Pas d'autonomie là où l'AMO est obligatoire](0037-pas-d-autonomie-en-amo-obligatoire.md)                                               | Accepté               |
+| 0038 | [La qualification de l'Aller-vers décide de l'accompagnement](0038-qualification-aller-vers-pivot-accompagnement.md)                    | Accepté               |
+| 0039 | [Classer les pièces justificatives d'après leur libellé DN](0039-classement-pieces-justificatives-par-libelle.md)                       | Accepté               |
+| 0040 | [Un tunnel sans navigation pour le simulateur, et l'adresse en deux écrans](0040-tunnel-simulateur-adresse-en-deux-ecrans.md)           | Accepté               |
+| 0041 | [Calcul de vulnérabilité sans pondération en cascade, moyenne quadratique](0041-calcul-vulnerabilite-sans-ponderation-cascade.md)       | Remplacé par ADR-0045 |
+| 0042 | [Ne jamais désigner une AMO parmi plusieurs à la place de quelqu'un](0042-choix-amo-parmi-plusieurs.md)                                 | Accepté               |
+| 0043 | [Contrôle de l'avis d'imposition écrit dans DN](0043-controle-avis-imposition-annotation-dn.md)                                         | Accepté               |
+| 0044 | [La demande de paiement du diagnostic est initiée par l'AMO mandataire financier](0044-demande-paiement-diagnostic-initiee-par-amo.md)  | Accepté               |
+| 0045 | [Catégorisation qualitative des réponses de vulnérabilité, sans score](0045-categorisation-qualitative-vulnerabilite.md)                | Accepté               |
 
 <!-- Ajouter chaque nouvel ADR ici -->

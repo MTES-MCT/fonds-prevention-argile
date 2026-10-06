@@ -40,6 +40,7 @@ const mockedGetDossierByStep = vi.mocked(getDossierByStep);
 const mockedUpdateDossierStatus = vi.mocked(updateDossierStatus);
 const mockedRecordDnProbeState = vi.mocked(recordDnProbeState);
 const mockedGetDossierStatus = vi.mocked(graphqlClient.getDossierStatus);
+const DOSSIER_DN = { id: "RG9zc2llci0x", annotations: [] };
 const mockedEmit = vi.mocked(emitBrevoEvent);
 
 describe("syncDossierStatus — propagation de la date de décision (dateTraitement)", () => {
@@ -55,6 +56,7 @@ describe("syncDossierStatus — propagation de la date de décision (dateTraitem
       dsStatus: DSStatus.EN_INSTRUCTION,
     } as never);
     mockedGetDossierStatus.mockResolvedValue({
+      ...DOSSIER_DN,
       state: DSStatus.REFUSE,
       datePassageEnConstruction: "2026-06-10T00:00:00Z",
       datePassageEnInstruction: "2026-06-12T00:00:00Z",
@@ -77,6 +79,7 @@ describe("syncDossierStatus — propagation de la date de décision (dateTraitem
       dsStatus: DSStatus.EN_INSTRUCTION,
     } as never);
     mockedGetDossierStatus.mockResolvedValue({
+      ...DOSSIER_DN,
       state: DSStatus.ACCEPTE,
       datePassageEnConstruction: "2026-06-10T00:00:00Z",
       datePassageEnInstruction: "2026-06-12T00:00:00Z",
@@ -98,6 +101,7 @@ describe("syncDossierStatus — propagation de la date de décision (dateTraitem
       dsStatus: DSStatus.EN_CONSTRUCTION,
     } as never);
     mockedGetDossierStatus.mockResolvedValue({
+      ...DOSSIER_DN,
       state: DSStatus.EN_INSTRUCTION,
       datePassageEnConstruction: "2026-06-10T00:00:00Z",
       datePassageEnInstruction: "2026-06-12T00:00:00Z",
@@ -122,7 +126,11 @@ describe("syncDossierStatus — évènement Brevo dn_update", () => {
 
   it("émet dn_update sur changement de ds_status (DS_STATUT + transition)", async () => {
     mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never);
-    mockedGetDossierStatus.mockResolvedValue({ state: DSStatus.ACCEPTE, dateTraitement: "2026-06-21T00:00:00Z" });
+    mockedGetDossierStatus.mockResolvedValue({
+      ...DOSSIER_DN,
+      state: DSStatus.ACCEPTE,
+      dateTraitement: "2026-06-21T00:00:00Z",
+    });
 
     await syncDossierStatus("p1", Step.ELIGIBILITE, "456");
 
@@ -138,7 +146,7 @@ describe("syncDossierStatus — évènement Brevo dn_update", () => {
 
   it("n'émet pas dn_update quand le ds_status est inchangé", async () => {
     mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never);
-    mockedGetDossierStatus.mockResolvedValue({ state: DSStatus.EN_INSTRUCTION });
+    mockedGetDossierStatus.mockResolvedValue({ ...DOSSIER_DN, state: DSStatus.EN_INSTRUCTION });
 
     await syncDossierStatus("p1", Step.ELIGIBILITE, "456");
 
@@ -201,5 +209,29 @@ describe("syncDossierStatus — prérempli non déposé (ADR-0026)", () => {
 
     expect(mockedRecordDnProbeState).toHaveBeenCalledWith("d1", "unauthorized");
     expect(result.success).toBe(false);
+  });
+});
+
+describe("syncDossierStatus — date de modification des champs", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedUpdateDossierStatus.mockResolvedValue({ success: true, data: { updated: true } });
+    mockedRecordDnProbeState.mockResolvedValue(undefined);
+  });
+
+  it.each([
+    ["statut changé", DSStatus.EN_CONSTRUCTION],
+    ["statut inchangé", DSStatus.EN_INSTRUCTION],
+  ])("la renvoie pour le contrôle de l'avis (%s)", async (_cas, statutLocal) => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: statutLocal } as never);
+    mockedGetDossierStatus.mockResolvedValue({
+      ...DOSSIER_DN,
+      state: DSStatus.EN_INSTRUCTION,
+      dateDerniereModificationChamps: "2026-09-29T15:41:02+02:00",
+    });
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    expect(result.success && result.data?.champsModifiesAt).toBe("2026-09-29T15:41:02+02:00");
   });
 });

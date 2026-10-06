@@ -62,8 +62,8 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // maplibre 6 n'échoue plus bruyamment sans WebGL2 : il construit une carte sans peintre,
-    // muette, dont le remove() lève et emporte la page entière. Ne rien instancier plutôt.
+    // Sans WebGL2, maplibre lève à la construction (v5, 6.11) ou au remove() (6.4) selon la version :
+    // dans les deux cas l'erreur emporte la page entière. Ne rien instancier plutôt.
     if (!webgl2EstDisponible()) {
       setWebglIndisponible(true);
       return;
@@ -74,14 +74,22 @@ export function useRgaMap(options: UseRgaMapOptions = {}): UseRgaMapReturn {
 
     const initialZoom = zoom ?? (centerLat !== undefined ? ZOOM.building : ZOOM.france);
 
-    const newMap = new maplibregl.Map({
-      container: mapRef.current,
-      style: RGA_MAP_STYLE_URL,
-      center: initialCenter,
-      zoom: initialZoom,
-      maxBounds: MAX_BOUNDS,
-      attributionControl: false,
-    });
+    let newMap: maplibregl.Map;
+    try {
+      newMap = new maplibregl.Map({
+        container: mapRef.current,
+        style: RGA_MAP_STYLE_URL,
+        center: initialCenter,
+        zoom: initialZoom,
+        maxBounds: MAX_BOUNDS,
+        attributionControl: false,
+      });
+    } catch (error) {
+      // La détection est mémoïsée : le contexte peut manquer quand même (GPU perdu en cours de session).
+      console.error("[RgaMap] Création de la carte impossible:", error);
+      setWebglIndisponible(true);
+      return;
+    }
 
     // Ajouter les contrôles de navigation
     newMap.addControl(

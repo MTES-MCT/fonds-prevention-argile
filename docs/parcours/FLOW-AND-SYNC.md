@@ -416,6 +416,14 @@ figé à vie dans DN, la cible doit être résolue **au clic** — la page tente
 `resolveEspaceAgentPath(id)` et redirige vers le dossier, la demande ou le prospect. C'est
 aussi ce qui répare les liens diagnostic/devis déjà écrits, qui renvoyaient un 404.
 
+**Le CRON complète les liens manquants** (amendement d'ADR-0025). Le préremplissage ne couvrant
+que les dossiers créés depuis le lien FPA, `completerLienFpa` (`services/lien-fpa.service.ts`)
+écrit le permalien par la mutation de § 2.6.3 dans toute annotation **vide** d'un dossier
+synchronisé, sur les trois démarches. Une valeur existante n'est jamais écrasée : la
+réconciliation la lit comme clé de rattachement (ADR-0027). Les annotations viennent de la
+requête de synchronisation, sans appel de plus. Un échec ne compte pas comme erreur de synchro
+(le diagnostic lit ces erreurs), il est seulement compté dans le bilan du run (§ 5).
+
 ### 2.6.2 Champ public « État de la maison » (éligibilité)
 
 Le formulaire DN posait deux cases à cocher dérivées du même `rga.sinistres` — « Désordres
@@ -442,6 +450,109 @@ Les deux mêmes pièges que l'annotation « lien FPA » s'appliquent :
 > pour que la table couvre les 4 degrés. Attention aux simulations **antérieures** à ce
 > degré : « endommagée » y désignait « avec des premiers désordres structuraux », elles
 > restent éligibles et sont préremplies avec « … mais sans désordres structuraux ».
+
+### 2.6.3 Contrôle de l'avis d'imposition (annotation privée écrite après dépôt) — ADR-0043
+
+DN décode le **2D-Doc** des avis déposés dans les pièces de nature « avis d'impôt » (« Dernier avis
+d'imposition » et le bloc répété « Tous les Avis d'imposition du foyer ») et expose le résultat en
+colonnes de `PieceJustificativeChamp` : déclarants, référence, année des revenus, **parts**, RFR.
+Pas de nombre de personnes, et rien du tout sans 2D-Doc valide (scan dégradé, photo, faux).
+
+**Seul le bloc répété compte**, un avis par ligne. « Dernier avis » n'est lu que si le bloc est
+vide (dossiers déposés avant lui) : DN n'y décode qu'un 2D-Doc même quand le demandeur y met
+plusieurs avis, et une seule pièce illisible y rendait tout le contrôle non vérifiable.
+
+Le CRON compare ces données aux déclaratifs (« Revenu fiscal de référence », « Nombre de personnes
+composant le ménage ») selon ces critères :
+
+| Critère    | Règle                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| RFR        | égalité stricte avec la somme des avis retenus, dédoublonnés par référence ; écart en tranche |
+| Personnes  | fourchette estimée depuis parts et déclarants, jamais au-delà de « à vérifier »               |
+| Année      | revenus N-1, N étant l'année du dépôt                                                         |
+| Couverture | aucun avis lu → Non vérifiable ; un avis sur plusieurs non lu → À vérifier                    |
+
+L'annotation « Contrôle avis d'imposition » ne reçoit qu'**une phrase**, choisie par le seul critère
+du RFR (`TEXTES_ANNOTATION_CONTROLE`, libellés validés par le métier). En cas d'écart, elle se
+termine par les deux montants : « … : montant déclaré = 30 000 € et montant indiqué dans l'avis
+d'imposition = 35 000 €. » (« dans les avis d'imposition (somme de 2 avis) » s'il y en a plusieurs).
+
+| RFR            | Phrase écrite dans DN                                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cohérent       | « Les informations renseignées par le demandeur sont cohérentes avec l'avis d'imposition. »                                                  |
+| Écart          | « Attention, il semble y avoir une incohérence entre les informations renseignées par le demandeur et l'avis d'imposition. »                 |
+| Non vérifiable | « La vérification automatique n'a pas pu être réalisée : l'avis d'imposition n'a pas pu être lu. Une vérification manuelle est nécessaire. » |
+
+Le foyer et l'année n'alertent pas la DDT : l'estimation depuis les parts est trop incertaine. Ils
+restent, avec la tranche, dans le détail de `pnpm ds:inspecter-avis-impot`. Le statut
+enregistré en base (`avis_impot_statut`) est celui de la phrase, pour que les deux ne divergent pas.
+
+Trois règles à connaître :
+
+- **Canal d'écriture** : la mutation GraphQL `dossierModifierAnnotations`, pas le préremplissage
+  (§ 2.6.1), qui ne sait que créer. Elle exige un token en **lecture et écriture** et un
+  `instructeurId` (`DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID`) membre du groupe du dossier. L'historique
+  DN attribue l'écriture à cet instructeur.
+- **Déclenchement** : dossier d'éligibilité déposé et sans décision, jamais contrôlé ou dont
+  `dateDerniereModificationChamps` a bougé depuis le contrôle (colonnes `avis_impot_*` de
+  `dossiers_demarches_simplifiees`). Écrire l'annotation fait bouger `dateDerniereModification`,
+  **pas** `dateDerniereModificationChamps` : c'est pour ça que le repère est la seconde. Après la
+  décision DDT, l'annotation n'est plus touchée.
+- **Activation par annotation** : chacune s'active dès que son id est répertorié pour la démarche
+  (`idsAnnotationsInstruction`, `ds-annotations.ts`), sans attendre les autres ; une démarche sans
+  aucune annotation est ignorée sans bruit. Les cinq sont répertoriées en préprod (146377) et en
+  prod (126061). Toutes partent dans la **même mutation**, et seules
+  celles dont la valeur change sont envoyées. Aucune valeur fiscale n'est stockée ni journalisée.
+
+**Tranche de revenus et taux de subvention.** Deux annotations de plus, calculées depuis le
+formulaire DN seul (`calculerTrancheDossier`, `domain/tranche-revenu/`) :
+
+| Annotation         | Type DN          | Valeur                                                                    |
+| ------------------ | ---------------- | ------------------------------------------------------------------------- |
+| Tranche de revenus | liste déroulante | `TMO`, `MO`, `INT`, `Hors plafond`, `Non calculable` (libellés exacts)    |
+| Taux de subvention | nombre entier    | `90`, `85`, `70` (phases étude et travaux), `0` hors plafond, non calculé |
+
+- **Un nombre ne se vide pas par l'API** (`AnnotationValueInput` est `@oneOf`, `null` refusé) :
+  un taux devenu incalculable reste en place, la tranche affichant « Non calculable ». Un taux
+  envoyé sous un mauvais type fait refuser toute la mutation, les trois annotations comprises.
+
+- **RFR déclaré**, pas celui de l'avis : la DDT instruit sur le formulaire, et un écart est déjà
+  signalé par l'annotation de l'avis.
+- **Barème du simulateur** (`calculerTrancheRevenu`, seuils ANAH codés en dur) : la DDT voit la
+  tranche annoncée au demandeur. À mettre à jour à chaque nouveau barème annuel.
+- **Île-de-France lue sur le département de la commune** déclarée dans DN (le champ « Commune »
+  expose `departement.code`, pas la région). Le contrôle de l'avis l'emploie aussi pour chiffrer
+  un écart : un dossier n'a qu'un barème, plus celui de la simulation FPA.
+- **Taux** : `TAUX_SUBVENTION` reprend le tableau « Taux de subvention de l'État » de la page
+  d'accueil ; un test échoue si les deux divergent.
+
+**Lien Google Maps et zone d'aléa de la maison.** Deux annotations de plus, tirées de l'adresse du
+**dépôt** (« Adresse postale de la maison », texte libre, et « Commune »), que le demandeur a pu
+modifier après le préremplissage (`localiserMaison`, `services/adresse-maison.service.ts`) :
+
+| Annotation                                               | Type DN          | Valeur                                                                |
+| -------------------------------------------------------- | ---------------- | --------------------------------------------------------------------- |
+| Lien vers google map pour voir la maison…                | texte court      | Street View `…map_action=pano&viewpoint=<lat>,<lon>`, sinon l'adresse |
+| Vérification de la zone d'aléa avec l'adresse renseignée | liste déroulante | `Fort`, `Moyen`, `Faible`, `Hors zone` (polygones RGA 2026 importés)  |
+
+- **Géocodage BAN dans la commune déclarée** (filtre sur son code INSEE), retenu seulement au
+  numéro de rue et avec un score d'au moins 0,6 (`pointFiable`). Le lien et la zone partent du
+  même point : la DDT voit en Street View la maison qui a servi au calcul.
+- **Sans point sûr**, le lien retombe sur une recherche Google de l'adresse en texte, et **aucune
+  zone n'est écrite** : la liste n'a pas d'option « inconnue », et « Hors zone » serait faux. Le cas
+  est compté dans le bilan (« Adresse non géocodée »).
+- **Une panne n'est jamais « Hors zone »** : `getAleaByCoordinates` renvoie `null` dans les deux
+  cas, le service appelle donc le dépôt, qui lève sur une erreur.
+- Le géocodage n'a lieu que si l'une des deux annotations est répertoriée pour la démarche, et
+  seulement quand un contrôle tourne. L'adresse part vers l'API publique BAN, déjà utilisée par
+  le simulateur ; elle n'est ni stockée ni journalisée.
+
+> Outils : `pnpm ds:inspecter-avis-impot --dossier=<n>` (lecture, valeurs masquées),
+> `pnpm ds:controler-avis-impot --dossier=<n> | --tous [--apply]` (dry-run par défaut, rattrapage :
+> à relancer avec `--tous --apply` quand les règles ou les annotations changent, un dossier déjà
+> contrôlé n'étant recontrôlé que si ses champs bougent ; montants et lien carte masqués sans
+> `--afficher-valeurs`),
+> `pnpm ds:lister-instructeurs <numero>` (id et groupes de chaque instructeur).
 
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
@@ -1179,7 +1290,7 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 3. Récupère tous les parcours actifs via `parcoursRepo.findActiveForSync()` (`archived_at IS NULL AND completed_at IS NULL`).
 4. Pour chaque parcours, dans un `try/catch` indépendant :
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
-   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`.
+   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
    c. Appelle `recomputeParcoursStatus` une fois.
    d. Si `current_status === VALIDE`, appelle `moveToNextStep` qui :
    - avance à l'étape suivante si non finale ;
@@ -1192,33 +1303,35 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne | Type |
-| ------------------------ | ---------------------------------- | ------- | ----- | ----- |
-| `id` | uuid |
-| `started_at` | timestamp |
-| `finished_at` | timestamp (null = en cours) |
-| `status` | `success                           | partial | error | null` |
-| `triggered_by` | `cron                              | manual` |
-| `total_parcours_scanned` | int |
-| `total_parcours_updated` | int |
-| `total_errors` | int |
-| `error_summary` | text (20 premières erreurs concat) |
+| Colonne                  | Type                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------- |
+| `id`                     | uuid                                                                               |
+| `started_at`             | timestamp                                                                          |
+| `finished_at`            | timestamp (null = en cours)                                                        |
+| `status`                 | `success` \| `partial` \| `error` \| `null`                                        |
+| `triggered_by`           | `cron` \| `manual`                                                                 |
+| `total_parcours_scanned` | int                                                                                |
+| `total_parcours_updated` | int                                                                                |
+| `total_errors`           | int                                                                                |
+| `error_summary`          | text (20 premières erreurs concat)                                                 |
+| `bilan_annotations_dn`   | jsonb : compteurs du contrôle et du lien FPA (§ 5) ; null pour les runs antérieurs |
 
-**`sync_run_entries`** — une entrée par parcours **modifié** (ou en erreur) durant un run. Les parcours sans changement ne génèrent **pas** d'entrée pour ne pas alourdir la table.
+**`sync_run_entries`** — une entrée par parcours **modifié**, en erreur, dont l'avis d'imposition a été **contrôlé** ou dont un lien FPA a été complété durant un run. Les autres parcours ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
-| Colonne             | Type                                           |
-| ------------------- | ---------------------------------------------- |
-| `id`                | uuid                                           |
-| `sync_run_id`       | FK → sync_runs (cascade)                       |
-| `parcours_id`       | FK → parcours_prevention (cascade)             |
-| `step_before`       | step enum (nullable)                           |
-| `step_after`        | step enum (nullable)                           |
-| `status_before`     | status enum (nullable)                         |
-| `status_after`      | status enum (nullable)                         |
-| `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]` |
-| `step_advanced`     | boolean                                        |
-| `error`             | text (nullable)                                |
-| `created_at`        | timestamp                                      |
+| Colonne             | Type                                                                   |
+| ------------------- | ---------------------------------------------------------------------- |
+| `id`                | uuid                                                                   |
+| `sync_run_id`       | FK → sync_runs (cascade)                                               |
+| `parcours_id`       | FK → parcours_prevention (cascade)                                     |
+| `step_before`       | step enum (nullable)                                                   |
+| `step_after`        | step enum (nullable)                                                   |
+| `status_before`     | status enum (nullable)                                                 |
+| `status_after`      | status enum (nullable)                                                 |
+| `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]`                         |
+| `step_advanced`     | boolean                                                                |
+| `error`             | text (nullable)                                                        |
+| `annotations_dn`    | jsonb : `{ issue, annotationsEcrites, echecLienFpa? }`, noms seulement |
+| `created_at`        | timestamp                                                              |
 
 ### 4.3 Configuration GitHub Actions
 
@@ -1268,7 +1381,21 @@ Route : `src/app/api/cron/sync-parcours/route.ts`.
 URL : `/administration/synchronisations` (réservée `SUPER_ADMINISTRATEUR`).
 
 - **Liste** : table paginée des runs (date, durée, badge statut, trigger, totaux), bouton « Lancer une synchro maintenant ».
-- **Détail** (`/administration/synchronisations/[id]`) : table des `sync_run_entries` avec demandeur, transitions step/status, changements DS, étape avancée, erreur.
+- **Détail** (`/administration/synchronisations/[id]`) : table des `sync_run_entries` avec demandeur, transitions step/status, changements DS, étape avancée, annotations DN, erreur.
+
+**Bilan des annotations DN** (§ 2.6.3). La liste porte une colonne « Annotations DN »
+(« 4 contrôlés · 3 mis à jour · 2 liens FPA complétés »), le détail un encart de synthèse et une
+colonne de badges (annotations écrites, « À jour », « Échec », « Échec du lien FPA », « Adresse non
+géocodée »). Un lien FPA
+complété sans contrôle de l'avis laisse l'issue à `null` : il n'est pas compté comme un contrôle.
+Trois règles :
+
+- **Des actions, jamais des valeurs.** Une ligne ne garde que l'issue et les **noms** des
+  annotations écrites ; ni montant, ni tranche, ni taux, ni verdict.
+- **Le verdict n'est compté qu'au niveau du run**, agrégé et non nominatif : il dit d'un coup
+  d'œil si le 2D-Doc est lu, sans rattacher un verdict à un demandeur nommé.
+- **Un contrôle lancé a sa ligne, même s'il n'a rien écrit** (« À jour ») : c'est ce qui montre
+  ce qui a tourné. Le volume reste borné, le contrôle ne tournant que si les champs ont bougé.
 
 Server actions : `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`.
 
@@ -1645,7 +1772,11 @@ retrouvé déposé.
 | Écriture des actions système (helper unique)   | `backoffice/espace-agent/shared/services/action-audit.service.ts` (`logSystemAction`)                       |
 | Rattrapage des actions d'audit (script ops)    | `scripts/ops/fix/backfill-actions-audit.ts` (`pnpm fix:backfill-actions-audit`)                             |
 | Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
+| Lien FPA complété par le CRON                  | `dossiers-ds/services/lien-fpa.service.ts` (`completerLienFpa`)                                             |
 | Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
+| Contrôle de l'avis d'imposition (ADR-0043)     | `dossiers-ds/domain/avis-impot/`, `services/controle-avis-impot.service.ts`, `mappers/avis-impot.mapper.ts` |
+| Lien Google Maps et zone d'aléa de la maison   | `dossiers-ds/domain/adresse-maison/`, `services/adresse-maison.service.ts` (`localiserMaison`)              |
+| Tranche de revenus et taux de subvention       | `dossiers-ds/domain/tranche-revenu/` (`calculerTrancheDossier`, `TAUX_SUBVENTION`)                          |
 | Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
 | Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
 | Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |

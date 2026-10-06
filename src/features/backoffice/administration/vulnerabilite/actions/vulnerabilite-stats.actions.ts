@@ -14,7 +14,7 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
 
 /**
  * Récupère les statistiques d'usage du simulateur de vulnérabilité RGA : total de simulations,
- * répartition par réponse et score moyen (table anonyme `vulnerabilite_simulations`).
+ * répartition par réponse et points moyens (table anonyme `vulnerabilite_simulations`).
  */
 export async function getVulnerabiliteStatsAction(periodeId: PeriodeId): Promise<ActionResult<VulnerabiliteStatsBdd>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);

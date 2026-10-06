@@ -1,19 +1,13 @@
 "use client";
 
 import { ALEA_COLORS } from "@/features/rga-map";
+import { ALEA_RGA_LABELS } from "../../../domain/value-objects/grille-categorisation";
 import type { ReponseAleaRga } from "../../../domain/types/vulnerabilite-reponses.types";
 
 interface AleaBadgeDisplayProps {
   adresse: string;
   aleaRga: ReponseAleaRga;
 }
-
-const ALEA_LABELS: Record<ReponseAleaRga, string> = {
-  fort: "Aléa fort",
-  moyen: "Aléa moyen",
-  faible: "Aléa faible",
-  nul: "Hors zone argileuse",
-};
 
 /**
  * Affichage non éditable de l'adresse sélectionnée + son aléa RGA (issu de la carte).
@@ -28,7 +22,7 @@ export function AleaBadgeDisplay({ adresse, aleaRga }: AleaBadgeDisplayProps) {
     <div className="fr-mt-2w px-2 py-1">
       <p className="fr-text--bold fr-mb-1v">{adresse}</p>
       <span className="fr-badge fr-badge--sm" style={{ backgroundColor: color, color: "#161616" }}>
-        {ALEA_LABELS[aleaRga]}
+        {ALEA_RGA_LABELS[aleaRga]}
       </span>
     </div>
   );

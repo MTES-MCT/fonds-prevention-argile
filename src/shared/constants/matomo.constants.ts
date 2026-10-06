@@ -34,6 +34,7 @@ export const MATOMO_EVENTS = {
   VULNERABILITE_STEP_VEGETATION_PIED_FACADE: "vulnerabilite_step_vegetation_pied_facade",
   VULNERABILITE_STEP_MITOYENNETE: "vulnerabilite_step_mitoyennete",
   VULNERABILITE_STEP_ENSOLEILLEMENT: "vulnerabilite_step_ensoleillement",
+  VULNERABILITE_STEP_SOURCE_CHALEUR_SOUS_SOL: "vulnerabilite_step_source_chaleur_sous_sol",
   VULNERABILITE_RESULT: "vulnerabilite_result",
   VULNERABILITE_PDF_DOWNLOAD: "vulnerabilite_pdf_download",
 } as const;

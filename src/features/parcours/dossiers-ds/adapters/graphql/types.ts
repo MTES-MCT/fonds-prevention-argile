@@ -59,6 +59,7 @@ export interface Dossier {
   datePassageEnInstruction?: string;
   dateTraitement?: string;
   dateDerniereCorrectionEnAttente?: string;
+  dateDerniereModificationChamps?: string;
   motivation?: string;
   motivationAttachment?: Attachment;
   attestation?: Attachment;
@@ -93,6 +94,8 @@ export interface Champ {
 
 export interface Annotation {
   id: string;
+  /** Id du descripteur, commun à tous les dossiers d'une démarche (l'`id` change d'un dossier à l'autre). */
+  champDescriptorId?: string;
   label: string;
   stringValue?: string;
   instructeur?: Instructeur;
@@ -125,6 +128,12 @@ export interface Attachment {
 }
 
 /** Annotation réduite à ce qui sert au rattachement (ADR-0027). */
+/** Annotation relue par la synchro : de quoi savoir si un champ est vide. */
+export interface AnnotationLue {
+  champDescriptorId: string;
+  stringValue: string | null;
+}
+
 export interface AnnotationReconciliation {
   champDescriptorId: string;
   stringValue?: string | null;
@@ -164,6 +173,98 @@ export interface DossierInspection {
   usager?: { email: string };
   demandeur?: { __typename?: string; nom?: string | null; prenom?: string | null };
   champs?: Array<{ champDescriptorId: string; label: string; stringValue?: string | null }>;
+}
+
+/** Colonne DN : porte les données qu'il a extraites d'une pièce, ici le 2D-Doc de l'avis. */
+export interface ColonneDn {
+  __typename: string;
+  id: string;
+  label: string;
+  stringValue?: string | null;
+  // Alias : `value` n'a pas le même type d'une colonne à l'autre (BigInt, Float, ISO8601Date).
+  valeurEntiere?: string | number | null;
+  valeurDecimale?: number | null;
+  valeurDate?: string | null;
+}
+
+export interface PieceJustificativeChampDn {
+  __typename: "PieceJustificativeChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  nature: string;
+  files: Array<{ contentType?: string | null }>;
+  columns: ColonneDn[];
+}
+
+export interface IntegerNumberChampDn {
+  __typename: "IntegerNumberChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  valeurEntiere?: string | number | null;
+}
+
+export interface RepetitionChampDn {
+  __typename: "RepetitionChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  rows: Array<{ champs: ChampAvisImpotDn[] }>;
+}
+
+export interface AutreChampDn {
+  __typename: string;
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+}
+
+export interface CommuneChampDn {
+  __typename: "CommuneChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  departement?: { code: string } | null;
+  commune?: { code: string; name: string } | null;
+}
+
+export interface TextChampDn {
+  __typename: "TextChamp";
+  champDescriptorId: string;
+  label: string;
+  updatedAt: string;
+  valeurTexte?: string | null;
+}
+
+export type ChampAvisImpotDn =
+  PieceJustificativeChampDn | IntegerNumberChampDn | RepetitionChampDn | CommuneChampDn | TextChampDn | AutreChampDn;
+
+/** Projection d'un dossier d'éligibilité pour le contrôle de l'avis d'imposition. */
+export interface DossierAvisImpot {
+  id: string;
+  number: number;
+  state: DossierState;
+  dateDepot?: string | null;
+  dateDerniereModification?: string | null;
+  dateDerniereModificationChamps?: string | null;
+  demarche?: { number: number } | null;
+  champs: ChampAvisImpotDn[];
+  annotations: Array<{ champDescriptorId: string; stringValue?: string | null }>;
+}
+
+/** Valeur d'annotation, un seul type de champ à la fois (`AnnotationValueInput @oneOf`). */
+export type ValeurAnnotationDn =
+  | { text: string }
+  | { textarea: string }
+  | { dropDownList: string }
+  // `@oneOf` refuse `null` : un nombre ne se vide pas par l'API.
+  | { integerNumber: number };
+
+export interface ModificationAnnotationsDn {
+  dossierId: string;
+  instructeurId: string;
+  annotations: Array<{ id: string; value: ValeurAnnotationDn }>;
 }
 
 export interface DossiersConnection {

@@ -1,0 +1,1 @@
+ALTER TABLE "vulnerabilite_simulations" ADD COLUMN "source_chaleur_sous_sol" varchar(32);

@@ -28,11 +28,10 @@ describe("buildInfoVulnerabilite", () => {
     expect(result).toBeNull();
   });
 
-  it("mappe le score persisté et les réponses en libellés lisibles", async () => {
+  it("mappe les réponses en libellés lisibles et compte les points", async () => {
     mockedFindById.mockResolvedValue({
       id: "sim-1",
       createdAt: new Date("2026-06-01T10:00:00Z"),
-      scoreGlobal: 42,
       penteTerrain: "vers_facade",
       reseauxEnterres: null,
       gravierProprete: null,
@@ -48,7 +47,7 @@ describe("buildInfoVulnerabilite", () => {
 
     const result = await buildInfoVulnerabilite("sim-1");
 
-    expect(result?.scoreGlobal).toBe(42);
+    expect(result?.compte).toEqual({ critique: 0, vigilance: 1, a_verifier: 0, bonne_pratique: 1 });
     expect(result?.completedAt).toEqual(new Date("2026-06-01T10:00:00Z"));
     // Seules les réponses effectivement renseignées (non null) apparaissent.
     expect(result?.reponses).toEqual(
@@ -61,13 +60,12 @@ describe("buildInfoVulnerabilite", () => {
     expect(result?.reponses).toHaveLength(3);
   });
 
-  it("calcule le score d'impact de chaque réponse pour le code couleur côté agent", async () => {
+  it("donne la catégorie de chaque réponse pour le label côté agent, aucune pour l'aléa", async () => {
     mockedFindById.mockResolvedValue({
       id: "sim-1",
       createdAt: new Date("2026-06-01T10:00:00Z"),
-      scoreGlobal: 42,
       penteTerrain: null,
-      reseauxEnterres: null,
+      reseauxEnterres: "sous_fondations",
       gravierProprete: null,
       gouttieres: null,
       arbreProximite: null,
@@ -82,7 +80,8 @@ describe("buildInfoVulnerabilite", () => {
     const result = await buildInfoVulnerabilite("sim-1");
 
     expect(result?.reponses).toEqual([
-      expect.objectContaining({ label: "Aléa RGA (sol)", impactScore: expect.any(Number) }),
+      { label: "Aléa RGA (sol)", valeur: "Aléa fort", categorie: null },
+      { label: "Réseaux enterrés", valeur: "Sous les fondations", categorie: "critique" },
     ]);
   });
 });

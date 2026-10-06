@@ -1,19 +1,13 @@
 import { z } from "zod";
-import { CRITERES_CONFIG, ESSENCES_AGRESSIVITE, getCritereConfig } from "./grille-ponderation";
+import { ALEA_RGA_CRITERE_ID, ALEA_RGA_LABELS, CRITERES_CONFIG, type CritereConfig } from "./grille-categorisation";
 import { toReponsesParCritere, type ReponsesParCritere } from "./vulnerabilite-critere-fields";
 import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
 
 /** Métropole (01-95, 2A/2B) et outre-mer (971-976, 984-988). */
 const CODE_DEPARTEMENT_REGEX = /^(2[AB]|[0-9]{2,3})$/;
 
-/** Valeurs acceptées pour un critère : son barème, ou la table d'essences pour `arbre_essence`. */
-function reponsesValides(critereId: string): [string, ...string[]] {
-  const valeurs =
-    critereId === "arbre_essence"
-      ? Object.keys(ESSENCES_AGRESSIVITE)
-      : (getCritereConfig(critereId)?.bareme ?? []).map((b) => b.reponse);
-
-  return valeurs as [string, ...string[]];
+function reponsesValides(critere: CritereConfig): [string, ...string[]] {
+  return critere.reponses.map((r) => r.reponse) as [string, ...string[]];
 }
 
 /**
@@ -22,17 +16,20 @@ function reponsesValides(critereId: string): [string, ...string[]] {
  * Deux propriétés à préserver :
  * - **anonymat** (ADR-0031) : seul le code département sort du navigateur, jamais l'adresse,
  *   les coordonnées, la clé BAN ou l'identifiant RNB, qui ne servent qu'à l'affichage ;
- * - **non falsifiable** : aucun score n'est accepté du client, le serveur le recalcule à partir
- *   des réponses validées ici. La page étant publique et non authentifiée, tout ce qui est
- *   accepté tel quel finit dans les stats qui servent à calibrer la grille.
+ * - **non falsifiable** : aucune catégorie n'est acceptée du client, seules des réponses
+ *   connues de la grille le sont. La page étant publique et non authentifiée, tout ce qui est
+ *   accepté tel quel finit dans les stats.
  *
- * Les valeurs acceptées sont dérivées de la grille de pondération : elle reste le seul fichier
- * à modifier pour ajuster la méthode (ADR-0030).
+ * Les valeurs acceptées sont dérivées de la grille de catégorisation : elle reste le seul
+ * fichier à modifier pour ajuster la méthode (ADR-0045).
  */
 export const vulnerabiliteSimulationPayloadSchema = z.object({
   codeDepartement: z.string().regex(CODE_DEPARTEMENT_REGEX).nullable(),
   reponses: z.object(
-    Object.fromEntries(CRITERES_CONFIG.map((critere) => [critere.id, z.enum(reponsesValides(critere.id)).optional()]))
+    Object.fromEntries([
+      [ALEA_RGA_CRITERE_ID, z.enum(Object.keys(ALEA_RGA_LABELS) as [string, ...string[]]).optional()],
+      ...CRITERES_CONFIG.map((critere) => [critere.id, z.enum(reponsesValides(critere)).optional()] as const),
+    ])
   ),
 });
 

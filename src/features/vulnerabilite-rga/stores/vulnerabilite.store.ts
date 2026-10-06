@@ -4,7 +4,8 @@ import type { VulnerabiliteState } from "../domain/entities/vulnerabilite-state.
 import type { PartialVulnerabiliteReponses } from "../domain/types/vulnerabilite-reponses.types";
 import { VulnerabiliteFlowService } from "../domain/services/vulnerabilite-flow.service";
 
-const VULNERABILITE_STORAGE_KEY = "fonds-argile-vulnerabilite-rga";
+// v2 : le résultat persisté n'est plus un score — une session antérieure ne doit pas être relue.
+const VULNERABILITE_STORAGE_KEY = "fonds-argile-vulnerabilite-rga-v2";
 
 interface VulnerabiliteStoreState {
   vulnerabilite: VulnerabiliteState;

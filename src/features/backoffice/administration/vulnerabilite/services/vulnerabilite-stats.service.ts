@@ -1,13 +1,18 @@
 import { vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
 import type { VulnerabiliteSimulation } from "@/shared/database/schema/vulnerabilite-simulations";
 import {
-  CATEGORIES_CONFIG,
-  type CategorieVulnerabilite,
-} from "@/features/vulnerabilite-rga/domain/value-objects/grille-ponderation";
+  CATEGORIES_AFFICHAGE,
+  type CategorieAffichee,
+} from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
+import {
+  categoriserReponses,
+  compterPoints,
+} from "@/features/vulnerabilite-rga/domain/services/categorisation.service";
 import {
   CRITERE_FIELDS,
   QUESTION_LABELS,
   getReponseLabel,
+  reponsesDepuisColonnes,
 } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-critere-fields";
 import {
   fetchMatomoCountByDimension,
@@ -22,7 +27,7 @@ import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-
 import type {
   CritereReponsesStats,
   ReponseDistribution,
-  VulnerabiliteScoreMoyen,
+  VulnerabilitePointsMoyens,
   VulnerabiliteStatsBdd,
   VulnerabiliteTopDepartement,
 } from "../domain/types/vulnerabilite-stats.types";
@@ -76,24 +81,25 @@ function computeReponsesStats(rows: VulnerabiliteSimulation[]): CritereReponsesS
   });
 }
 
-function computeScoreMoyen(rows: VulnerabiliteSimulation[]): VulnerabiliteScoreMoyen {
-  const parCategorie = {} as Record<CategorieVulnerabilite, number | null>;
+// Les catégories sont relues dans la grille courante, pas figées à la simulation : une
+// grille révisée requalifie aussi l'historique.
+function computePointsMoyens(rows: VulnerabiliteSimulation[]): VulnerabilitePointsMoyens {
+  const categories = Object.keys(CATEGORIES_AFFICHAGE) as CategorieAffichee[];
+  const totaux = Object.fromEntries(categories.map((c) => [c, 0])) as Record<CategorieAffichee, number>;
 
-  for (const cat of CATEGORIES_CONFIG) {
-    const valeurs = rows
-      .map((r) => (r.scoreParCategorie as Record<string, number | null> | null)?.[cat.id])
-      .filter((v): v is number => typeof v === "number");
-    parCategorie[cat.id] = valeurs.length > 0 ? Math.round(valeurs.reduce((a, b) => a + b, 0) / valeurs.length) : null;
+  for (const row of rows) {
+    const compte = compterPoints(categoriserReponses(reponsesDepuisColonnes(row)));
+    for (const categorie of categories) totaux[categorie] += compte[categorie];
   }
 
-  const global = rows.length > 0 ? Math.round(rows.reduce((acc, r) => acc + r.scoreGlobal, 0) / rows.length) : null;
-
-  return { global, parCategorie };
+  return Object.fromEntries(
+    categories.map((c) => [c, rows.length > 0 ? Math.round((totaux[c] / rows.length) * 10) / 10 : null])
+  ) as VulnerabilitePointsMoyens;
 }
 
 /**
  * Statistiques issues de la table anonyme `vulnerabilite_simulations` : total de simulations
- * terminées, répartition par réponse et score moyen — Matomo ne sait pas calculer de moyenne
+ * terminées, répartition par réponse et points moyens par catégorie — Matomo ne sait pas calculer de moyenne
  * ni agréger des champs de formulaire, cf. ADR sur les stats du simulateur de vulnérabilité.
  */
 export async function getVulnerabiliteStatsBdd(periodeId: PeriodeId): Promise<VulnerabiliteStatsBdd> {
@@ -103,7 +109,7 @@ export async function getVulnerabiliteStatsBdd(periodeId: PeriodeId): Promise<Vu
   return {
     totalSimulations: rows.length,
     reponses: computeReponsesStats(rows),
-    scoreMoyen: computeScoreMoyen(rows),
+    pointsMoyens: computePointsMoyens(rows),
   };
 }
 

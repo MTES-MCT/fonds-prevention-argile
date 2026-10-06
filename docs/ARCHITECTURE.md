@@ -21,18 +21,18 @@ DDD-lite par feature.
 
 ## 2. Features métier (`src/features/`)
 
-| Feature                | Rôle métier                                                                                                                                                                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`                 | Authentification FranceConnect + ProConnect, sessions, rôles et permissions                                                                                                                                                                          |
-| `parcours/core`        | Domaine du parcours : étapes, statuts, value-objects, progression                                                                                                                                                                                    |
-| `parcours/amo`         | Sélection et validation de l'AMO (assistant maîtrise d'ouvrage)                                                                                                                                                                                      |
-| `parcours/dossiers-ds` | Dossiers Démarches Simplifiées : création/préremplissage, sync, suivi d'état                                                                                                                                                                         |
-| `simulateur`           | Simulateur RGA (exposition au retrait-gonflement des argiles, éligibilité)                                                                                                                                                                           |
-| `vulnerabilite-rga`    | Simulateur public de vulnérabilité RGA (`/vulnerabilite-rga`) : grille de pondération centralisée, jauge de score, recommandations — indépendant de `simulateur`, **inactif en production** ([guide](vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md)) |
-| `rga-map`              | Visualisation cartographique des zones RGA                                                                                                                                                                                                           |
-| `seo`                  | Données géographiques et SEO : catastrophes naturelles (catnat), allers-vers                                                                                                                                                                         |
-| `backoffice`           | Espaces agents : `espace-agent` (suivi dossiers) et `administration`                                                                                                                                                                                 |
-| `public-stats`         | Chiffres clés publics depuis le lancement (`/stats`) : cartes + évolution mensuelle                                                                                                                                                                  |
+| Feature                | Rôle métier                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`                 | Authentification FranceConnect + ProConnect, sessions, rôles et permissions                                                                                                                                                                                                                                                         |
+| `parcours/core`        | Domaine du parcours : étapes, statuts, value-objects, progression                                                                                                                                                                                                                                                                   |
+| `parcours/amo`         | Sélection et validation de l'AMO (assistant maîtrise d'ouvrage)                                                                                                                                                                                                                                                                     |
+| `parcours/dossiers-ds` | Dossiers Démarches Simplifiées : création/préremplissage, sync, suivi d'état                                                                                                                                                                                                                                                        |
+| `simulateur`           | Simulateur RGA (exposition au retrait-gonflement des argiles, éligibilité)                                                                                                                                                                                                                                                          |
+| `vulnerabilite-rga`    | Simulateur public de vulnérabilité RGA (`/vulnerabilite-rga`) : grille de catégorisation centralisée, points critiques / de vigilance / à vérifier, recommandations — distinct de `simulateur`, dont il ne reprend que les règles d'éligibilité, **inactif en production** ([guide](vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md)) |
+| `rga-map`              | Visualisation cartographique des zones RGA                                                                                                                                                                                                                                                                                          |
+| `seo`                  | Données géographiques et SEO : catastrophes naturelles (catnat), allers-vers                                                                                                                                                                                                                                                        |
+| `backoffice`           | Espaces agents : `espace-agent` (suivi dossiers) et `administration`                                                                                                                                                                                                                                                                |
+| `public-stats`         | Chiffres clés publics depuis le lancement (`/stats`) : cartes + évolution mensuelle                                                                                                                                                                                                                                                 |
 
 Sous-modules notables :
 
@@ -146,15 +146,15 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 ## 6. Intégrations externes
 
-| Service               | Usage                                            | Adapter / config                                                  |
-| --------------------- | ------------------------------------------------ | ----------------------------------------------------------------- |
-| FranceConnect         | Identité demandeurs                              | `src/features/auth/adapters/franceconnect/`                       |
-| ProConnect            | Identité agents                                  | `src/features/auth/adapters/proconnect/`                          |
-| Démarches Simplifiées | Dossiers (GraphQL lecture + REST préremplissage) | `src/features/parcours/dossiers-ds/adapters/`                     |
-| Brevo / Mailhog       | Emails transactionnels (prod / dev)              | `src/shared/email/`                                               |
-| Brevo Contacts        | Synchro contacts + évènements (cycle de vie)     | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |
-| Matomo                | Analytics                                        | `@socialgouv/matomo-next`                                         |
-| Géorisques / RGA      | Données risque                                   | `src/features/seo/`, `scripts/import/rga-zones/`                  |
+| Service               | Usage                                                         | Adapter / config                                                  |
+| --------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| FranceConnect         | Identité demandeurs                                           | `src/features/auth/adapters/franceconnect/`                       |
+| ProConnect            | Identité agents                                               | `src/features/auth/adapters/proconnect/`                          |
+| Démarches Simplifiées | Dossiers (GraphQL lecture + annotations, REST préremplissage) | `src/features/parcours/dossiers-ds/adapters/`                     |
+| Brevo / Mailhog       | Emails transactionnels (prod / dev)                           | `src/shared/email/`                                               |
+| Brevo Contacts        | Synchro contacts + évènements (cycle de vie)                  | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |
+| Matomo                | Analytics                                                     | `@socialgouv/matomo-next`                                         |
+| Géorisques / RGA      | Données risque                                                | `src/features/seo/`, `scripts/import/rga-zones/`                  |
 
 > Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
 > `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de

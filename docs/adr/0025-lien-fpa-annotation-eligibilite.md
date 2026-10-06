@@ -112,7 +112,8 @@ les logs de debug et n'intervient pas dans le préremplissage.
 - Le préremplissage d'éligibilité ne contient plus de champ mort : ce qu'il écrit
   correspond à ce que l'instructeur voit.
 - Les liens FPA déjà écrits dans DN sur diagnostic et devis cessent de renvoyer un 404,
-  sans rien réécrire côté DN (ce qui est de toute façon impossible par API).
+  sans rien réécrire côté DN (impossible par le préremplissage, qui ne sait que créer ; la mutation
+  GraphQL `dossierModifierAnnotations` le permet pour les annotations privées, cf. ADR-0043).
 - Une démarche non répertoriée est signalée dans les logs au lieu d'échouer en silence.
 
 ### Négatives / Risques
@@ -130,6 +131,22 @@ Aucune migration de données. Les dossiers d'éligibilité **déjà créés** da
 reçoivent pas l'annotation rétroactivement (le préremplissage ne sait que créer) — seuls
 les nouveaux dossiers sont concernés. Les liens diagnostic/devis existants, eux, sont
 réparés dès le déploiement puisque la résolution est faite au clic.
+
+## Amendement — Lien complété par le CRON (octobre 2026)
+
+La limite « seuls les nouveaux dossiers sont concernés » est levée. Depuis ADR-0043, l'application
+écrit des annotations après création par la mutation `dossierModifierAnnotations`. Le CRON de
+synchronisation l'utilise aussi pour le lien FPA : sur chaque dossier synchronisé (éligibilité,
+diagnostic, devis), une annotation **vide** reçoit le permalien du parcours.
+
+- Une valeur existante n'est **jamais écrasée** : elle peut désigner un autre parcours, et la
+  réconciliation (ADR-0027) la lit comme clé de rattachement. La remplacer masquerait le conflit.
+- Le coût est nul pour les dossiers déjà liés : la synchronisation lisait déjà le dossier, elle
+  lit ses annotations dans la même requête.
+- Un échec n'entre pas dans les erreurs du run, que le diagnostic lit comme des pannes de
+  synchronisation. Il est compté à part dans le bilan des annotations DN.
+- Prérequis : l'instructeur `DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID` doit avoir accès aux trois
+  démarches, pas seulement à l'éligibilité.
 
 ## Liens
 

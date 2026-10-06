@@ -1,22 +1,35 @@
 import { vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
-import type { VulnerabiliteSimulation } from "@/shared/database/schema/vulnerabilite-simulations";
 import {
   CRITERE_FIELDS,
   QUESTION_LABELS,
   getReponseLabel,
+  reponsesDepuisColonnes,
 } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-critere-fields";
-import { getImpactScore } from "@/features/vulnerabilite-rga/domain/services/scoring.service";
+import {
+  categoriserReponses,
+  compterPoints,
+  getCategorieReponse,
+  type ComptePoints,
+} from "@/features/vulnerabilite-rga/domain/services/categorisation.service";
+import type { CategorieReponse } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
+
+export interface InfoVulnerabiliteReponse {
+  label: string;
+  valeur: string;
+  /** null pour l'aléa et l'essence de l'arbre, qui ne portent pas de catégorie. */
+  categorie: CategorieReponse | null;
+}
 
 export interface InfoVulnerabiliteData {
-  scoreGlobal: number;
+  compte: ComptePoints;
   completedAt: Date;
-  reponses: { label: string; valeur: string; impactScore: number | null }[];
+  reponses: InfoVulnerabiliteReponse[];
 }
 
 /**
  * Construit les données de la carte « Vulnérabilité au RGA » côté agent, à partir du pointeur
- * `parcours_prevention.vulnerabilite_simulation_id`. Lit le score déjà persisté au moment de la
- * simulation (pas de recalcul) — cohérent avec ce que le demandeur a vu.
+ * `parcours_prevention.vulnerabilite_simulation_id`. Les catégories sont relues dans la grille
+ * en vigueur, seules les réponses étant persistées.
  */
 export async function buildInfoVulnerabilite(
   vulnerabiliteSimulationId: string | null
@@ -26,15 +39,23 @@ export async function buildInfoVulnerabilite(
   const simulation = await vulnerabiliteSimulationsRepo.findById(vulnerabiliteSimulationId);
   if (!simulation) return null;
 
-  const reponses = CRITERE_FIELDS.map(({ critereId, field }) => {
-    const valeur = simulation[field as keyof VulnerabiliteSimulation] as string | null;
-    if (!valeur) return null;
-    return {
-      label: QUESTION_LABELS[critereId] ?? critereId,
-      valeur: getReponseLabel(critereId, valeur),
-      impactScore: getImpactScore(critereId, valeur),
-    };
-  }).filter((r): r is { label: string; valeur: string; impactScore: number | null } => r !== null);
+  const reponsesParCritere = reponsesDepuisColonnes(simulation);
 
-  return { scoreGlobal: simulation.scoreGlobal, completedAt: simulation.createdAt, reponses };
+  const reponses = CRITERE_FIELDS.flatMap(({ critereId }): InfoVulnerabiliteReponse[] => {
+    const valeur = reponsesParCritere[critereId];
+    if (!valeur) return [];
+    return [
+      {
+        label: QUESTION_LABELS[critereId] ?? critereId,
+        valeur: getReponseLabel(critereId, valeur),
+        categorie: getCategorieReponse(critereId, valeur),
+      },
+    ];
+  });
+
+  return {
+    compte: compterPoints(categoriserReponses(reponsesParCritere)),
+    completedAt: simulation.createdAt,
+    reponses,
+  };
 }

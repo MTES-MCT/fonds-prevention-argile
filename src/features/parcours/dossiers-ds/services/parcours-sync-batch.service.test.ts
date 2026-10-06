@@ -3,6 +3,8 @@ import { runSyncBatch } from "./parcours-sync-batch.service";
 import { parcoursRepo, syncRunRepo } from "@/shared/database/repositories";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
+import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
+import { completerLienFpa } from "./lien-fpa.service";
 import { moveToNextStep } from "@/features/parcours/core/services";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -35,6 +37,14 @@ vi.mock("./ds-sync.service", () => ({
   recomputeParcoursStatus: vi.fn(),
 }));
 
+vi.mock("./controle-avis-impot.service", () => ({
+  controlerAvisImpotApresSync: vi.fn(),
+}));
+
+vi.mock("./lien-fpa.service", () => ({
+  completerLienFpa: vi.fn(),
+}));
+
 vi.mock("@/features/parcours/core/services", () => ({
   moveToNextStep: vi.fn(),
   validateCurrentStep: vi.fn(),
@@ -48,6 +58,8 @@ const mockedGetAllDossiers = vi.mocked(getAllDossiersByParcours);
 const mockedSyncDossierStatus = vi.mocked(syncDossierStatus);
 const mockedRecomputeStatus = vi.mocked(recomputeParcoursStatus);
 const mockedMoveToNextStep = vi.mocked(moveToNextStep);
+const mockedControleAvisImpot = vi.mocked(controlerAvisImpotApresSync);
+const mockedCompleterLienFpa = vi.mocked(completerLienFpa);
 
 /** Type guard pour narrow dans les tests qui attendent un run effectif. */
 function assertExecuted<T extends { skipped: boolean }>(result: T): asserts result is Extract<T, { skipped: false }> {
@@ -86,6 +98,8 @@ describe("runSyncBatch", () => {
     // Par défaut : recompute ne change rien (les tests qui veulent simuler une transition
     // s'appuient sur les findById séquencés du parcours, pas sur cette valeur)
     mockedRecomputeStatus.mockResolvedValue({ success: true, data: { updated: false } } as never);
+    mockedControleAvisImpot.mockResolvedValue(null);
+    mockedCompleterLienFpa.mockResolvedValue(false);
   });
 
   it("aucun parcours actif → status SUCCESS, pas d'entry", async () => {
@@ -382,6 +396,248 @@ describe("runSyncBatch", () => {
 
     expect(result.totalErrors).toBe(2);
     expect(result.status).toBe(SyncRunStatus.ERROR);
+  });
+
+  describe("contrôle de l'avis d'imposition", () => {
+    const eligibilite = { id: "d1", step: Step.ELIGIBILITE, dsNumber: "123" };
+
+    function preparer(dossiers: unknown[], sync: unknown) {
+      const parcours = fakeParcours();
+      mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
+      mockedParcoursRepo.findById.mockResolvedValue(parcours as never);
+      mockedGetAllDossiers.mockResolvedValue(dossiers as never);
+      mockedSyncDossierStatus.mockResolvedValue(sync as never);
+      return parcours;
+    }
+
+    it("est lancé après la sync du dossier d'éligibilité, avec son état DN", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: {
+          updated: false,
+          oldStatus: DSStatus.EN_INSTRUCTION,
+          newStatus: DSStatus.EN_INSTRUCTION,
+          champsModifiesAt: "2026-09-29T15:41:02+02:00",
+        },
+      });
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      expect(mockedControleAvisImpot).toHaveBeenCalledWith({
+        dossier: eligibilite,
+        dsStatus: DSStatus.EN_INSTRUCTION,
+        champsModifiesAt: "2026-09-29T15:41:02+02:00",
+      });
+      expect(result.status).toBe(SyncRunStatus.SUCCESS);
+      expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
+    });
+
+    it("n'est pas lancé pour un autre dossier que celui d'éligibilité", async () => {
+      preparer([{ id: "d2", step: Step.DIAGNOSTIC, dsNumber: "456" }], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedControleAvisImpot).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["sync en échec", { success: false, error: "unauthorized" }],
+      ["prérempli non observé", { success: true, data: { updated: false, notObserved: true } }],
+    ])("n'est pas lancé quand l'état DN est inconnu (%s)", async (_cas, sync) => {
+      preparer([eligibilite], sync);
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedControleAvisImpot).not.toHaveBeenCalled();
+    });
+
+    it("trace chaque contrôle lancé et totalise le bilan du run, sans aucune valeur", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+      mockedControleAvisImpot.mockResolvedValue({
+        entree: { issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage"] },
+        verdict: "a_verifier",
+      });
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+      expect(entry.annotationsDn).toEqual({ issue: "ecrite", annotationsEcrites: ["avisImpot", "typeMenage"] });
+      expect(Object.keys(entry.annotationsDn ?? {}).sort()).toEqual(["annotationsEcrites", "issue"]);
+      expect(result.totalUpdated).toBe(0);
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({
+          bilanAnnotationsDn: {
+            controles: 1,
+            ecritures: { avisImpot: 1, typeMenage: 1, tauxSubvention: 0, lienCarte: 0, zoneAlea: 0, lienFpa: 0 },
+            aJour: 0,
+            echecs: 0,
+            echecsLienFpa: 0,
+            adressesNonGeocodees: 0,
+            verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
+          },
+        })
+      );
+    });
+
+    it("trace aussi un contrôle qui n'a rien eu à écrire", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+      mockedControleAvisImpot.mockResolvedValue({
+        entree: { issue: "inchangee", annotationsEcrites: [] },
+        verdict: "coherent",
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedSyncRunRepo.addEntry).toHaveBeenCalledOnce();
+      expect(mockedSyncRunRepo.addEntry.mock.calls[0][0].annotationsDn).toEqual({
+        issue: "inchangee",
+        annotationsEcrites: [],
+      });
+    });
+
+    it("enregistre un bilan à zéro quand aucun contrôle n'a tourné", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_INSTRUCTION, newStatus: DSStatus.EN_INSTRUCTION },
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({ bilanAnnotationsDn: expect.objectContaining({ controles: 0 }) })
+      );
+    });
+
+    it("trace un échec dans le run sans interrompre la sync du parcours", async () => {
+      preparer([eligibilite], {
+        success: true,
+        data: { updated: false, oldStatus: DSStatus.EN_CONSTRUCTION, newStatus: DSStatus.EN_CONSTRUCTION },
+      });
+      mockedControleAvisImpot.mockRejectedValue(new Error("Le jeton utilisé est configuré seulement en lecture"));
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      expect(mockedRecomputeStatus).toHaveBeenCalled();
+      expect(result.totalErrors).toBe(1);
+      const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+      expect(entry.error).toContain("avis-impot: Le jeton utilisé est configuré seulement en lecture");
+      expect(entry.annotationsDn).toEqual({ issue: "echec", annotationsEcrites: [] });
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({ bilanAnnotationsDn: expect.objectContaining({ controles: 1, echecs: 1 }) })
+      );
+    });
+  });
+
+  describe("lien FPA", () => {
+    const sync = {
+      success: true,
+      data: {
+        updated: false,
+        oldStatus: DSStatus.EN_INSTRUCTION,
+        newStatus: DSStatus.EN_INSTRUCTION,
+        dossierDnId: "RG9zc2llci0x",
+        annotations: [{ champDescriptorId: "Q2hhbXAtNjM1MjA4OQ==", stringValue: null }],
+      },
+    };
+
+    function preparer(dossiers: unknown[]) {
+      const parcours = fakeParcours();
+      mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
+      mockedParcoursRepo.findById.mockResolvedValue(parcours as never);
+      mockedGetAllDossiers.mockResolvedValue(dossiers as never);
+      mockedSyncDossierStatus.mockResolvedValue(sync as never);
+    }
+
+    it("est complété sur chaque dossier synchronisé, avec ce que la sync a lu", async () => {
+      preparer([
+        { id: "d2", step: Step.DIAGNOSTIC, dsNumber: "456", dsDemarcheId: "1" },
+        { id: "d3", step: Step.DEVIS, dsNumber: "789", dsDemarcheId: "2" },
+      ]);
+      mockedCompleterLienFpa.mockResolvedValue(true);
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedCompleterLienFpa).toHaveBeenCalledWith({
+        parcoursId: "p1",
+        step: Step.DIAGNOSTIC,
+        dsNumber: "456",
+        dsDemarcheId: "1",
+        dossierDnId: "RG9zc2llci0x",
+        annotations: sync.data.annotations,
+      });
+      expect(mockedSyncRunRepo.addEntry.mock.calls[0][0].annotationsDn).toEqual({
+        issue: null,
+        annotationsEcrites: ["lienFpa", "lienFpa"],
+      });
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({
+          bilanAnnotationsDn: expect.objectContaining({
+            controles: 0,
+            ecritures: expect.objectContaining({ lienFpa: 2 }),
+          }),
+        })
+      );
+    });
+
+    it("s'ajoute aux annotations écrites par le contrôle de l'avis", async () => {
+      preparer([{ id: "d1", step: Step.ELIGIBILITE, dsNumber: "123", dsDemarcheId: "146377" }]);
+      mockedCompleterLienFpa.mockResolvedValue(true);
+      mockedControleAvisImpot.mockResolvedValue({
+        entree: { issue: "ecrite", annotationsEcrites: ["avisImpot"] },
+        verdict: "coherent",
+      });
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedSyncRunRepo.addEntry.mock.calls[0][0].annotationsDn).toEqual({
+        issue: "ecrite",
+        annotationsEcrites: ["avisImpot", "lienFpa"],
+      });
+    });
+
+    it("trace un échec sans le compter comme une erreur de synchro", async () => {
+      preparer([{ id: "d2", step: Step.DIAGNOSTIC, dsNumber: "456", dsDemarcheId: "1" }]);
+      mockedCompleterLienFpa.mockRejectedValue(new Error("unauthorized"));
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const result = await runSyncBatch(SyncRunTrigger.CRON);
+      assertExecuted(result);
+
+      expect(result.totalErrors).toBe(0);
+      const entry = mockedSyncRunRepo.addEntry.mock.calls[0][0];
+      expect(entry.error).toBeUndefined();
+      expect(entry.annotationsDn).toEqual({ issue: null, annotationsEcrites: [], echecLienFpa: true });
+    });
+
+    it("n'est pas tenté sans dossier lu côté DN", async () => {
+      preparer([{ id: "d2", step: Step.DIAGNOSTIC, dsNumber: "456", dsDemarcheId: "1" }]);
+      mockedSyncDossierStatus.mockResolvedValue({
+        success: true,
+        data: { updated: false, notObserved: true },
+      } as never);
+
+      await runSyncBatch(SyncRunTrigger.CRON);
+
+      expect(mockedCompleterLienFpa).not.toHaveBeenCalled();
+      expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
+    });
   });
 
   describe("verrou anti-runs concurrents", () => {

@@ -3,8 +3,9 @@
 import type { ReactNode } from "react";
 import { VulnerabiliteLayout } from "./VulnerabiliteLayout";
 import { NavigationButtons } from "./NavigationButtons";
-import { ImpactBadge } from "./ImpactBadge";
-import { getImpactScore } from "../../domain/services/scoring.service";
+import { CategorieBadge } from "./CategorieBadge";
+import { getCategorieReponse } from "../../domain/services/categorisation.service";
+import { getCategorieAffichage } from "../../domain/value-objects/grille-categorisation";
 
 export interface QuestionOption<TValue extends string> {
   value: TValue;
@@ -14,7 +15,7 @@ export interface QuestionOption<TValue extends string> {
 interface QuestionStepProps<TValue extends string> {
   /** Identifiant unique de la question (préfixe des id/name DOM, ex: "pente-terrain"). */
   fieldsetName: string;
-  /** Id du critère dans la grille de pondération (ex: "pente_terrain") — sert à afficher l'impact de la réponse sélectionnée. */
+  /** Id du critère dans la grille de catégorisation (ex: "pente_terrain") — sert à afficher la catégorie de la réponse sélectionnée. */
   critereId: string;
   title: string;
   illustration: ReactNode;
@@ -60,9 +61,10 @@ export function QuestionStep<TValue extends string>({
         <legend className="fr-fieldset__legend fr-sr-only">{title}</legend>
         {options.map((option) => {
           const isSelected = selected === option.value;
-          // Impact affiché UNIQUEMENT sur l'option sélectionnée : montrer un badge sur
+          // Catégorie affichée UNIQUEMENT sur l'option sélectionnée : montrer un badge sur
           // chaque option alourdirait l'écran et casserait la simplicité recherchée.
-          const impactScore = isSelected ? getImpactScore(critereId, option.value) : null;
+          const categorie = isSelected ? getCategorieReponse(critereId, option.value) : null;
+          const explication = getCategorieAffichage(categorie)?.explication;
 
           return (
             <div className="fr-fieldset__element" key={option.value}>
@@ -76,7 +78,8 @@ export function QuestionStep<TValue extends string>({
                 />
                 <label className="fr-label" htmlFor={`${fieldsetName}-${option.value}`}>
                   {option.label}
-                  {impactScore !== null && <ImpactBadge score={impactScore} />}
+                  <CategorieBadge categorie={categorie} />
+                  {explication && <span className="fr-hint-text">{explication}</span>}
                 </label>
               </div>
             </div>
