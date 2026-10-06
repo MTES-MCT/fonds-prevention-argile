@@ -74,6 +74,26 @@ describe("SimulationsParDepartementTable", () => {
     );
   });
 
+  it("signale un échec de chargement sans le présenter comme un vrai vide, et propose de réessayer", async () => {
+    const reessayer = vi.fn();
+    render(
+      <SimulationsParDepartementTable
+        departements={null}
+        loading={false}
+        erreur
+        onReessayer={reessayer}
+        periodeId="30j"
+      />
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("n'ont pas pu être chargées");
+    expect(screen.queryByText("Aucune donnée disponible.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Exporter en CSV" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(reessayer).toHaveBeenCalledTimes(1);
+  });
+
   it("désactive l'export quand il n'y a aucune donnée", () => {
     render(<SimulationsParDepartementTable departements={[]} loading={false} periodeId="tout" />);
 
