@@ -1212,6 +1212,9 @@ ancien état, sans `processed_at`, et chaque run comptait un faux changement et 
 garde le verdict **brut** de DN (`sans_suite`) ; `ds-anomaly.ts` compare après traduction et classe
 une décision déjà reflétée en base « Décision synchronisée », plus en désynchronisation.
 
+Les parcours archivés ou complétés, hors du CRON, ne sont pas rattrapés : sujet reporté, voir
+[SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md).
+
 Note : **un prérempli non déposé n'est pas une erreur de sync** ([ADR-0026](../adr/0026-gel-reset-eligibilite-not-found.md)).
 DN masque à l'API instructeur un dossier que l'usager n'a pas transmis : `getDossier` répond
 `Dossier not found`. Quand le dossier local n'a **ni `last_sync_at` ni `submitted_at`**,
@@ -1530,6 +1533,7 @@ type SyncRunResult =
 ### 6.10 Non-décisions / dette technique connue
 
 - **Pas de purge automatique de l'historique** : `sync_runs` et `sync_run_entries` grossissent indéfiniment. Prévoir un CRON de purge (>90 jours par exemple) en complément.
+- **Rattrapage des dossiers classés sans suite hors CRON** : voir [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md).
 - **Pas de flag explicite « parcours complété » dans `sync_run_entries`** : la complétion se déduit de `stepAfter = factures && statusAfter = valide`. À ajouter si on veut filtrer/agréger sur ce critère dans la vue admin.
 
 ---

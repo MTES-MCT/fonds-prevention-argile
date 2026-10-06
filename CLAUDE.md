@@ -115,6 +115,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   `docs/ARCHITECTURE.md`, `docs/security/RBAC-ROLES.md`, `docs/parcours/FLOW-AND-SYNC.md`,
   `README.md`, et créer un ADR (`/adr`) si une décision structurante est prise.
   Pas de doc inutile : ne documenter que ce qui change réellement.
+- Un sujet écarté d'une PR (retour de revue hors périmètre, arbitrage en attente, rattrapage à
+  mesurer d'abord) va dans `docs/SUJETS-A-TRAITER.md`, avec son préalable ; l'entrée est retirée
+  par la PR qui le traite.
 - Vérifier les vulnérabilités à chaque fonctionnalité (groupe de commits) : lancer
   `pnpm audit` (et `pnpm audit --prod` pour isoler le runtime). Toute vulnérabilité
   nouvelle ou acceptée doit être tracée dans `docs/security/snyk-accepted-vulnerabilities.md`
