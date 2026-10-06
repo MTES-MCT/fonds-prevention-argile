@@ -50,6 +50,12 @@ describe("SimulationsParDepartementTable", () => {
     expect(screen.getByRole("rowheader", { name: "Total (2 départements)" })).toBeInTheDocument();
   });
 
+  it("accorde le total au singulier quand un seul département est affiché (filtre département)", () => {
+    render(<SimulationsParDepartementTable departements={[DEPARTEMENTS[1]]} loading={false} periodeId="30j" />);
+
+    expect(screen.getByRole("rowheader", { name: "Total (1 département)" })).toBeInTheDocument();
+  });
+
   it("exporte en CSV les lignes affichées", async () => {
     const createObjectURL = vi.fn().mockReturnValue("blob:csv");
     Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });

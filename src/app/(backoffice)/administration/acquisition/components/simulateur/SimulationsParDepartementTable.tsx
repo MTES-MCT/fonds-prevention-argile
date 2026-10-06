@@ -176,7 +176,7 @@ export default function SimulationsParDepartementTable({
                   <tfoot>
                     <tr style={{ fontWeight: 700 }}>
                       <th scope="row" className="fr-text--sm">
-                        Total ({lignes.length} départements)
+                        Total ({lignes.length} département{lignes.length > 1 ? "s" : ""})
                       </th>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         {nombre(total.simulations)}
