@@ -40,6 +40,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | ---------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant                                                    | `tsx scripts/ops/audit/audit-parcours-ds-integrity.ts` |
 | [`audit-dossiers-bloques.ts`](#audit-dossiers-bloques)           | read-only | Parcours bloqués sur le dossier de l'étape courante (en_construction/en_instruction), cross-check DS optionnel                  | `pnpm audit:dossiers-bloques`                          |
+| [`analyser-ecarts-dn.ts`](#analyser-ecarts-dn)                   | read-only | Explique, dossier par dossier, l'écart entre une démarche DN et les compteurs de `/stats` (déposés, validés)                    | `pnpm ds:analyser-ecarts`                              |
 | [`audit-epci-fallback.ts`](#audit-epci-fallback)                 | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api | `tsx scripts/ops/audit/audit-epci-fallback.ts`         |
 | [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                       | `tsx scripts/ops/fix/fix-double-progression-amo.ts`    |
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                            | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
@@ -90,6 +91,26 @@ pnpm audit:dossiers-bloques --check-ds --csv=rapport.csv --anonymize
 ```
 
 **Prérequis** : `.env.local` avec `DATABASE_URL` (+ `DEMARCHES_SIMPLIFIEES_GRAPHQL_*` si `--check-ds`).
+
+### analyser-ecarts-dn
+
+Rapproche les dossiers d'une démarche DN des compteurs de `/stats`, numéro par numéro, en lecture seule des deux côtés (contrairement à `ds:reconcilier`, qui écrit dans la file d'observations même en dry-run). Le rapport décompose :
+
+- **les déposés** : DN = base − dossiers que DN ne liste plus (supprimés, en corbeille, introuvables) + dossiers que DN compte et pas `/stats`, classés par cause (pointeur sans dépôt enregistré, numéro connu du seul registre, lien FPA vers un parcours perdu ou supprimé, dossier prérempli sans lien, dossier créé directement dans DN) ;
+- **les validés** : les acceptés DN absents du graphique (décision du mois en cours, date de décision manquante, état pas encore à jour, hors périmètre) et les validés en base que DN ne dit pas acceptés ;
+- **les états divergents** des dossiers connus des deux côtés, avec leur cause probable (parcours archivé ou complété hors du CRON, synchro en erreur ou ancienne, état DN absent de l'enum `ds_status`) ;
+- **les dates de décision** qui diffèrent de plus d'un jour.
+
+Le bilan se referme : un résidu non nul signale un cas qui échappe au classement. Seul le lien FPA est lu parmi les annotations ; aucune donnée d'usager ni champ du formulaire n'est demandé à DN.
+
+```bash
+pnpm ds:analyser-ecarts                    # éligibilité, numéros anonymisés, 10 par catégorie
+pnpm ds:analyser-ecarts --detail           # listes complètes
+pnpm ds:analyser-ecarts --no-anonymize     # numéros DN en clair, pour agir dessus
+pnpm ds:analyser-ecarts --step=diagnostic  # autre démarche
+```
+
+**Prérequis** : `DATABASE_URL` + `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_*` + `DEMARCHES_SIMPLIFIEES_ID_*` (déjà injectés dans un one-off Scalingo).
 
 ### audit-epci-fallback
 
