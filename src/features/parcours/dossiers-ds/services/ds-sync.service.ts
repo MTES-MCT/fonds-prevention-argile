@@ -107,7 +107,11 @@ export async function syncDossierStatus(
   };
 
   if (newStatus !== oldStatus) {
-    await updateDossierStatus(localDossier.id, newStatus, dates);
+    // Sans ce contrôle, un UPDATE refusé passait pour un changement et renotifiait Brevo à chaque run.
+    const ecriture = await updateDossierStatus(localDossier.id, newStatus, dates);
+    if (!ecriture.success) {
+      return { success: false, error: `Dossier ${dsNumber} : écriture du statut ${newStatus} échouée` };
+    }
 
     // Synchro Brevo (flux) : évènement d'update DN. Best-effort, uniquement sur
     // changement réel de ds_status (même condition que sync_run_entries).
@@ -135,7 +139,10 @@ export async function syncDossierStatus(
 
   // Statut inchangé mais on met à jour les dates si pas encore renseignées
   if (dates.submittedAt || dates.instructedAt || dates.processedAt) {
-    await updateDossierStatus(localDossier.id, newStatus, dates);
+    const ecriture = await updateDossierStatus(localDossier.id, newStatus, dates);
+    if (!ecriture.success) {
+      return { success: false, error: `Dossier ${dsNumber} : écriture des dates échouée` };
+    }
   }
 
   return {

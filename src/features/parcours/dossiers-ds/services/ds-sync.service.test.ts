@@ -293,4 +293,15 @@ describe("syncDossierStatus — dossier classé sans suite côté DN", () => {
     expect(result.success).toBe(false);
     expect(mockedUpdateDossierStatus).not.toHaveBeenCalled();
   });
+
+  it("remonte en erreur un UPDATE refusé, sans annoncer de changement ni notifier Brevo", async () => {
+    mockedGetDossierByStep.mockResolvedValue({ id: "d1", dsStatus: DSStatus.EN_INSTRUCTION } as never);
+    mockedGetDossierStatus.mockResolvedValue({ ...DOSSIER_DN, state: "sans_suite" });
+    mockedUpdateDossierStatus.mockResolvedValue({ success: false, error: "Erreur lors de la mise à jour du statut" });
+
+    const result = await syncDossierStatus("p1", Step.ELIGIBILITE, "123");
+
+    expect(result.success).toBe(false);
+    expect(mockedEmit).not.toHaveBeenCalled();
+  });
 });
