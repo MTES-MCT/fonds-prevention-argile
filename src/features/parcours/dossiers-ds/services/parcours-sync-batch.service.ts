@@ -210,6 +210,7 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   let verdictControle: VerdictControleDn | null = null;
   const liensEcrits: AnnotationDn[] = [];
   let echecLienFpa = false;
+  let etapeCouranteNonRelue = false;
 
   // 1. Synchronise tous les dossiers (sans toucher au current_status du parcours).
   //    On garde tous les dossiers en sync DS pour rester cohérent côté historique,
@@ -228,6 +229,7 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       // Échec de sync d'un dossier (ex: unauthorized côté DS) : on le collecte au lieu
       // de l'ignorer silencieusement, pour le tracer dans l'historique du run.
       dossierErrors.push(`${dossier.step}: ${result.error}`);
+      if (dossier.step === before.currentStep) etapeCouranteNonRelue = true;
     }
 
     if (result.success && result.data?.dossierDnId && result.data.annotations) {
@@ -290,7 +292,8 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   //   de findActiveForSync au prochain run.
   let stepAdvanced = false;
   let final = afterSync;
-  if (afterSync.currentStatus === Status.VALIDE) {
+  // Un VALIDE lu en base sans avoir pu relire DN peut être périmé : on n'avance pas sur lui.
+  if (afterSync.currentStatus === Status.VALIDE && !etapeCouranteNonRelue) {
     const progression = await moveToNextStep(userId);
     if (progression.success && !progression.data.complete) {
       stepAdvanced = true;
