@@ -314,6 +314,66 @@ describe("runSyncBatch", () => {
     expect(result.status).toBe(SyncRunStatus.SUCCESS);
   });
 
+  it("étape VALIDE mais dossier courant non relu → erreur tracée, aucune progression", async () => {
+    const parcours = fakeParcours({ currentStep: Step.FACTURES, currentStatus: Status.VALIDE });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
+    mockedParcoursRepo.findById.mockResolvedValue(parcours as never);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.FACTURES, dsNumber: "123" } as never]);
+    mockedSyncDossierStatus.mockResolvedValue({
+      success: false,
+      error: "Dossier 123 : écriture du statut classe_sans_suite échouée",
+    } as never);
+
+    const result = await runSyncBatch(SyncRunTrigger.CRON);
+    assertExecuted(result);
+
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+    expect(result.totalErrors).toBe(1);
+  });
+
+  it("étape changée pendant la synchro (progression concurrente) → aucune progression", async () => {
+    const before = fakeParcours({ currentStep: Step.DEVIS, currentStatus: Status.VALIDE });
+    const avanceAilleurs = fakeParcours({ currentStep: Step.FACTURES, currentStatus: Status.VALIDE });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([before as never]);
+    mockedParcoursRepo.findById.mockResolvedValueOnce(before as never).mockResolvedValueOnce(avanceAilleurs as never);
+    mockedGetAllDossiers.mockResolvedValue([{ id: "d1", step: Step.FACTURES, dsNumber: "123" } as never]);
+    mockedSyncDossierStatus.mockResolvedValue({ success: false, error: "Sync dossier 123 échouée" } as never);
+
+    await runSyncBatch(SyncRunTrigger.CRON);
+
+    expect(mockedMoveToNextStep).not.toHaveBeenCalled();
+  });
+
+  it("étape VALIDE et échec sur un dossier d'une étape passée → la progression a lieu", async () => {
+    const parcours = fakeParcours({ currentStep: Step.DIAGNOSTIC, currentStatus: Status.VALIDE });
+    const afterProgress = fakeParcours({ currentStep: Step.DEVIS, currentStatus: Status.TODO });
+
+    mockedParcoursRepo.findActiveForSync.mockResolvedValue([parcours as never]);
+    mockedParcoursRepo.findById
+      .mockResolvedValueOnce(parcours as never)
+      .mockResolvedValueOnce(parcours as never)
+      .mockResolvedValueOnce(afterProgress as never);
+    mockedGetAllDossiers.mockResolvedValue([
+      { id: "d1", step: Step.ELIGIBILITE, dsNumber: "111" } as never,
+      { id: "d2", step: Step.DIAGNOSTIC, dsNumber: "222" } as never,
+    ]);
+    mockedSyncDossierStatus.mockImplementation(async (_pid, step) =>
+      step === Step.ELIGIBILITE
+        ? ({ success: false, error: "Sync dossier 111 échouée" } as never)
+        : ({ success: true, data: { updated: false } } as never)
+    );
+    mockedMoveToNextStep.mockResolvedValue({
+      success: true,
+      data: { state: { step: Step.DEVIS, status: Status.TODO }, complete: false },
+    } as never);
+
+    await runSyncBatch(SyncRunTrigger.CRON);
+
+    expect(mockedMoveToNextStep).toHaveBeenCalledWith("u1");
+  });
+
   it("plusieurs dossiers : seul celui de current_step pilote current_status (via recomputeParcoursStatus)", async () => {
     // Scénario : current_step=eligibilite (EN_INSTRUCTION). Le dossier eligibilite passe
     // à ACCEPTE et un dossier diagnostic ouvert en avance passe de NON_ACCESSIBLE à
