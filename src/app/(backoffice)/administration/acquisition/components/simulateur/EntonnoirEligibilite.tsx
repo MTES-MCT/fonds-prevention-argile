@@ -50,11 +50,11 @@ export default function EntonnoirEligibilite({
           <DashboardStatCard
             className=""
             value={formatMatomoValue(simulationsTerminees, matomoLoaded)}
-            label="Simulations terminees"
+            label="Simulations terminées"
             variation={simulationsTerminees?.variation ?? null}
             loading={false}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : simulations menées jusqu'au résultat, anonymes comprises. Une simulation réaffichée sans changement ne compte qu'une fois. Même total que le tableau par département."
           />
         </div>
 
@@ -73,20 +73,20 @@ export default function EntonnoirEligibilite({
           <DashboardStatCard
             className=""
             value={formatMatomoValue(eligibles, matomoLoaded)}
-            label="Simulations eligibles"
+            label="Simulations éligibles"
             variation={eligibles?.variation ?? null}
             loading={false}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : simulations terminées sur un résultat éligible"
           />
           <DashboardStatCard
             className=""
             value={formatMatomoValue(nonEligibles, matomoLoaded)}
-            label="Simulations non eligibles"
+            label="Simulations non éligibles"
             variation={nonEligibles?.variation ?? null}
             loading={false}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : simulations terminées sur un résultat non éligible"
           />
         </div>
 
@@ -98,7 +98,7 @@ export default function EntonnoirEligibilite({
           <DashboardStatCard
             className=""
             value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
-            label="Comptes crees"
+            label="Comptes créés"
             variation={stats?.comptesCrees.variation ?? null}
             variationType="points"
             loading={loading}
@@ -125,7 +125,7 @@ export default function EntonnoirEligibilite({
         </div>
       </div>
       <p className="fr-text--xs fr-mt-1w" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-        Simulations : donnees Matomo (tous utilisateurs) | Comptes : donnees application
+        Simulations : données Matomo (tous utilisateurs) | Comptes : données de l&apos;application
       </p>
     </div>
   );

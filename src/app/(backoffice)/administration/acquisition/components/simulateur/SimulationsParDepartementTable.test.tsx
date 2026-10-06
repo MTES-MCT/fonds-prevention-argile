@@ -34,7 +34,14 @@ describe("SimulationsParDepartementTable", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("affiche tous les départements, triés par simulations, avec leur total", () => {
-    render(<SimulationsParDepartementTable departements={DEPARTEMENTS} loading={false} periodeId="tout" />);
+    render(
+      <SimulationsParDepartementTable
+        departements={DEPARTEMENTS}
+        nonRenseigne={null}
+        loading={false}
+        periodeId="tout"
+      />
+    );
 
     expect(lignesAffichees()).toEqual(["03 AllierPilote", "75 Paris", "13 Bouches-du-Rhône"]);
     expect(screen.getByRole("rowheader", { name: "Total (3 départements)" })).toBeInTheDocument();
@@ -42,7 +49,14 @@ describe("SimulationsParDepartementTable", () => {
   });
 
   it("restreint la liste aux départements hors expérimentation", async () => {
-    render(<SimulationsParDepartementTable departements={DEPARTEMENTS} loading={false} periodeId="tout" />);
+    render(
+      <SimulationsParDepartementTable
+        departements={DEPARTEMENTS}
+        nonRenseigne={null}
+        loading={false}
+        periodeId="tout"
+      />
+    );
 
     await userEvent.selectOptions(screen.getByLabelText("Départements affichés"), "hors-pilotes");
 
@@ -54,7 +68,9 @@ describe("SimulationsParDepartementTable", () => {
     const createObjectURL = vi.fn().mockReturnValue("blob:csv");
     Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-    render(<SimulationsParDepartementTable departements={DEPARTEMENTS} loading={false} periodeId="30j" />);
+    render(
+      <SimulationsParDepartementTable departements={DEPARTEMENTS} nonRenseigne={null} loading={false} periodeId="30j" />
+    );
 
     await userEvent.selectOptions(screen.getByLabelText("Départements affichés"), "pilotes");
     await userEvent.click(screen.getByRole("button", { name: "Exporter en CSV" }));
@@ -69,9 +85,29 @@ describe("SimulationsParDepartementTable", () => {
   });
 
   it("désactive l'export quand il n'y a aucune donnée", () => {
-    render(<SimulationsParDepartementTable departements={[]} loading={false} periodeId="tout" />);
+    render(<SimulationsParDepartementTable departements={[]} nonRenseigne={null} loading={false} periodeId="tout" />);
 
     expect(screen.getByText("Aucune donnée disponible.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Exporter en CSV" })).toBeDisabled();
+  });
+
+  it("ajoute les simulations sans département sur « Tous », pour retomber sur le total de l'entonnoir", async () => {
+    render(
+      <SimulationsParDepartementTable
+        departements={DEPARTEMENTS}
+        nonRenseigne={{ simulations: 40, simulationsEligibles: 10 }}
+        loading={false}
+        periodeId="tout"
+      />
+    );
+
+    expect(lignesAffichees().at(-1)).toBe("Département non renseigné");
+    expect(screen.getByRole("rowheader", { name: "Total (3 départements et non renseigné)" })).toBeInTheDocument();
+    expect(screen.getByText("100")).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText("Départements affichés"), "pilotes");
+
+    expect(lignesAffichees()).toEqual(["03 AllierPilote"]);
+    expect(screen.getByText(/Les 40 simulations sans département/)).toBeInTheDocument();
   });
 });

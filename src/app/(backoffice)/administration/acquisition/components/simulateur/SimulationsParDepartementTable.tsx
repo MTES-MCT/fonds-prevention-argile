@@ -4,10 +4,11 @@ import { useId, useMemo, useState } from "react";
 import type {
   DepartementStats,
   PeriodeId,
+  TopDepartementsMatomo,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import {
   construireLignesSimulationsDepartement,
-  filtrerParPerimetre,
+  lignesAffichees,
   totaliserSimulations,
   versCsvSimulationsDepartement,
   type PerimetreDepartements,
@@ -21,6 +22,7 @@ const PERIMETRES: { value: PerimetreDepartements; label: string }[] = [
 
 interface SimulationsParDepartementTableProps {
   departements: DepartementStats[] | null;
+  nonRenseigne: TopDepartementsMatomo["nonRenseigne"] | null;
   loading: boolean;
   periodeId: PeriodeId;
 }
@@ -43,6 +45,7 @@ const cadre = {
 
 export default function SimulationsParDepartementTable({
   departements,
+  nonRenseigne,
   loading,
   periodeId,
 }: SimulationsParDepartementTableProps) {
@@ -51,10 +54,12 @@ export default function SimulationsParDepartementTable({
   const [perimetre, setPerimetre] = useState<PerimetreDepartements>("tous");
 
   const lignes = useMemo(
-    () => filtrerParPerimetre(construireLignesSimulationsDepartement(departements ?? []), perimetre),
-    [departements, perimetre]
+    () => lignesAffichees(construireLignesSimulationsDepartement(departements ?? []), nonRenseigne, perimetre),
+    [departements, nonRenseigne, perimetre]
   );
   const total = useMemo(() => totaliserSimulations(lignes), [lignes]);
+  const nombreDepartements = lignes.filter((l) => l.pilote !== null).length;
+  const simulationsSansDepartement = nonRenseigne?.simulations ?? 0;
 
   const exporter = () => {
     const date = new Date().toISOString().slice(0, 10);
@@ -83,8 +88,8 @@ export default function SimulationsParDepartementTable({
             Information
           </button>
           <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-            Simulations : Matomo, toutes simulations y compris anonymes, comptées en visites. Comptes et dossiers DN :
-            base de données.
+            Simulations terminées (Matomo, anonymes comprises) : une simulation réaffichée sans changement ne compte
+            qu&apos;une fois. Même total que l&apos;entonnoir. Comptes et dossiers DN : base de données.
           </span>
         </h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -147,9 +152,9 @@ export default function SimulationsParDepartementTable({
                   </thead>
                   <tbody>
                     {lignes.map((l) => (
-                      <tr key={l.codeDepartement}>
+                      <tr key={l.codeDepartement || "non-renseigne"}>
                         <td className="fr-text--sm">
-                          {l.codeDepartement} {l.nomDepartement}
+                          {l.codeDepartement ? `${l.codeDepartement} ${l.nomDepartement}` : l.nomDepartement}
                           {l.pilote && (
                             <span className="fr-badge fr-badge--sm fr-badge--blue-ecume fr-ml-1w">Pilote</span>
                           )}
@@ -175,7 +180,8 @@ export default function SimulationsParDepartementTable({
                   <tfoot>
                     <tr style={{ fontWeight: 700 }}>
                       <th scope="row" className="fr-text--sm">
-                        Total ({lignes.length} départements)
+                        Total ({nombreDepartements} départements
+                        {nombreDepartements < lignes.length && " et non renseigné"})
                       </th>
                       <td className="fr-text--sm" style={{ textAlign: "right" }}>
                         {nombre(total.simulations)}
@@ -198,10 +204,13 @@ export default function SimulationsParDepartementTable({
               </div>
             </div>
           </div>
-          <p className="fr-text--xs fr-mt-1w fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
-            Avant le 15 septembre 2026, une simulation arrêtée avant l&apos;adresse (un appartement, par exemple)
-            partait sans département : elle n&apos;apparaît dans aucune ligne.
-          </p>
+          {simulationsSansDepartement > 0 && (
+            <p className="fr-text--xs fr-mt-1w fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
+              {perimetre === "tous"
+                ? "« Département non renseigné » : simulations terminées avant octobre 2026, quand le résultat ne portait pas encore son département."
+                : `Les ${nombre(simulationsSansDepartement)} simulations sans département, antérieures à octobre 2026, ne sont comptées que sur « Tous les départements ».`}
+            </p>
+          )}
         </div>
       )}
     </div>

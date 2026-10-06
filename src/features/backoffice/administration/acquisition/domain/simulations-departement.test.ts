@@ -3,6 +3,7 @@ import {
   construireLignesSimulationsDepartement,
   estCodeDepartementConnu,
   filtrerParPerimetre,
+  lignesAffichees,
   totaliserSimulations,
   versCsvSimulationsDepartement,
 } from "./simulations-departement";
@@ -81,5 +82,39 @@ describe("versCsvSimulationsDepartement", () => {
     const csv = versCsvSimulationsDepartement(construireLignesSimulationsDepartement([stats("99", 'Nom; "x"', 1, 0)]));
 
     expect(csv).toContain('99;"Nom; ""x""";Non;');
+  });
+});
+
+describe("lignesAffichees", () => {
+  const lignes = construireLignesSimulationsDepartement([stats("03", "Allier", 40, 30), stats("75", "Paris", 10, 0)]);
+  const nonRenseigne = { simulations: 6, simulationsEligibles: 2 };
+
+  it("ajoute la ligne non renseigné en dernier sur « Tous », pour que le total rejoigne l'entonnoir", () => {
+    const affichees = lignesAffichees(lignes, nonRenseigne, "tous");
+
+    expect(affichees.at(-1)).toMatchObject({
+      nomDepartement: "Département non renseigné",
+      pilote: null,
+      simulations: 6,
+      eligibles: 2,
+      nonEligibles: 4,
+    });
+    expect(totaliserSimulations(affichees).simulations).toBe(56);
+  });
+
+  it("ne la compte dans aucun des deux périmètres", () => {
+    expect(lignesAffichees(lignes, nonRenseigne, "pilotes").map((l) => l.codeDepartement)).toEqual(["03"]);
+    expect(lignesAffichees(lignes, nonRenseigne, "hors-pilotes").map((l) => l.codeDepartement)).toEqual(["75"]);
+  });
+
+  it("ne l'affiche pas quand elle est vide", () => {
+    expect(lignesAffichees(lignes, { simulations: 0, simulationsEligibles: 0 }, "tous")).toHaveLength(2);
+    expect(lignesAffichees(lignes, null, "tous")).toHaveLength(2);
+  });
+
+  it("l'exporte sans code ni statut pilote", () => {
+    const csv = versCsvSimulationsDepartement(lignesAffichees(lignes, nonRenseigne, "tous"));
+
+    expect(csv).toContain("\r\n;Département non renseigné;;6;2;4;33;0;0\r\n");
   });
 });

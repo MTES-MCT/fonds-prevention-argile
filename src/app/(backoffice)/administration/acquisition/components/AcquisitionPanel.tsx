@@ -13,6 +13,7 @@ import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
   DepartementStats,
+  TopDepartementsMatomo,
   CommuneSimulationsStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
@@ -47,6 +48,9 @@ export default function AcquisitionPanel() {
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [matomoLoaded, setMatomoLoaded] = useState(false);
   const [topDepartementsMatomo, setTopDepartementsMatomo] = useState<DepartementStats[] | null>(null);
+  const [simulationsSansDepartement, setSimulationsSansDepartement] = useState<
+    TopDepartementsMatomo["nonRenseigne"] | null
+  >(null);
   const [topDeptsLoading, setTopDeptsLoading] = useState(true);
   const [topCommunesMatomo, setTopCommunesMatomo] = useState<CommuneSimulationsStats[] | null>(null);
   const [topCommunesLoading, setTopCommunesLoading] = useState(true);
@@ -126,6 +130,7 @@ export default function AcquisitionPanel() {
   useEffect(() => {
     let cancelled = false;
     setTopDepartementsMatomo(null);
+    setSimulationsSansDepartement(null);
     setTopDeptsLoading(true);
 
     async function loadTopDepts() {
@@ -133,6 +138,7 @@ export default function AcquisitionPanel() {
       if (!cancelled) {
         if (result.success) {
           setTopDepartementsMatomo(result.data.departements);
+          setSimulationsSansDepartement(result.data.nonRenseigne);
         }
         setTopDeptsLoading(false);
       }
@@ -288,6 +294,7 @@ export default function AcquisitionPanel() {
               <div className="fr-mt-4w">
                 <SimulationsParDepartementTable
                   departements={topDepartementsMatomo}
+                  nonRenseigne={simulationsSansDepartement}
                   loading={topDeptsLoading}
                   periodeId={periodeId}
                 />

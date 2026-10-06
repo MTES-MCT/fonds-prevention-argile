@@ -1,13 +1,17 @@
 import { DEPARTEMENTS, normalizeCodeDepartement } from "@/shared/constants/departements.constants";
 import { isDepartementEligible } from "@/shared/constants/rga.constants";
-import type { DepartementStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  DepartementStats,
+  TopDepartementsMatomo,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 export type PerimetreDepartements = "tous" | "pilotes" | "hors-pilotes";
 
 export interface LigneSimulationsDepartement {
   codeDepartement: string;
   nomDepartement: string;
-  pilote: boolean;
+  /** `null` pour la ligne « non renseigné », qui n'appartient à aucun des deux périmètres. */
+  pilote: boolean | null;
   simulations: number;
   eligibles: number;
   nonEligibles: number;
@@ -43,6 +47,32 @@ export function construireLignesSimulationsDepartement(stats: DepartementStats[]
       dossiersDN: d.dossiersDN,
     }))
     .sort((a, b) => b.simulations - a.simulations || a.codeDepartement.localeCompare(b.codeDepartement));
+}
+
+export const LIBELLE_NON_RENSEIGNE = "Département non renseigné";
+
+/** Lignes affichées : la ligne « non renseigné » ne figure que sur « Tous », pour que le total y rejoigne l'entonnoir. */
+export function lignesAffichees(
+  lignes: LigneSimulationsDepartement[],
+  nonRenseigne: TopDepartementsMatomo["nonRenseigne"] | null,
+  perimetre: PerimetreDepartements
+): LigneSimulationsDepartement[] {
+  const filtrees = filtrerParPerimetre(lignes, perimetre);
+  if (perimetre !== "tous" || !nonRenseigne || nonRenseigne.simulations === 0) return filtrees;
+  return [
+    ...filtrees,
+    {
+      codeDepartement: "",
+      nomDepartement: LIBELLE_NON_RENSEIGNE,
+      pilote: null,
+      simulations: nonRenseigne.simulations,
+      eligibles: nonRenseigne.simulationsEligibles,
+      nonEligibles: nonRenseigne.simulations - nonRenseigne.simulationsEligibles,
+      pourcentageEligibles: pourcentage(nonRenseigne.simulationsEligibles, nonRenseigne.simulations),
+      comptesCrees: 0,
+      dossiersDN: 0,
+    },
+  ];
 }
 
 export function filtrerParPerimetre(
@@ -90,7 +120,7 @@ export function versCsvSimulationsDepartement(lignes: LigneSimulationsDepartemen
     [
       l.codeDepartement,
       l.nomDepartement,
-      l.pilote ? "Oui" : "Non",
+      l.pilote === null ? "" : l.pilote ? "Oui" : "Non",
       l.simulations,
       l.eligibles,
       l.nonEligibles,
