@@ -1070,15 +1070,15 @@ export async function getTopDepartementsMatomo(
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+  // Sans dimension, un zéro serait indiscernable d'une vraie absence de simulation : on signale l'indisponibilité.
+  if (!dimensionId) throw new Error("NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré");
 
   const [matomoParValeur, bddStats] = await Promise.all([
-    dimensionId
-      ? fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
-          period: "range",
-          date: dateRange,
-          extraSegment: partnerSegment,
-        })
-      : Promise.resolve(new Map<string, { total: number; eligible: number; nonEligible: number }>()),
+    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
+      period: "range",
+      date: dateRange,
+      extraSegment: partnerSegment,
+    }),
     getTopDepartementsStats(debut, fin, partner),
   ]);
   const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
