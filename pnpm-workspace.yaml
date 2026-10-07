@@ -61,9 +61,9 @@ overrides:
   # CRLF injection, origin validation error, DoS WebSocket, TLS bypass SOCKS5
   # (transitif via jsdom -> vitest, devDep test uniquement)
   undici: "^7.29.1"
-  # CVE libvips (CVE-2026-33327/33328/35590/35591) — transitif via next (image
-  # optimization), non exploitable sans input attaquant mais patché à la source
-  sharp: "^0.35.4"
+  # CVE libvips (CVE-2026-33327/33328/35590/35591) puis dépendance librsvg
+  # (GHSA-wq5f-xc86-pv6w) — transitif via next (image optimization), patché à la source
+  sharp: "^0.35.5"
   # next épingle postcss@8.4.31 : lecture de fichier arbitraire via sourceMappingURL,
   # XSS </style> et 2 autres CVE, dont 2 High, en dépendance de PRODUCTION.
   # L'override aligne le postcss bundlé sur notre dep directe (même majeur 8.x).
