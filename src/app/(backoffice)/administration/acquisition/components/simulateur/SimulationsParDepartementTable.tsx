@@ -216,11 +216,11 @@ export default function SimulationsParDepartementTable({
             </div>
           </div>
           <p className="fr-text--xs fr-mt-1w fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
-            Somme non dédoublonnée : une visite qui touche deux départements, ou passe par deux pages, compte dans
-            chacun. Le total peut donc dépasser les « Simulations terminées » de l&apos;entonnoir. Un département sans
-            simulation ni compte créé n&apos;apparaît pas. Avant la mi-septembre 2026, une simulation arrêtée avant
-            l&apos;adresse (un appartement, par exemple) partait sans département : elle n&apos;apparaît dans aucune
-            ligne.
+            Somme non dédoublonnée, avec une ligne par département et par page : une visite qui touche plusieurs
+            départements ou plusieurs pages peut compter plusieurs fois. Le total peut donc dépasser les « Simulations
+            terminées » de l&apos;entonnoir. Un département sans simulation ni compte créé n&apos;apparaît pas. Avant la
+            mi-septembre 2026, une simulation arrêtée avant l&apos;adresse (un appartement, par exemple) partait sans
+            département : elle n&apos;apparaît dans aucune ligne.
           </p>
         </div>
       )}
