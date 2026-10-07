@@ -206,7 +206,7 @@ Les arbitrages sont suivis dans [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md#statis
 
 ### Libellés à préciser
 
-- **Répartition dossiers DN (Demandeurs)** : le badge de « Déposés » mesure la variation des dossiers créés, pas des dossiers déposés.
+- **Répartition dossiers DN (Demandeurs)** : le badge de « En attente d'instruction » mesure la variation des dossiers créés, pas de ceux en attente.
 - **Diagnostics réalisés ou en cours** : compte aussi les parcours dont le diagnostic n'est pas commencé.
 - **Carte « Demandes d'accompagnement »** : dans la liste des dossiers, elle compte tout le territoire ; sur l'accueil AMO, seulement
   l'entreprise de l'agent.
