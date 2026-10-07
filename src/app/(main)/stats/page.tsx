@@ -46,15 +46,15 @@ export default async function StatsPage() {
 
         <div className="fr-grid-row fr-grid-row--gutters fr-mb-2w">
           <StatCard value={cards.visiteurs} label="Visiteurs uniques" />
-          <StatCard value={cards.simulationsTerminees} label="Simulations terminées" />
-          <StatCard value={cards.simulationsEligibles} label="Simulations éligibles" />
+          <StatCard value={cards.simulationsTerminees} label="Visites avec un résultat" />
+          <StatCard value={cards.simulationsEligibles} label="Visites avec un résultat éligible" />
           <StatCard value={cards.comptesCrees} label="Comptes créés" />
           <StatCard value={cards.dossiersEligibiliteDeposes} label="Dossiers d'éligibilité déposés" />
           <StatCard value={cards.diagnostics} label="Diagnostics réalisés ou en cours" />
         </div>
         <p className="fr-text--sm fr-mb-6w" style={{ color: "var(--text-mention-grey)" }}>
-          Les simulations sont comptées par visite du site et par résultat : plusieurs simulations au même résultat lors
-          d'une même visite comptent pour une seule.
+          Une visite compte une fois par type de résultat obtenu, éligible ou non : plusieurs simulations au même
+          résultat lors d'une même visite comptent pour une seule.
         </p>
 
         <h2 className="fr-h4 fr-mb-3w">Évolution mensuelle</h2>
