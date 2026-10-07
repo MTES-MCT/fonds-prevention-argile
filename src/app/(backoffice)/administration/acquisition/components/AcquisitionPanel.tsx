@@ -193,7 +193,7 @@ export default function AcquisitionPanel() {
                   aria-selected={activeTab === "simulateur"}
                   aria-controls="tab-acquisition-simulateur-panel"
                   onClick={() => setActiveTab("simulateur")}>
-                  Simulateur d'eligibilite
+                  Simulateur d'éligibilité
                 </button>
               </li>
               <li role="presentation">
