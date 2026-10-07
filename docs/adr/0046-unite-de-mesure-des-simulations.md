@@ -5,7 +5,7 @@
 
 ## Contexte
 
-L'onglet Acquisition affiche toutes les simulations par département, et non plus un top 5. Le total de ce tableau dépasse celui de l'entonnoir (relevé en octobre 2026 sur 30 jours : 8 301 contre 7 962). Les deux comptent des **visites**, mais à partir de deux rapports Matomo différents.
+L'onglet Acquisition affiche toutes les simulations par département, et non plus un top 5. Le total de ce tableau dépasse celui de l'entonnoir (relevé antérieur à cette PR, non revérifié : 8 301 contre 7 962 sur 30 jours en octobre 2026). Les deux comptent des **visites**, mais à partir de deux rapports Matomo différents.
 
 - L'entonnoir et `/stats` lisent `Events.getAction` : chaque évènement `simulateur_result_*` donne son `nb_visits`. Une visite qui affiche un résultat compte une fois par verdict.
 - Le tableau lit le rapport de la dimension département (`CustomDimensions.getCustomDimension`, `flat=1`) : une ligne par couple **département × URL**. Une visite compte donc une fois par département et par page qu'elle touche.
@@ -61,8 +61,8 @@ Une première version a fait du **nom de l'évènement** la seule source, compt�
 
 - Le total du tableau ne retombe pas sur l'entonnoir : l'écart est expliqué sous le tableau.
 - Les écrans de correction (`SimulateurEdition`, `SimulateurEditionInvitation`) rendent le même
-  formulaire et envoient les mêmes évènements, et un résultat réaffiché repart : ces cas gonflent le
-  compte. Non traité ici, suivi dans `docs/SUJETS-A-TRAITER.md`.
+  formulaire et envoient les mêmes évènements, et un résultat réaffiché repart : ces cas peuvent gonfler
+  le compte en visites, sans qu'on sache de combien. Non traité ici, suivi dans `docs/SUJETS-A-TRAITER.md`.
 
 ### Migration
 

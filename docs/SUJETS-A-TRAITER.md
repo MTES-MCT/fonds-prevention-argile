@@ -55,7 +55,7 @@ produit : le code est simple une fois la définition choisie.
 
 - **Constat** : les écrans de correction (agent, demandeur) rendent le même formulaire que le simulateur
   public et envoient les mêmes évènements de résultat, et un résultat réaffiché repart : « simulations
-  terminées » est gonflé d'autant (ADR-0046). Le nom de l'évènement ne porte pas le département, donc
+  terminées » peut en être gonflé, sans qu'on sache de combien (ADR-0046). Le nom de l'évènement ne porte pas le département, donc
   aucun comptage additif par département n'est possible.
 - **À faire** : le garde-fou existe sur `feat/simulations-par-departement` (commits 8f85b0a9, 7f04c43f,
   128ce3e8) : aucun évènement depuis un écran de correction, un même résultat envoyé une fois par visite
@@ -81,7 +81,8 @@ produit : le code est simple une fois la définition choisie.
 
 - **Constat** : Acquisition compte des visites (dimension commune), Demandeurs des parcours.
 - **Préalable** : renommer celui de Demandeurs ; compter des simulations par commune demanderait de
-  porter la commune dans le nom de l'évènement, qui ne peut pas porter à la fois département et commune.
+  définir un encodage stable de la commune et du département dans le nom de l'évènement (la chaîne est libre), puis de
+  vérifier son exploitation dans les rapports Matomo.
 
 ### Anomalies relevées par l'inventaire
 
@@ -102,6 +103,9 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 - **Échec affiché comme un vide** (retour de revue de la PR #394) : le Top 5 départements du Tableau de bord
   (`TableauDeBord.tsx`) et les cartes Top 5 d'Acquisition n'ont pas d'état d'erreur distinct d'un vrai vide ; seul le tableau par
   département en a un (`useTopDepartementsMatomo`).
+- **Tiroir « Autre » des demandes archivées** : le filtrage par motif se fait en JavaScript, après lecture de tous les
+  archivages de la période avec leurs jointures. Négligeable aux volumes actuels (environ 215 dossiers archivés en production en
+  septembre 2026, voir FLOW-AND-SYNC § 2.8) ; à repasser en SQL si ce nombre grossit.
 - **Tests du Tableau de bord** : les requêtes SQL (prédicats département, dossiers DN) et le cache Next sont mockés ; un test
   d'intégration sur la base locale attraperait ce que les mocks ne voient pas.
 
