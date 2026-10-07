@@ -54,6 +54,7 @@ export default function SimulationsParDepartementTable({
 }: SimulationsParDepartementTableProps) {
   const selectId = useId();
   const tooltipId = useId();
+  const colonneTooltipId = useId();
   const [perimetre, setPerimetre] = useState<PerimetreDepartements>("tous");
 
   const lignes = useMemo(
@@ -146,7 +147,15 @@ export default function SimulationsParDepartementTable({
                     <tr>
                       <th scope="col">Département</th>
                       <th scope="col" style={{ textAlign: "right" }}>
-                        Simulations
+                        Simulations{" "}
+                        <button aria-describedby={colonneTooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                          Information
+                        </button>
+                        <span className="fr-tooltip fr-placement" id={colonneTooltipId} role="tooltip">
+                          Visites ayant affiché un résultat dans ce département. Une visite qui touche plusieurs
+                          départements ou plusieurs pages peut apparaître plusieurs fois : le total peut dépasser celui
+                          de l&apos;entonnoir.
+                        </span>
                       </th>
                       <th scope="col" style={{ textAlign: "right" }}>
                         Éligibles

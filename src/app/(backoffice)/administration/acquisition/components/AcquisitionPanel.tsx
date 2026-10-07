@@ -237,9 +237,9 @@ export default function AcquisitionPanel() {
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <TopSimulationsCard
-                    title="Top 5 simulations par departement"
-                    columnLabel="Departements"
-                    tooltip="Données Matomo : visites ayant affiché un résultat, anonymes comprises"
+                    title="Top 5 simulations par département"
+                    columnLabel="Départements"
+                    tooltip="Données Matomo : visites ayant affiché un résultat, anonymes comprises. Ce sont les cinq premières lignes du tableau par département ci-dessous."
                     rows={[...(topDepartementsMatomo ?? [])]
                       .sort((a, b) => b.simulations - a.simulations)
                       .slice(0, 5)
@@ -254,7 +254,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
-                    tooltip="Données Matomo : visites ayant affiché un résultat, anonymes comprises"
+                    tooltip="Données Matomo : visites ayant affiché un résultat par commune, tous départements (le filtre département ne s'applique pas) ; les homonymes de départements différents sont fusionnés. Si Matomo ne répond pas ou ne renvoie rien, parcours de la base ayant une simulation."
                     rows={
                       topCommunesMatomo?.map((c) => ({
                         label: c.commune,

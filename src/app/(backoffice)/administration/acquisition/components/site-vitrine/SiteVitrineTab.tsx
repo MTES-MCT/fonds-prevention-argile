@@ -75,7 +75,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             variation={stats?.variationVisiteursUniques ?? null}
             loading={loading}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : personnes distinctes sur la période, filtrées par département et partenaire."
           />
         </div>
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
@@ -88,7 +88,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             invertColors
             loading={loading}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : part des visites avec une seule page vue et sans autre interaction suivie."
           />
         </div>
       </div>
