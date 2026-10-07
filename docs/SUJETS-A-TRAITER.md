@@ -117,7 +117,7 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 
 - **Constat** : `source-map-js` <1.2.2 (GHSA-68fv-2mgg-jv7q, DoS), transitif via
   `@socialgouv/matomo-next > next > postcss`, apparu après le refresh d'octobre 2026. Tracé comme
-  accepté par la PR #394 : le correctif n'est installable qu'à partir du 7 octobre (`minimumReleaseAge`).
+  accepté par la PR #394 : le correctif n'est installable qu'à partir du 7 octobre à 14 h 08 UTC (`minimumReleaseAge`).
 - **À faire** : override `source-map-js: ^1.2.2`, checksum `.talismanrc`, section « Refresh » de
   [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md).
 
