@@ -65,7 +65,7 @@ produit : le code est simple une fois la définition choisie.
   périodes affichées, sinon le tableau se vide. Attendre ne suffira jamais pour « Depuis le début » : les
   résultats antérieurs n'auront jamais de nom. Il faudra garder une catégorie historique, ou faire partir
   le nouveau compteur d'une date de début affichée, et décider si `/stats` bascule en même temps (son
-  chiffre public changerait). Une première implémentation de la bascule existe sur la même branche
+  chiffre public changerait : en septembre 2026, 13 902 évènements de résultat contre 7 903 visites, soit +76 %, relevé du 2026-10-07). Une première implémentation de la bascule existe sur la même branche
   (commits 58fadbc6, dc7d2ca9, 23a509fe, annulés par 085627d8).
 - **À vérifier sur un Matomo réel avant toute mise en production** (non établi) : avec un nom d'évènement,
   `Events.getAction` en `flat=1` peut renvoyer des libellés « action - nom ». L'adaptateur lit le libellé

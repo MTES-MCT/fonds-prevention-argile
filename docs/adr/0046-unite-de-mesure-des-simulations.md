@@ -5,12 +5,12 @@
 
 ## Contexte
 
-L'onglet Acquisition affiche toutes les simulations par département, et non plus un top 5. Le total de ce tableau dépasse celui de l'entonnoir (relevé antérieur à cette PR, non revérifié : 8 301 contre 7 962 sur 30 jours en octobre 2026). Les deux comptent des **visites**, mais à partir de deux rapports Matomo différents.
+L'onglet Acquisition affiche toutes les simulations par département, et non plus un top 5. Le total de ce tableau dépasse celui de l'entonnoir : sur septembre 2026 (relevé en lecture seule le 2026-10-07), 7 903 pour l'entonnoir et 8 138 pour le tableau, soit +3,0 %. Les deux comptent des **visites**, mais à partir de deux rapports Matomo différents.
 
 - L'entonnoir et `/stats` lisent `Events.getAction` : chaque évènement `simulateur_result_*` donne son `nb_visits`. Une visite qui affiche un résultat compte une fois par verdict.
-- Le tableau lit le rapport de la dimension département (`CustomDimensions.getCustomDimension`, `flat=1`) : une ligne par couple **département × URL**. Une visite compte donc une fois par département et par page qu'elle touche.
+- Le tableau lit le rapport de la dimension département (`CustomDimensions.getCustomDimension`, `flat=1`) : une ligne par couple **département × URL**. Une visite peut donc compter une fois par département et par page qu'elle touche.
 
-Les visites par département ne s'additionnent donc pas : une visite qui touche deux départements, ou deux pages, compte dans chacun.
+Les visites par département ne s'additionnent donc pas : une visite qui touche plusieurs départements ou plusieurs pages peut compter plusieurs fois. Sur la même période, 4,3 % des visites du rapport viennent d'autres URL que `/simulateur` (partenaires en iframe, écrans de correction) ; la part exacte de doubles comptes n'est pas établie. Aucune ligne du rapport n'est sans département : des visites sans département n'y apparaîtraient pas, et il ne permet pas de les compter. Avant la PR #394, le plafond par défaut de Matomo (100 lignes par verdict) retirait 146 visites (1,8 %) du rapport et masquait une partie de l'écart.
 
 Une première version a fait du **nom de l'évènement** la seule source, comptée en `nb_events` : additive par construction. Mais les résultats déjà envoyés n'ont pas de nom, et le tableau serait resté presque vide pendant des mois sur « Depuis le début ». Elle a été retirée (branche `feat/simulations-par-departement`).
 
