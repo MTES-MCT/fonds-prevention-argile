@@ -121,11 +121,14 @@ et absente ici — les deux bases divergent, l'IdP est le même.
 Un client ProConnect réglé autrement dans l'espace partenaires échoue au retour de connexion,
 avec « Erreur de sécurité ».
 
-**Second facteur sur les comptes partagés** : la 2FA est exigée en local comme ailleurs. Sur un
-compte commun (`user@yopmail.com`, `userNN@...`), valider le code envoyé par e-mail proposé par
-ProConnect et **ne pas** y enrôler d'application d'authentification personnelle : elle
-bloquerait tous les autres développeurs. Les réinitialisations du bac à sable effacent aussi
-les enrôlements.
+**Second facteur sur les comptes partagés** : la 2FA est exigée en local comme ailleurs. Le bac à
+sable (ProConnect Identité) gère lui-même la MFA : à la première connexion, il demande d'enrôler
+un code à usage unique (TOTP) ou une clé d'accès, sans code par e-mail. Sur un compte commun
+(`user@yopmail.com`, `userNN@...`), l'enrôlement bloque tous ceux qui n'ont pas le facteur :
+pour tester, créer un compte personnel dans le bac à sable et l'ajouter comme agent, ou, à
+défaut, enrôler un TOTP et partager sa clé secrète dans le gestionnaire de mots de passe de
+l'équipe. Jamais de clé d'accès sur un compte partagé, elle reste liée à l'appareil. Les
+réinitialisations du bac à sable effacent les enrôlements.
 
 Référence : [identifiants des FI de test](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/identifiants-fi-test).
 La base d'intégration ProConnect est réinitialisée périodiquement : un compte créé à la main peut

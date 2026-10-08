@@ -105,9 +105,10 @@ parcours de toutes les erreurs de connexion du site, et le refus serveur reste e
 
 - **Déconnexion générale au déploiement** : les agents doivent être prévenus, et à leur
   prochaine connexion ProConnect leur demandera de configurer ou valider un second facteur.
-- **Comptes partagés du bac à sable** (`user@yopmail.com`) : y enrôler une application
-  d'authentification bloquerait les autres développeurs. Préférer l'OTP mail ou des comptes
-  individuels (cf. README).
+- **Comptes partagés du bac à sable** (`user@yopmail.com`) : ProConnect Identité étant
+  compatible MFA, il impose un TOTP ou une clé d'accès, pas l'OTP mail. Un compte partagé
+  enrôlé bloque les autres développeurs : comptes de test individuels, ou clé TOTP partagée
+  (cf. README).
 - **Cohabitation de versions** pendant un déploiement Scalingo : une instance ancienne peut
   encore accepter une session faible quelques secondes. Un retour arrière complet rétablirait
   l'ancien comportement : corriger en avant plutôt que revenir.
