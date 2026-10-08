@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, Image as PdfImage, StyleSheet, Svg, Polygon } from "@react-pdf/renderer";
 import {
   CALLOUT_EXPERT_TITLE,
-  CALLOUT_EXPERT_TEXT,
+  getCalloutExpertTexte,
   SOURCES_VULNERABILITE_TITRE,
   SOURCES_VULNERABILITE_INTRO,
   SOURCES_VULNERABILITE_CHAPO,
@@ -16,6 +16,7 @@ interface VulnerabilitePdfDocumentProps {
   synthese: SyntheseResultat;
   sections: SectionRecommandations[];
   illustrations: IllustrationsPdf;
+  eligibleFonds: boolean;
 }
 
 const BLEU_FRANCE = "#000091";
@@ -161,7 +162,12 @@ function PdfHeader() {
  * pédagogie RGA et recommandations par section. Synthèse, sections et textes sont ceux du
  * rendu HTML (`resultat-content.const.ts`), pour ne jamais diverger.
  */
-export function VulnerabilitePdfDocument({ synthese, sections, illustrations }: VulnerabilitePdfDocumentProps) {
+export function VulnerabilitePdfDocument({
+  synthese,
+  sections,
+  illustrations,
+  eligibleFonds,
+}: VulnerabilitePdfDocumentProps) {
   const dateGeneration = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
   return (
@@ -178,8 +184,8 @@ export function VulnerabilitePdfDocument({ synthese, sections, illustrations }: 
             style={[
               styles.synthese,
               {
-                backgroundColor: FONDS_SYNTHESE[synthese.niveau].fond,
-                borderLeft: `3pt solid ${FONDS_SYNTHESE[synthese.niveau].bordure}`,
+                backgroundColor: FONDS_SYNTHESE[synthese.accent].fond,
+                borderLeft: `3pt solid ${FONDS_SYNTHESE[synthese.accent].bordure}`,
               },
             ]}>
             <Text style={styles.calloutTitle}>{synthese.titre}</Text>
@@ -188,7 +194,7 @@ export function VulnerabilitePdfDocument({ synthese, sections, illustrations }: 
 
           <View style={styles.callout} wrap={false}>
             <Text style={styles.calloutTitle}>{CALLOUT_EXPERT_TITLE}</Text>
-            <Text style={styles.calloutText}>{CALLOUT_EXPERT_TEXT}</Text>
+            <Text style={styles.calloutText}>{getCalloutExpertTexte(eligibleFonds)}</Text>
           </View>
 
           <View style={styles.section}>

@@ -37,6 +37,18 @@ describe("ResultVulnerabilite — callout de synthèse", () => {
     expect(container.querySelector(".fr-callout--pink-tuile")).not.toBeNull();
   });
 
+  it("reste en accent jaune avec un point critique en zone d'aléa faible", () => {
+    const { container } = rendre({
+      ...ELIGIBLE,
+      adresse: { ...ADRESSE, codeDepartement: "36", aleaRga: "faible" },
+      eaux: { reseaux_enterres: "sous_fondations" },
+    });
+
+    expect(screen.getByRole("heading", { name: "Points critiques identifiés" })).toBeInTheDocument();
+    expect(container.querySelector(".fr-callout--yellow-moutarde")).not.toBeNull();
+    expect(container.querySelector(".fr-callout--pink-tuile")).toBeNull();
+  });
+
   it("passe en accent jaune sans point critique mais avec un point de vigilance", () => {
     const { container } = rendre({ ...ELIGIBLE, eaux: { gouttieres: "absentes_ou_debordantes" } });
 
@@ -71,10 +83,17 @@ describe("ResultVulnerabilite — renvoi vers le simulateur d'éligibilité", ()
     expect(screen.queryByRole("link", { name: LIEN })).toBeNull();
   });
 
-  it("laisse l'avertissement « pas un diagnostic » visible même sans le renvoi", () => {
+  it("laisse l'avertissement « pas un diagnostic » visible même sans le renvoi, sans promettre de financement", () => {
     rendre({ ...ELIGIBLE, adresse: { ...ADRESSE, codeDepartement: "75", aleaRga: "fort" } });
 
     expect(screen.getByText(/pas un diagnostic/)).toBeInTheDocument();
+    expect(screen.queryByText(/il peut financer/)).toBeNull();
+  });
+
+  it("annonce le financement du diagnostic quand le logement remplit les critères", () => {
+    rendre(ELIGIBLE);
+
+    expect(screen.getByText(/il peut financer ce diagnostic/)).toBeInTheDocument();
   });
 });
 
