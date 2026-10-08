@@ -1,6 +1,6 @@
 import { QUESTION_LABELS } from "../value-objects/vulnerabilite-critere-fields";
 import { describe, it, expect } from "vitest";
-import { getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
+import { compterPointsSection, getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
 import { categoriserReponses } from "./categorisation.service";
 
 describe("getSectionsRecommandations", () => {
@@ -93,5 +93,18 @@ describe("getReponsesSansCarte", () => {
       "gravier_proprete/absent",
       "recuperateur_eau/present_bon_etat",
     ]);
+  });
+});
+
+describe("compterPointsSection", () => {
+  it("additionne les fiches et les points sans fiche de la section", () => {
+    const sections = getSectionsRecommandations(
+      categoriserReponses({ pente_terrain: "ne_sais_pas", gravier_proprete: "absent" })
+    );
+    const aVerifier = sections.find((s) => s.categorie === "a_verifier")!;
+
+    expect(aVerifier.recommandations.length).toBeGreaterThan(0);
+    expect(aVerifier.pointsSansCarte.length).toBeGreaterThan(0);
+    expect(compterPointsSection(aVerifier)).toBe(aVerifier.recommandations.length + aVerifier.pointsSansCarte.length);
   });
 });

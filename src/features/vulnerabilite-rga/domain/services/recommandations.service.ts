@@ -58,6 +58,11 @@ export function getSectionsRecommandations(points: PointVulnerabilite[]): Sectio
 }
 
 /** Réponses classées critique, vigilance ou à surveiller qu'aucune fiche ne couvre (`critereId/reponse`). */
+/** Une fiche correspond à exactement un point : le compte additionne fiches et points sans fiche. */
+export function compterPointsSection(section: SectionRecommandations): number {
+  return section.recommandations.length + section.pointsSansCarte.length;
+}
+
 export function getReponsesSansCarte(): string[] {
   return CRITERES_CONFIG.flatMap((critere) =>
     critere.reponses

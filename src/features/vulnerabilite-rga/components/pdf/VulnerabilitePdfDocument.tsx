@@ -7,7 +7,8 @@ import {
   SOURCES_VULNERABILITE_CHAPO,
   SOURCES_VULNERABILITE_ITEMS,
 } from "../../domain/value-objects/resultat-content.const";
-import type { SectionRecommandations } from "../../domain/services/recommandations.service";
+import { compterPointsSection, type SectionRecommandations } from "../../domain/services/recommandations.service";
+import { CATEGORIES_AFFICHAGE, type CategorieATraiter } from "../../domain/value-objects/grille-categorisation";
 import type { RecommandationDef } from "../../domain/catalogues/recommandations.catalogue";
 import type { NiveauSynthese, SyntheseResultat } from "../../domain/services/synthese-resultat.service";
 import type { IllustrationsPdf } from "./rasteriser-illustrations";
@@ -63,6 +64,17 @@ const styles = StyleSheet.create({
   calloutText: { fontSize: 9.5, lineHeight: 1.4 },
   section: { marginBottom: 16 },
   sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold", marginBottom: 6 },
+  sectionHeader: { paddingTop: 8, marginBottom: 6 },
+  sectionCount: { fontSize: 9, color: GRIS_MENTION, marginTop: -3, marginBottom: 6 },
+  badge: {
+    alignSelf: "flex-start",
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 3,
+    marginBottom: 5,
+  },
   paragraph: { fontSize: 9.5, lineHeight: 1.4, marginBottom: 8 },
   chapo: { fontSize: 9.5, fontFamily: "Helvetica-Bold", marginBottom: 4 },
   bulletRow: { flexDirection: "row", marginBottom: 3, paddingRight: 4 },
@@ -104,15 +116,19 @@ function PdfBulletList({ items, textStyle }: { items: string[]; textStyle?: (typ
 /** Fiche de recommandation ; l'appelant l'enveloppe dans une View `wrap={false}` pour qu'elle ne se coupe pas. */
 function PdfFiche({
   recommandation,
+  categorie,
   illustrations,
 }: {
   recommandation: RecommandationDef;
+  categorie: CategorieATraiter;
   illustrations: IllustrationsPdf;
 }) {
   const illustration = recommandation.illustrationId ? illustrations[recommandation.illustrationId] : undefined;
+  const affichage = CATEGORIES_AFFICHAGE[categorie];
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderLeft: `3pt solid ${affichage.accent.hex}` }]}>
+      <Text style={[styles.badge, { backgroundColor: affichage.couleur }]}>{affichage.label.toUpperCase()}</Text>
       <Text style={styles.cardTitle}>{recommandation.titre}</Text>
       {illustration && <PdfImage src={illustration} style={styles.cardIllustration} />}
 
@@ -213,6 +229,7 @@ export function VulnerabilitePdfDocument({
 
           {sections.map((section) => {
             const [premiere, ...suivantes] = section.recommandations;
+            const nombre = compterPointsSection(section);
             const pointsSansCarte = (
               <PdfBulletList items={section.pointsSansCarte.map((point) => `${point.question} : ${point.reponse}`)} />
             );
@@ -221,13 +238,30 @@ export function VulnerabilitePdfDocument({
               <View style={styles.section} key={section.categorie}>
                 {/* Le titre voyage avec sa première fiche : jamais seul en bas de page. */}
                 <View wrap={false}>
-                  <Text style={styles.sectionTitle}>{section.titre}</Text>
+                  <View
+                    style={[
+                      styles.sectionHeader,
+                      { borderTop: `3pt solid ${CATEGORIES_AFFICHAGE[section.categorie].accent.hex}` },
+                    ]}>
+                    <Text style={styles.sectionTitle}>{section.titre}</Text>
+                    <Text style={styles.sectionCount}>
+                      {nombre} {nombre > 1 ? "points identifiés" : "point identifié"}
+                    </Text>
+                  </View>
                   {section.explication && <Text style={styles.paragraph}>{section.explication}</Text>}
-                  {premiere ? <PdfFiche recommandation={premiere} illustrations={illustrations} /> : pointsSansCarte}
+                  {premiere ? (
+                    <PdfFiche recommandation={premiere} categorie={section.categorie} illustrations={illustrations} />
+                  ) : (
+                    pointsSansCarte
+                  )}
                 </View>
                 {suivantes.map((recommandation) => (
                   <View key={recommandation.id} wrap={false}>
-                    <PdfFiche recommandation={recommandation} illustrations={illustrations} />
+                    <PdfFiche
+                      recommandation={recommandation}
+                      categorie={section.categorie}
+                      illustrations={illustrations}
+                    />
                   </View>
                 ))}
                 {premiere && pointsSansCarte}

@@ -117,6 +117,22 @@ describe("ResultVulnerabilite — sections de fiches", () => {
     expect(within(critiques).queryByText("Entretenir les gouttières et éloigner leur évacuation")).toBeNull();
   });
 
+  it("donne à chaque section son nombre de points et à chaque fiche le badge de sa catégorie", () => {
+    rendre({
+      ...ELIGIBLE,
+      eaux: { gouttieres: "absentes_ou_debordantes", reseaux_enterres: "sous_fondations" },
+      vegetation: { vegetation_pied_facade: "presente" },
+    });
+
+    const critiques = screen.getByRole("heading", { level: 2, name: "Points critiques" }).closest("section")!;
+    expect(within(critiques).getByText("2 points identifiés")).toBeInTheDocument();
+    expect(within(critiques).getAllByText("Point critique")).toHaveLength(2);
+
+    const vigilance = screen.getByRole("heading", { level: 2, name: "Points de vigilance" }).closest("section")!;
+    expect(within(vigilance).getByText("1 point identifié")).toBeInTheDocument();
+    expect(within(vigilance).getByText("Point de vigilance")).toBeInTheDocument();
+  });
+
   it("n'affiche aucune section quand tout est en bonne pratique", () => {
     rendre({ ...ELIGIBLE, eaux: { reseaux_enterres: "eloignes" } });
 
