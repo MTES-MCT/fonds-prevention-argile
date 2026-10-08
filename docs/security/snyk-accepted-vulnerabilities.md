@@ -471,8 +471,16 @@ Le binaire natif se charge après le bump (`sharp` 0.35.5, libvips 8.18.7).
 
 ## Refresh — octobre 2026 (branche `feat/proconnect-2fa`)
 
-Ajout d'une dépendance runtime pour vérifier la signature des jetons ProConnect (ADR-0047). Aucune vulnérabilité nouvelle : `pnpm audit` est identique à celui du refresh
-précédent (`braces`, `source-map-js`, `uuid`, déjà acceptées ci-dessus).
+Ajout d'une dépendance runtime pour vérifier la signature des jetons ProConnect (ADR-0047). La
+branche n'introduit aucune vulnérabilité. `pnpm audit --prod` (2026-10-08) en relève toutefois deux
+nouvelles, déjà présentes sur `main`.
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin                                   | Justification                                                                                                                                                                                                  |
+| --------------------- | -------- | ------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next` <15.5.27 (×2)  | Moderate | runtime | `next`, `@socialgouv/matomo-next > next` | `GHSA-4jqv-mc3x-m676`, `GHSA-mcj8-r9mp-w47p` : empoisonnement du cache des pages SSG / ISR en auto-hébergement. Correctif `15.5.27` (publié le 2026-09-30), hors périmètre de cette PR : voir SUJETS-A-TRAITER |
+
+`source-map-js` 1.2.2 est installable depuis le 2026-10-07 : son override part avec le bump de
+`next`, dans la même PR de dépendances.
 
 - **`jose` 6.2.12** (runtime) : vérification JWT / JWKS, maintenue par l'auteur de
   `node-oidc-provider`, **sans aucune dépendance transitive**, aucune vulnérabilité connue.
