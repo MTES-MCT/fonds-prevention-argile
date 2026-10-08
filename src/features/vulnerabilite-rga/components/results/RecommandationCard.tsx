@@ -52,15 +52,16 @@ export function RecommandationCard({ recommandation, categorie }: Recommandation
             ))}
           </ul>
 
-          {/* Callout info DSFR standard, sans modificateur de couleur (--blue-ecume) : seul le
-              texte est recoloré en bleu info (--text-default-info, #0063CB). color sur le
-              conteneur pour que l'icône fr-icon-* (::before, currentColor) suive aussi ;
-              .fr-callout__title fixe sa propre couleur, d'où l'override explicite en plus. */}
-          <div className="fr-callout fr-icon-info-line fr-mb-0" style={{ color: "var(--text-default-info)" }}>
-            <p className="fr-callout__title" style={{ color: "var(--text-default-info)" }}>
-              Amélioration conseillée :
-            </p>
-            <ul className="fr-callout__text fr-text--sm fr-mb-0">
+          {/* Même encadré que le PDF (bleu écume) : le callout DSFR imposait un fond gris. */}
+          <div
+            className="fr-p-2w"
+            style={{
+              backgroundColor: "var(--background-contrast-blue-ecume)",
+              color: "var(--text-label-blue-ecume)",
+              borderRadius: "0.25rem",
+            }}>
+            <p className="fr-text--md fr-text--bold fr-mb-1w">Amélioration conseillée :</p>
+            <ul className="fr-text--sm fr-mb-0">
               {ameliorations.map((bullet, index) => (
                 <li key={index}>{bullet}</li>
               ))}
