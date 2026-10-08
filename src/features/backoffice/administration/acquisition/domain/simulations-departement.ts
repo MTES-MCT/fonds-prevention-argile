@@ -4,7 +4,10 @@ import {
   toOfficialCodeDepartement,
 } from "@/shared/constants/departements.constants";
 import { isDepartementEligible } from "@/shared/constants/rga.constants";
-import type { DepartementStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  DepartementStats,
+  MatomoSimulationsStats,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 export interface CompteurSimulations {
   total: number;
@@ -95,11 +98,33 @@ export function totaliserSimulations(lignes: LigneSimulationsDepartement[]): Tot
   return { ...total, pourcentageEligibles: pourcentage(total.eligibles, total.simulations) };
 }
 
+export interface TotalEntonnoir {
+  simulations: number;
+  eligibles: number;
+  nonEligibles: number;
+  pourcentageEligibles: number;
+}
+
+/** Reprend les chiffres de l'entonnoir tels quels ; null si l'un manque, pour ne jamais afficher un 0 à sa place. */
+export function totalDepuisEntonnoir(
+  stats: Pick<MatomoSimulationsStats, "simulationsMatomo" | "simulationsEligibles" | "simulationsNonEligibles"> | null
+): TotalEntonnoir | null {
+  if (!stats?.simulationsMatomo || !stats.simulationsEligibles || !stats.simulationsNonEligibles) return null;
+  const simulations = stats.simulationsMatomo.valeur;
+  const eligibles = stats.simulationsEligibles.valeur;
+  return {
+    simulations,
+    eligibles,
+    nonEligibles: stats.simulationsNonEligibles.valeur,
+    pourcentageEligibles: pourcentage(eligibles, simulations),
+  };
+}
+
 const ENTETES_CSV = [
   "Code département",
   "Département",
   "Département pilote",
-  "Simulations",
+  "Visites avec un résultat (cumul non dédoublonné)",
   "Éligibles",
   "Non éligibles",
   "Taux d'éligibilité (%)",

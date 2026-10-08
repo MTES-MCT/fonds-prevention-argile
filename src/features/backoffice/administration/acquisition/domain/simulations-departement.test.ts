@@ -4,6 +4,7 @@ import {
   filtrerParPerimetre,
   regrouperSimulationsParDepartement,
   totaliserSimulations,
+  totalDepuisEntonnoir,
   versCsvSimulationsDepartement,
   type CompteurSimulations,
 } from "./simulations-departement";
@@ -77,13 +78,50 @@ describe("construireLignesSimulationsDepartement", () => {
   });
 });
 
+describe("totalDepuisEntonnoir", () => {
+  const stat = (valeur: number) => ({ valeur, variation: null });
+
+  it("reprend à l'identique le total, les éligibles et les non éligibles de l'entonnoir", () => {
+    const total = totalDepuisEntonnoir({
+      simulationsMatomo: stat(7842),
+      simulationsEligibles: stat(1772),
+      simulationsNonEligibles: stat(6070),
+    });
+
+    expect(total).toEqual({ simulations: 7842, eligibles: 1772, nonEligibles: 6070, pourcentageEligibles: 23 });
+  });
+
+  it("renvoie null dès qu'un des trois chiffres manque, jamais un zéro à sa place", () => {
+    const complet = {
+      simulationsMatomo: stat(10),
+      simulationsEligibles: stat(4),
+      simulationsNonEligibles: stat(6),
+    };
+
+    expect(totalDepuisEntonnoir(null)).toBeNull();
+    expect(totalDepuisEntonnoir({ ...complet, simulationsMatomo: null })).toBeNull();
+    expect(totalDepuisEntonnoir({ ...complet, simulationsEligibles: null })).toBeNull();
+    expect(totalDepuisEntonnoir({ ...complet, simulationsNonEligibles: null })).toBeNull();
+  });
+
+  it("n'invente pas de taux quand l'entonnoir n'a aucun résultat", () => {
+    const total = totalDepuisEntonnoir({
+      simulationsMatomo: stat(0),
+      simulationsEligibles: stat(0),
+      simulationsNonEligibles: stat(0),
+    });
+
+    expect(total?.pourcentageEligibles).toBe(0);
+  });
+});
+
 describe("versCsvSimulationsDepartement", () => {
   it("produit un CSV point-virgule avec BOM, une ligne par département", () => {
     const csv = versCsvSimulationsDepartement(construireLignesSimulationsDepartement([stats("03", "Allier", 40, 30)]));
 
     expect(csv.startsWith("﻿")).toBe(true);
     expect(csv.slice(1).split("\r\n")).toEqual([
-      "Code département;Département;Département pilote;Simulations;Éligibles;Non éligibles;Taux d'éligibilité (%);Comptes créés;Dossiers DN créés",
+      "Code département;Département;Département pilote;Visites avec un résultat (cumul non dédoublonné);Éligibles;Non éligibles;Taux d'éligibilité (%);Comptes créés;Dossiers DN créés",
       "03;Allier;Oui;40;30;10;75;2;1",
       "",
     ]);
