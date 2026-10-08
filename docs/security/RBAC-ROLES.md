@@ -21,7 +21,7 @@ Le `middleware.ts` aiguille selon la route demandée : `/mon-compte`,
 `/espace-agent/*` → connexion ProConnect. L'accès agent vérifie donc **deux
 choses** : `checkProConnectAccess()` (bonne méthode d'auth) **et** le rôle.
 
-> **Double authentification obligatoire (ADR-0045).** Tout agent doit se connecter avec un
+> **Double authentification obligatoire (ADR-0047).** Tout agent doit se connecter avec un
 > second facteur : la requête `/authorize` exige un `acr` parmi `eidas0-mfa`, `eidas1-mfa`,
 > `eidas2`, `eidas3` (paramètre `claims`), et le callback refuse toute autre valeur **avant**
 > d'écrire quoi que ce soit en base, sur un `id_token` dont la signature, l'émetteur,
@@ -105,7 +105,7 @@ et ne sont synchronisées par rien : la désactivation y retire l'adresse explic
 la même transaction — sauf si c'est la **dernière** de la structure, auquel cas elle est
 conservée et signalée (une liste vide couperait tous les mails de la structure en silence).
 
-### 2.2 Session sans preuve de double authentification — refusée partout (ADR-0045)
+### 2.2 Session sans preuve de double authentification — refusée partout (ADR-0047)
 
 L'`acr` validé au callback est écrit, signé, dans le JWT de session (`proConnectAcr`).
 `getSession` (`auth/services/session.service.ts`) le contrôle par `estSessionConforme`

@@ -149,7 +149,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Service               | Usage                                                           | Adapter / config                                                  |
 | --------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
 | FranceConnect         | Identité demandeurs                                             | `src/features/auth/adapters/franceconnect/`                       |
-| ProConnect            | Identité agents, double authentification obligatoire (ADR-0045) | `src/features/auth/adapters/proconnect/`                          |
+| ProConnect            | Identité agents, double authentification obligatoire (ADR-0047) | `src/features/auth/adapters/proconnect/`                          |
 | Démarches Simplifiées | Dossiers (GraphQL lecture + annotations, REST préremplissage)   | `src/features/parcours/dossiers-ds/adapters/`                     |
 | Brevo / Mailhog       | Emails transactionnels (prod / dev)                             | `src/shared/email/`                                               |
 | Brevo Contacts        | Synchro contacts + évènements (cycle de vie)                    | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |

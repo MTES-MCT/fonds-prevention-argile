@@ -471,8 +471,7 @@ Le binaire natif se charge après le bump (`sharp` 0.35.5, libvips 8.18.7).
 
 ## Refresh — octobre 2026 (branche `feat/proconnect-2fa`)
 
-Ajout d'une dépendance runtime pour vérifier la signature des jetons ProConnect (ADR de la double
-authentification). Aucune vulnérabilité nouvelle : `pnpm audit` est identique à celui du refresh
+Ajout d'une dépendance runtime pour vérifier la signature des jetons ProConnect (ADR-0047). Aucune vulnérabilité nouvelle : `pnpm audit` est identique à celui du refresh
 précédent (`braces`, `source-map-js`, `uuid`, déjà acceptées ci-dessus).
 
 - **`jose` 6.2.12** (runtime) : vérification JWT / JWKS, maintenue par l'auteur de

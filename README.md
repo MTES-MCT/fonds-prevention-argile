@@ -99,7 +99,7 @@ qu'en sachant laquelle a cédé :
 | Étage                              | Ce qu'il vérifie                    | Symptôme en cas d'échec                                                    |
 | ---------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
 | Bac à sable ProConnect             | l'identité existe, mot de passe bon | `mot de passe incorrect` / `invalid_credentials`, sans quitter l'IdP       |
-| Double authentification (ADR-0045) | un second facteur a été validé      | retour sur `/connexion/agent` avec « double authentification obligatoire » |
+| Double authentification (ADR-0047) | un second facteur a été validé      | retour sur `/connexion/agent` avec « double authentification obligatoire » |
 | Table `agents` de l'environnement  | une ligne porte cet email           | écran ProConnect franchi, puis refus applicatif (« non autorisé »)         |
 
 L'app ne crée **jamais** d'agent à la volée : `authenticateFromProConnect` cherche par `sub`

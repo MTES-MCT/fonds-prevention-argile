@@ -1,4 +1,4 @@
-# ADR-0045 : Double authentification obligatoire pour les agents ProConnect
+# ADR-0047 : Double authentification obligatoire pour les agents ProConnect
 
 **Date** : 2026-10-05
 **Statut** : Accepté
