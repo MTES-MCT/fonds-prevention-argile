@@ -148,12 +148,4 @@ describe("ResultVulnerabilite — sections de fiches", () => {
       within(critiques).getByRole("heading", { name: "Limiter la chaleur transmise au sol par le mur du sous-sol" })
     ).toBeInTheDocument();
   });
-
-  it("mentionne sans fiche un point que le catalogue ne couvre pas, sous l'explication de sa section", () => {
-    rendre({ ...ELIGIBLE, eaux: { gravier_proprete: "absent" } });
-
-    const section = screen.getByRole("heading", { level: 2, name: "Points à surveiller" }).closest("section")!;
-    expect(within(section).getByText(/peut en faire un point critique/)).toBeInTheDocument();
-    expect(within(section).getByText(/Absent/)).toBeInTheDocument();
-  });
 });

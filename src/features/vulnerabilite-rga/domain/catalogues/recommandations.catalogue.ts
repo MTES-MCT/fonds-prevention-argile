@@ -32,10 +32,11 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-pente",
     critereId: "pente_terrain",
-    reponsesDeclenchantes: ["vers_facade", "ne_sais_pas"],
+    reponsesDeclenchantes: ["vers_facade", "ne_sais_pas", "plat", "eloignee_facade"],
     titre: "Détourner les eaux de ruissellement de la façade",
     problemes: [
       "Une pente qui descend vers la maison ramène l'eau de pluie contre la façade à chaque orage, provoquant des cycles de gonflement et de retrait du sol argileux juste sous les fondations",
+      "Sur un terrain plat, l'eau peut aussi stagner au pied du mur ; et une pente favorable peut s'inverser après un remblai, une terrasse ou un tassement du sol",
     ],
     ameliorations: [
       "Créer une pente légère qui éloigne l'eau de pluie de la maison plutôt que vers elle",
@@ -83,6 +84,20 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     ],
     ameliorations: [
       "Faire vérifier la présence d'une membrane étanche aux endroits concernés, ou remplacer par un dispositif qui éloigne l'eau du mur",
+    ],
+    illustrationId: "gravier",
+  },
+  {
+    id: "eaux-gravier-absent",
+    critereId: "gravier_proprete",
+    reponsesDeclenchantes: ["absent"],
+    titre: "Garder le pied du mur sec et protégé",
+    problemes: [
+      "Sans gravier, c'est ce qui borde le mur qui compte : terre nue, pelouse, massif ou dallage mal posé peuvent retenir l'eau ou la laisser s'infiltrer au contact des fondations",
+    ],
+    ameliorations: [
+      "Vérifier que le sol en pied de façade éloigne l'eau du mur, avec une légère pente vers l'extérieur",
+      "Privilégier un trottoir étanche ou une géomembrane couverte plutôt qu'un revêtement drainant directement contre le mur",
     ],
     illustrationId: "gravier",
   },

@@ -1,7 +1,6 @@
 import { RecommandationCard } from "./RecommandationCard";
-import { CategorieBadge } from "../shared/CategorieBadge";
 import { CATEGORIES_AFFICHAGE } from "../../domain/value-objects/grille-categorisation";
-import { compterPointsSection, type SectionRecommandations } from "../../domain/services/recommandations.service";
+import type { SectionRecommandations } from "../../domain/services/recommandations.service";
 
 interface RecommandationsListProps {
   sections: SectionRecommandations[];
@@ -21,7 +20,7 @@ export function RecommandationsList({ sections }: RecommandationsListProps) {
     <div className="fr-mt-4w">
       {sections.map((section) => {
         const accent = CATEGORIES_AFFICHAGE[section.categorie].accent.token;
-        const nombre = compterPointsSection(section);
+        const nombre = section.recommandations.length;
 
         return (
           <section key={section.categorie} className="fr-mb-6w">
@@ -39,15 +38,6 @@ export function RecommandationsList({ sections }: RecommandationsListProps) {
                 categorie={section.categorie}
               />
             ))}
-            {section.pointsSansCarte.length > 0 && (
-              <ul className="fr-mb-0 fr-pl-2w" style={{ borderLeft: `4px solid ${accent}` }}>
-                {section.pointsSansCarte.map((point) => (
-                  <li key={point.critereId}>
-                    <strong>{point.question}</strong> : {point.reponse} <CategorieBadge categorie={section.categorie} />
-                  </li>
-                ))}
-              </ul>
-            )}
           </section>
         );
       })}

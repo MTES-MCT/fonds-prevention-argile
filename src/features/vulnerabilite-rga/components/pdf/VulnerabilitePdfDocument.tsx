@@ -7,7 +7,7 @@ import {
   SOURCES_VULNERABILITE_CHAPO,
   SOURCES_VULNERABILITE_ITEMS,
 } from "../../domain/value-objects/resultat-content.const";
-import { compterPointsSection, type SectionRecommandations } from "../../domain/services/recommandations.service";
+import type { SectionRecommandations } from "../../domain/services/recommandations.service";
 import { CATEGORIES_AFFICHAGE, type CategorieATraiter } from "../../domain/value-objects/grille-categorisation";
 import type { RecommandationDef } from "../../domain/catalogues/recommandations.catalogue";
 import type { NiveauSynthese, SyntheseResultat } from "../../domain/services/synthese-resultat.service";
@@ -229,10 +229,7 @@ export function VulnerabilitePdfDocument({
 
           {sections.map((section) => {
             const [premiere, ...suivantes] = section.recommandations;
-            const nombre = compterPointsSection(section);
-            const pointsSansCarte = (
-              <PdfBulletList items={section.pointsSansCarte.map((point) => `${point.question} : ${point.reponse}`)} />
-            );
+            const nombre = section.recommandations.length;
 
             return (
               <View style={styles.section} key={section.categorie}>
@@ -249,10 +246,8 @@ export function VulnerabilitePdfDocument({
                     </Text>
                   </View>
                   {section.explication && <Text style={styles.paragraph}>{section.explication}</Text>}
-                  {premiere ? (
+                  {premiere && (
                     <PdfFiche recommandation={premiere} categorie={section.categorie} illustrations={illustrations} />
-                  ) : (
-                    pointsSansCarte
                   )}
                 </View>
                 {suivantes.map((recommandation) => (
@@ -264,7 +259,6 @@ export function VulnerabilitePdfDocument({
                     />
                   </View>
                 ))}
-                {premiere && pointsSansCarte}
               </View>
             );
           })}

@@ -1,6 +1,5 @@
-import { QUESTION_LABELS } from "../value-objects/vulnerabilite-critere-fields";
 import { describe, it, expect } from "vitest";
-import { compterPointsSection, getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
+import { getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
 import { categoriserReponses } from "./categorisation.service";
 
 describe("getSectionsRecommandations", () => {
@@ -66,22 +65,6 @@ describe("getSectionsRecommandations", () => {
     expect(fruitier[0].categorie).toBe("vigilance");
     expect(fruitier[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
   });
-
-  it("liste sans conseil un point qu'aucune fiche ne couvre", () => {
-    const sections = getSectionsRecommandations(categoriserReponses({ gravier_proprete: "absent" }));
-
-    expect(sections).toEqual([
-      {
-        categorie: "a_verifier",
-        titre: "Points à surveiller",
-        explication: expect.stringContaining("peut en faire un point critique"),
-        recommandations: [],
-        pointsSansCarte: [
-          { critereId: "gravier_proprete", question: QUESTION_LABELS.gravier_proprete, reponse: "Absent" },
-        ],
-      },
-    ]);
-  });
 });
 
 describe("eaux-recuperateur", () => {
@@ -91,30 +74,12 @@ describe("eaux-recuperateur", () => {
     expect(sections).toHaveLength(1);
     expect(sections[0].categorie).toBe("a_verifier");
     expect(sections[0].recommandations.map((r) => r.id)).toEqual(["eaux-recuperateur"]);
-    expect(sections[0].pointsSansCarte).toEqual([]);
   });
 });
 
 describe("getReponsesSansCarte", () => {
-  // Liste figée : y ajouter une entrée, c'est accepter qu'un point s'affiche sans conseil.
-  it("recense les réponses à traiter qui n'ont pas encore de fiche", () => {
-    expect(getReponsesSansCarte()).toEqual([
-      "pente_terrain/plat",
-      "pente_terrain/eloignee_facade",
-      "gravier_proprete/absent",
-    ]);
-  });
-});
-
-describe("compterPointsSection", () => {
-  it("additionne les fiches et les points sans fiche de la section", () => {
-    const sections = getSectionsRecommandations(
-      categoriserReponses({ pente_terrain: "ne_sais_pas", gravier_proprete: "absent" })
-    );
-    const aVerifier = sections.find((s) => s.categorie === "a_verifier")!;
-
-    expect(aVerifier.recommandations.length).toBeGreaterThan(0);
-    expect(aVerifier.pointsSansCarte.length).toBeGreaterThan(0);
-    expect(compterPointsSection(aVerifier)).toBe(aVerifier.recommandations.length + aVerifier.pointsSansCarte.length);
+  // Une réponse sans fiche disparaîtrait du résultat : toute nouvelle réponse à traiter doit en avoir une.
+  it("donne une fiche à chaque réponse à traiter", () => {
+    expect(getReponsesSansCarte()).toEqual([]);
   });
 });
