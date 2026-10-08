@@ -155,12 +155,14 @@ Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
 - **Synthèse** (`SyntheseResultat`) : mise en avant DSFR (`fr-callout`, pas une alerte — c'est un
   contenu éditorial, pas un retour système). Accent `pink-tuile` dès qu'un point est critique,
   `yellow-moutarde` s'il n'y a que de la vigilance, `green-emeraude` sinon. L'icône et le titre
-  doublent la couleur. Hors zone argileuse (aléa `nul`), une phrase relativise les points sans
-  les retirer : la carte d'aléa est une estimation, et ils redeviennent déterminants s'il y a
-  de l'argile sous les fondations.
-- **Callout expert** : toujours affiché. Seul son bouton vers `/simulateur` est conditionnel —
-  département éligible, aléa fort, maison non mitoyenne (`remplitCriteresEligibiliteFonds`, qui
-  appelle les règles du simulateur d'éligibilité).
+  doublent la couleur. En aléa faible ou hors zone argileuse, une phrase relativise les points
+  sans les retirer : la carte d'aléa est une estimation, sans conséquence si le sol s'avère non
+  argileux, déterminante s'il l'est. L'accent descend alors d'un cran (`yellow-moutarde` pour des
+  points critiques, champ `accent`), le titre gardant le niveau réel.
+- **Callout expert** : toujours affiché. Son bouton vers `/simulateur` et sa dernière phrase (le
+  fonds peut financer le diagnostic) sont conditionnels — département éligible, aléa fort, maison
+  non mitoyenne (`remplitCriteresEligibiliteFonds`, qui appelle les règles du simulateur
+  d'éligibilité). Même règle dans le PDF.
 - **Fiches** : celles du catalogue, regroupées en « Points critiques », « Points de vigilance »,
   « Points à surveiller », une section vide étant omise. Un point qu'aucune fiche ne couvre est
   listé sous sa section, sans conseil.
