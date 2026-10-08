@@ -17,6 +17,7 @@ import {
   fetchMatomoCountByDimension,
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
+  fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
   fetchMatomoUniqueVisitors,
   fetchMatomoUniqueVisitorsSeries,
@@ -68,12 +69,63 @@ describe("fetchMatomoCountByDimension", () => {
     expect(body.get("method")).toBe("CustomDimensions.getCustomDimension");
   });
 
+  it("lève la limite de lignes Matomo (100 par défaut) quand on demande toutes les lignes", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result", { toutesLesLignes: true });
+
+    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+    expect(new URLSearchParams(init.body as string).get("filter_limit")).toBe("-1");
+  });
+
+  it("garde la limite par défaut de Matomo sans la demande explicite (Top 5 communes, jamais mesuré en entier)", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result");
+
+    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+    expect(new URLSearchParams(init.body as string).has("filter_limit")).toBe(false);
+  });
+
   it("un seul appel HTTP (contrairement à fetchMatomoSimulationsGroupedByDimension qui en fait 2)", async () => {
     mockFetchResponse([]);
 
     await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result");
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("fetchMatomoSimulationsGroupedByDepartment — liste complète des départements", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("demande toutes les lignes sur les deux rapports (éligibles et non éligibles)", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoSimulationsGroupedByDepartment(5, { period: "range", date: "2026-09-01,2026-09-30" });
+
+    const appels = vi.mocked(global.fetch).mock.calls as [string, RequestInit][];
+    expect(appels).toHaveLength(2);
+    for (const [, init] of appels) {
+      expect(new URLSearchParams(init.body as string).get("filter_limit")).toBe("-1");
+    }
+  });
+
+  it("laisse le rapport par commune à la limite par défaut", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoSimulationsGroupedByDimension(6, { period: "range", date: "2026-09-01,2026-09-30" });
+
+    const appels = vi.mocked(global.fetch).mock.calls as [string, RequestInit][];
+    for (const [, init] of appels) {
+      expect(new URLSearchParams(init.body as string).has("filter_limit")).toBe(false);
+    }
   });
 });
 

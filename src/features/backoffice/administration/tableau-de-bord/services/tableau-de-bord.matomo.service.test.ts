@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getMatomoSimulationsStats } from "./tableau-de-bord.service";
+import { getMatomoSimulationsStats, getTopDepartementsMatomo } from "./tableau-de-bord.service";
 import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
+  fetchMatomoSimulationsGroupedByDepartment,
 } from "../../acquisition/adapters/matomo-api.adapter";
 import { db } from "@/shared/database/client";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
@@ -21,14 +22,15 @@ vi.mock("../../acquisition/adapters/matomo-api.adapter", () => ({
   buildPartnerSegment: vi.fn(() => undefined),
 }));
 
-// Dimension département déterministe (indépendante de l'env locale) pour le test filtré par département.
+// Dimension département déterministe (indépendante de l'env locale) ; `undefined` simule la variable absente.
+const env = vi.hoisted(() => ({ dimensionDepartement: "7" as string | undefined }));
 vi.mock("@/shared/config/env.config", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/shared/config/env.config")>();
   return {
     ...actual,
     getClientEnv: () => ({
       ...actual.getClientEnv(),
-      NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: "7",
+      NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: env.dimensionDepartement,
     }),
   };
 });
@@ -209,5 +211,82 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
     expect(nombreAppelsCourants).toBeGreaterThan(1);
     expect(stats.simulationsEligibles?.valeur).toBe(3 * nombreAppelsCourants);
     expect(stats.simulationsNonEligibles?.valeur).toBe(1 * nombreAppelsCourants);
+  });
+});
+
+describe("getTopDepartementsMatomo — une seule unité par colonne, filtre toujours appliqué", () => {
+  // Un parcours avec simulation en BDD (Indre par défaut) ; Matomo, lui, ne connaît que le Puy-de-Dôme.
+  function mockParcoursIndre(codeDepartement = "36") {
+    const parcours = [
+      {
+        id: "p1",
+        userId: "u1",
+        rgaSimulationData: { logement: { code_departement: codeDepartement } },
+        rgaSimulationDataAgent: null,
+      },
+    ];
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(parcours),
+        innerJoin: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
+      }),
+    } as never);
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    env.dimensionDepartement = "7";
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockParcoursIndre();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("lève quand la dimension département n'est pas configurée, au lieu de fabriquer des zéros", async () => {
+    env.dimensionDepartement = undefined;
+
+    await expect(getTopDepartementsMatomo("30j")).rejects.toThrow("NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID");
+    expect(fetchMatomoSimulationsGroupedByDepartment).not.toHaveBeenCalled();
+  });
+
+  it("fusionne les variantes « 3 » et « 03 » de Matomo en une ligne, avec les comptes de la base", async () => {
+    mockParcoursIndre("3");
+    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(
+      new Map([
+        ["3", { total: 5, eligible: 2, nonEligible: 3 }],
+        ["03", { total: 7, eligible: 4, nonEligible: 3 }],
+      ])
+    );
+
+    const top = await getTopDepartementsMatomo("30j");
+
+    expect(top).toEqual([
+      expect.objectContaining({ codeDepartement: "03", simulations: 12, simulationsEligibles: 6, comptesCrees: 1 }),
+    ]);
+  });
+
+  it("ne complète pas un département absent de Matomo avec des parcours BDD", async () => {
+    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(
+      new Map([["63", { total: 12, eligible: 4, nonEligible: 8 }]])
+    );
+
+    const top = await getTopDepartementsMatomo("30j");
+
+    expect(top.find((d) => d.codeDepartement === "36")).toMatchObject({ simulations: 0, comptesCrees: 1 });
+    expect(top.find((d) => d.codeDepartement === "63")).toMatchObject({ simulations: 12, simulationsEligibles: 4 });
+  });
+
+  it("garde des simulations à 0 plutôt que des parcours quand Matomo ne renvoie rien", async () => {
+    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(new Map());
+
+    const top = await getTopDepartementsMatomo("30j");
+
+    expect(top).toEqual([expect.objectContaining({ codeDepartement: "36", simulations: 0, comptesCrees: 1 })]);
+  });
+
+  it("applique le filtre département même quand Matomo ne renvoie rien", async () => {
+    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(new Map());
+
+    expect(await getTopDepartementsMatomo("30j", "63")).toEqual([]);
   });
 });

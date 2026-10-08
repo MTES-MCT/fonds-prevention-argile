@@ -147,7 +147,7 @@ describe("getVulnerabiliteTopDepartements", () => {
     expect(fetchMatomoCountByDimension).toHaveBeenCalledWith(
       5,
       "eventAction==vulnerabilite_result",
-      expect.objectContaining({ period: "range" })
+      expect.objectContaining({ period: "range", toutesLesLignes: true })
     );
     expect(result).toEqual([{ codeDepartement: "36", nomDepartement: "Indre", simulations: 12 }]);
   });

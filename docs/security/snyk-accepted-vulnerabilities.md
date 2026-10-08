@@ -9,9 +9,12 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (octobre 2026) — une seule vulnérabilité acceptée** : `uuid` <11.1.1
-> (Moderate, transitif via `exceljs`). Tout le reste est corrigé à la source. Voir
-> [Refresh — octobre 2026](#refresh--octobre-2026-branche-chorebump-deps-securite-oct).
+> **État courant (octobre 2026) — trois vulnérabilités acceptées** : `uuid` <11.1.1
+> (Moderate, runtime, transitif via `exceljs`), `source-map-js` <1.2.2 (High, build, transitif via
+> le `postcss` de `next`, correctif à embarquer dès le 2026-10-07 à 14 h UTC) et `braces` <=3.0.3 (High,
+> devDep, transitif via `eslint-config-next`, aucun correctif publié). Tout le reste est corrigé à
+> la source. Voir
+> [Refresh — octobre 2026 (tableau des simulations par département)](#refresh--octobre-2026-branche-feattableau-simulations-departement).
 
 ## Décision
 
@@ -443,6 +446,28 @@ prod envoient par l'API Brevo. Version retenue : la plus récente hors fenêtre 
 | Dépendance vulnérable | Sévérité | Type    | Chemin           | Justification                                                                                            |
 | --------------------- | -------- | ------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
 | `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid` | Inchangé : exceljs appelle `uuidv4()` sans buffer → faille non atteignable ; override v11 = major risqué |
+
+## Refresh — octobre 2026 (branche `feat/tableau-simulations-departement`)
+
+Branche sans ajout de dépendance. `pnpm audit` remonte trois avis High apparus depuis le refresh
+précédent, dont `sharp` le 2026-10-07 : celui-ci est corrigé à la source, les deux autres sont acceptés.
+`pnpm audit` passe ensuite à 3 (`braces`, `source-map-js`, `uuid`) et `pnpm audit --prod` à 2
+(`source-map-js`, `uuid`).
+
+### Corrigée à la source (override `pnpm-workspace.yaml`)
+
+| Override | Avant     | Après     | Avis éliminé                                                                                                                      |
+| -------- | --------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `sharp`  | `^0.35.4` | `^0.35.5` | 1 High — **prod**, `GHSA-wq5f-xc86-pv6w` (dépendance librsvg), transitif via `next` (optimisation d'images), publié le 2026-09-27 |
+
+Le binaire natif se charge après le bump (`sharp` 0.35.5, libvips 8.18.7).
+
+### Acceptées
+
+| Dépendance vulnérable  | Sévérité | Type   | Chemin                                                                                            | Justification                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------- | -------- | ------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `braces` <=3.0.3       | High     | devDep | `eslint-config-next > … > @typescript-eslint/typescript-estree > fast-glob > micromatch > braces` | `GHSA-vfj7-8cjw-p6xm`, épuisement de pile sur des motifs profondément imbriqués. N'entre que sur les globs de la configuration ESLint du dépôt, jamais sur une entrée externe, et rien de tout ça n'est déployé. **Aucune version corrigée publiée** : à reprendre dès qu'il y en a une (override), ou avec le lot Next 16 / ESLint 10                                     |
+| `source-map-js` <1.2.2 | High     | build  | `next > postcss > source-map-js` (aussi via `@socialgouv/matomo-next`, `tailwindcss`)             | `GHSA-68fv-2mgg-jv7q`. Ne tourne qu'au build, sur les sources CSS du dépôt, jamais sur une entrée externe. Correctif publié (`1.2.2`, le 2026-09-30 à 14 h 08 UTC) mais bloqué par `minimumReleaseAge` jusqu'au **2026-10-07 à 14 h 08 UTC** : ajouter alors l'override `source-map-js: ^1.2.2` dans `pnpm-workspace.yaml` (et le checksum du lockfile dans `.talismanrc`) |
 
 ## Prochaine revue
 
