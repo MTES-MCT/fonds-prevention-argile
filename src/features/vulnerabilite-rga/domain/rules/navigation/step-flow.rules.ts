@@ -1,5 +1,4 @@
 import { VulnerabiliteStep } from "../../value-objects/vulnerabilite-step.enum";
-import type { PartialVulnerabiliteReponses } from "../../types/vulnerabilite-reponses.types";
 
 /**
  * Ordre complet des étapes (intro + résultat inclus).
@@ -13,7 +12,6 @@ const STEP_ORDER: VulnerabiliteStep[] = [
   VulnerabiliteStep.GOUTTIERES,
   VulnerabiliteStep.RECUPERATEUR_EAU,
   VulnerabiliteStep.ARBRE_PROXIMITE,
-  VulnerabiliteStep.ARBRE_ESSENCE,
   VulnerabiliteStep.HAIES,
   VulnerabiliteStep.VEGETATION_PIED_FACADE,
   VulnerabiliteStep.MITOYENNETE,
@@ -22,47 +20,16 @@ const STEP_ORDER: VulnerabiliteStep[] = [
   VulnerabiliteStep.RESULTAT,
 ];
 
-/**
- * Contrairement au simulateur d'éligibilité (qui n'a qu'un early-exit vers RESULTAT,
- * jamais de saut intra-parcours), ce simulateur a un vrai branchement conditionnel :
- * ARBRE_ESSENCE n'a de sens que si un arbre a été signalé proche des fondations.
- * `getNextStep`/`getPreviousStep` prennent donc les réponses en paramètre.
- */
-function shouldSkipStep(step: VulnerabiliteStep, answers: PartialVulnerabiliteReponses): boolean {
-  if (step === VulnerabiliteStep.ARBRE_ESSENCE) {
-    return answers.vegetation?.arbre_proximite !== "oui";
-  }
-  return false;
+export function getNextStep(currentStep: VulnerabiliteStep): VulnerabiliteStep | null {
+  const index = STEP_ORDER.indexOf(currentStep);
+  if (index === -1 || index + 1 >= STEP_ORDER.length) return null;
+  return STEP_ORDER[index + 1];
 }
 
-export function getNextStep(
-  currentStep: VulnerabiliteStep,
-  answers: PartialVulnerabiliteReponses
-): VulnerabiliteStep | null {
-  let index = STEP_ORDER.indexOf(currentStep);
-  if (index === -1) return null;
-
-  do {
-    index++;
-    if (index >= STEP_ORDER.length) return null;
-  } while (shouldSkipStep(STEP_ORDER[index], answers));
-
-  return STEP_ORDER[index];
-}
-
-export function getPreviousStep(
-  currentStep: VulnerabiliteStep,
-  answers: PartialVulnerabiliteReponses
-): VulnerabiliteStep | null {
-  let index = STEP_ORDER.indexOf(currentStep);
-  if (index === -1) return null;
-
-  do {
-    index--;
-    if (index < 0) return null;
-  } while (shouldSkipStep(STEP_ORDER[index], answers));
-
-  return STEP_ORDER[index];
+export function getPreviousStep(currentStep: VulnerabiliteStep): VulnerabiliteStep | null {
+  const index = STEP_ORDER.indexOf(currentStep);
+  if (index <= 0) return null;
+  return STEP_ORDER[index - 1];
 }
 
 export function canGoToStep(targetStep: VulnerabiliteStep, currentStep: VulnerabiliteStep): boolean {

@@ -11,8 +11,7 @@ describe("getCategorieReponse", () => {
     expect(getCategorieReponse("source_chaleur_sous_sol", "pas_de_sous_sol")).toBe("sans_objet");
   });
 
-  it("ne renvoie rien pour l'essence de l'arbre, l'aléa ou une réponse inconnue", () => {
-    expect(getCategorieReponse("arbre_essence", "peuplier")).toBeNull();
+  it("ne renvoie rien pour l'aléa ou une réponse inconnue", () => {
     expect(getCategorieReponse("aleaRga", "fort")).toBeNull();
     expect(getCategorieReponse("pente_terrain", "valeur_inconnue")).toBeNull();
   });
@@ -41,10 +40,25 @@ describe("categoriserReponses", () => {
     expect(categoriserReponses({ ensoleillement: "modere", source_chaleur_sous_sol: "pas_de_sous_sol" })).toEqual([]);
   });
 
-  it("ne tire aucun point de l'essence : c'est « arbre proche = oui » qui porte le point critique", () => {
-    const points = categoriserReponses({ arbre_proximite: "oui", arbre_essence: "peuplier" });
+  it("tire le point de l'arbre de son essence : critique pour les grands arbres, vigilance pour les fruitiers", () => {
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_gourmand" })).toEqual([
+      { critereId: "arbre_essence", reponse: "tres_gourmand", categorie: "critique" },
+    ]);
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "grand_ornement" })).toEqual([
+      { critereId: "arbre_essence", reponse: "grand_ornement", categorie: "critique" },
+    ]);
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "fruitier_petit" })).toEqual([
+      { critereId: "arbre_essence", reponse: "fruitier_petit", categorie: "vigilance" },
+    ]);
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "ne_sais_pas" })).toEqual([
+      { critereId: "arbre_essence", reponse: "ne_sais_pas", categorie: "critique" },
+    ]);
+  });
 
-    expect(points).toEqual([{ critereId: "arbre_proximite", reponse: "oui", categorie: "critique" }]);
+  it("ignore une essence restée en mémoire quand l'arbre n'est plus signalé", () => {
+    expect(categoriserReponses({ arbre_proximite: "non", arbre_essence: "tres_gourmand" })).toEqual([
+      { critereId: "arbre_proximite", reponse: "non", categorie: "bonne_pratique" },
+    ]);
   });
 
   it("ne renvoie rien sans réponse", () => {
@@ -56,7 +70,7 @@ describe("compterPoints", () => {
   it("compte les points par catégorie", () => {
     const { points } = computeResultat({
       eaux: { reseaux_enterres: "sous_fondations", gouttieres: "absentes_ou_debordantes", pente_terrain: "plat" },
-      vegetation: { arbre_proximite: "oui", haies: "eloignees_peu_denses" },
+      vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand", haies: "eloignees_peu_denses" },
       divers: { source_chaleur_sous_sol: "oui_mur_non_isole", ensoleillement: "modere" },
     });
 

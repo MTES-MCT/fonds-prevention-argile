@@ -52,14 +52,19 @@ describe("getSectionsRecommandations", () => {
     expect(localise[0].recommandations[0].id).toBe("eaux-gravier-localise");
   });
 
-  it("porte la fiche arbre sur la proximité, quelle que soit l'essence", () => {
-    const sections = getSectionsRecommandations(
-      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "conifere" })
+  it("porte la fiche arbre sur l'essence, rangée selon sa catégorie", () => {
+    const gourmand = getSectionsRecommandations(
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_gourmand" })
+    );
+    const fruitier = getSectionsRecommandations(
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "fruitier_petit" })
     );
 
-    expect(sections).toHaveLength(1);
-    expect(sections[0].categorie).toBe("critique");
-    expect(sections[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
+    expect(gourmand).toHaveLength(1);
+    expect(gourmand[0].categorie).toBe("critique");
+    expect(gourmand[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
+    expect(fruitier[0].categorie).toBe("vigilance");
+    expect(fruitier[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
   });
 
   it("liste sans conseil un point qu'aucune fiche ne couvre", () => {

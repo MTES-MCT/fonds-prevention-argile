@@ -1,5 +1,3 @@
-import type { PartialVulnerabiliteReponses } from "../types/vulnerabilite-reponses.types";
-
 /**
  * Étapes du simulateur de vulnérabilité RGA.
  */
@@ -12,7 +10,6 @@ export const VulnerabiliteStep = {
   GOUTTIERES: "gouttieres",
   RECUPERATEUR_EAU: "recuperateur_eau",
   ARBRE_PROXIMITE: "arbre_proximite",
-  ARBRE_ESSENCE: "arbre_essence",
   HAIES: "haies",
   VEGETATION_PIED_FACADE: "vegetation_pied_facade",
   MITOYENNETE: "mitoyennete",
@@ -23,13 +20,8 @@ export const VulnerabiliteStep = {
 
 export type VulnerabiliteStep = (typeof VulnerabiliteStep)[keyof typeof VulnerabiliteStep];
 
-/**
- * Étapes numérotées de base (hors intro/résultat). `ARBRE_ESSENCE` n'est comptée
- * que si elle s'applique (cf. `getEtapesNumerotees`) — c'est la même logique qui
- * pilote le skip dans `step-flow.rules.ts`, dupliquée ici volontairement pour
- * garder ce fichier indépendant de la logique de navigation.
- */
-const ETAPES_NUMEROTEES_BASE: VulnerabiliteStep[] = [
+/** Étapes numérotées (hors intro/résultat). */
+const ETAPES_NUMEROTEES: VulnerabiliteStep[] = [
   VulnerabiliteStep.ADRESSE,
   VulnerabiliteStep.PENTE_TERRAIN,
   VulnerabiliteStep.RESEAUX_ENTERRES,
@@ -37,7 +29,6 @@ const ETAPES_NUMEROTEES_BASE: VulnerabiliteStep[] = [
   VulnerabiliteStep.GOUTTIERES,
   VulnerabiliteStep.RECUPERATEUR_EAU,
   VulnerabiliteStep.ARBRE_PROXIMITE,
-  VulnerabiliteStep.ARBRE_ESSENCE,
   VulnerabiliteStep.HAIES,
   VulnerabiliteStep.VEGETATION_PIED_FACADE,
   VulnerabiliteStep.MITOYENNETE,
@@ -45,23 +36,10 @@ const ETAPES_NUMEROTEES_BASE: VulnerabiliteStep[] = [
   VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL,
 ];
 
-function isArbreEssenceApplicable(answers: PartialVulnerabiliteReponses): boolean {
-  return answers.vegetation?.arbre_proximite === "oui";
-}
-
-/** Étapes numérotées réellement affichées, compte tenu du branchement arbre → essence. */
-export function getEtapesNumerotees(answers: PartialVulnerabiliteReponses): VulnerabiliteStep[] {
-  const showEssence = isArbreEssenceApplicable(answers);
-  return ETAPES_NUMEROTEES_BASE.filter((step) => step !== VulnerabiliteStep.ARBRE_ESSENCE || showEssence);
-}
-
 /** Numéro d'étape affiché (1-based), ou null pour intro/résultat. */
-export function getNumeroEtape(step: VulnerabiliteStep, answers: PartialVulnerabiliteReponses): number | null {
-  const index = getEtapesNumerotees(answers).indexOf(step);
+export function getNumeroEtape(step: VulnerabiliteStep): number | null {
+  const index = ETAPES_NUMEROTEES.indexOf(step);
   return index >= 0 ? index + 1 : null;
 }
 
-/** Nombre total d'étapes numérotées affichées (12 ou 13 selon le branchement arbre). */
-export function getTotalEtapes(answers: PartialVulnerabiliteReponses): number {
-  return getEtapesNumerotees(answers).length;
-}
+export const TOTAL_ETAPES = ETAPES_NUMEROTEES.length;

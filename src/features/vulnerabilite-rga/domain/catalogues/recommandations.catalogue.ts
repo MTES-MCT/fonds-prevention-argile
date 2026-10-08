@@ -13,6 +13,17 @@ export interface RecommandationDef {
   illustrationId?: string;
 }
 
+// Même fiche pour un arbre signalé (catégorie portée par l'essence) et pour un doute sur sa présence.
+const FICHE_ARBRE = {
+  titre: "Faire expertiser l'arbre proche des fondations",
+  problemes: ["Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux"],
+  ameliorations: [
+    "Faire évaluer par un professionnel si un élagage régulier ou une barrière anti-racines suffit",
+    "L'abattage n'est pas toujours la meilleure solution : un arbre supprimé brutalement peut au contraire déséquilibrer l'humidité du sol",
+  ],
+  illustrationId: "arbre",
+} satisfies Omit<RecommandationDef, "id" | "critereId" | "reponsesDeclenchantes">;
+
 /**
  * Catalogue des recommandations. Une fiche ne se déclenche que sur des réponses classées
  * critique, vigilance ou à surveiller — vérifié par `recommandations.catalogue.test.ts`.
@@ -104,16 +115,15 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   },
   {
     id: "veg-arbre",
-    // Portée par la proximité tant que les essences n'ont pas de catégorie.
+    critereId: "arbre_essence",
+    reponsesDeclenchantes: ["tres_gourmand", "grand_ornement", "fruitier_petit", "ne_sais_pas"],
+    ...FICHE_ARBRE,
+  },
+  {
+    id: "veg-arbre-a-verifier",
     critereId: "arbre_proximite",
-    reponsesDeclenchantes: ["oui", "ne_sais_pas"],
-    titre: "Faire expertiser l'arbre proche des fondations",
-    problemes: ["Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux"],
-    ameliorations: [
-      "Faire évaluer par un professionnel si un élagage régulier ou une barrière anti-racines suffit",
-      "L'abattage n'est pas toujours la meilleure solution : un arbre supprimé brutalement peut au contraire déséquilibrer l'humidité du sol",
-    ],
-    illustrationId: "arbre",
+    reponsesDeclenchantes: ["ne_sais_pas"],
+    ...FICHE_ARBRE,
   },
   {
     id: "veg-haies",

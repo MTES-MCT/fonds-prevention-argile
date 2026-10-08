@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { QuestionStep } from "../shared/QuestionStep";
+import { ChoixRadios, QuestionStep } from "../shared/QuestionStep";
 import Image from "next/image";
 import schemaArbreProximite from "../illustrations/SchemaArbreProximite.svg";
+import { getCritereConfig } from "../../domain/value-objects/grille-categorisation";
 import type {
+  ReponseArbreEssence,
   ReponseArbreProximite,
   PartialVulnerabiliteReponses,
 } from "../../domain/types/vulnerabilite-reponses.types";
 
 interface StepArbreProximiteProps {
   initialValue?: ReponseArbreProximite;
+  initialEssence?: ReponseArbreEssence;
   numeroEtape: number;
   totalEtapes: number;
   canGoBack: boolean;
@@ -18,8 +21,15 @@ interface StepArbreProximiteProps {
   onBack: () => void;
 }
 
+const OPTIONS_ESSENCE = (getCritereConfig("arbre_essence")?.reponses ?? []).map(({ reponse, label, precision }) => ({
+  value: reponse as ReponseArbreEssence,
+  label,
+  precision,
+}));
+
 export function StepArbreProximite({
   initialValue,
+  initialEssence,
   numeroEtape,
   totalEtapes,
   canGoBack,
@@ -27,6 +37,8 @@ export function StepArbreProximite({
   onBack,
 }: StepArbreProximiteProps) {
   const [selected, setSelected] = useState<ReponseArbreProximite | undefined>(initialValue);
+  const [essence, setEssence] = useState<ReponseArbreEssence | undefined>(initialEssence);
+  const arbreProche = selected === "oui";
 
   return (
     <QuestionStep<ReponseArbreProximite>
@@ -42,11 +54,29 @@ export function StepArbreProximite({
       ]}
       selected={selected}
       onSelect={setSelected}
+      complement={
+        arbreProche && (
+          <ChoixRadios<ReponseArbreEssence>
+            fieldsetName="arbre-essence"
+            critereId="arbre_essence"
+            legend="Quelle est l'essence de cet arbre ?"
+            legendVisible
+            hint="Certaines essences assèchent l'argile bien plus que d'autres ; les arbres fruitiers assèchent beaucoup moins. S'il y a plusieurs arbres, choisissez le groupe le plus haut dans la liste."
+            options={OPTIONS_ESSENCE}
+            selected={essence}
+            onSelect={setEssence}
+          />
+        )
+      }
+      isNextDisabled={selected === undefined || (arbreProche && essence === undefined)}
       numeroEtape={numeroEtape}
       totalEtapes={totalEtapes}
       canGoBack={canGoBack}
       onBack={onBack}
-      onNext={() => selected && onSubmit({ vegetation: { arbre_proximite: selected } })}
+      onNext={() =>
+        selected &&
+        onSubmit({ vegetation: { arbre_proximite: selected, arbre_essence: arbreProche ? essence : undefined } })
+      }
     />
   );
 }

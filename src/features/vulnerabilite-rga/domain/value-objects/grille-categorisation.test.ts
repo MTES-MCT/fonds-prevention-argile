@@ -9,24 +9,17 @@ const CATEGORIES_VALIDES = [...Object.keys(CATEGORIES_AFFICHAGE), "sans_objet"];
  * reste le SEUL fichier à changer pour ajuster la méthode.
  */
 describe("grille-categorisation", () => {
-  it("chaque réponse d'une question catégorisée porte une catégorie connue", () => {
-    for (const critere of CRITERES_CONFIG.filter((c) => !c.sansCategorie)) {
+  it("chaque réponse porte une catégorie connue", () => {
+    for (const critere of CRITERES_CONFIG) {
       for (const reponse of critere.reponses) {
         expect(CATEGORIES_VALIDES, `${critere.id} / ${reponse.reponse}`).toContain(reponse.categorie);
       }
     }
   });
 
-  it("une question sans catégorie n'en porte sur aucune réponse", () => {
-    for (const critere of CRITERES_CONFIG.filter((c) => c.sansCategorie)) {
-      for (const reponse of critere.reponses) {
-        expect(reponse.categorie, `${critere.id} / ${reponse.reponse}`).toBeUndefined();
-      }
-    }
-  });
-
-  it("seule l'essence de l'arbre est sans catégorie", () => {
-    expect(CRITERES_CONFIG.filter((c) => c.sansCategorie).map((c) => c.id)).toEqual(["arbre_essence"]);
+  it("« arbre proche = oui » laisse l'essence porter le point", () => {
+    const oui = CRITERES_CONFIG.find((c) => c.id === "arbre_proximite")?.reponses.find((r) => r.reponse === "oui");
+    expect(oui?.categorie).toBe("sans_objet");
   });
 
   it("chaque question a des réponses aux identifiants uniques", () => {

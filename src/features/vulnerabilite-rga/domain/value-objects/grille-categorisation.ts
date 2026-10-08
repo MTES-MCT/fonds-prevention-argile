@@ -6,6 +6,7 @@ import type {
   ReponseGouttieres,
   ReponseRecuperateurEau,
   ReponseArbreProximite,
+  ReponseArbreEssence,
   ReponseHaies,
   ReponseVegetationPiedFacade,
   ReponseMitoyennete,
@@ -61,15 +62,14 @@ export function getCategorieAffichage(categorie: CategorieReponse | null): Categ
 export interface ReponseConfig<TReponse extends string = string> {
   reponse: TReponse;
   label: string;
-  /** Absente uniquement sur une question marquée `sansCategorie`. */
-  categorie?: CategorieReponse;
+  /** Précision affichée sous le libellé (exemples, seuils). */
+  precision?: string;
+  categorie: CategorieReponse;
 }
 
 export interface CritereConfig {
   id: string;
   reponses: ReponseConfig[];
-  /** Question posée mais qui ne produit aucun point : ses réponses n'ont pas de catégorie. */
-  sansCategorie?: boolean;
   /** Ce critère ne s'applique que si un autre critère a la réponse indiquée (ex : essence ⇐ arbre proche = "oui"). */
   conditionnelA?: { critereId: string; reponseRequise: string };
 }
@@ -144,28 +144,38 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "arbre_proximite",
     reponses: [
-      { reponse: "oui", label: "Un arbre est proche des fondations", categorie: "critique" },
+      // Le point est porté par l'essence, posée sur le même écran dès qu'un arbre est signalé.
+      { reponse: "oui", label: "Un arbre est proche des fondations", categorie: "sans_objet" },
       { reponse: "ne_sais_pas", label: "Je ne sais pas", categorie: "a_verifier" },
       { reponse: "non", label: "Aucun arbre proche", categorie: "bonne_pratique" },
     ] satisfies ReponseConfig<ReponseArbreProximite>[],
   },
   {
     id: "arbre_essence",
-    // En attente des études par essence : c'est « arbre proche = oui » qui porte le point.
-    sansCategorie: true,
+    // Groupes tirés de Cutler et Richardson (1989), du guide RGA du ministère et de NHBC 4.2 pour les conifères.
     conditionnelA: { critereId: "arbre_proximite", reponseRequise: "oui" },
     reponses: [
-      { reponse: "peuplier", label: "Peuplier" },
-      { reponse: "saule", label: "Saule" },
-      { reponse: "chene", label: "Chêne" },
-      { reponse: "frene", label: "Frêne" },
-      { reponse: "bouleau", label: "Bouleau" },
-      { reponse: "erable", label: "Érable" },
-      { reponse: "fruitier", label: "Arbre fruitier" },
-      { reponse: "conifere", label: "Conifère" },
-      { reponse: "autre", label: "Autre essence" },
-      { reponse: "ne_sais_pas", label: "Je ne sais pas" },
-    ],
+      {
+        reponse: "tres_gourmand",
+        label: "Grand arbre très gourmand en eau",
+        precision: "Chêne, peuplier, saule, frêne, cèdre, cyprès (dont cyprès de Leyland)",
+        categorie: "critique",
+      },
+      {
+        reponse: "grand_ornement",
+        label: "Grand arbre d'ornement ou conifère",
+        precision: "Érable, platane, tilleul, marronnier, robinier (acacia), hêtre, orme, pin, sapin, épicéa, if",
+        categorie: "critique",
+      },
+      {
+        reponse: "fruitier_petit",
+        label: "Arbre fruitier ou petit arbre",
+        precision: "Pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine",
+        categorie: "vigilance",
+      },
+      // Sans essence connue, on retient l'hypothèse prudente.
+      { reponse: "ne_sais_pas", label: "Autre essence ou je ne sais pas", categorie: "critique" },
+    ] satisfies ReponseConfig<ReponseArbreEssence>[],
   },
   {
     id: "haies",
