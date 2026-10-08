@@ -68,6 +68,19 @@ Une première version a fait du **nom de l'évènement** la seule source, compt�
 
 Rien à migrer.
 
+## Mise à jour du 2026-10-08
+
+Mesure en lecture seule sur 30 jours (du 9 septembre au 8 octobre, aujourd'hui compris) : entonnoir 7 842, somme des lignes du tableau 8 246, soit +404. Deux causes distinctes :
+
+- **Retard du rapport d'évènements** : 167 visites des 7 et 8 octobre (130 + 37) que l'entonnoir n'avait pas encore reçues, alors que le comptage direct de visites les voit. Cause non établie (hypothèse : archivage de Matomo), à faire vérifier côté administration.
+- **Doubles comptes du tableau** : 237 (8 246 contre 8 009 une fois ces visites ajoutées, soit +3,0 %). Sur les éligibles, 1 894 lignes pour 1 812 visites distinctes. Le rapport hiérarchique de la dimension (sans `flat`) donne les mêmes nombres : Matomo ne dédoublonne pas par département.
+
+**Décision complémentaire.** Le pied du tableau affiche deux lignes : « Somme des lignes » (cumul non dédoublonné) puis « Total, même mesure que l'entonnoir », qui reprend les chiffres de l'entonnoir pour la période, le département et le partenaire en cours (« Indisponible » s'ils manquent, jamais 0). Pour les périmètres pilotes et hors pilotes, seul « Cumul des lignes affichées » apparaît : aucun total global n'en est l'équivalent. Les lignes ne changent jamais selon l'état de l'interface. Le titre et la colonne deviennent « Visites avec un résultat », avec la mention « Cumul non dédoublonné entre pages et départements ».
+
+**Option C mesurée, non retenue pour l'instant.** Compter par département les visites dont l'évènement de résultat porte lui-même le département (segment `eventAction==…;dimension==département`) rend les lignes additives côté éligibles : 1 816 visites sur 30 départements, égales aux 1 816 visites distinctes, sans doublon entre départements ; les 83 d'écart avec les lignes sont des doublons de pages. Non mesuré pour les non éligibles (deux départements seulement), ni sur une période close. Un appel par département et par verdict, de 3 à 90 s chacun : il faudrait un pré-calcul quotidien en base (comptes journaliers sommables), avec le filtre partenaire, la limite d'historique et l'alignement de l'entonnoir à traiter. Voir `docs/SUJETS-A-TRAITER.md`.
+
+**Option D écartée — `Live.getLastVisitsDetails`.** Reconstruire les visites une à une manipule des données de visiteurs et un volume important.
+
 ## Liens
 
 - Lecture : `src/features/backoffice/administration/acquisition/adapters/matomo-api.adapter.ts`,

@@ -14,6 +14,7 @@ import type {
   CommuneSimulationsStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import { totalDepuisEntonnoir } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
 import EntonnoirEligibilite from "./simulateur/EntonnoirEligibilite";
@@ -273,6 +274,9 @@ export default function AcquisitionPanel() {
                   erreur={topDeptsErreur}
                   onReessayer={reessayerTopDepts}
                   periodeId={periodeId}
+                  totalEntonnoir={totalDepuisEntonnoir(matomoSimuStats)}
+                  totalEntonnoirChargement={!matomoLoaded}
+                  filtreDepartementActif={Boolean(codeDepartement)}
                 />
               </div>
             </div>
