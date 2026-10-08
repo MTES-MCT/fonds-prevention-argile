@@ -3,8 +3,8 @@ import { getServerEnv } from "@/shared/config/env.config";
 import { getProConnectConfig } from "./proconnect.config";
 import { PC_ENDPOINTS } from "./proconnect.constants";
 
-// Algorithmes que ProConnect peut signer (discovery) ; chacun a sa clé, l'en-tête ne choisit jamais la clé.
-const ALGORITHMES_AUTORISES = ["ES256", "RS256", "HS256"];
+// Algorithme enregistré pour nos clients ProConnect (staging et prod) : le changer là-bas impose de le changer ici.
+const ALGORITHMES_AUTORISES = ["RS256"];
 const TOLERANCE_HORLOGE_SECONDES = 60;
 
 export class JetonProConnectInvalideError extends Error {
@@ -17,7 +17,6 @@ export class JetonProConnectInvalideError extends Error {
 export interface ContexteVerificationProConnect {
   issuer: string;
   clientId: string;
-  clientSecret: string;
   jwks: JWTVerifyGetKey;
 }
 
@@ -43,20 +42,13 @@ export function getContexteVerificationProConnect(): ContexteVerificationProConn
   return {
     issuer: `${base}${PC_ENDPOINTS.ISSUER}`,
     clientId: config.clientId,
-    clientSecret: config.clientSecret,
     jwks: getJwksDistant(config.urls.jwks),
   };
 }
 
-// HS256 est signé avec le client_secret ; les algorithmes asymétriques passent par le JWKS publié.
-function resoudreCle(contexte: ContexteVerificationProConnect): JWTVerifyGetKey {
-  const secret = new TextEncoder().encode(contexte.clientSecret);
-  return (header, jeton) => (header.alg === "HS256" ? secret : contexte.jwks(header, jeton));
-}
-
 async function verifierSignature(jeton: string, contexte: ContexteVerificationProConnect): Promise<JWTPayload> {
   try {
-    const { payload } = await jwtVerify(jeton, resoudreCle(contexte), {
+    const { payload } = await jwtVerify(jeton, contexte.jwks, {
       algorithms: ALGORITHMES_AUTORISES,
       clockTolerance: TOLERANCE_HORLOGE_SECONDES,
     });

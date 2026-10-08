@@ -40,11 +40,12 @@ Concrètement, dans l'ordre du flux :
    `acr_values` (`buildClaimsMfaProConnect`). `PC_ACR_VALUES` est supprimée : la liste n'est
    pas configurable, pour qu'aucun environnement ne puisse l'affaiblir.
 2. **Authenticité** : l'`id_token` est vérifié avec `jose` — signature, émetteur
-   (`<PC_BASE_URL>/api/v2`), audience, `azp` si plusieurs audiences, expiration, nonce. La clé
-   est **liée à l'algorithme** et jamais choisie par l'en-tête : ES256/RS256 par le JWKS publié,
-   HS256 par le `client_secret`. Les trois sont acceptés car l'algorithme enregistré pour notre
-   client n'est pas consultable depuis le dépôt ; une confusion d'algorithmes reste impossible,
-   aucune clé publique ne servant de secret HMAC. Un UserInfo signé suit la même vérification.
+   (`<PC_BASE_URL>/api/v2`), audience, `azp` si plusieurs audiences, expiration, nonce. Seul
+   **RS256** est accepté, avec les clés du JWKS publié : c'est l'algorithme enregistré pour nos
+   clients de staging et de production, pour l'`id_token` comme pour le UserInfo (relevé dans
+   l'espace partenaires le 6 octobre 2026). Un jeton ES256 ou HS256 est refusé même bien signé :
+   le `client_secret` ne sert jamais de clé, ce qui écarte la confusion d'algorithmes. Un
+   UserInfo signé suit la même vérification.
 3. **MFA** : l'`acr` doit être une chaîne exactement égale à l'une des quatre valeurs. Le
    contrôle a lieu **avant** UserInfo et avant `authenticateFromProConnect`, qui écrit
    `lastLogin`, les données de contact et peut remplacer le `sub` : un refus ne laisse aucune
@@ -113,8 +114,9 @@ parcours de toutes les erreurs de connexion du site, et le refus serveur reste e
 - **Re-saisie non garantie** : ProConnect réutilise sa session SSO (12 h) et n'implémente pas
   `max_age`. L'agent n'est pas forcé de re-saisir son second facteur à chaque connexion ;
   l'`acr` exigé reste celui d'une authentification MFA.
-- **Algorithme non épinglé** : tant que l'algorithme de notre client n'est pas confirmé dans
-  l'espace partenaires, les trois sont acceptés. Une fois connu, le restreindre est une ligne.
+- **Algorithme épinglé** : changer l'algorithme de signature dans l'espace partenaires
+  ProConnect coupe toute connexion agent tant que `ALGORITHMES_AUTORISES`
+  (`proconnect-oidc.ts`) n'a pas suivi. Les deux se changent ensemble.
 - **Documentation ProConnect ambiguë** : `niveaux-acr.md` cite encore l'URI
   `consistency-checked-2fa`, la page MFA les seules valeurs eIDAS ; la discovery (octobre 2026)
   n'annonce plus que les valeurs eIDAS. Aucun alias n'est accepté sans confirmation.

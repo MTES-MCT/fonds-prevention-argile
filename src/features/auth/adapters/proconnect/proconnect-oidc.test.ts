@@ -15,6 +15,7 @@ import {
 const ISSUER = "https://proconnect.test/api/v2";
 const CLIENT_ID = "client-fpa";
 const CLIENT_SECRET = "secret-client-fpa-suffisamment-long-pour-hs256";
+const ENCODEUR = new TextEncoder();
 const NONCE = "nonce-attendu";
 
 let cleEs256: CryptoKey;
@@ -25,7 +26,7 @@ let contexte: ContexteVerificationProConnect;
 beforeAll(async () => {
   const es = await generateKeyPair("ES256");
   const rs = await generateKeyPair("RS256");
-  const etrangere = await generateKeyPair("ES256");
+  const etrangere = await generateKeyPair("RS256");
   cleEs256 = es.privateKey;
   cleRs256 = rs.privateKey;
   cleEtrangere = etrangere.privateKey;
@@ -36,7 +37,7 @@ beforeAll(async () => {
   contexte = {
     issuer: ISSUER,
     clientId: CLIENT_ID,
-    clientSecret: CLIENT_SECRET,
+    // Une clé ES256 publiée ne doit pas suffire : seul RS256 est accepté.
     jwks: createLocalJWKSet({ keys: [jwkEs, jwkRs] }),
   };
 });
@@ -53,9 +54,8 @@ async function signer(
   payload: JWTPayload,
   options: { alg?: "ES256" | "RS256" | "HS256"; kid?: string; cle?: CryptoKey | Uint8Array; expire?: string } = {}
 ): Promise<string> {
-  const alg = options.alg ?? "ES256";
-  const cle =
-    options.cle ?? (alg === "HS256" ? new TextEncoder().encode(CLIENT_SECRET) : alg === "RS256" ? cleRs256 : cleEs256);
+  const alg = options.alg ?? "RS256";
+  const cle = options.cle ?? (alg === "HS256" ? ENCODEUR.encode(CLIENT_SECRET) : alg === "RS256" ? cleRs256 : cleEs256);
   const kid = options.kid ?? (alg === "RS256" ? "rs" : alg === "ES256" ? "es" : undefined);
 
   return new SignJWT(payload)
@@ -66,16 +66,25 @@ async function signer(
 }
 
 describe("verifierIdTokenProConnect", () => {
-  it.each(["ES256", "RS256", "HS256"] as const)(
-    "accepte un id_token %s valide et rend sub, acr et amr",
-    async (alg) => {
-      const jeton = await signer({ ...claimsValides(), amr: ["pwd", "totp"] }, { alg });
+  it("accepte un id_token RS256 valide et rend sub, acr et amr", async () => {
+    const jeton = await signer({ ...claimsValides(), amr: ["pwd", "totp"] });
 
-      const claims = await verifierIdTokenProConnect(jeton, NONCE, contexte);
+    const claims = await verifierIdTokenProConnect(jeton, NONCE, contexte);
 
-      expect(claims).toEqual({ sub: "sub-agent", acr: "eidas1-mfa", amr: ["pwd", "totp"] });
-    }
-  );
+    expect(claims).toEqual({ sub: "sub-agent", acr: "eidas1-mfa", amr: ["pwd", "totp"] });
+  });
+
+  it("refuse un ES256 pourtant signé par une clé publiée dans le JWKS", async () => {
+    const jeton = await signer(claimsValides(), { alg: "ES256" });
+
+    await expect(verifierIdTokenProConnect(jeton, NONCE, contexte)).rejects.toThrow(JetonProConnectInvalideError);
+  });
+
+  it("refuse un HS256 signé avec le client_secret", async () => {
+    const jeton = await signer(claimsValides(), { alg: "HS256" });
+
+    await expect(verifierIdTokenProConnect(jeton, NONCE, contexte)).rejects.toThrow(JetonProConnectInvalideError);
+  });
 
   it("refuse une signature par une clé absente du JWKS", async () => {
     const jeton = await signer(claimsValides(), { cle: cleEtrangere });
@@ -83,12 +92,6 @@ describe("verifierIdTokenProConnect", () => {
     await expect(verifierIdTokenProConnect(jeton, NONCE, contexte)).rejects.toBeInstanceOf(
       JetonProConnectInvalideError
     );
-  });
-
-  it("refuse un HS256 signé avec un autre secret", async () => {
-    const jeton = await signer(claimsValides(), { alg: "HS256", cle: new TextEncoder().encode("x".repeat(48)) });
-
-    await expect(verifierIdTokenProConnect(jeton, NONCE, contexte)).rejects.toThrow(JetonProConnectInvalideError);
   });
 
   it("refuse un jeton non signé (alg none)", async () => {

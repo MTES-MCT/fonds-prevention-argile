@@ -117,6 +117,10 @@ et absente ici — les deux bases divergent, l'IdP est le même.
   par l'équipe, tous avec le mot de passe `password123`. Ils ne sont **pas** dans le seed :
   s'ils manquent en local, il faut ajouter la ligne `agents` correspondante.
 
+**Algorithme de signature** : seul RS256 est accepté pour l'`id_token` et le UserInfo (ADR-0047).
+Un client ProConnect réglé autrement dans l'espace partenaires échoue au retour de connexion,
+avec « Erreur de sécurité ».
+
 **Second facteur sur les comptes partagés** : la 2FA est exigée en local comme ailleurs. Sur un
 compte commun (`user@yopmail.com`, `userNN@...`), valider le code envoyé par e-mail proposé par
 ProConnect et **ne pas** y enrôler d'application d'authentification personnelle : elle
