@@ -165,7 +165,11 @@ Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
   d'éligibilité). Même règle dans le PDF.
 - **Fiches** : celles du catalogue, regroupées en « Points critiques », « Points de vigilance »,
   « Points à surveiller », une section vide étant omise. Un point qu'aucune fiche ne couvre est
-  listé sous sa section, sans conseil.
+  listé sous sa section, sans conseil. Toutes les sections restent dépliées. Pour qu'on sache
+  toujours dans quelle section on lit, chaque en-tête de section porte un filet de la couleur de
+  sa catégorie et son nombre de points, et chaque fiche un liseré gauche et le badge de sa
+  catégorie (couleurs dans `CATEGORIES_AFFICHAGE.accent`, jeton DSFR à l'écran, hexadécimal dans
+  le PDF, qui reprend le même repérage).
 
 ---
 
