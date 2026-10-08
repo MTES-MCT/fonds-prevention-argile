@@ -117,7 +117,7 @@ export function TableauDeBord() {
   // Simulations : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
   const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
   const simulationsEligiblesValue = matomoSimuStats?.simulationsEligibles ?? null;
-  // Carte fusionnée "Simulations éligibles" : "éligibles / terminées", même forme que
+  // Carte fusionnée "Visites avec un résultat éligible" : "éligibles / avec un résultat", même forme que
   // "Réponses d'AMO en attente" (X / Y).
   const simulationEligibleValue = !matomoLoaded
     ? "..."
@@ -170,7 +170,7 @@ export function TableauDeBord() {
               variation={matomoSimuStats?.visiteursUniques?.variation ?? null}
               loading={false}
               compact
-              tooltip="Données Matomo : personnes distinctes sur la période. La somme de plusieurs périodes dépasse le total, un visiteur revenu comptant dans chacune."
+              tooltip="Données Matomo : personnes distinctes sur la période. La somme de plusieurs périodes peut dépasser le total : un visiteur revenu compte dans chacune."
             />
             <DashboardStatCard
               value={simulationEligibleValue}
@@ -186,7 +186,7 @@ export function TableauDeBord() {
               variation={stats?.comptesCrees.variation ?? null}
               loading={loading}
               compact
-              tooltip="Parcours créés sur la période. Avec un filtre département, seulement ceux qui ont une simulation. La page publique compte tous les parcours depuis le lancement."
+              tooltip="Parcours créés sur la période. Avec un filtre département, seulement ceux qui ont une simulation. La page publique compte tous les parcours présents en base, sans filtre de date."
             />
             <DashboardStatCard
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}

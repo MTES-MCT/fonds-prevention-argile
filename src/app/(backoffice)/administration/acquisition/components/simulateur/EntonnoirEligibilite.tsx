@@ -45,7 +45,7 @@ export default function EntonnoirEligibilite({
           gap: "0.5rem",
           flexWrap: "wrap",
         }}>
-        {/* Etape 1 : Simulations terminees */}
+        {/* Etape 1 : Visites avec un resultat */}
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
@@ -102,7 +102,7 @@ export default function EntonnoirEligibilite({
             variation={stats?.comptesCrees.variation ?? null}
             loading={loading}
             compact
-            tooltip="Parcours créés sur la période. Avec un filtre département, seulement ceux qui ont une simulation. La page publique compte tous les parcours depuis le lancement."
+            tooltip="Parcours créés sur la période. Avec un filtre département, seulement ceux qui ont une simulation. La page publique compte tous les parcours présents en base, sans filtre de date."
           />
         </div>
 
