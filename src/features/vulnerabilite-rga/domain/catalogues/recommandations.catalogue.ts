@@ -101,7 +101,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-recuperateur",
     critereId: "recuperateur_eau",
-    reponsesDeclenchantes: ["present_fuite_ou_mal_raccorde", "ne_sais_pas"],
+    reponsesDeclenchantes: ["present_fuite_ou_mal_raccorde", "ne_sais_pas", "present_bon_etat"],
     titre: "Vérifier le raccordement et l'étanchéité du récupérateur d'eau",
     problemes: [
       "Collé à la descente de gouttière, un récupérateur d'eau est presque toujours en pied de façade",

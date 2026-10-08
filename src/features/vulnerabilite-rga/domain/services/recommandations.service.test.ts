@@ -84,6 +84,17 @@ describe("getSectionsRecommandations", () => {
   });
 });
 
+describe("eaux-recuperateur", () => {
+  it("reprend la même fiche pour un récupérateur en bon état, rangée dans les points à surveiller", () => {
+    const sections = getSectionsRecommandations(categoriserReponses({ recuperateur_eau: "present_bon_etat" }));
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0].categorie).toBe("a_verifier");
+    expect(sections[0].recommandations.map((r) => r.id)).toEqual(["eaux-recuperateur"]);
+    expect(sections[0].pointsSansCarte).toEqual([]);
+  });
+});
+
 describe("getReponsesSansCarte", () => {
   // Liste figée : y ajouter une entrée, c'est accepter qu'un point s'affiche sans conseil.
   it("recense les réponses à traiter qui n'ont pas encore de fiche", () => {
@@ -91,7 +102,6 @@ describe("getReponsesSansCarte", () => {
       "pente_terrain/plat",
       "pente_terrain/eloignee_facade",
       "gravier_proprete/absent",
-      "recuperateur_eau/present_bon_etat",
     ]);
   });
 });
