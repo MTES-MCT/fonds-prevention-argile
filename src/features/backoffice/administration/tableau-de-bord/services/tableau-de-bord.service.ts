@@ -99,7 +99,7 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
 }
 
 /**
- * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
+ * Récupère le nombre de visites avec un résultat depuis Matomo (eligible + non eligible).
  * Utilise les events par département si un code département est spécifié.
  *
  * Requête en `day`/`week`/`month` (granularité adaptée à la durée, cf. `getGranulariteForPeriode`)

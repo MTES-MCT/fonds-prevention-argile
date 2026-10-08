@@ -15,7 +15,7 @@ réellement (portée de la dimension département, effet d'un segment, durée d'
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Visite avec un résultat (ex-« simulation terminée ») | Somme, par verdict, des **visites** ayant affiché un résultat (`nb_visits` de chaque évènement `simulateur_result_*`) : une visite qui obtient les deux verdicts compte deux fois, plusieurs résultats du même verdict une fois. |
 | Visite                                               | Un passage sur le site (`nb_visits`) : une visite qui fait trois simulations compte une fois.                                                                                                                                    |
-| Visiteur unique                                      | Un visiteur dédoublonné sur la période (`nb_uniq_visitors`) : non additif, la somme des mois dépasse le total de la période.                                                                                                     |
+| Visiteur unique                                      | Un visiteur dédoublonné sur la période (`nb_uniq_visitors`) : non additif, la somme des mois peut dépasser le total de la période.                                                                                               |
 | Compte                                               | Un `parcours_prevention` ; `user_id` y est obligatoire et unique, tout parcours a donc un utilisateur, créé par le demandeur ou par un agent.                                                                                    |
 | Dossier                                              | Un `dossiers_demarches_simplifiees`, c'est-à-dire un formulaire Démarche Numérique d'une étape (un par parcours et par étape).                                                                                                   |
 
@@ -185,7 +185,7 @@ Les arbitrages sont suivis dans [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md#statis
   parcours créés dans la période) et un stock (agent : l'entreprise, sans période) ; la même inscription ne compte pas aux trois endroits.
 - **Fenêtres** : calendaire (Tableau de bord, Acquisition), glissante (Activité, Demandeurs, Vulnérabilité). Un « 7 jours » demandé un
   mardi à 15 h commence mercredi à 0 h au Tableau de bord, mardi à 15 h dans Activité et Demandeurs, et couvre 8 jours côté Matomo de Vulnérabilité.
-- **Filtre partenaire** : `users.partner_source` côté base, referrer côté Matomo, dans le même ratio « Transfo. simu. → comptes ».
+- **Filtre partenaire** : `users.partner_source` côté base, referrer côté Matomo, dans le même ratio « Transfo. visites → comptes ».
 
 ### Anomalies probables
 

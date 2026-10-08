@@ -54,8 +54,8 @@ produit : le code est simple une fois la définition choisie.
 ### Suivi du simulateur : écrans de correction, réaffichage, nom de l'évènement
 
 - **Constat** : les écrans de correction (agent, demandeur) rendent le même formulaire que le simulateur
-  public et envoient les mêmes évènements de résultat, et un résultat réaffiché repart : « simulations
-  terminées » peut en être gonflé, sans qu'on sache de combien (ADR-0046). Le nom de l'évènement ne porte pas le département, donc
+  public et envoient les mêmes évènements de résultat, et un résultat réaffiché repart : les « visites
+  avec un résultat » peuvent en être gonflées, sans qu'on sache de combien (ADR-0046). Le nom de l'évènement ne porte pas le département, donc
   aucun comptage additif par département n'est possible.
 - **À faire** : le garde-fou existe sur `feat/simulations-par-departement` (commits 8f85b0a9, 7f04c43f,
   128ce3e8) : aucun évènement depuis un écran de correction, un même résultat envoyé une fois par visite
