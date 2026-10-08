@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QuestionStep, type QuestionOption } from "./QuestionStep";
-import { CRITERES_CONFIG, getCritereConfig } from "../../domain/value-objects/grille-categorisation";
+import { getCritereConfig } from "../../domain/value-objects/grille-categorisation";
 
 const LABELS = ["Point critique", "Point de vigilance", "À surveiller", "Bonne pratique en place"];
 
@@ -67,11 +67,9 @@ describe("QuestionStep — label de catégorie", () => {
     expect(labelsAffiches()).toEqual([]);
   });
 
-  it("n'affiche aucun label sur la question de l'essence de l'arbre", () => {
-    for (const { reponse } of CRITERES_CONFIG.find((c) => c.id === "arbre_essence")!.reponses) {
-      const { unmount } = rendre("arbre_essence", reponse);
-      expect(labelsAffiches(), reponse).toEqual([]);
-      unmount();
-    }
+  it("n'affiche aucun label sur « arbre proche = oui » : l'essence porte le point", () => {
+    rendre("arbre_proximite", "oui");
+
+    expect(labelsAffiches()).toEqual([]);
   });
 });
