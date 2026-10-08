@@ -8,6 +8,7 @@ import type {
 import {
   construireLignesSimulationsDepartement,
   filtrerParPerimetre,
+  repartitionPilotes,
   totaliserSimulations,
   versCsvSimulationsDepartement,
   type PerimetreDepartements,
@@ -31,6 +32,8 @@ interface SimulationsParDepartementTableProps {
   /** Chiffres de l'entonnoir pour les mêmes filtres : le total « Tous les départements » les reprend à l'identique. */
   totalEntonnoir: TotalEntonnoir | null;
   totalEntonnoirChargement: boolean;
+  /** Avec un filtre département, la part pilotes / hors pilotes n'a plus de sens : on la masque. */
+  filtreDepartementActif?: boolean;
 }
 
 const nombre = (n: number) => n.toLocaleString("fr-FR");
@@ -57,17 +60,21 @@ export default function SimulationsParDepartementTable({
   periodeId,
   totalEntonnoir,
   totalEntonnoirChargement,
+  filtreDepartementActif = false,
 }: SimulationsParDepartementTableProps) {
   const selectId = useId();
   const tooltipId = useId();
   const colonneTooltipId = useId();
   const [perimetre, setPerimetre] = useState<PerimetreDepartements>("tous");
 
-  const lignes = useMemo(
-    () => filtrerParPerimetre(construireLignesSimulationsDepartement(departements ?? []), perimetre),
-    [departements, perimetre]
-  );
+  const toutesLesLignes = useMemo(() => construireLignesSimulationsDepartement(departements ?? []), [departements]);
+  const lignes = useMemo(() => filtrerParPerimetre(toutesLesLignes, perimetre), [toutesLesLignes, perimetre]);
   const total = useMemo(() => totaliserSimulations(lignes), [lignes]);
+  // Calculée sur toutes les lignes : le sélecteur de périmètre ne doit pas la faire varier.
+  const repartition = useMemo(
+    () => (filtreDepartementActif ? null : repartitionPilotes(toutesLesLignes)),
+    [toutesLesLignes, filtreDepartementActif]
+  );
 
   const exporter = () => {
     const date = new Date().toISOString().slice(0, 10);
@@ -131,6 +138,64 @@ export default function SimulationsParDepartementTable({
           </button>
         </div>
       </div>
+
+      {repartition && (
+        <div className="fr-px-2w fr-pt-2w">
+          <p className="fr-text--lg fr-mb-1w" style={{ fontWeight: 700 }}>
+            {repartition.partHorsPilotes} % des visites avec un résultat viennent de départements hors des{" "}
+            {DEPARTEMENTS_ELIGIBLES_RGA.length} pilotes
+          </p>
+          <div
+            aria-hidden="true"
+            data-testid="barre-repartition-pilotes"
+            style={{
+              display: "flex",
+              height: "0.75rem",
+              overflow: "hidden",
+              borderRadius: "0.375rem",
+              backgroundColor: "var(--background-contrast-grey)",
+            }}>
+            <div
+              style={{
+                width: `${repartition.partPilotes}%`,
+                backgroundColor: "var(--background-action-high-blue-france)",
+              }}
+            />
+          </div>
+          <p className="fr-text--sm fr-mt-1w fr-mb-0 flex flex-wrap gap-x-4">
+            <span>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: "inline-block",
+                  width: "0.75rem",
+                  height: "0.75rem",
+                  marginRight: "0.375rem",
+                  backgroundColor: "var(--background-action-high-blue-france)",
+                }}
+              />
+              {DEPARTEMENTS_ELIGIBLES_RGA.length} départements pilotes : {repartition.partPilotes} % (
+              {nombre(repartition.pilotes)})
+            </span>
+            <span>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: "inline-block",
+                  width: "0.75rem",
+                  height: "0.75rem",
+                  marginRight: "0.375rem",
+                  backgroundColor: "var(--background-contrast-grey)",
+                }}
+              />
+              Autres départements : {repartition.partHorsPilotes} % ({nombre(repartition.horsPilotes)})
+            </span>
+          </p>
+          <p className="fr-text--xs fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
+            Estimation sur le cumul des lignes ci-dessous, à environ deux points près.
+          </p>
+        </div>
+      )}
 
       {lignes.length === 0 && erreur ? (
         <div className="fr-px-2w fr-pb-2w fr-mt-2w">

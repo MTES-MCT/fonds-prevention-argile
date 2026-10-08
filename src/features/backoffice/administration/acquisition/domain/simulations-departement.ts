@@ -98,6 +98,23 @@ export function totaliserSimulations(lignes: LigneSimulationsDepartement[]): Tot
   return { ...total, pourcentageEligibles: pourcentage(total.eligibles, total.simulations) };
 }
 
+export interface RepartitionPilotes {
+  pilotes: number;
+  horsPilotes: number;
+  partPilotes: number;
+  partHorsPilotes: number;
+}
+
+/** Part des lignes hors départements pilotes, arrondie ; l'autre part en est le complément pour que le total fasse 100. */
+export function repartitionPilotes(lignes: LigneSimulationsDepartement[]): RepartitionPilotes | null {
+  const pilotes = lignes.filter((l) => l.pilote).reduce((somme, l) => somme + l.simulations, 0);
+  const horsPilotes = lignes.filter((l) => !l.pilote).reduce((somme, l) => somme + l.simulations, 0);
+  const total = pilotes + horsPilotes;
+  if (total === 0) return null;
+  const partHorsPilotes = pourcentage(horsPilotes, total);
+  return { pilotes, horsPilotes, partPilotes: 100 - partHorsPilotes, partHorsPilotes };
+}
+
 export interface TotalEntonnoir {
   simulations: number;
   eligibles: number;

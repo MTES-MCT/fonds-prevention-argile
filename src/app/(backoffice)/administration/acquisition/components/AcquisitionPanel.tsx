@@ -276,6 +276,7 @@ export default function AcquisitionPanel() {
                   periodeId={periodeId}
                   totalEntonnoir={totalDepuisEntonnoir(matomoSimuStats)}
                   totalEntonnoirChargement={!matomoLoaded}
+                  filtreDepartementActif={Boolean(codeDepartement)}
                 />
               </div>
             </div>

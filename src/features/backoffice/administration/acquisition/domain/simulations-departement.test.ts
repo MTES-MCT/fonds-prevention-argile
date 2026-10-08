@@ -3,6 +3,7 @@ import {
   construireLignesSimulationsDepartement,
   filtrerParPerimetre,
   regrouperSimulationsParDepartement,
+  repartitionPilotes,
   totaliserSimulations,
   totalDepuisEntonnoir,
   versCsvSimulationsDepartement,
@@ -75,6 +76,46 @@ describe("construireLignesSimulationsDepartement", () => {
       comptesCrees: 6,
       dossiersDN: 3,
     });
+  });
+});
+
+describe("repartitionPilotes", () => {
+  it("donne la part des visites hors des départements pilotes, calculée sur toutes les lignes", () => {
+    const lignes = construireLignesSimulationsDepartement([
+      stats("54", "Meurthe-et-Moselle", 5155, 0),
+      stats("75", "Paris", 3000, 0),
+      stats("13", "Bouches-du-Rhône", 91, 0),
+    ]);
+
+    expect(repartitionPilotes(lignes)).toEqual({
+      pilotes: 5155,
+      horsPilotes: 3091,
+      partPilotes: 63,
+      partHorsPilotes: 37,
+    });
+  });
+
+  it("arrondit la part hors pilotes et en déduit l'autre, pour que les deux fassent toujours 100", () => {
+    // 1 hors pilote sur 8 : 12,5 % arrondi à 13, donc 87 pour les pilotes et non 88.
+    const lignes = construireLignesSimulationsDepartement([stats("03", "Allier", 7, 0), stats("75", "Paris", 1, 0)]);
+
+    const repartition = repartitionPilotes(lignes);
+
+    expect(repartition).toMatchObject({ partPilotes: 87, partHorsPilotes: 13 });
+    expect((repartition?.partPilotes ?? 0) + (repartition?.partHorsPilotes ?? 0)).toBe(100);
+  });
+
+  it("couvre les cas extrêmes sans diviser par zéro", () => {
+    expect(repartitionPilotes(construireLignesSimulationsDepartement([stats("03", "Allier", 4, 0)]))).toMatchObject({
+      partPilotes: 100,
+      partHorsPilotes: 0,
+    });
+    expect(repartitionPilotes(construireLignesSimulationsDepartement([stats("75", "Paris", 4, 0)]))).toMatchObject({
+      partPilotes: 0,
+      partHorsPilotes: 100,
+    });
+    expect(repartitionPilotes([])).toBeNull();
+    expect(repartitionPilotes(construireLignesSimulationsDepartement([stats("75", "Paris", 0, 0)]))).toBeNull();
   });
 });
 

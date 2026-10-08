@@ -4,6 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SimulationsParDepartementTable from "./SimulationsParDepartementTable";
 import type { TotalEntonnoir } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
+import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/shared/constants/rga.constants";
 import type { DepartementStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 function stats(code: string, nom: string, simulations: number, eligibles: number): DepartementStats {
@@ -88,6 +89,40 @@ describe("SimulationsParDepartementTable", () => {
 
     tableau({ totalEntonnoir: null, totalEntonnoirChargement: true });
     expect(within(ligneDuPied("Total, même mesure que l'entonnoir")).getAllByRole("cell")[0]).toHaveTextContent("…");
+  });
+
+  it("annonce en une phrase la part des visites hors départements pilotes, avec sa légende chiffrée", () => {
+    tableau();
+
+    // Lignes : Allier (pilote) 40, Paris 12, Bouches-du-Rhône 8 : 20 sur 60 hors pilotes, soit 33 %.
+    const n = DEPARTEMENTS_ELIGIBLES_RGA.length;
+    expect(
+      screen.getByText(`33 % des visites avec un résultat viennent de départements hors des ${n} pilotes`)
+    ).toBeInTheDocument();
+    expect(screen.getByText(`${n} départements pilotes : 67 % (40)`)).toBeInTheDocument();
+    expect(screen.getByText("Autres départements : 33 % (20)")).toBeInTheDocument();
+    expect(screen.getByText(/Estimation sur le cumul des lignes ci-dessous/)).toBeInTheDocument();
+    // La barre est décorative : tout ce qu'elle dit est déjà dans le texte.
+    expect(screen.getByTestId("barre-repartition-pilotes")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("ne fait pas varier la part avec le sélecteur de périmètre", async () => {
+    tableau();
+
+    await userEvent.selectOptions(screen.getByLabelText("Départements affichés"), "pilotes");
+
+    expect(
+      screen.getByText(/^33 % des visites avec un résultat viennent de départements hors des/)
+    ).toBeInTheDocument();
+  });
+
+  it("masque la part avec un filtre département, ou sans aucune visite", () => {
+    const { unmount } = tableau({ filtreDepartementActif: true });
+    expect(screen.queryByText(/des visites avec un résultat viennent de départements hors/)).not.toBeInTheDocument();
+    unmount();
+
+    tableau({ departements: [stats("75", "Paris", 0, 0)] });
+    expect(screen.queryByText(/des visites avec un résultat viennent de départements hors/)).not.toBeInTheDocument();
   });
 
   it("qualifie le titre et la colonne : cumul non dédoublonné, visites avec un résultat", () => {
