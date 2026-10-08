@@ -54,6 +54,7 @@ export default function SimulationsParDepartementTable({
 }: SimulationsParDepartementTableProps) {
   const selectId = useId();
   const tooltipId = useId();
+  const colonneTooltipId = useId();
   const [perimetre, setPerimetre] = useState<PerimetreDepartements>("tous");
 
   const lignes = useMemo(
@@ -146,7 +147,15 @@ export default function SimulationsParDepartementTable({
                     <tr>
                       <th scope="col">Département</th>
                       <th scope="col" style={{ textAlign: "right" }}>
-                        Simulations
+                        Simulations{" "}
+                        <button aria-describedby={colonneTooltipId} type="button" className="fr-btn--tooltip fr-btn">
+                          Information
+                        </button>
+                        <span className="fr-tooltip fr-placement" id={colonneTooltipId} role="tooltip">
+                          Visites ayant affiché un résultat dans ce département. Une visite qui touche plusieurs
+                          départements ou plusieurs pages peut apparaître plusieurs fois : le total peut dépasser celui
+                          de l&apos;entonnoir.
+                        </span>
                       </th>
                       <th scope="col" style={{ textAlign: "right" }}>
                         Éligibles
@@ -217,9 +226,9 @@ export default function SimulationsParDepartementTable({
           </div>
           <p className="fr-text--xs fr-mt-1w fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
             Somme non dédoublonnée, avec une ligne par département et par page : une visite qui touche plusieurs
-            départements ou plusieurs pages peut compter plusieurs fois. Le total peut donc dépasser les « Simulations
-            terminées » de l&apos;entonnoir. Un département sans simulation ni compte créé n&apos;apparaît pas. Avant la
-            mi-septembre 2026, une simulation arrêtée avant l&apos;adresse (un appartement, par exemple) partait sans
+            départements ou plusieurs pages peut compter plusieurs fois. Le total peut donc dépasser les « Visites avec
+            un résultat » de l&apos;entonnoir. Un département sans simulation ni compte créé n&apos;apparaît pas. Avant
+            la mi-septembre 2026, une simulation arrêtée avant l&apos;adresse (un appartement, par exemple) partait sans
             département : elle n&apos;apparaît dans aucune ligne.
           </p>
         </div>

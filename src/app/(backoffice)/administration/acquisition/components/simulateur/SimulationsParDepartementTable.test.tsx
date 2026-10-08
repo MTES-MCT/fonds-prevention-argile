@@ -50,6 +50,28 @@ describe("SimulationsParDepartementTable", () => {
     expect(screen.getByRole("rowheader", { name: "Total (2 départements)" })).toBeInTheDocument();
   });
 
+  it("explique, dans l'infobulle de la colonne, pourquoi le total peut dépasser l'entonnoir", () => {
+    render(<SimulationsParDepartementTable departements={DEPARTEMENTS} loading={false} periodeId="tout" />);
+
+    const infobulle = screen.getByText(/peut apparaître plusieurs fois/);
+
+    expect(infobulle).toHaveAttribute("role", "tooltip");
+    expect(infobulle).toHaveTextContent("le total peut dépasser celui de l'entonnoir");
+    // Le lecteur d'écran n'annonce l'infobulle que si le bouton la désigne par son identifiant.
+    const bouton = within(screen.getByRole("columnheader", { name: /^Simulations/ })).getByRole("button");
+    expect(infobulle.id).not.toBe("");
+    expect(bouton).toHaveAttribute("aria-describedby", infobulle.id);
+  });
+
+  it("nomme dans sa note le libellé actuel de l'entonnoir, plus l'ancien", () => {
+    render(<SimulationsParDepartementTable departements={DEPARTEMENTS} loading={false} periodeId="tout" />);
+
+    const note = screen.getByText(/Somme non dédoublonnée/);
+
+    expect(note).toHaveTextContent("« Visites avec un résultat » de l'entonnoir");
+    expect(note).not.toHaveTextContent("Simulations terminées");
+  });
+
   it("accorde le total au singulier quand un seul département est affiché (filtre département)", () => {
     render(<SimulationsParDepartementTable departements={[DEPARTEMENTS[1]]} loading={false} periodeId="30j" />);
 

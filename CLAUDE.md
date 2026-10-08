@@ -115,6 +115,10 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   `docs/ARCHITECTURE.md`, `docs/security/RBAC-ROLES.md`, `docs/parcours/FLOW-AND-SYNC.md`,
   `README.md`, et créer un ADR (`/adr`) si une décision structurante est prise.
   Pas de doc inutile : ne documenter que ce qui change réellement.
+- **Toute modification d'une statistique** (calcul, source, unité, libellé, filtre), publique ou
+  interne, met à jour `docs/stats/STATISTIQUES.md` dans la même PR : une ligne par statistique, ce
+  qu'elle compte en une ou deux phrases. Une statistique ajoutée y entre, une supprimée en sort, et un
+  écart corrigé quitte la section « Écarts connus ».
 - Un sujet écarté d'une PR (retour de revue hors périmètre, arbitrage en attente, rattrapage à
   mesurer d'abord) va dans `docs/SUJETS-A-TRAITER.md`, avec son préalable ; l'entrée est retirée
   par la PR qui le traite.
@@ -458,6 +462,7 @@ Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver 
 - Les ids de champs DN ne sont communs entre environnements que pour les champs **antérieurs au clonage** de la démarche. Un champ ou une annotation ajouté à la main après coup a un id propre à chaque démarche (cas de l'annotation « lien FPA » et du champ « état de la maison » d'éligibilité, ADR-0025 et FLOW-AND-SYNC § 2.6.2). Toujours vérifier avec `pnpm ds:fetch-schema <numero>` avant de coder un id en dur — DN **ignore silencieusement** un `champ_` inconnu, le préremplissage échoue sans aucune erreur
 - **DN et `ds_status` n'ont pas le même vocabulaire** : l'API renvoie `sans_suite`, l'enum Postgres attend `classe_sans_suite`. Toujours passer par `dsStatusFromEtatDn` (`dossiers-ds/domain/value-objects/ds-status.ts`), jamais `state as DSStatus` — le cast compile, Postgres refuse l'UPDATE, et `updateDossierStatus` avale l'erreur : sans contrôle de son retour, le dossier reste figé en silence
 - **Écrire dans DN passe par deux canaux qui n'ont pas les mêmes droits** : le préremplissage REST ne sait que **créer** un dossier (annotation « lien FPA »), la mutation GraphQL `dossierModifierAnnotations` modifie une annotation privée après dépôt mais exige un token en **lecture et écriture** et un `instructeurId` (`DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID`) membre du groupe du dossier (ADR-0043). Une écriture fait bouger `dateDerniereModification` du dossier, **pas** `dateDerniereModificationChamps` : déclencher un traitement sur la première le relancerait à chaque passage du CRON. Et les données de l'avis d'imposition ne viennent que de son **2D-Doc** : sans code lisible, les colonnes restent vides, sans erreur
+- **« Visites avec un résultat » (ex-« Simulations terminées ») compte des visites, pas des simulations** : `nb_visits` des évènements `simulateur_result_*`, partout (entonnoir, `/stats`, top 5, tableau par département). Le tableau lit la dimension département, où une visite qui touche deux départements ou deux URL compte dans chacun : son total n'est pas celui de l'entonnoir, c'est attendu (ADR-0046)
 - Les rapports Matomo s'arrêtent à **100 lignes par défaut** (`filter_limit`), sans le signaler. `CustomDimensions.getCustomDimension` en `flat=1` renvoie une ligne par couple **valeur × URL**, donc la limite saute vite : la liste des départements était tronquée en silence. Tout rapport destiné à être listé en entier demande `toutesLesLignes: true` (`filter_limit=-1`, `fetchMatomoDimensionRows`) ; le Top 5 communes garde la limite par défaut, sa taille n'ayant pas été mesurée : le cache de données de Next refuse d'écrire une entrée de plus de 2 Mo (`unstable_cache` de `fetchMatomoApiCached`, vérifié dans Next 15.5.24)
 - L'API Matomo répond **HTTP 200 même sur erreur d'authentification** (le verdict est dans le corps : `{"result":"error"}`) — ne jamais se fier au seul `response.ok`, et ne pas mettre ces réponses en cache HTTP
 - `unstable_cache` **sérialise en JSON** : une valeur cachée contenant un `Date` revient en **string** au premier hit, pas au miss. Le bug ne se voit donc ni au premier chargement ni en test si le mock est un pass-through, mais casse le rendu ensuite (`date.getUTCFullYear is not a function`, constaté en staging sur `/stats`). N'y mettre que du JSON simple (ISO strings, nombres) et réhydrater côté appelant ; un mock de `unstable_cache` doit refaire l'aller-retour `JSON.parse(JSON.stringify(...))`
@@ -477,5 +482,6 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @docs/security/RBAC-TEST-PLAN.md — Plan de couverture RBAC (anti-fuite / anti-accès non désiré)
 - @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
+- [docs/stats/STATISTIQUES.md](docs/stats/STATISTIQUES.md) — Ce que compte chaque statistique, publique et interne (à lire avant de toucher une stat)
 
 Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).

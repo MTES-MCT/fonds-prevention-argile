@@ -45,16 +45,16 @@ export default function EntonnoirEligibilite({
           gap: "0.5rem",
           flexWrap: "wrap",
         }}>
-        {/* Etape 1 : Simulations terminees */}
+        {/* Etape 1 : Visites avec un resultat */}
         <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
             value={formatMatomoValue(simulationsTerminees, matomoLoaded)}
-            label="Simulations terminees"
+            label="Visites avec un résultat"
             variation={simulationsTerminees?.variation ?? null}
             loading={false}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo, anonymes comprises : visites ayant affiché un résultat, éligible ou non. Une visite qui obtient les deux compte deux fois ; plusieurs résultats du même type comptent une fois. Le total du tableau par département peut être plus élevé : il compte une ligne par département et par page. Même calcul que la page publique."
           />
         </div>
 
@@ -73,20 +73,20 @@ export default function EntonnoirEligibilite({
           <DashboardStatCard
             className=""
             value={formatMatomoValue(eligibles, matomoLoaded)}
-            label="Simulations eligibles"
+            label="Visites avec un résultat éligible"
             variation={eligibles?.variation ?? null}
             loading={false}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : visites ayant affiché au moins un résultat éligible"
           />
           <DashboardStatCard
             className=""
             value={formatMatomoValue(nonEligibles, matomoLoaded)}
-            label="Simulations non eligibles"
+            label="Visites avec un résultat non éligible"
             variation={nonEligibles?.variation ?? null}
             loading={false}
             compact
-            tooltip="Données Matomo"
+            tooltip="Données Matomo : visites ayant affiché au moins un résultat non éligible"
           />
         </div>
 
@@ -98,12 +98,11 @@ export default function EntonnoirEligibilite({
           <DashboardStatCard
             className=""
             value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
-            label="Comptes crees"
+            label="Comptes créés"
             variation={stats?.comptesCrees.variation ?? null}
-            variationType="points"
             loading={loading}
             compact
-            tooltip="Données base de données"
+            tooltip="Parcours créés sur la période. Avec un filtre département, seulement ceux qui ont une simulation. La page publique compte tous les parcours présents en base, sans filtre de date."
           />
         </div>
 
@@ -115,17 +114,17 @@ export default function EntonnoirEligibilite({
           <DashboardStatCard
             className=""
             value={formatMatomoValue(taux, matomoLoaded, "%")}
-            label="Transfo. simu. &rarr; comptes"
+            label="Transfo. visites &rarr; comptes"
             variation={taux?.variation ?? null}
             variationType="points"
             loading={false}
             compact
-            tooltip="Calculé : comptes créés / simulations terminées (Matomo)"
+            tooltip="Calculé : comptes créés / visites avec un résultat (Matomo)"
           />
         </div>
       </div>
       <p className="fr-text--xs fr-mt-1w" style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
-        Simulations : donnees Matomo (tous utilisateurs) | Comptes : donnees application
+        Visites : données Matomo (tous utilisateurs) | Comptes : données de l&apos;application
       </p>
     </div>
   );
