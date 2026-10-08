@@ -116,3 +116,14 @@ l'évènement Matomo `vulnerabilite_step_arbre_essence` disparaît du funnel.
 - Synthèse : `src/features/vulnerabilite-rga/domain/services/synthese-resultat.service.ts`
 - Renvoi conditionnel : `src/features/vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`
 - Guide : [SIMULATEUR-VULNERABILITE-RGA.md](../vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md)
+
+## Amendement (2026-10-08) : une fiche pour chaque réponse à traiter
+
+Les dernières réponses sans fiche en ont une : la pente « plat » et « s'éloigne de la maison »
+reprennent la fiche de la pente, le récupérateur « en bon état » celle du récupérateur, et le
+gravier « absent » reçoit sa propre fiche, les deux fiches de gravier existantes portant sur un
+gravier présent. Le contenu d'une fiche ne dépend pas de la catégorie qui la déclenche.
+
+L'affichage « point sans conseil » disparaît, puisque plus rien ne l'alimente. Le test
+`getReponsesSansCarte` attend désormais une liste vide : une réponse à traiter ajoutée sans fiche
+le fait échouer, au lieu de s'afficher sans conseil.

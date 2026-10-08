@@ -164,8 +164,10 @@ Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
   non mitoyenne (`remplitCriteresEligibiliteFonds`, qui appelle les règles du simulateur
   d'éligibilité). Même règle dans le PDF.
 - **Fiches** : celles du catalogue, regroupées en « Points critiques », « Points de vigilance »,
-  « Points à surveiller », une section vide étant omise. Un point qu'aucune fiche ne couvre est
-  listé sous sa section, sans conseil. Toutes les sections restent dépliées. Pour qu'on sache
+  « Points à surveiller », une section vide étant omise. Chaque réponse à traiter a sa fiche : une fiche
+  vaut un point, et `getReponsesSansCarte` (test du service) échoue si une nouvelle réponse à
+  traiter n'en a pas. Une fiche garde le même contenu quelle que soit la catégorie qui la
+  déclenche, seule la section change. Toutes les sections restent dépliées. Pour qu'on sache
   toujours dans quelle section on lit, chaque en-tête de section porte un filet de la couleur de
   sa catégorie et son nombre de points, et chaque fiche un liseré gauche et le badge de sa
   catégorie (couleurs dans `CATEGORIES_AFFICHAGE.accent`, jeton DSFR à l'écran, hexadécimal dans
@@ -253,10 +255,6 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ### Méthode et contenu
 
-- **P0 — Écrire les fiches manquantes.** Six réponses classées à traiter n'ont pas de fiche :
-  pente « plat » et « s'éloigne de la maison », gravier « absent », récupérateur « en bon état »,
-  source de chaleur « mur isolé » et « mur non isolé ». La liste est figée par
-  `recommandations.service.test.ts` (`getReponsesSansCarte`).
 - Préciser à l'écran ce que « proche » veut dire pour l'arbre et la haie.
 - La fiche arbre s'affiche aussi sur « je ne sais pas », alors que son texte suppose un arbre
   présent : à reformuler ou à dédoubler.
