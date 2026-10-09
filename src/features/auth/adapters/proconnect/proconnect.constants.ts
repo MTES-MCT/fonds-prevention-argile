@@ -23,6 +23,8 @@ export const PC_ENDPOINTS = {
   LOGOUT: "/api/v2/session/end",
   JWKS: "/api/v2/jwks",
   DISCOVERY: "/api/v2/.well-known/openid-configuration",
+  // Valeur du claim iss, relevée dans la discovery (base + /api/v2).
+  ISSUER: "/api/v2",
 } as const;
 
 /**

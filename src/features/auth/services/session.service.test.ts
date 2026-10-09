@@ -62,6 +62,7 @@ describe("session.service", () => {
         userId: "user-123",
         role: ROLES.ADMINISTRATEUR,
         authMethod: AUTH_METHODS.PROCONNECT,
+        proConnectAcr: "eidas2",
         exp: Date.now() + 3600000,
         iat: Date.now(),
       };
@@ -73,6 +74,37 @@ describe("session.service", () => {
 
       expect(result).toEqual(mockPayload);
       expect(verifyToken).toHaveBeenCalledWith("valid-token");
+    });
+
+    it.each([
+      ["sans acr (ouverte avant la 2FA)", undefined],
+      ["avec un acr sans second facteur", "eidas1"],
+    ])("devrait refuser une session agent ProConnect signée et non expirée %s", async (_cas, proConnectAcr) => {
+      mockCookieStore.get.mockReturnValue({ value: "valid-token" });
+      vi.mocked(verifyToken).mockReturnValue({
+        userId: "agent-123",
+        role: ROLES.AMO,
+        authMethod: AUTH_METHODS.PROCONNECT,
+        proConnectAcr,
+        exp: Date.now() + 3600000,
+        iat: Date.now(),
+      });
+
+      expect(await getSession()).toBeNull();
+      expect(await isAuthenticated()).toBe(false);
+    });
+
+    it("devrait refuser une session de l'ancienne méthode par mot de passe", async () => {
+      mockCookieStore.get.mockReturnValue({ value: "valid-token" });
+      vi.mocked(verifyToken).mockReturnValue({
+        userId: "admin",
+        role: ROLES.SUPER_ADMINISTRATEUR,
+        authMethod: AUTH_METHODS.PASSWORD,
+        exp: Date.now() + 3600000,
+        iat: Date.now(),
+      });
+
+      expect(await getSession()).toBeNull();
     });
 
     it("devrait retourner null pour un token invalide", async () => {
@@ -118,6 +150,7 @@ describe("session.service", () => {
         userId: "user-123",
         role: ROLES.ADMINISTRATEUR,
         authMethod: AUTH_METHODS.PROCONNECT,
+        proConnectAcr: "eidas2",
         exp: Date.now() + 3600000,
         iat: Date.now(),
       };
@@ -263,7 +296,7 @@ describe("session.service", () => {
   });
 
   describe("logout", () => {
-    it("devrait nettoyer les cookies et retourner les infos de session pour ProConnect", async () => {
+    it("devrait déconnecter de ProConnect une session antérieure à la 2FA", async () => {
       const mockPayload: JWTPayload = {
         userId: "agent-123",
         role: ROLES.ADMINISTRATEUR,
