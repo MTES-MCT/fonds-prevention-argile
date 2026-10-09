@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { verifyToken } from "../utils/jwt.utils";
 import { COOKIE_NAMES } from "../domain/value-objects/constants";
+import { estSessionConforme } from "../domain/value-objects/session-mfa";
 import { getCookieOptions, SESSION_DURATION } from "../domain/value-objects/configs/session.config";
 import type { JWTPayload } from "../domain/entities";
 import type { UserRole } from "../domain/types";
@@ -11,15 +12,25 @@ import { isAgentRole } from "@/shared/domain/value-objects";
  */
 
 /**
- * Récupère la session courante
+ * Lit la session signée sans juger de sa conformité : réservé à la déconnexion
  */
-export async function getSession(): Promise<JWTPayload | null> {
+export async function lireSessionSignee(): Promise<JWTPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAMES.SESSION)?.value;
 
   if (!token) return null;
 
   return verifyToken(token);
+}
+
+/**
+ * Récupère la session courante
+ */
+export async function getSession(): Promise<JWTPayload | null> {
+  const session = await lireSessionSignee();
+
+  // Point unique : toutes les gardes y passent, une session agent sans preuve MFA n'existe pas.
+  return estSessionConforme(session) ? session : null;
 }
 
 /**
@@ -105,7 +116,7 @@ export async function logout(): Promise<{
   authMethod: string | null;
   idToken?: string | null;
 }> {
-  const session = await getSession();
+  const session = await lireSessionSignee();
   await clearSessionCookies();
 
   return {

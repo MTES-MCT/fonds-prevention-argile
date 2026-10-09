@@ -10,6 +10,21 @@ chaque entrée renvoie.
 
 ---
 
+## Dépendances
+
+### Monter `next` en 15.5.27 et poser l'override `source-map-js`
+
+- **Constat** : `pnpm audit --prod` relève deux Moderate `next` <15.5.27 (cache SSG / ISR
+  empoisonnable) et la High `source-map-js` <1.2.2, acceptée jusqu'à ce que son correctif sorte de
+  la fenêtre `minimumReleaseAge`. Écartés de la PR de double authentification (#393), qui n'y touche pas.
+- **Préalable** : aucun, les deux correctifs sont installables depuis le 2026-10-07. Vérifier qu'une
+  PR Dependabot ne les porte pas déjà.
+- **À faire** : `next` 15.5.27, override `source-map-js: ^1.2.2`, checksum du lockfile dans
+  `.talismanrc`, `pnpm build`, puis retirer les deux lignes du suivi des vulnérabilités.
+- **Référence** : [suivi des vulnérabilités](security/snyk-accepted-vulnerabilities.md).
+
+---
+
 ## Synchronisation DN
 
 ### Rattraper les dossiers classés sans suite des parcours archivés ou complétés
@@ -55,8 +70,9 @@ produit : le code est simple une fois la définition choisie.
 
 - **Constat** : les écrans de correction (agent, demandeur) rendent le même formulaire que le simulateur
   public et envoient les mêmes évènements de résultat, et un résultat réaffiché repart : les « visites
-  avec un résultat » peuvent en être gonflées, sans qu'on sache de combien (ADR-0046). Le nom de l'évènement ne porte pas le département, donc
-  aucun comptage additif par département n'est possible.
+  avec un résultat » peuvent en être gonflées, sans qu'on sache de combien (ADR-0046). Le nom de l'évènement ne porte pas le département ; l'y porter ne rendrait pas à lui seul les visites additives,
+  il faudrait aussi une règle de résultat unique par visite (ou compter des évènements). Le département est déjà porté par
+  la dimension de l'évènement : voir « Tableau par département : des lignes qui s'additionnent ».
 - **À faire** : le garde-fou existe sur `feat/simulations-par-departement` (commits 8f85b0a9, 7f04c43f,
   128ce3e8) : aucun évènement depuis un écran de correction, un même résultat envoyé une fois par visite
   (30 minutes, `localStorage`), et le code département dans le nom de l'évènement. À trier : livrer le
@@ -70,6 +86,27 @@ produit : le code est simple une fois la définition choisie.
 - **À vérifier sur un Matomo réel avant toute mise en production** (non établi) : avec un nom d'évènement,
   `Events.getAction` en `flat=1` peut renvoyer des libellés « action - nom ». L'adaptateur lit le libellé
   exact (`sumEventCounts`) : l'entonnoir et `/stats` tomberaient alors à 0.
+
+### Tableau par département : des lignes qui s'additionnent
+
+- **Constat** : mesuré le 2026-10-08, côté éligibles, compter par département les visites dont l'évènement de résultat porte lui-même le département donne des lignes additives (1 816 sur 30 départements, égales aux 1 816 visites distinctes) ; le tableau actuel somme des lignes département × page (1 899). Le pied affiche pour l'instant le total de l'entonnoir et la somme des lignes (ADR-0046, mise à jour du 2026-10-08).
+- **Pourquoi reporté** : un appel Matomo par département et par verdict, de 3 à 90 s chacun sur 30 jours, impossible au chargement. Il faudrait un pré-calcul quotidien : comptes journaliers stockés en base, sommés sur la période.
+- **Préalables avant de décider** :
+  1. répéter la mesure sur une période close (septembre 2026), pour les éligibles puis les non éligibles (environ 94 départements, non mesurés en entier) ;
+  2. vérifier que les comptes journaliers se somment exactement en celui de la période (une visite appartient à un seul jour) ;
+  3. compter « Sans département » par différence (visites distinctes moins visites ayant un département), pas avec les évènements sans département : 8 visites non éligibles ont les deux ; unir `3` et `03` dans la requête au lieu d'additionner deux compteurs ;
+  4. traiter le filtre partenaire, appliqué aujourd'hui, et l'historique, rattrapable depuis la mi-septembre seulement ;
+  5. aligner la source de l'entonnoir (`Events.getAction`, en retard sur les derniers jours) ou faire corriger l'archivage : sans cela, le total et la somme des lignes divergent encore.
+- **Référence** : [ADR-0046](adr/0046-unite-de-mesure-des-simulations.md), [STATISTIQUES.md § 9](stats/STATISTIQUES.md#9-écarts-connus).
+
+### Comptes du tableau par département : rapprocher de la carte nationale
+
+- **Constat** : la carte « Comptes créés » compte tous les parcours créés sur la période ; le tableau ne compte que ceux qui ont une simulation du demandeur et un département extractible. L'écart mêle parcours sans simulation et départements inconnus, sans qu'on sache la part de chacun.
+- **Préalable** : une mesure en lecture seule sur la base de production (script ponctuel, par exemple en one-off Scalingo) qui sépare les deux causes. Une ligne « Sans département connu » n'aurait de sens qu'ensuite.
+
+### Libellés « Simulations » restants
+
+- Les cartes Top 5 d'Acquisition (`TopSimulationsCard`) et la carte Top 5 départements du Tableau de bord (colonnes « Simulations » et « Simu. éligibles ») gardent « Simulations », avec infobulle. Elles lisent les mêmes lignes non dédoublonnées que le tableau : à renommer en « Visites avec un résultat » dans une PR dédiée.
 
 ### Dossiers déposés / validés : trois définitions
 

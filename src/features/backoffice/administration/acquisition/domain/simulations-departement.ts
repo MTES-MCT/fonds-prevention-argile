@@ -4,7 +4,10 @@ import {
   toOfficialCodeDepartement,
 } from "@/shared/constants/departements.constants";
 import { isDepartementEligible } from "@/shared/constants/rga.constants";
-import type { DepartementStats } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import type {
+  DepartementStats,
+  MatomoSimulationsStats,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
 export interface CompteurSimulations {
   total: number;
@@ -95,11 +98,50 @@ export function totaliserSimulations(lignes: LigneSimulationsDepartement[]): Tot
   return { ...total, pourcentageEligibles: pourcentage(total.eligibles, total.simulations) };
 }
 
+export interface RepartitionPilotes {
+  pilotes: number;
+  horsPilotes: number;
+  partPilotes: number;
+  partHorsPilotes: number;
+}
+
+/** Part des lignes hors départements pilotes, arrondie ; l'autre part en est le complément pour que le total fasse 100. */
+export function repartitionPilotes(lignes: LigneSimulationsDepartement[]): RepartitionPilotes | null {
+  const pilotes = lignes.filter((l) => l.pilote).reduce((somme, l) => somme + l.simulations, 0);
+  const horsPilotes = lignes.filter((l) => !l.pilote).reduce((somme, l) => somme + l.simulations, 0);
+  const total = pilotes + horsPilotes;
+  if (total === 0) return null;
+  const partHorsPilotes = pourcentage(horsPilotes, total);
+  return { pilotes, horsPilotes, partPilotes: 100 - partHorsPilotes, partHorsPilotes };
+}
+
+export interface TotalEntonnoir {
+  simulations: number;
+  eligibles: number;
+  nonEligibles: number;
+  pourcentageEligibles: number;
+}
+
+/** Reprend les chiffres de l'entonnoir tels quels ; null si l'un manque, pour ne jamais afficher un 0 à sa place. */
+export function totalDepuisEntonnoir(
+  stats: Pick<MatomoSimulationsStats, "simulationsMatomo" | "simulationsEligibles" | "simulationsNonEligibles"> | null
+): TotalEntonnoir | null {
+  if (!stats?.simulationsMatomo || !stats.simulationsEligibles || !stats.simulationsNonEligibles) return null;
+  const simulations = stats.simulationsMatomo.valeur;
+  const eligibles = stats.simulationsEligibles.valeur;
+  return {
+    simulations,
+    eligibles,
+    nonEligibles: stats.simulationsNonEligibles.valeur,
+    pourcentageEligibles: pourcentage(eligibles, simulations),
+  };
+}
+
 const ENTETES_CSV = [
   "Code département",
   "Département",
   "Département pilote",
-  "Simulations",
+  "Visites avec un résultat (cumul non dédoublonné)",
   "Éligibles",
   "Non éligibles",
   "Taux d'éligibilité (%)",

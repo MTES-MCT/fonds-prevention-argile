@@ -20,6 +20,11 @@ export default function ConnexionProConnectClient() {
         case "pc_unauthorized":
           setPcError("Accès non autorisé. Veuillez contacter un administrateur pour obtenir l'accès.");
           break;
+        case "pc_mfa_required":
+          setPcError(
+            "La double authentification est obligatoire pour accéder à l'espace agent. Reconnectez-vous avec ProConnect et suivez les étapes proposées pour la configurer ou la valider."
+          );
+          break;
         case "pc_security_error":
           setPcError("Erreur de sécurité. Veuillez réessayer.");
           break;

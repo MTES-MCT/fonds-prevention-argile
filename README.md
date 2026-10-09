@@ -93,15 +93,16 @@ En local, `PC_BASE_URL` pointe vers le **bac à sable ProConnect** (`identite-sa
 C'est un annuaire d'identités indépendant : il ne connaît ni nos dossiers ni nos agents, et il est
 commun à tous les environnements qui le configurent (local comme staging).
 
-Se connecter demande donc que **deux conditions** soient réunies, et un échec ne se diagnostique
+Se connecter demande donc que **trois conditions** soient réunies, et un échec ne se diagnostique
 qu'en sachant laquelle a cédé :
 
-| Étage                             | Ce qu'il vérifie                    | Symptôme en cas d'échec                                              |
-| --------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
-| Bac à sable ProConnect            | l'identité existe, mot de passe bon | `mot de passe incorrect` / `invalid_credentials`, sans quitter l'IdP |
-| Table `agents` de l'environnement | une ligne porte cet email           | écran ProConnect franchi, puis refus applicatif (« non autorisé »)   |
+| Étage                              | Ce qu'il vérifie                    | Symptôme en cas d'échec                                                    |
+| ---------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| Bac à sable ProConnect             | l'identité existe, mot de passe bon | `mot de passe incorrect` / `invalid_credentials`, sans quitter l'IdP       |
+| Double authentification (ADR-0047) | un second facteur a été validé      | retour sur `/connexion/agent` avec « double authentification obligatoire » |
+| Table `agents` de l'environnement  | une ligne porte cet email           | écran ProConnect franchi, puis refus applicatif (« non autorisé »)         |
 
-L'app ne crée **jamais** d'agent à la volée : `createOrUpdateFromProConnect` cherche par `sub`
+L'app ne crée **jamais** d'agent à la volée : `authenticateFromProConnect` cherche par `sub`
 puis par email, et refuse si la ligne n'existe pas
 ([agents.repository.ts](src/shared/database/repositories/agents.repository.ts)). Un compte qui
 marche sur staging et pas en local, c'est donc presque toujours une ligne `agents` présente là-bas
@@ -115,6 +116,19 @@ et absente ici — les deux bases divergent, l'IdP est le même.
 - `userNN@yopmail.com` (ex. `user14@yopmail.com`) — comptes créés à la main dans le bac à sable
   par l'équipe, tous avec le mot de passe `password123`. Ils ne sont **pas** dans le seed :
   s'ils manquent en local, il faut ajouter la ligne `agents` correspondante.
+
+**Algorithme de signature** : seul RS256 est accepté pour l'`id_token` et le UserInfo (ADR-0047).
+Un client ProConnect réglé autrement dans l'espace partenaires échoue au retour de connexion,
+avec « Erreur de sécurité ».
+
+**Second facteur sur les comptes partagés** : la 2FA est exigée en local comme ailleurs. Le bac à
+sable (ProConnect Identité) gère lui-même la MFA : à la première connexion, il demande d'enrôler
+un code à usage unique (TOTP) ou une clé d'accès, sans code par e-mail. Sur un compte commun
+(`user@yopmail.com`, `userNN@...`), l'enrôlement bloque tous ceux qui n'ont pas le facteur :
+pour tester, créer un compte personnel dans le bac à sable et l'ajouter comme agent, ou, à
+défaut, enrôler un TOTP et partager sa clé secrète dans le gestionnaire de mots de passe de
+l'équipe. Jamais de clé d'accès sur un compte partagé, elle reste liée à l'appareil. Les
+réinitialisations du bac à sable effacent les enrôlements.
 
 Référence : [identifiants des FI de test](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/identifiants-fi-test).
 La base d'intégration ProConnect est réinitialisée périodiquement : un compte créé à la main peut

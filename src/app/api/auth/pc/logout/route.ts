@@ -1,10 +1,11 @@
-import { AUTH_METHODS, clearSessionCookies, getSession } from "@/features/auth";
+import { AUTH_METHODS, clearSessionCookies, lireSessionSignee } from "@/features/auth";
 import { generateLogoutUrl } from "@/features/auth/adapters/proconnect/proconnect.service";
 import { NextResponse } from "next/server";
 
 export async function POST() {
   try {
-    const session = await getSession();
+    // Session lue même non conforme : une session antérieure à la 2FA doit pouvoir se fermer chez ProConnect.
+    const session = await lireSessionSignee();
 
     if (session?.authMethod === AUTH_METHODS.PROCONNECT && session?.idToken) {
       const logoutUrl = generateLogoutUrl(session.idToken);
@@ -16,6 +17,7 @@ export async function POST() {
       });
     }
 
+    await clearSessionCookies();
     return NextResponse.json({ success: false, error: "Session ProConnect invalide" }, { status: 400 });
   } catch (error) {
     console.error("Erreur lors de la déconnexion ProConnect:", error);
