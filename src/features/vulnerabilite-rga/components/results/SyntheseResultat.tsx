@@ -14,7 +14,7 @@ interface SyntheseResultatProps {
 
 export function SyntheseResultat({ synthese }: SyntheseResultatProps) {
   return (
-    <div className={`fr-callout ${CLASSES_NIVEAU[synthese.niveau]} fr-mb-4w`}>
+    <div className={`fr-callout ${CLASSES_NIVEAU[synthese.accent]} fr-mb-4w`}>
       <h2 className="fr-callout__title">{synthese.titre}</h2>
       <p className="fr-callout__text">{synthese.texte}</p>
     </div>

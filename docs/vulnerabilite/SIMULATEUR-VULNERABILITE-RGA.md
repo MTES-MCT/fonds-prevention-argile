@@ -103,12 +103,13 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 
 ### Parcours
 
-`intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (+ essence si arbre proche) →
+`intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (et son essence) →
 haies → végétation en pied de façade → mitoyenneté → ensoleillement → source de chaleur en
 sous-sol → résultat`
 
-Seule bifurcation : `arbre_essence` n'est posée que si `arbre_proximite === "oui"`. Le compteur
-d'étapes passe donc de 12 à 13 selon la réponse.
+Parcours linéaire, 12 étapes numérotées. L'essence de l'arbre n'a plus d'écran propre : elle
+apparaît sous la question de proximité dès la réponse « Oui », et « Suivant » l'exige alors.
+Revenir à « Non » ou « Je ne sais pas » l'efface.
 
 ### Catégorisation des réponses
 
@@ -127,14 +128,25 @@ Quatre règles à connaître :
 
 - **L'aléa RGA n'est pas une question.** Donnée de contexte issue de la carte, il est cité dans la
   synthèse et ne produit aucun point.
-- **L'essence de l'arbre est posée mais sans catégorie** (`sansCategorie`), en attente des études
-  par essence. C'est « arbre proche = oui » qui porte le point critique.
+- **C'est l'essence qui porte le point de l'arbre**, « arbre proche = oui » étant `sans_objet`.
+  Elle se choisit parmi quatre groupes (exemples d'essences affichés en bleu sous chaque groupe) :
+
+  | Groupe                             | Exemples                                                                 | Catégorie |
+  | ---------------------------------- | ------------------------------------------------------------------------ | --------- |
+  | Grand arbre très gourmand en eau   | chêne, peuplier, saule, frêne, cèdre, cyprès                             | critique  |
+  | Grand arbre d'ornement ou conifère | érable, platane, tilleul, marronnier, robinier, hêtre, orme, pin, sapin… | critique  |
+  | Arbre fruitier ou petit arbre      | pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine          | vigilance |
+  | Autre essence ou je ne sais pas    | —                                                                        | critique  |
+
+  Sources : Cutler et Richardson (1989) pour le score de sécurité et la distance d'influence, le
+  guide RGA du ministère pour le saule et le cèdre, NHBC Standards 4.2 pour les conifères absents
+  de l'étude (cyprès à forte demande en eau, les autres modérée). Voir l'amendement d'ADR-0045.
+
 - **« À surveiller » s'explique** : un point sans problème a priori, qui peut devenir critique
   (fuite, défaut d'entretien). L'explication (`CATEGORIES_AFFICHAGE.a_verifier.explication`)
   s'affiche sous la réponse sélectionnée et sous le titre de la section de résultat. L'id
   `a_verifier` est conservé : les statistiques le relisent.
-- **Un test échoue si une réponse n'a pas de catégorie** (`grille-categorisation.test.ts`), hors
-  question marquée `sansCategorie`.
+- **Un test échoue si une réponse n'a pas de catégorie** (`grille-categorisation.test.ts`).
 
 ### Écran de résultat
 
@@ -143,15 +155,23 @@ Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
 - **Synthèse** (`SyntheseResultat`) : mise en avant DSFR (`fr-callout`, pas une alerte — c'est un
   contenu éditorial, pas un retour système). Accent `pink-tuile` dès qu'un point est critique,
   `yellow-moutarde` s'il n'y a que de la vigilance, `green-emeraude` sinon. L'icône et le titre
-  doublent la couleur. Hors zone argileuse (aléa `nul`), une phrase relativise les points sans
-  les retirer : la carte d'aléa est une estimation, et ils redeviennent déterminants s'il y a
-  de l'argile sous les fondations.
-- **Callout expert** : toujours affiché. Seul son bouton vers `/simulateur` est conditionnel —
-  département éligible, aléa fort, maison non mitoyenne (`remplitCriteresEligibiliteFonds`, qui
-  appelle les règles du simulateur d'éligibilité).
+  doublent la couleur. En aléa faible ou hors zone argileuse, une phrase relativise les points
+  sans les retirer : la carte d'aléa est une estimation, sans conséquence si le sol s'avère non
+  argileux, déterminante s'il l'est. L'accent descend alors d'un cran (`yellow-moutarde` pour des
+  points critiques, champ `accent`), le titre gardant le niveau réel.
+- **Callout expert** : toujours affiché. Son bouton vers `/simulateur` et sa dernière phrase (le
+  fonds peut financer le diagnostic) sont conditionnels — département éligible, aléa fort, maison
+  non mitoyenne (`remplitCriteresEligibiliteFonds`, qui appelle les règles du simulateur
+  d'éligibilité). Même règle dans le PDF.
 - **Fiches** : celles du catalogue, regroupées en « Points critiques », « Points de vigilance »,
-  « Points à surveiller », une section vide étant omise. Un point qu'aucune fiche ne couvre est
-  listé sous sa section, sans conseil.
+  « Points à surveiller », une section vide étant omise. Chaque réponse à traiter a sa fiche : une fiche
+  vaut un point, et `getReponsesSansCarte` (test du service) échoue si une nouvelle réponse à
+  traiter n'en a pas. Une fiche garde le même contenu quelle que soit la catégorie qui la
+  déclenche, seule la section change. Toutes les sections restent dépliées. Pour qu'on sache
+  toujours dans quelle section on lit, chaque en-tête de section porte un filet de la couleur de
+  sa catégorie et son nombre de points, et chaque fiche un liseré gauche et le badge de sa
+  catégorie (couleurs dans `CATEGORIES_AFFICHAGE.accent`, jeton DSFR à l'écran, hexadécimal dans
+  le PDF, qui reprend le même repérage).
 
 ---
 
@@ -235,13 +255,6 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ### Méthode et contenu
 
-- **P0 — Catégoriser les essences d'arbre.** La question est posée mais ne produit rien ; les
-  catégories viendront des études par essence. Retirer alors `sansCategorie` de `arbre_essence`
-  et décider si la fiche arbre revient sur cette question.
-- **P0 — Écrire les fiches manquantes.** Six réponses classées à traiter n'ont pas de fiche :
-  pente « plat » et « s'éloigne de la maison », gravier « absent », récupérateur « en bon état »,
-  source de chaleur « mur isolé » et « mur non isolé ». La liste est figée par
-  `recommandations.service.test.ts` (`getReponsesSansCarte`).
 - Préciser à l'écran ce que « proche » veut dire pour l'arbre et la haie.
 - La fiche arbre s'affiche aussi sur « je ne sais pas », alors que son texte suppose un arbre
   présent : à reformuler ou à dédoubler.

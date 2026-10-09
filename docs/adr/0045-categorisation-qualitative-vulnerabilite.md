@@ -83,6 +83,30 @@ Cinq catégories (`grille-categorisation.ts`, champ `categorie` de chaque répon
 - La clé de `sessionStorage` passe en `-v2` : un résultat persisté sous l'ancien format n'est pas relu.
 - Le funnel Matomo gagne une étape (`vulnerabilite_step_source_chaleur_sous_sol`), à ajouter côté Matomo.
 
+## Amendement (2026-10-08) : l'essence de l'arbre porte la catégorie
+
+L'essence était posée sur un écran à part, sans catégorie, en attente d'études. Elle rejoint
+l'écran de proximité (sous-question affichée sur « Oui ») et porte désormais le point de l'arbre :
+« arbre proche = oui » passe en `sans_objet`, et `sansCategorie` disparaît de la grille.
+
+Les dix essences deviennent quatre groupes, pour un remplissage plus simple :
+
+- **Grand arbre très gourmand en eau** (chêne, peuplier, saule, frêne, cèdre, cyprès) : critique.
+  Chêne, peuplier et frêne ont les pires scores de sécurité de Cutler et Richardson (1989) ; le
+  saule y est moyen mais porte jusqu'à 40 m, et le guide RGA du ministère le cite avec le cèdre.
+- **Grand arbre d'ornement ou conifère** (érable, platane, tilleul, marronnier, robinier, hêtre,
+  orme, pin, sapin, épicéa, if) : critique. Grands sujets qui portent à 15-20 m, même avec un
+  score correct ; NHBC 4.2 classe ces conifères en demande en eau modérée.
+- **Arbre fruitier ou petit arbre** (pommier, poirier, prunier, cerisier, sorbier, bouleau,
+  aubépine) : vigilance. Portée de 6 à 15 m.
+- **Autre essence ou je ne sais pas** : critique, hypothèse prudente.
+
+Le score de sécurité de l'étude se lit (2) ÷ (1) × 10 : plus il est haut, plus l'essence est
+sûre. La définition de « proche » reste « moins de 1,5 fois la hauteur adulte », sans
+distinction par groupe. Les valeurs déjà enregistrées (`peuplier`, `chene`…) ne sont pas
+reprises, la feature n'étant pas en production. La clé de `sessionStorage` passe en `-v3`, et
+l'évènement Matomo `vulnerabilite_step_arbre_essence` disparaît du funnel.
+
 ## Liens
 
 - Remplace : [ADR-0041](0041-calcul-vulnerabilite-sans-ponderation-cascade.md)
@@ -92,3 +116,14 @@ Cinq catégories (`grille-categorisation.ts`, champ `categorie` de chaque répon
 - Synthèse : `src/features/vulnerabilite-rga/domain/services/synthese-resultat.service.ts`
 - Renvoi conditionnel : `src/features/vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`
 - Guide : [SIMULATEUR-VULNERABILITE-RGA.md](../vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md)
+
+## Amendement (2026-10-08) : une fiche pour chaque réponse à traiter
+
+Les dernières réponses sans fiche en ont une : la pente « plat » et « s'éloigne de la maison »
+reprennent la fiche de la pente, le récupérateur « en bon état » celle du récupérateur, et le
+gravier « absent » reçoit sa propre fiche, les deux fiches de gravier existantes portant sur un
+gravier présent. Le contenu d'une fiche ne dépend pas de la catégorie qui la déclenche.
+
+L'affichage « point sans conseil » disparaît, puisque plus rien ne l'alimente. Le test
+`getReponsesSansCarte` attend désormais une liste vide : une réponse à traiter ajoutée sans fiche
+le fait échouer, au lieu de s'afficher sans conseil.

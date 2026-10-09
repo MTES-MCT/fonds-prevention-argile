@@ -91,25 +91,25 @@ describe("getVulnerabiliteStatsBdd", () => {
     expect(essence.reponses).toEqual([]);
   });
 
-  it("résout le libellé d'essence d'arbre, question sans catégorie", async () => {
+  it("résout le libellé du groupe d'essences", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ arbreProximite: "oui", arbreEssence: "peuplier" }),
-      makeRow({ arbreProximite: "oui", arbreEssence: "peuplier" }),
-      makeRow({ arbreProximite: "oui", arbreEssence: "chene" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "fruitier_petit" }),
     ]);
 
     const stats = await getVulnerabiliteStatsBdd("30j");
 
     const essence = stats.reponses.find((c) => c.critereId === "arbre_essence")!;
     expect(essence.total).toBe(3);
-    const peuplier = essence.reponses.find((r) => r.reponse === "peuplier")!;
-    expect(peuplier).toMatchObject({ label: "Peuplier", count: 2, pourcentage: 67 });
+    const gourmand = essence.reponses.find((r) => r.reponse === "tres_gourmand")!;
+    expect(gourmand).toMatchObject({ label: "Grand arbre très gourmand en eau", count: 2, pourcentage: 67 });
   });
 
   it("calcule le nombre moyen de points par catégorie et par simulation, aléa exclu", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      // 2 critiques (réseaux, arbre), 1 vigilance (pente) ; l'essence et l'aléa ne comptent pas.
-      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "peuplier" }),
+      // 2 critiques (réseaux, essence de l'arbre), 1 vigilance (pente) ; l'aléa ne compte pas.
+      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
       // 1 critique (haies), 1 à vérifier (pente), 1 bonne pratique (réseaux), 1 sans objet.
       makeRow({ penteTerrain: "plat", haies: "proches_denses", reseauxEnterres: "eloignes", ensoleillement: "modere" }),
       // 1 vigilance (pente).

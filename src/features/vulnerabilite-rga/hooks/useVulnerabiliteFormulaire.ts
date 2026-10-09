@@ -9,7 +9,7 @@ import {
   selectCanGoBack,
 } from "../stores/vulnerabilite.store";
 import type { PartialVulnerabiliteReponses } from "../domain/types/vulnerabilite-reponses.types";
-import { VulnerabiliteStep, getNumeroEtape, getTotalEtapes } from "../domain/value-objects/vulnerabilite-step.enum";
+import { VulnerabiliteStep, getNumeroEtape, TOTAL_ETAPES } from "../domain/value-objects/vulnerabilite-step.enum";
 
 /**
  * Hook principal pour le formulaire du simulateur de vulnérabilité.
@@ -26,8 +26,8 @@ export function useVulnerabiliteFormulaire() {
   const goBack = useVulnerabiliteStore((state) => state.goBack);
   const reset = useVulnerabiliteStore((state) => state.reset);
 
-  const numeroEtape = getNumeroEtape(currentStep, answers);
-  const totalEtapes = getTotalEtapes(answers);
+  const numeroEtape = getNumeroEtape(currentStep);
+  const totalEtapes = TOTAL_ETAPES;
 
   if (!isHydrated) {
     return {

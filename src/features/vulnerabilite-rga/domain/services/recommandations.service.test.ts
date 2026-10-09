@@ -1,4 +1,3 @@
-import { QUESTION_LABELS } from "../value-objects/vulnerabilite-critere-fields";
 import { describe, it, expect } from "vitest";
 import { getReponsesSansCarte, getSectionsRecommandations } from "./recommandations.service";
 import { categoriserReponses } from "./categorisation.service";
@@ -52,41 +51,35 @@ describe("getSectionsRecommandations", () => {
     expect(localise[0].recommandations[0].id).toBe("eaux-gravier-localise");
   });
 
-  it("porte la fiche arbre sur la proximité, quelle que soit l'essence", () => {
-    const sections = getSectionsRecommandations(
-      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "conifere" })
+  it("porte la fiche arbre sur l'essence, rangée selon sa catégorie", () => {
+    const gourmand = getSectionsRecommandations(
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_gourmand" })
+    );
+    const fruitier = getSectionsRecommandations(
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "fruitier_petit" })
     );
 
-    expect(sections).toHaveLength(1);
-    expect(sections[0].categorie).toBe("critique");
-    expect(sections[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
+    expect(gourmand).toHaveLength(1);
+    expect(gourmand[0].categorie).toBe("critique");
+    expect(gourmand[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
+    expect(fruitier[0].categorie).toBe("vigilance");
+    expect(fruitier[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
   });
+});
 
-  it("liste sans conseil un point qu'aucune fiche ne couvre", () => {
-    const sections = getSectionsRecommandations(categoriserReponses({ gravier_proprete: "absent" }));
+describe("eaux-recuperateur", () => {
+  it("reprend la même fiche pour un récupérateur en bon état, rangée dans les points à surveiller", () => {
+    const sections = getSectionsRecommandations(categoriserReponses({ recuperateur_eau: "present_bon_etat" }));
 
-    expect(sections).toEqual([
-      {
-        categorie: "a_verifier",
-        titre: "Points à surveiller",
-        explication: expect.stringContaining("peut en faire un point critique"),
-        recommandations: [],
-        pointsSansCarte: [
-          { critereId: "gravier_proprete", question: QUESTION_LABELS.gravier_proprete, reponse: "Absent" },
-        ],
-      },
-    ]);
+    expect(sections).toHaveLength(1);
+    expect(sections[0].categorie).toBe("a_verifier");
+    expect(sections[0].recommandations.map((r) => r.id)).toEqual(["eaux-recuperateur"]);
   });
 });
 
 describe("getReponsesSansCarte", () => {
-  // Liste figée : y ajouter une entrée, c'est accepter qu'un point s'affiche sans conseil.
-  it("recense les réponses à traiter qui n'ont pas encore de fiche", () => {
-    expect(getReponsesSansCarte()).toEqual([
-      "pente_terrain/plat",
-      "pente_terrain/eloignee_facade",
-      "gravier_proprete/absent",
-      "recuperateur_eau/present_bon_etat",
-    ]);
+  // Une réponse sans fiche disparaîtrait du résultat : toute nouvelle réponse à traiter doit en avoir une.
+  it("donne une fiche à chaque réponse à traiter", () => {
+    expect(getReponsesSansCarte()).toEqual([]);
   });
 });

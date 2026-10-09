@@ -13,6 +13,17 @@ export interface RecommandationDef {
   illustrationId?: string;
 }
 
+// Même fiche pour un arbre signalé (catégorie portée par l'essence) et pour un doute sur sa présence.
+const FICHE_ARBRE = {
+  titre: "Faire expertiser l'arbre proche des fondations",
+  problemes: ["Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux"],
+  ameliorations: [
+    "Faire évaluer par un professionnel si un élagage régulier ou une barrière anti-racines suffit",
+    "L'abattage n'est pas toujours la meilleure solution : un arbre supprimé brutalement peut au contraire déséquilibrer l'humidité du sol",
+  ],
+  illustrationId: "arbre",
+} satisfies Omit<RecommandationDef, "id" | "critereId" | "reponsesDeclenchantes">;
+
 /**
  * Catalogue des recommandations. Une fiche ne se déclenche que sur des réponses classées
  * critique, vigilance ou à surveiller — vérifié par `recommandations.catalogue.test.ts`.
@@ -21,10 +32,11 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-pente",
     critereId: "pente_terrain",
-    reponsesDeclenchantes: ["vers_facade", "ne_sais_pas"],
+    reponsesDeclenchantes: ["vers_facade", "ne_sais_pas", "plat", "eloignee_facade"],
     titre: "Détourner les eaux de ruissellement de la façade",
     problemes: [
       "Une pente qui descend vers la maison ramène l'eau de pluie contre la façade à chaque orage, provoquant des cycles de gonflement et de retrait du sol argileux juste sous les fondations",
+      "Sur un terrain plat, l'eau peut aussi stagner au pied du mur ; et une pente favorable peut s'inverser après un remblai, une terrasse ou un tassement du sol",
     ],
     ameliorations: [
       "Créer une pente légère qui éloigne l'eau de pluie de la maison plutôt que vers elle",
@@ -76,6 +88,20 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     illustrationId: "gravier",
   },
   {
+    id: "eaux-gravier-absent",
+    critereId: "gravier_proprete",
+    reponsesDeclenchantes: ["absent"],
+    titre: "Garder le pied du mur sec et protégé",
+    problemes: [
+      "Sans gravier, c'est ce qui borde le mur qui compte : terre nue, pelouse, massif ou dallage mal posé peuvent retenir l'eau ou la laisser s'infiltrer au contact des fondations",
+    ],
+    ameliorations: [
+      "Vérifier que le sol en pied de façade éloigne l'eau du mur, avec une légère pente vers l'extérieur",
+      "Privilégier un trottoir étanche ou une géomembrane couverte plutôt qu'un revêtement drainant directement contre le mur",
+    ],
+    illustrationId: "gravier",
+  },
+  {
     id: "eaux-gouttieres",
     critereId: "gouttieres",
     reponsesDeclenchantes: ["absentes_ou_debordantes", "ne_sais_pas"],
@@ -90,7 +116,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-recuperateur",
     critereId: "recuperateur_eau",
-    reponsesDeclenchantes: ["present_fuite_ou_mal_raccorde", "ne_sais_pas"],
+    reponsesDeclenchantes: ["present_fuite_ou_mal_raccorde", "ne_sais_pas", "present_bon_etat"],
     titre: "Vérifier le raccordement et l'étanchéité du récupérateur d'eau",
     problemes: [
       "Collé à la descente de gouttière, un récupérateur d'eau est presque toujours en pied de façade",
@@ -104,16 +130,15 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   },
   {
     id: "veg-arbre",
-    // Portée par la proximité tant que les essences n'ont pas de catégorie.
+    critereId: "arbre_essence",
+    reponsesDeclenchantes: ["tres_gourmand", "grand_ornement", "fruitier_petit", "ne_sais_pas"],
+    ...FICHE_ARBRE,
+  },
+  {
+    id: "veg-arbre-a-verifier",
     critereId: "arbre_proximite",
-    reponsesDeclenchantes: ["oui", "ne_sais_pas"],
-    titre: "Faire expertiser l'arbre proche des fondations",
-    problemes: ["Les racines d'un arbre proche assèchent le sol à son pied, ce qui accentue le retrait argileux"],
-    ameliorations: [
-      "Faire évaluer par un professionnel si un élagage régulier ou une barrière anti-racines suffit",
-      "L'abattage n'est pas toujours la meilleure solution : un arbre supprimé brutalement peut au contraire déséquilibrer l'humidité du sol",
-    ],
-    illustrationId: "arbre",
+    reponsesDeclenchantes: ["ne_sais_pas"],
+    ...FICHE_ARBRE,
   },
   {
     id: "veg-haies",

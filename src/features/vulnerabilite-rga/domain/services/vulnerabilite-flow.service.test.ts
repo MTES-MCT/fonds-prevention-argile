@@ -27,18 +27,27 @@ describe("VulnerabiliteFlowService", () => {
     expect(state.answers.adresse?.aleaRga).toBe("moyen");
   });
 
-  it("submitAnswer() saute ARBRE_ESSENCE si arbre_proximite = 'non'", () => {
+  it("submitAnswer() enregistre l'essence avec la proximité, puis passe aux haies", () => {
     let state = VulnerabiliteFlowService.create();
     state = { ...state, currentStep: VulnerabiliteStep.ARBRE_PROXIMITE };
-    state = VulnerabiliteFlowService.submitAnswer(state, { vegetation: { arbre_proximite: "non" } });
+    state = VulnerabiliteFlowService.submitAnswer(state, {
+      vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand" },
+    });
     expect(state.currentStep).toBe(VulnerabiliteStep.HAIES);
+    expect(state.answers.vegetation?.arbre_essence).toBe("tres_gourmand");
   });
 
-  it("submitAnswer() inclut ARBRE_ESSENCE si arbre_proximite = 'oui'", () => {
+  it("submitAnswer() efface l'essence quand l'arbre n'est plus signalé", () => {
     let state = VulnerabiliteFlowService.create();
-    state = { ...state, currentStep: VulnerabiliteStep.ARBRE_PROXIMITE };
-    state = VulnerabiliteFlowService.submitAnswer(state, { vegetation: { arbre_proximite: "oui" } });
-    expect(state.currentStep).toBe(VulnerabiliteStep.ARBRE_ESSENCE);
+    state = {
+      ...state,
+      currentStep: VulnerabiliteStep.ARBRE_PROXIMITE,
+      answers: { vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand" } },
+    };
+    state = VulnerabiliteFlowService.submitAnswer(state, {
+      vegetation: { arbre_proximite: "non", arbre_essence: undefined },
+    });
+    expect(state.answers.vegetation?.arbre_essence).toBeUndefined();
   });
 
   it("submitAnswer() calcule le résultat en arrivant à RESULTAT", () => {

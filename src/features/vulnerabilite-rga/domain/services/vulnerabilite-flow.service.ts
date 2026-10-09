@@ -31,8 +31,7 @@ const STEP_SPECIFIC_KEYS: Partial<
   [VulnerabiliteStep.GRAVIER_PROPRETE]: { section: "eaux", keys: ["gravier_proprete"] },
   [VulnerabiliteStep.GOUTTIERES]: { section: "eaux", keys: ["gouttieres"] },
   [VulnerabiliteStep.RECUPERATEUR_EAU]: { section: "eaux", keys: ["recuperateur_eau"] },
-  [VulnerabiliteStep.ARBRE_PROXIMITE]: { section: "vegetation", keys: ["arbre_proximite"] },
-  [VulnerabiliteStep.ARBRE_ESSENCE]: { section: "vegetation", keys: ["arbre_essence"] },
+  [VulnerabiliteStep.ARBRE_PROXIMITE]: { section: "vegetation", keys: ["arbre_proximite", "arbre_essence"] },
   [VulnerabiliteStep.HAIES]: { section: "vegetation", keys: ["haies"] },
   [VulnerabiliteStep.VEGETATION_PIED_FACADE]: { section: "vegetation", keys: ["vegetation_pied_facade"] },
   [VulnerabiliteStep.MITOYENNETE]: { section: "divers", keys: ["mitoyennete"] },
@@ -73,7 +72,7 @@ export const VulnerabiliteFlowService = {
   start(state: VulnerabiliteState): VulnerabiliteState {
     if (state.currentStep !== VulnerabiliteStep.INTRO) return state;
 
-    const nextStep = getNextStep(VulnerabiliteStep.INTRO, state.answers);
+    const nextStep = getNextStep(VulnerabiliteStep.INTRO);
     if (!nextStep) return state;
 
     return {
@@ -86,7 +85,7 @@ export const VulnerabiliteFlowService = {
 
   submitAnswer(state: VulnerabiliteState, answerUpdates: PartialVulnerabiliteReponses): VulnerabiliteState {
     const newAnswers = mergeAnswers(state.answers, answerUpdates);
-    const nextStep = getNextStep(state.currentStep, newAnswers);
+    const nextStep = getNextStep(state.currentStep);
 
     if (!nextStep) {
       return { ...state, answers: newAnswers, updatedAt: new Date().toISOString() };

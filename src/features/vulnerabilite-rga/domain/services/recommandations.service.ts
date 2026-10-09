@@ -4,23 +4,14 @@ import {
   CRITERES_CONFIG,
   type CategorieATraiter,
 } from "../value-objects/grille-categorisation";
-import { QUESTION_LABELS, getReponseLabel } from "../value-objects/vulnerabilite-critere-fields";
 import { RECOMMANDATIONS_CATALOGUE, type RecommandationDef } from "../catalogues/recommandations.catalogue";
 import type { PointVulnerabilite } from "./categorisation.service";
-
-export interface PointSansCarte {
-  critereId: string;
-  question: string;
-  reponse: string;
-}
 
 export interface SectionRecommandations {
   categorie: CategorieATraiter;
   titre: string;
   explication?: string;
   recommandations: RecommandationDef[];
-  /** Points de la catégorie qu'aucune fiche du catalogue ne couvre : listés sans conseil. */
-  pointsSansCarte: PointSansCarte[];
 }
 
 function trouverRecommandation(critereId: string, reponse: string): RecommandationDef | undefined {
@@ -33,27 +24,14 @@ function trouverRecommandation(critereId: string, reponse: string): Recommandati
  */
 export function getSectionsRecommandations(points: PointVulnerabilite[]): SectionRecommandations[] {
   return CATEGORIES_A_TRAITER.flatMap((categorie) => {
-    const recommandations: RecommandationDef[] = [];
-    const pointsSansCarte: PointSansCarte[] = [];
+    // Chaque réponse à traiter a sa fiche (garde-fou : `getReponsesSansCarte`), une fiche vaut donc un point.
+    const recommandations = points
+      .filter((point) => point.categorie === categorie)
+      .flatMap((point) => trouverRecommandation(point.critereId, point.reponse) ?? []);
 
-    for (const point of points) {
-      if (point.categorie !== categorie) continue;
-
-      const def = trouverRecommandation(point.critereId, point.reponse);
-      if (def) {
-        recommandations.push(def);
-      } else {
-        pointsSansCarte.push({
-          critereId: point.critereId,
-          question: QUESTION_LABELS[point.critereId] ?? point.critereId,
-          reponse: getReponseLabel(point.critereId, point.reponse),
-        });
-      }
-    }
-
-    if (recommandations.length === 0 && pointsSansCarte.length === 0) return [];
+    if (recommandations.length === 0) return [];
     const { pluriel, explication } = CATEGORIES_AFFICHAGE[categorie];
-    return [{ categorie, titre: pluriel, explication, recommandations, pointsSansCarte }];
+    return [{ categorie, titre: pluriel, explication, recommandations }];
   });
 }
 

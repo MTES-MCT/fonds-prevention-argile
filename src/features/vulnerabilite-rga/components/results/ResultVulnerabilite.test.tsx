@@ -37,6 +37,18 @@ describe("ResultVulnerabilite — callout de synthèse", () => {
     expect(container.querySelector(".fr-callout--pink-tuile")).not.toBeNull();
   });
 
+  it("reste en accent jaune avec un point critique en zone d'aléa faible", () => {
+    const { container } = rendre({
+      ...ELIGIBLE,
+      adresse: { ...ADRESSE, codeDepartement: "36", aleaRga: "faible" },
+      eaux: { reseaux_enterres: "sous_fondations" },
+    });
+
+    expect(screen.getByRole("heading", { name: "Points critiques identifiés" })).toBeInTheDocument();
+    expect(container.querySelector(".fr-callout--yellow-moutarde")).not.toBeNull();
+    expect(container.querySelector(".fr-callout--pink-tuile")).toBeNull();
+  });
+
   it("passe en accent jaune sans point critique mais avec un point de vigilance", () => {
     const { container } = rendre({ ...ELIGIBLE, eaux: { gouttieres: "absentes_ou_debordantes" } });
 
@@ -71,10 +83,17 @@ describe("ResultVulnerabilite — renvoi vers le simulateur d'éligibilité", ()
     expect(screen.queryByRole("link", { name: LIEN })).toBeNull();
   });
 
-  it("laisse l'avertissement « pas un diagnostic » visible même sans le renvoi", () => {
+  it("laisse l'avertissement « pas un diagnostic » visible même sans le renvoi, sans promettre de financement", () => {
     rendre({ ...ELIGIBLE, adresse: { ...ADRESSE, codeDepartement: "75", aleaRga: "fort" } });
 
     expect(screen.getByText(/pas un diagnostic/)).toBeInTheDocument();
+    expect(screen.queryByText(/il peut financer/)).toBeNull();
+  });
+
+  it("annonce le financement du diagnostic quand le logement remplit les critères", () => {
+    rendre(ELIGIBLE);
+
+    expect(screen.getByText(/il peut financer ce diagnostic/)).toBeInTheDocument();
   });
 });
 
@@ -98,6 +117,22 @@ describe("ResultVulnerabilite — sections de fiches", () => {
     expect(within(critiques).queryByText("Entretenir les gouttières et éloigner leur évacuation")).toBeNull();
   });
 
+  it("donne à chaque section son nombre de points et à chaque fiche le badge de sa catégorie", () => {
+    rendre({
+      ...ELIGIBLE,
+      eaux: { gouttieres: "absentes_ou_debordantes", reseaux_enterres: "sous_fondations" },
+      vegetation: { vegetation_pied_facade: "presente" },
+    });
+
+    const critiques = screen.getByRole("heading", { level: 2, name: "Points critiques" }).closest("section")!;
+    expect(within(critiques).getByText("2 points identifiés")).toBeInTheDocument();
+    expect(within(critiques).getAllByText("Point critique")).toHaveLength(2);
+
+    const vigilance = screen.getByRole("heading", { level: 2, name: "Points de vigilance" }).closest("section")!;
+    expect(within(vigilance).getByText("1 point identifié")).toBeInTheDocument();
+    expect(within(vigilance).getByText("Point de vigilance")).toBeInTheDocument();
+  });
+
   it("n'affiche aucune section quand tout est en bonne pratique", () => {
     rendre({ ...ELIGIBLE, eaux: { reseaux_enterres: "eloignes" } });
 
@@ -112,13 +147,5 @@ describe("ResultVulnerabilite — sections de fiches", () => {
     expect(
       within(critiques).getByRole("heading", { name: "Limiter la chaleur transmise au sol par le mur du sous-sol" })
     ).toBeInTheDocument();
-  });
-
-  it("mentionne sans fiche un point que le catalogue ne couvre pas, sous l'explication de sa section", () => {
-    rendre({ ...ELIGIBLE, eaux: { gravier_proprete: "absent" } });
-
-    const section = screen.getByRole("heading", { level: 2, name: "Points à surveiller" }).closest("section")!;
-    expect(within(section).getByText(/peut en faire un point critique/)).toBeInTheDocument();
-    expect(within(section).getByText(/Absent/)).toBeInTheDocument();
   });
 });

@@ -42,8 +42,26 @@ describe("buildSyntheseResultat", () => {
 
     expect(synthese.texte).toContain("Nous avons identifié 1 point critique");
     expect(synthese.texte).toContain("ont a priori peu d'impact");
+    expect(synthese.texte).toContain("s'il est argileux, ils comptent");
     expect(buildSyntheseResultat("nul", compte(0, 0)).texte).not.toContain("peu d'impact");
     expect(buildSyntheseResultat("fort", compte(1, 0)).texte).not.toContain("peu d'impact");
+  });
+
+  it("relativise aussi en zone d'aléa faible, mais pas en aléa moyen", () => {
+    expect(buildSyntheseResultat("faible", compte(1, 0)).texte).toContain("impact limité");
+    expect(buildSyntheseResultat("faible", compte(1, 0)).texte).toContain("s'avère non argileux");
+    expect(buildSyntheseResultat("moyen", compte(1, 0)).texte).not.toContain("estimation");
+  });
+
+  it("adoucit la couleur d'un point critique en zone faible ou hors zone, sans changer le titre", () => {
+    for (const alea of ["nul", "faible"] as const) {
+      const synthese = buildSyntheseResultat(alea, compte(1, 0));
+      expect(synthese.accent).toBe("vigilance");
+      expect(synthese.titre).toBe("Points critiques identifiés");
+    }
+    expect(buildSyntheseResultat("moyen", compte(1, 0)).accent).toBe("critique");
+    expect(buildSyntheseResultat(undefined, compte(1, 0)).accent).toBe("critique");
+    expect(buildSyntheseResultat("faible", compte(0, 0)).accent).toBe("aucun");
   });
 
   it("se passe de la phrase d'aléa quand il est inconnu", () => {
