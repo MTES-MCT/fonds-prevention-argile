@@ -4,6 +4,8 @@
  */
 
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
+import { dsStatusFromEtatDn } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-status";
+import { extraireNumerosDepuisErreur } from "../sync-erreurs/_shared";
 
 export type EtatDn = "en_construction" | "en_instruction" | "accepte" | "refuse" | "sans_suite";
 
@@ -26,7 +28,8 @@ export interface DossierSupprimeDn {
 }
 
 export interface PointeurBase {
-  numero: string;
+  /** Nul pour une ligne jamais rattachée à un numéro : `/stats` la compte quand même. */
+  numero: string | null;
   parcoursId: string;
   dsStatus: string | null;
   submittedAt: Date | null;
@@ -73,7 +76,7 @@ export type CauseDivergence =
   | "parcours_complete"
   | "sync_en_erreur"
   | "sync_ancienne"
-  | "etat_inconnu_en_base"
+  | "sans_suite_non_recopie"
   | "non_explique";
 
 export const LIBELLES_CAUSE: Record<CauseDivergence, string> = {
@@ -81,11 +84,11 @@ export const LIBELLES_CAUSE: Record<CauseDivergence, string> = {
   parcours_complete: "parcours complété (hors du CRON)",
   sync_en_erreur: "dernière synchro en erreur",
   sync_ancienne: "aucune synchro depuis plus de 48 h",
-  etat_inconnu_en_base: "état DN absent de l'enum ds_status",
+  sans_suite_non_recopie: "classé sans suite dans DN, jamais recopié en base",
   non_explique: "non expliqué",
 };
 
-export type CauseFantome = "supprime_dn" | "corbeille_dn" | "introuvable";
+export type CauseFantome = "supprime_dn" | "corbeille_dn" | "introuvable" | "sans_numero";
 
 export interface Divergence {
   numero: string;
@@ -99,6 +102,9 @@ export interface DateDivergente {
   dateTraitementDn: Date;
   processedAt: Date | null;
 }
+
+/** Clé d'affichage d'une ligne sans numéro DN : `parcours:<id>`. */
+export const PREFIXE_SANS_NUMERO = "parcours:";
 
 export interface Fantome {
   numero: string;
@@ -141,9 +147,58 @@ const ETATS_DN: EtatDn[] = ["en_construction", "en_instruction", "accepte", "ref
 const SYNC_ANCIENNE_MS = 48 * 3600 * 1000;
 const TOLERANCE_DATE_MS = 24 * 3600 * 1000;
 
-/** DN dit `sans_suite`, la base `classe_sans_suite` : seul état dont le libellé diffère. */
-export function etatDnVersDsStatus(etat: EtatDn): DSStatus {
-  return etat === "sans_suite" ? DSStatus.CLASSE_SANS_SUITE : (etat as DSStatus);
+/** Erreur de synchro encore d'actualité : postérieure à la dernière lecture DN réussie (`last_sync_at`). */
+export function erreurSyncEnCours(derniereErreur: Date | undefined, lastSyncAt: Date | null): boolean {
+  return !!derniereErreur && (!lastSyncAt || derniereErreur > lastSyncAt);
+}
+
+/** Dernière erreur de synchro citant chaque numéro de l'étape (`<étape>: Sync dossier <n> échouée`). */
+export function derniereErreurParNumero(
+  entrees: Array<{ error: string | null; createdAt: Date }>,
+  step: string
+): Map<string, Date> {
+  const parNumero = new Map<string, Date>();
+  for (const { error, createdAt } of entrees) {
+    if (!error) continue;
+    for (const cite of extraireNumerosDepuisErreur(error)) {
+      if (cite.step !== step) continue;
+      const connue = parNumero.get(cite.dsNumber);
+      if (!connue || createdAt > connue) parNumero.set(cite.dsNumber, createdAt);
+    }
+  }
+  return parNumero;
+}
+
+/** Une connexion DN paginée telle que la renvoie `dsQuery`. */
+export interface ReponseConnexion<T> {
+  data?: {
+    demarche: Record<string, { pageInfo: { hasNextPage: boolean; endCursor: string | null }; nodes: T[] }> | null;
+  };
+  errors?: Array<{ extensions?: { code?: string } }>;
+  httpError?: string;
+}
+
+/** Message volontairement fermé : ni message GraphQL ni paramètre, qui pourraient citer une donnée. */
+export class ErreurCollecte extends Error {}
+
+/** Refuse toute réponse partielle : `data` accompagnée d'`errors` pourrait cacher des dossiers mal lus. */
+export function extraireConnexion<T>(reponse: ReponseConnexion<T>, connexion: string, page: number) {
+  const prefixe = `${connexion}, page ${page}`;
+  if (reponse.httpError) throw new ErreurCollecte(`${prefixe} : ${reponse.httpError}`);
+  if (reponse.errors?.length) {
+    const codes = [...new Set(reponse.errors.map((e) => e.extensions?.code ?? "inconnu"))].join(", ");
+    throw new ErreurCollecte(`${prefixe} : erreur GraphQL (${codes})`);
+  }
+  const conn = reponse.data?.demarche?.[connexion];
+  if (!conn) throw new ErreurCollecte(`${prefixe} : réponse vide`);
+  return conn;
+}
+
+/** Message affichable d'une erreur quelconque, sans le texte d'une erreur externe (SQL, GraphQL). */
+export function messageSur(error: unknown): string {
+  return error instanceof ErreurCollecte
+    ? error.message
+    : `erreur inattendue (${error instanceof Error ? error.name : typeof error})`;
 }
 
 /** Bornes du graphique des validés de `/stats` : du lancement au dernier jour du mois précédent (UTC). */
@@ -177,9 +232,9 @@ export function classerPerimetre(
 }
 
 export function causeDivergence(pointeur: PointeurBase, etatDn: EtatDn, maintenant: Date): CauseDivergence {
+  if (etatDn === "sans_suite") return "sans_suite_non_recopie";
   if (pointeur.parcoursArchive) return "parcours_archive";
   if (pointeur.parcoursComplete) return "parcours_complete";
-  if (etatDn === "sans_suite") return "etat_inconnu_en_base";
   if (pointeur.syncEnErreur) return "sync_en_erreur";
   if (!pointeur.lastSyncAt || maintenant.getTime() - pointeur.lastSyncAt.getTime() > SYNC_ANCIENNE_MS) {
     return "sync_ancienne";
@@ -203,7 +258,9 @@ export function analyserEcarts(params: {
   const { dn, supprimes, pointeurs, tentatives, parcoursExistants, maintenant, debutService } = params;
   const fenetre = fenetreValides(maintenant, debutService);
 
-  const pointeurParNumero = new Map(pointeurs.map((p) => [p.numero, p]));
+  const pointeurParNumero = new Map(
+    pointeurs.flatMap((p): Array<[string, PointeurBase]> => (p.numero ? [[p.numero, p]] : []))
+  );
   const pointeurParParcours = new Map(pointeurs.map((p) => [p.parcoursId, p]));
   // Un numéro encore pointé n'est pas « registre seul », même s'il figure au registre.
   const tentativeParNumero = new Map(
@@ -230,7 +287,7 @@ export function analyserEcarts(params: {
     parPerimetre[perimetre].push(dossier.numero);
 
     const pointeur = pointeurParNumero.get(dossier.numero);
-    const etatAttendu = etatDnVersDsStatus(dossier.etat);
+    const etatAttendu = dsStatusFromEtatDn(dossier.etat) ?? dossier.etat;
 
     if (pointeur && pointeur.dsStatus !== etatAttendu) {
       divergences.push({
@@ -262,20 +319,23 @@ export function analyserEcarts(params: {
   }
 
   const comptes = pointeurs.filter((p) => p.submittedAt);
+  const cle = (p: PointeurBase) => p.numero ?? `${PREFIXE_SANS_NUMERO}${p.parcoursId}`;
   const fantomes: Fantome[] = comptes
-    .filter((p) => !dnParNumero.has(p.numero))
-    .map((p) => {
-      const supprime = supprimeParNumero.get(p.numero);
-      return {
-        numero: p.numero,
-        dsStatus: p.dsStatus,
-        cause: supprime ? (supprime.enCorbeille ? "corbeille_dn" : "supprime_dn") : "introuvable",
-        raison: supprime?.raison ?? null,
-      };
+    .filter((p) => !p.numero || !dnParNumero.has(p.numero))
+    .map((p): Fantome => {
+      const supprime = p.numero ? supprimeParNumero.get(p.numero) : undefined;
+      const cause: CauseFantome = !p.numero
+        ? "sans_numero"
+        : supprime
+          ? supprime.enCorbeille
+            ? "corbeille_dn"
+            : "supprime_dn"
+          : "introuvable";
+      return { numero: cle(p), dsStatus: p.dsStatus, cause, raison: supprime?.raison ?? null };
     });
 
   const valides = pointeurs.filter((p) => p.dsStatus === DSStatus.ACCEPTE && estDansFenetre(p.processedAt, fenetre));
-  const enTrop = valides.filter((p) => dnParNumero.get(p.numero)?.etat !== "accepte").map((p) => p.numero);
+  const enTrop = valides.filter((p) => !p.numero || dnParNumero.get(p.numero)?.etat !== "accepte").map(cle);
 
   const nonComptes = dn.length - parPerimetre.compte.length;
   const absentsTotal = Object.values(absents).reduce((s, l) => s + l.length, 0);

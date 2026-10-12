@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   analyserEcarts,
-  etatDnVersDsStatus,
+  derniereErreurParNumero,
+  erreurSyncEnCours,
+  ErreurCollecte,
+  extraireConnexion,
   fenetreValides,
+  messageSur,
   type DossierDn,
   type PointeurBase,
   type TentativeBase,
@@ -25,7 +29,7 @@ function dn(numero: string, surcharge: Partial<DossierDn> = {}): DossierDn {
   };
 }
 
-function pointeur(numero: string, surcharge: Partial<PointeurBase> = {}): PointeurBase {
+function pointeur(numero: string | null, surcharge: Partial<PointeurBase> = {}): PointeurBase {
   return {
     numero,
     parcoursId: `p-${numero}`,
@@ -58,14 +62,23 @@ function analyser(params: {
   });
 }
 
-describe("etatDnVersDsStatus", () => {
-  it("traduit sans_suite, seul état dont le libellé diffère en base", () => {
-    expect(etatDnVersDsStatus("sans_suite")).toBe("classe_sans_suite");
-    expect(etatDnVersDsStatus("accepte")).toBe("accepte");
-  });
-});
-
 describe("fenetreValides", () => {
+  it("inclut le lancement et exclut le 1er du mois en cours, à la milliseconde", () => {
+    const { debut, fin } = fenetreValides(MAINTENANT, DEBUT);
+    const dans = (date: string) => new Date(date) >= debut && new Date(date) < fin;
+    expect(dans("2025-10-16T00:00:00.000Z")).toBe(true);
+    expect(dans("2025-10-15T23:59:59.999Z")).toBe(false);
+    expect(dans("2026-09-30T23:59:59.999Z")).toBe(true);
+    expect(dans("2026-10-01T00:00:00.000Z")).toBe(false);
+  });
+
+  it("change de mois à minuit UTC, quel que soit le fuseau du poste", () => {
+    const veille = fenetreValides(new Date("2026-09-30T22:30:00Z"), DEBUT).fin.toISOString();
+    const lendemain = fenetreValides(new Date("2026-10-01T00:00:00Z"), DEBUT).fin.toISOString();
+    expect(veille).toBe("2026-09-01T00:00:00.000Z");
+    expect(lendemain).toBe("2026-10-01T00:00:00.000Z");
+  });
+
   it("s'arrête au 1er du mois en cours, comme le graphique de /stats", () => {
     expect(fenetreValides(MAINTENANT, DEBUT).fin.toISOString()).toBe("2026-10-01T00:00:00.000Z");
   });
@@ -154,12 +167,12 @@ describe("analyserEcarts — divergences d'état", () => {
     ]);
   });
 
-  it("signale un sans_suite que la synchro ne sait pas écrire", () => {
+  it("signale un classé sans suite jamais recopié, même sur un parcours archivé", () => {
     const r = analyser({
       dn: [dn("1", { etat: "sans_suite" })],
-      pointeurs: [pointeur("1", { dsStatus: "en_instruction", syncEnErreur: true })],
+      pointeurs: [pointeur("1", { dsStatus: "en_instruction", parcoursArchive: true })],
     });
-    expect(r.divergences[0].cause).toBe("etat_inconnu_en_base");
+    expect(r.divergences[0].cause).toBe("sans_suite_non_recopie");
   });
 
   it("ne voit pas de divergence entre sans_suite et classe_sans_suite", () => {
@@ -222,5 +235,118 @@ describe("analyserEcarts — validés", () => {
     });
     expect(r.valides.enTrop).toEqual(["1", "2"]);
     expect(r.valides.residu).toBe(0);
+  });
+});
+
+describe("analyserEcarts — pointeurs sans numéro DN", () => {
+  it("compte la ligne comme /stats et la relève comme fantôme, sans que le bilan se referme à tort", () => {
+    const r = analyser({
+      dn: [dn("1")],
+      pointeurs: [pointeur("1"), pointeur(null, { parcoursId: "orphelin" })],
+    });
+    expect(r.base.deposes).toBe(2);
+    expect(r.deposes.fantomes).toEqual([
+      { numero: "parcours:orphelin", dsStatus: "en_construction", cause: "sans_numero", raison: null },
+    ]);
+    expect(r.deposes.residu).toBe(0);
+  });
+
+  it("garde dans le graphique un validé sans numéro, signalé comme à vérifier", () => {
+    const r = analyser({
+      pointeurs: [
+        pointeur("x", {
+          numero: null,
+          parcoursId: "orphelin",
+          dsStatus: "accepte",
+          processedAt: new Date("2026-06-01"),
+        }),
+      ],
+    });
+    expect(r.base.valides).toBe(1);
+    expect(r.valides.enTrop).toEqual(["parcours:orphelin"]);
+    expect(r.valides.residu).toBe(0);
+  });
+});
+
+describe("erreurSyncEnCours", () => {
+  it("n'est plus d'actualité après une lecture réussie plus récente", () => {
+    expect(erreurSyncEnCours(new Date("2026-09-01"), new Date("2026-09-20"))).toBe(false);
+  });
+
+  it("l'est quand l'erreur est postérieure à la dernière lecture, ou sans lecture", () => {
+    expect(erreurSyncEnCours(new Date("2026-09-25"), new Date("2026-09-20"))).toBe(true);
+    expect(erreurSyncEnCours(new Date("2026-09-25"), null)).toBe(true);
+  });
+
+  it("est faux sans erreur", () => {
+    expect(erreurSyncEnCours(undefined, null)).toBe(false);
+  });
+});
+
+describe("derniereErreurParNumero", () => {
+  it("garde la plus récente par numéro et ignore les autres étapes", () => {
+    const parNumero = derniereErreurParNumero(
+      [
+        { error: "eligibilite: Sync dossier 11 échouée: x", createdAt: new Date("2026-09-01") },
+        { error: "eligibilite: Sync dossier 11 échouée: y", createdAt: new Date("2026-09-10") },
+        { error: "diagnostic: Sync dossier 22 échouée: z", createdAt: new Date("2026-09-05") },
+        { error: null, createdAt: new Date("2026-09-06") },
+      ],
+      "eligibilite"
+    );
+    expect([...parNumero.entries()]).toEqual([["11", new Date("2026-09-10")]]);
+  });
+
+  it("couvre l'erreur ancienne suivie d'une synchro réussie puis d'une divergence", () => {
+    const erreur = derniereErreurParNumero(
+      [{ error: "eligibilite: Sync dossier 11 échouée: x", createdAt: new Date("2026-08-01") }],
+      "eligibilite"
+    ).get("11");
+    expect(erreurSyncEnCours(erreur, new Date("2026-09-15"))).toBe(false);
+  });
+});
+
+describe("extraireConnexion", () => {
+  const connexion = { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [{ number: 1 }] };
+
+  it("rend la connexion d'une réponse complète", () => {
+    expect(extraireConnexion({ data: { demarche: { dossiers: connexion } } }, "dossiers", 1)).toBe(connexion);
+  });
+
+  it("refuse une réponse partielle : des données accompagnées d'erreurs", () => {
+    expect(() =>
+      extraireConnexion(
+        { data: { demarche: { dossiers: connexion } }, errors: [{ extensions: { code: "unauthorized" } }] },
+        "dossiers",
+        3
+      )
+    ).toThrow("dossiers, page 3 : erreur GraphQL (unauthorized)");
+  });
+
+  it("refuse une erreur HTTP et une réponse vide", () => {
+    expect(() => extraireConnexion({ httpError: "HTTP 502" }, "dossiers", 1)).toThrow("HTTP 502");
+    expect(() => extraireConnexion({ data: { demarche: null } }, "dossiers", 1)).toThrow("réponse vide");
+  });
+
+  it("ne reprend jamais le message d'une erreur GraphQL, qui pourrait citer une donnée", () => {
+    const erreur = { message: "Dossier 12345 de Jeanne Martin introuvable", extensions: { code: "not_found" } };
+    try {
+      extraireConnexion({ errors: [erreur] } as never, "dossiers", 1);
+      expect.unreachable();
+    } catch (e) {
+      expect((e as Error).message).not.toContain("Jeanne");
+      expect((e as Error).message).not.toContain("12345");
+    }
+  });
+});
+
+describe("messageSur", () => {
+  it("garde le message d'une erreur de collecte", () => {
+    expect(messageSur(new ErreurCollecte("dossiers, page 2 : HTTP 500"))).toBe("dossiers, page 2 : HTTP 500");
+  });
+
+  it("masque le texte d'une erreur externe, SQL compris", () => {
+    const sql = new Error("Failed query: select ... where id in ($1) params: 3f2a-uuid");
+    expect(messageSur(sql)).toBe("erreur inattendue (Error)");
   });
 });

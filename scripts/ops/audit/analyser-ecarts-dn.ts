@@ -20,16 +20,22 @@
  * Sur Scalingo : dans un one-off, les variables sont déjà injectées.
  */
 
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { eq, inArray, isNotNull } from "drizzle-orm";
 // `createOpsDb` charge dotenv : à importer avant tout module qui lit l'environnement.
 import { createOpsDb } from "../lib/db";
-import { dsQuery, DEMARCHE_IDS, type DsGraphqlResult } from "../lib/ds-graphql";
+import { dsQuery, requireDsApiKey, DEMARCHE_IDS } from "../lib/ds-graphql";
 import { createRedactor } from "../lib/anonymize";
 import { getArg, hasFlag } from "../lib/args";
-import { getErrorByParcours, sleep } from "../sync-erreurs/_shared";
+import { sleep } from "../sync-erreurs/_shared";
 import {
   analyserEcarts,
+  derniereErreurParNumero,
+  erreurSyncEnCours,
+  extraireConnexion,
   fenetreValides,
+  messageSur,
+  ErreurCollecte,
+  PREFIXE_SANS_NUMERO,
   LIBELLES_ABSENCE_VALIDE,
   LIBELLES_CAUSE,
   LIBELLES_PERIMETRE,
@@ -38,8 +44,14 @@ import {
   type DossierSupprimeDn,
   type EtatDn,
   type Perimetre,
+  type ReponseConnexion,
 } from "./ecarts-dn";
-import { dossiersDemarchesSimplifiees, dossiersDsTentatives, parcoursPrevention } from "@/shared/database/schema";
+import {
+  dossiersDemarchesSimplifiees,
+  dossiersDsTentatives,
+  parcoursPrevention,
+  syncRunEntries,
+} from "@/shared/database/schema";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { lireAnnotationFpa } from "@/features/parcours/dossiers-ds/utils/annotation-fpa.utils";
 import { getAnnotationLienFpaId } from "@/features/parcours/dossiers-ds/domain/value-objects/ds-annotations";
@@ -54,19 +66,7 @@ const MAX_PAGES = 200;
 const PAUSE_MS = 150;
 const APERCU = 10;
 
-const { redactDsNumber } = createRedactor(ANONYMIZE);
-
-interface PageInfo {
-  hasNextPage: boolean;
-  endCursor: string | null;
-}
-
-interface Connexion<T> {
-  pageInfo: PageInfo;
-  nodes: T[];
-}
-
-type ReponsePaginee<T> = { demarche: Record<string, Connexion<T>> | null };
+const { redactDsNumber, redactUuid } = createRedactor(ANONYMIZE);
 
 interface NoeudDossier {
   number: number;
@@ -82,14 +82,16 @@ interface NoeudSupprime {
   reason: string | null;
 }
 
-const QUERY_DOSSIERS = `
-  query EcartsDossiers($n: Int!, $after: String) {
+// L'annotation est filtrée côté DN par son descripteur : les autres, qui peuvent porter un
+// commentaire nominatif, ne sont jamais téléchargées. Sans descripteur, aucune n'est demandée.
+const queryDossiers = (avecLienFpa: boolean) => `
+  query EcartsDossiers($n: Int!, $after: String${avecLienFpa ? ", $lien: ID" : ""}) {
     demarche(number: $n) {
       dossiers(first: 100, after: $after) {
         pageInfo { hasNextPage endCursor }
         nodes {
           number state archived prefilled dateTraitement
-          annotations { champDescriptorId stringValue prefilledValueModified }
+          ${avecLienFpa ? "annotations(id: $lien) { champDescriptorId stringValue prefilledValueModified }" : ""}
         }
       }
     }
@@ -108,29 +110,40 @@ const queryDossiersSupprimes = (connexion: "deletedDossiers" | "pendingDeletedDo
 `;
 
 /** Parcourt une connexion paginée de la démarche. Lève sur tout échec : un scan partiel fausserait le bilan. */
-async function paginer<T>(query: string, connexion: string, demarcheNumber: number): Promise<T[]> {
+async function paginer<T>(query: string, connexion: string, variables: Record<string, unknown>): Promise<T[]> {
   const noeuds: T[] = [];
   let after: string | null = null;
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const r: DsGraphqlResult<ReponsePaginee<T>> = await dsQuery<ReponsePaginee<T>>(query, { n: demarcheNumber, after });
-    const conn: Connexion<T> | undefined = r.data?.demarche?.[connexion];
-    if (!conn) {
-      const cause = r.httpError ?? r.errors?.map((e) => e.extensions?.code ?? e.message).join(", ") ?? "réponse vide";
-      throw new Error(`${connexion}, page ${page} : ${cause}`);
-    }
+    const reponse: ReponseConnexion<T> = await dsQuery<NonNullable<ReponseConnexion<T>["data"]>>(query, {
+      ...variables,
+      after,
+    });
+    const conn = extraireConnexion<T>(reponse, connexion, page);
     noeuds.push(...conn.nodes);
     if (!conn.pageInfo.hasNextPage) return noeuds;
     after = conn.pageInfo.endCursor;
-    if (!after) throw new Error(`${connexion}, page ${page} : curseur absent alors qu'il reste des pages`);
+    if (!after) throw new ErreurCollecte(`${connexion}, page ${page} : curseur absent alors qu'il reste des pages`);
     await sleep(PAUSE_MS);
   }
-  throw new Error(`${connexion} : plafond de ${MAX_PAGES} pages atteint`);
+  throw new ErreurCollecte(`${connexion} : plafond de ${MAX_PAGES} pages atteint`);
 }
 
 async function collecterDn(demarcheNumber: number): Promise<DossierDn[]> {
   const descripteur = getAnnotationLienFpaId(STEP, demarcheNumber);
-  const noeuds = await paginer<NoeudDossier>(QUERY_DOSSIERS, "dossiers", demarcheNumber);
+  if (!descripteur) {
+    console.warn("Lien FPA non répertorié pour cette étape : le classement par lien FPA est indisponible.");
+  }
+  const noeuds = await paginer<NoeudDossier>(
+    queryDossiers(!!descripteur),
+    "dossiers",
+    descripteur ? { n: demarcheNumber, lien: descripteur } : { n: demarcheNumber }
+  );
+
+  // Un filtre d'annotation mal formé renverrait des listes vides : sans lien lu nulle part, on prévient.
+  if (descripteur && noeuds.length > 0 && noeuds.every((n) => !n.annotations?.length)) {
+    console.warn("Aucune annotation FPA lue sur aucun dossier : le filtre d'annotation est peut-être invalide.");
+  }
 
   return noeuds.map((n) => {
     const lien = lireAnnotationFpa(n.annotations, descripteur);
@@ -150,27 +163,32 @@ async function collecterDn(demarcheNumber: number): Promise<DossierDn[]> {
 async function collecterSupprimes(demarcheNumber: number): Promise<DossierSupprimeDn[] | null> {
   try {
     const [supprimes, corbeille] = await Promise.all([
-      paginer<NoeudSupprime>(queryDossiersSupprimes("deletedDossiers"), "deletedDossiers", demarcheNumber),
-      paginer<NoeudSupprime>(
-        queryDossiersSupprimes("pendingDeletedDossiers"),
-        "pendingDeletedDossiers",
-        demarcheNumber
-      ),
+      paginer<NoeudSupprime>(queryDossiersSupprimes("deletedDossiers"), "deletedDossiers", { n: demarcheNumber }),
+      paginer<NoeudSupprime>(queryDossiersSupprimes("pendingDeletedDossiers"), "pendingDeletedDossiers", {
+        n: demarcheNumber,
+      }),
     ]);
     return [
       ...supprimes.map((s) => ({ numero: String(s.number), raison: s.reason ?? "inconnue", enCorbeille: false })),
       ...corbeille.map((s) => ({ numero: String(s.number), raison: s.reason ?? "inconnue", enCorbeille: true })),
     ];
   } catch (error) {
-    console.warn(`Dossiers supprimés indisponibles : ${error instanceof Error ? error.message : error}`);
+    console.warn(`Dossiers supprimés indisponibles : ${messageSur(error)}`);
     return null;
   }
+}
+
+/** Un numéro DN, ou la mention d'une ligne sans numéro (identifiant de parcours masqué comme les autres). */
+function afficherCle(cle: string): string {
+  return cle.startsWith(PREFIXE_SANS_NUMERO)
+    ? `<sans numéro:${redactUuid(cle.slice(PREFIXE_SANS_NUMERO.length))}>`
+    : redactDsNumber(cle);
 }
 
 function formaterNumeros(numeros: string[]): string {
   const visibles = DETAIL ? numeros : numeros.slice(0, APERCU);
   const reste = numeros.length - visibles.length;
-  return visibles.map((n) => redactDsNumber(n)).join(", ") + (reste > 0 ? ` … (+${reste}, --detail)` : "");
+  return visibles.map(afficherCle).join(", ") + (reste > 0 ? ` … (+${reste}, --detail)` : "");
 }
 
 function ligne(nombre: number, libelle: string, numeros: string[] = []) {
@@ -193,6 +211,7 @@ async function main() {
     process.exit(1);
   }
 
+  requireDsApiKey();
   const { db, client } = createOpsDb();
   const maintenant = new Date();
 
@@ -213,13 +232,17 @@ async function main() {
         })
         .from(dossiersDemarchesSimplifiees)
         .innerJoin(parcoursPrevention, eq(parcoursPrevention.id, dossiersDemarchesSimplifiees.parcoursId))
-        .where(and(eq(dossiersDemarchesSimplifiees.step, STEP), isNotNull(dossiersDemarchesSimplifiees.dsNumber))),
+        .where(eq(dossiersDemarchesSimplifiees.step, STEP)),
       db
         .select({ numero: dossiersDsTentatives.dsNumber, parcoursId: dossiersDsTentatives.parcoursId })
         .from(dossiersDsTentatives)
         .where(eq(dossiersDsTentatives.step, STEP)),
-      getErrorByParcours(db),
+      db
+        .select({ error: syncRunEntries.error, createdAt: syncRunEntries.createdAt })
+        .from(syncRunEntries)
+        .where(isNotNull(syncRunEntries.error)),
     ]);
+    const derniereErreur = derniereErreurParNumero(erreurs, STEP);
 
     const annotes = [...new Set(dn.map((d) => d.parcoursIdAnnote).filter((id): id is string => !!id))];
     const existants = new Set<string>();
@@ -235,7 +258,7 @@ async function main() {
       dn,
       supprimes: supprimes ?? [],
       pointeurs: pointeursBruts.map((p) => ({
-        numero: p.numero as string,
+        numero: p.numero,
         parcoursId: p.parcoursId,
         dsStatus: p.dsStatus,
         submittedAt: p.submittedAt,
@@ -243,7 +266,7 @@ async function main() {
         lastSyncAt: p.lastSyncAt,
         parcoursArchive: !!p.archivedAt,
         parcoursComplete: !!p.completedAt,
-        syncEnErreur: erreurs.has(p.parcoursId),
+        syncEnErreur: !!p.numero && erreurSyncEnCours(derniereErreur.get(p.numero), p.lastSyncAt),
       })),
       tentatives,
       parcoursExistants: existants,
@@ -296,9 +319,11 @@ async function main() {
     const fantomesParCause = new Map<string, string[]>();
     for (const f of r.deposes.fantomes) {
       const cle =
-        f.cause === "introuvable"
-          ? "introuvable dans DN"
-          : `${f.cause === "corbeille_dn" ? "dans la corbeille DN" : "supprimé dans DN"} (${f.raison})`;
+        f.cause === "sans_numero"
+          ? "pointeur déposé sans numéro DN (compté par /stats, introuvable dans DN)"
+          : f.cause === "introuvable"
+            ? "introuvable dans DN"
+            : `${f.cause === "corbeille_dn" ? "dans la corbeille DN" : "supprimé dans DN"} (${f.raison})`;
       fantomesParCause.set(cle, [...(fantomesParCause.get(cle) ?? []), f.numero]);
     }
     for (const [cle, numeros] of fantomesParCause) ligne(numeros.length, cle, numeros);
@@ -316,7 +341,7 @@ async function main() {
     }
     if (r.valides.enTrop.length > 0) {
       console.log("  Dans le graphique, mais pas « accepté » dans DN :");
-      ligne(r.valides.enTrop.length, "à vérifier", r.valides.enTrop);
+      ligne(r.valides.enTrop.length, "à vérifier (dont les pointeurs sans numéro DN)", r.valides.enTrop);
     }
     console.log();
 
@@ -327,7 +352,7 @@ async function main() {
       ligne(liste.length, LIBELLES_CAUSE[cause]);
       const visibles = DETAIL ? liste : liste.slice(0, APERCU);
       for (const d of visibles) {
-        console.log(`         ${redactDsNumber(d.numero)}  DN=${d.etatDn}  base=${d.dsStatus ?? "∅"}`);
+        console.log(`         ${afficherCle(d.numero)}  DN=${d.etatDn}  base=${d.dsStatus ?? "∅"}`);
       }
       if (visibles.length < liste.length) console.log(`         … (+${liste.length - visibles.length}, --detail)`);
     }
@@ -335,7 +360,7 @@ async function main() {
 
     console.log(`5. DATES DE DÉCISION DIVERGENTES (> 1 jour) : ${r.datesDivergentes.length}`);
     for (const d of DETAIL ? r.datesDivergentes : r.datesDivergentes.slice(0, APERCU)) {
-      console.log(`         ${redactDsNumber(d.numero)}  DN=${jour(d.dateTraitementDn)}  base=${jour(d.processedAt)}`);
+      console.log(`         ${afficherCle(d.numero)}  DN=${jour(d.dateTraitementDn)}  base=${jour(d.processedAt)}`);
     }
     console.log();
 
@@ -352,6 +377,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Analyse interrompue :", error instanceof Error ? error.message : error);
+  console.error("Analyse interrompue :", messageSur(error));
   process.exit(1);
 });
