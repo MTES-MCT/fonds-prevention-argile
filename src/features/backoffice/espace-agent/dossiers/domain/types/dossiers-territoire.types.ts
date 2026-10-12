@@ -1,3 +1,4 @@
+import type { SuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
@@ -64,6 +65,8 @@ export interface DossierItem {
     message: string | null;
     date: Date;
   } | null;
+  /** Suivi Chorus du dossier DN de l'étape courante (null tant que la DDT n'a rien saisi). */
+  suiviChorus?: SuiviChorus | null;
 }
 
 /** Filtres optionnels appliqués au listing. */
