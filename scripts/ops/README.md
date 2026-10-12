@@ -96,12 +96,12 @@ pnpm audit:dossiers-bloques --check-ds --csv=rapport.csv --anonymize
 
 Rapproche les dossiers d'une démarche DN des compteurs de `/stats`, numéro par numéro, en lecture seule des deux côtés (contrairement à `ds:reconcilier`, qui écrit dans la file d'observations même en dry-run). Le rapport décompose :
 
-- **les déposés** : DN = base − dossiers que DN ne liste plus (supprimés, en corbeille, introuvables) + dossiers que DN compte et pas `/stats`, classés par cause (pointeur sans dépôt enregistré, numéro connu du seul registre, lien FPA vers un parcours perdu ou supprimé, dossier prérempli sans lien, dossier créé directement dans DN) ;
+- **les déposés** : DN = base − dossiers que DN ne liste plus (supprimés, en corbeille, introuvables, ou pointeurs déposés sans numéro DN) + dossiers que DN compte et pas `/stats`, classés par cause (pointeur sans dépôt enregistré, numéro connu du seul registre, lien FPA vers un parcours perdu ou supprimé, dossier prérempli sans lien, dossier créé directement dans DN) ;
 - **les validés** : les acceptés DN absents du graphique (décision du mois en cours, date de décision manquante, état pas encore à jour, hors périmètre) et les validés en base que DN ne dit pas acceptés ;
-- **les états divergents** des dossiers connus des deux côtés, avec leur cause probable (parcours archivé ou complété hors du CRON, synchro en erreur ou ancienne, état DN absent de l'enum `ds_status`) ;
+- **les états divergents** des dossiers connus des deux côtés, avec leur cause probable (classé sans suite dans DN et jamais recopié en base, parcours archivé ou complété hors du CRON, synchro en erreur depuis la dernière lecture réussie, ou ancienne) ;
 - **les dates de décision** qui diffèrent de plus d'un jour.
 
-Le bilan se referme : un résidu non nul signale un cas qui échappe au classement. Seul le lien FPA est lu parmi les annotations ; aucune donnée d'usager ni champ du formulaire n'est demandé à DN.
+Le bilan se referme : un résidu non nul signale un cas qui échappe au classement. Seule l'annotation du lien FPA est demandée à DN, filtrée par son identifiant ; aucune donnée d'usager ni champ du formulaire. Les erreurs affichées sont réduites à l'opération, la page et un code, jamais au message d'une API ou d'une requête SQL.
 
 ```bash
 pnpm ds:analyser-ecarts                    # éligibilité, numéros anonymisés, 10 par catégorie
