@@ -68,6 +68,21 @@ export const DS_ANNOTATION_ZONE_ALEA_ELIGIBILITE: Record<number, string> = {
   146377: "Q2hhbXAtNzAzNTUwOA==", // préprod
 };
 
+/** « Numéro de tiers fournisseur » (nombre entier), saisi par la DDT dans Chorus. */
+export const DS_ANNOTATION_TIERS_FOURNISSEUR_ELIGIBILITE: Record<number, string> = {
+  146377: "Q2hhbXAtNzAzNDM2NA==", // préprod
+};
+
+/** « Numéro d'EJ » (nombre entier). */
+export const DS_ANNOTATION_NUMERO_EJ_ELIGIBILITE: Record<number, string> = {
+  146377: "Q2hhbXAtNzAzNDM2Nw==", // préprod
+};
+
+/** « Montant de subvention » (nombre décimal). */
+export const DS_ANNOTATION_MONTANT_SUBVENTION_ELIGIBILITE: Record<number, string> = {
+  146377: "Q2hhbXAtNzAzNDM2Mw==", // préprod
+};
+
 export interface IdsAnnotationsInstruction {
   avisImpot?: string;
   typeMenage?: string;
