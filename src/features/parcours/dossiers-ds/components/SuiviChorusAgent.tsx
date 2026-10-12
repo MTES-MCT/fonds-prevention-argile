@@ -1,64 +1,41 @@
 import { formatDate } from "@/shared/utils";
-import { formatMontantEuros, type SuiviChorus, type ValeurChorus } from "../domain/value-objects/suivi-chorus";
+import { formatMontantEuros, type SuiviChorus } from "../domain/value-objects/suivi-chorus";
 
-interface SuiviChorusAgentProps {
-  etapeLabel: string;
-  suivi: SuiviChorus;
-  instructedAt: Date | null;
-  notifiedAt: Date | null;
+interface LigneProps {
+  label: string;
+  valeur: string;
+  renseigneAt: Date;
 }
 
-function Ligne<T>({ label, item, format }: { label: string; item: ValeurChorus<T> | null; format: (v: T) => string }) {
+function Ligne({ label, valeur, renseigneAt }: LigneProps) {
   return (
-    <tr>
-      <th scope="row">{label}</th>
-      <td>
-        {item ? (
-          <>
-            {format(item.valeur)}
-            <div className="fr-text--xs fr-text-mention--grey fr-mb-0">
-              Renseigné le {formatDate(item.renseigneAt.toISOString())}
-            </div>
-          </>
-        ) : (
-          <span style={{ color: "var(--text-mention-grey)" }}>Pas encore renseigné</span>
-        )}
-      </td>
-    </tr>
+    <div className="fr-mb-1v">
+      <span className="fr-text-mention--grey">{label} : </span>
+      <span style={{ fontVariantNumeric: "tabular-nums" }}>{valeur}</span>
+      <span className="fr-text--xs fr-text-mention--grey"> (renseigné le {formatDate(renseigneAt.toISOString())})</span>
+    </div>
   );
 }
 
-export function SuiviChorusAgent({ etapeLabel, suivi, instructedAt, notifiedAt }: SuiviChorusAgentProps) {
+// Rattaché à la démarche d'éligibilité, seule à porter ces annotations ; masqué tant que la DDT n'a rien saisi.
+export function SuiviChorusAgent({ suivi }: { suivi: SuiviChorus | null | undefined }) {
+  if (!suivi) return null;
+  const { tiersFournisseur, numeroEj, montantSubvention } = suivi;
+
   return (
-    <section className="fr-p-3w" style={{ border: "1px solid var(--border-default-grey)" }}>
-      <h3 className="fr-h6 fr-mb-1v">Suivi Chorus</h3>
-      <p className="fr-text--sm fr-text-mention--grey fr-mb-2w">
-        {etapeLabel} · informations saisies par la DDT dans Démarches Numériques
-      </p>
-      <div className="fr-table fr-table--no-caption fr-mb-0">
-        <div className="fr-table__wrapper">
-          <div className="fr-table__container">
-            <div className="fr-table__content">
-              <table>
-                <caption>Suivi Chorus du dossier</caption>
-                <tbody>
-                  <tr>
-                    <th scope="row">Mise en instruction</th>
-                    <td>{instructedAt ? formatDate(instructedAt.toISOString()) : "—"}</td>
-                  </tr>
-                  <Ligne label="Tiers fournisseur" item={suivi.tiersFournisseur} format={(v) => v} />
-                  <Ligne label="Numéro d'EJ" item={suivi.numeroEj} format={(v) => v} />
-                  <Ligne label="Montant de la subvention" item={suivi.montantSubvention} format={formatMontantEuros} />
-                  <tr>
-                    <th scope="row">Notification</th>
-                    <td>{notifiedAt ? formatDate(notifiedAt.toISOString()) : "—"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div className="fr-text--sm">
+      <p className="fr-text--sm fr-text--bold fr-mb-1v">Suivi Chorus</p>
+      {tiersFournisseur && (
+        <Ligne label="Tiers fournisseur" valeur={tiersFournisseur.valeur} renseigneAt={tiersFournisseur.renseigneAt} />
+      )}
+      {numeroEj && <Ligne label="N° d'EJ" valeur={numeroEj.valeur} renseigneAt={numeroEj.renseigneAt} />}
+      {montantSubvention && (
+        <Ligne
+          label="Montant de la subvention"
+          valeur={formatMontantEuros(montantSubvention.valeur)}
+          renseigneAt={montantSubvention.renseigneAt}
+        />
+      )}
+    </div>
   );
 }

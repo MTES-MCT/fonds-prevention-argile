@@ -1,15 +1,24 @@
-import { getReferenceChorus, type SuiviChorus } from "../domain/value-objects/suivi-chorus";
+import type { SuiviChorus } from "../domain/value-objects/suivi-chorus";
 
 export function ReferenceChorusCell({ suivi }: { suivi: SuiviChorus | null | undefined }) {
-  const reference = getReferenceChorus(suivi);
-  if (!reference) return <span style={{ color: "var(--text-mention-grey)" }}>—</span>;
+  const tiers = suivi?.tiersFournisseur?.valeur;
+  const ej = suivi?.numeroEj?.valeur;
+  if (!tiers && !ej) return <span style={{ color: "var(--text-mention-grey)" }}>—</span>;
 
   return (
-    <>
-      <span className="fr-text--xs fr-text-mention--grey">
-        {reference.type === "EJ" ? "N° d'EJ" : "Tiers fournisseur"}
-      </span>
-      <div style={{ fontVariantNumeric: "tabular-nums" }}>{reference.valeur}</div>
-    </>
+    <div style={{ fontVariantNumeric: "tabular-nums" }}>
+      {tiers && (
+        <div>
+          <span className="fr-text--xs fr-text-mention--grey">Tiers </span>
+          {tiers}
+        </div>
+      )}
+      {ej && (
+        <div>
+          <span className="fr-text--xs fr-text-mention--grey">EJ </span>
+          {ej}
+        </div>
+      )}
+    </div>
   );
 }

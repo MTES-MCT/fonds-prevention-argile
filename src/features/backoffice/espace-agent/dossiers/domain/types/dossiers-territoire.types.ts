@@ -65,7 +65,7 @@ export interface DossierItem {
     message: string | null;
     date: Date;
   } | null;
-  /** Suivi Chorus du dossier DN de l'étape courante (null tant que la DDT n'a rien saisi). */
+  /** Suivi Chorus du dossier DN d'éligibilité, seule démarche qui le porte (null tant que la DDT n'a rien saisi). */
   suiviChorus?: SuiviChorus | null;
 }
 

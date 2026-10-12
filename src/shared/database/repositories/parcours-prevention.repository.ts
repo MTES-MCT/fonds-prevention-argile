@@ -1,4 +1,5 @@
 import { eq, sql, SQL, desc, asc, and, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
@@ -454,6 +455,9 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
       );
     }
 
+    // Le suivi Chorus ne vit que sur l'éligibilité, qui n'est plus l'étape courante après elle.
+    const dossierEligibilite = alias(dossiersDemarchesSimplifiees, "dossier_eligibilite");
+
     const results = await db
       .select({
         parcoursId: parcoursPrevention.id,
@@ -483,6 +487,12 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
         dossierCreatedAt: dossiersDemarchesSimplifiees.createdAt,
         submittedAt: dossiersDemarchesSimplifiees.submittedAt,
         instructedAt: dossiersDemarchesSimplifiees.instructedAt,
+        chorusTiersFournisseur: dossierEligibilite.chorusTiersFournisseur,
+        chorusTiersFournisseurAt: dossierEligibilite.chorusTiersFournisseurAt,
+        chorusNumeroEj: dossierEligibilite.chorusNumeroEj,
+        chorusNumeroEjAt: dossierEligibilite.chorusNumeroEjAt,
+        chorusMontantSubvention: dossierEligibilite.chorusMontantSubvention,
+        chorusMontantSubventionAt: dossierEligibilite.chorusMontantSubventionAt,
       })
       .from(parcoursPrevention)
       .innerJoin(users, eq(parcoursPrevention.userId, users.id))
@@ -493,6 +503,10 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
           eq(dossiersDemarchesSimplifiees.parcoursId, parcoursPrevention.id),
           eq(dossiersDemarchesSimplifiees.step, parcoursPrevention.currentStep)
         )
+      )
+      .leftJoin(
+        dossierEligibilite,
+        and(eq(dossierEligibilite.parcoursId, parcoursPrevention.id), eq(dossierEligibilite.step, Step.ELIGIBILITE))
       )
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       // Tri secondaire sur le dossier DS : sans unicité (parcours_id, step), le dédup ci-dessous

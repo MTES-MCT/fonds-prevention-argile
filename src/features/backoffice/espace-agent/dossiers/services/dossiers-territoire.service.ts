@@ -1,4 +1,5 @@
 import { parcoursActionsRepo, parcoursRepo } from "@/shared/database";
+import { toSuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { ACTION_LABELS_BY_VALUE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import { calculateAgentScope } from "@/features/auth/permissions/services/agent-scope.service";
 import { perimetreListing } from "@/features/auth/permissions/domain/perimetre-listing";
@@ -143,6 +144,14 @@ function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
     dossierCreatedAt: row.dossierCreatedAt ?? null,
     submittedAt: row.submittedAt ?? null,
     instructedAt: row.instructedAt ?? null,
+    suiviChorus: toSuiviChorus({
+      chorusTiersFournisseur: row.chorusTiersFournisseur ?? null,
+      chorusTiersFournisseurAt: row.chorusTiersFournisseurAt ?? null,
+      chorusNumeroEj: row.chorusNumeroEj ?? null,
+      chorusNumeroEjAt: row.chorusNumeroEjAt ?? null,
+      chorusMontantSubvention: row.chorusMontantSubvention ?? null,
+      chorusMontantSubventionAt: row.chorusMontantSubventionAt ?? null,
+    }),
     createdByAgentId: row.createdByAgentId,
     archivedAt: row.archivedAt,
     createdAt: row.createdAt,
