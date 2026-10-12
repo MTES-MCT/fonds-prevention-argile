@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, varchar, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, varchar, numeric, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { parcoursPrevention } from "./parcours-prevention";
 import { dsStatusPgEnum, stepPgEnum } from "../enums/enums";
@@ -53,6 +53,14 @@ export const dossiersDemarchesSimplifiees = pgTable(
     avisImpotStatut: varchar("avis_impot_statut", { length: 20 }),
     // `dateDerniereModificationChamps` DN au moment du contrôle : le relancer seulement si elle bouge.
     avisImpotChampsModifiesAt: timestamp("avis_impot_champs_modifies_at", { mode: "date" }),
+
+    // Suivi Chorus saisi par la DDT dans DN : valeur lue et date de première détection par la synchro.
+    chorusTiersFournisseur: varchar("chorus_tiers_fournisseur", { length: 30 }),
+    chorusTiersFournisseurAt: timestamp("chorus_tiers_fournisseur_at", { mode: "date" }),
+    chorusNumeroEj: varchar("chorus_numero_ej", { length: 30 }),
+    chorusNumeroEjAt: timestamp("chorus_numero_ej_at", { mode: "date" }),
+    chorusMontantSubvention: numeric("chorus_montant_subvention", { precision: 12, scale: 2, mode: "number" }),
+    chorusMontantSubventionAt: timestamp("chorus_montant_subvention_at", { mode: "date" }),
   },
   // Un seul pointeur par (parcours, étape) : `getDossierByStep` serait sinon indéterministe.
   (t) => [unique("dossiers_ds_parcours_step_unique").on(t.parcoursId, t.step)]
