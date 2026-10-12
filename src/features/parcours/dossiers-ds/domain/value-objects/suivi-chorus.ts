@@ -25,3 +25,25 @@ export function getReferenceChorus(suivi: SuiviChorus | null | undefined): Refer
 export function formatMontantEuros(montant: number): string {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(montant);
 }
+
+export interface ColonnesChorus {
+  chorusTiersFournisseur: string | null;
+  chorusTiersFournisseurAt: Date | null;
+  chorusNumeroEj: string | null;
+  chorusNumeroEjAt: Date | null;
+  chorusMontantSubvention: number | null;
+  chorusMontantSubventionAt: Date | null;
+}
+
+function valeur<T>(v: T | null, at: Date | null): ValeurChorus<T> | null {
+  return v !== null && at !== null ? { valeur: v, renseigneAt: at } : null;
+}
+
+export function toSuiviChorus(c: ColonnesChorus): SuiviChorus | null {
+  const suivi: SuiviChorus = {
+    tiersFournisseur: valeur(c.chorusTiersFournisseur, c.chorusTiersFournisseurAt),
+    numeroEj: valeur(c.chorusNumeroEj, c.chorusNumeroEjAt),
+    montantSubvention: valeur(c.chorusMontantSubvention, c.chorusMontantSubventionAt),
+  };
+  return suivi.tiersFournisseur || suivi.numeroEj || suivi.montantSubvention ? suivi : null;
+}

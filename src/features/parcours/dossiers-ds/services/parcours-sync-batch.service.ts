@@ -15,6 +15,7 @@ import {
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
 import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
+import { synchroniserChorus } from "./chorus-sync.service";
 import { completerLienFpa } from "./lien-fpa.service";
 
 /**
@@ -247,6 +248,15 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       } catch (error) {
         console.warn(`Lien FPA non complété (parcours ${parcoursId}, ${dossier.step}) :`, error);
         echecLienFpa = true;
+      }
+    }
+
+    if (dossier.step === Step.ELIGIBILITE && result.success && result.data?.annotations) {
+      // Hors erreurs du run : un suivi Chorus manqué sera repris au passage suivant.
+      try {
+        await synchroniserChorus(dossier, result.data.annotations);
+      } catch (error) {
+        console.warn(`Suivi Chorus non reporté (parcours ${parcoursId}) :`, error);
       }
     }
 

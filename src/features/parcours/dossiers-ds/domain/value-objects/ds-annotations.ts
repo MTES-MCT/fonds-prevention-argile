@@ -120,3 +120,17 @@ export function getAnnotationLienFpaId(step: Step, demarcheNumber: number): stri
   if (step === Step.DEVIS) return DS_FIELD_IDS.DEVIS.ANNOTATION_LIEN_FPA;
   return null;
 }
+
+export interface IdsAnnotationsChorus {
+  tiersFournisseur?: string;
+  numeroEj?: string;
+  montantSubvention?: string;
+}
+
+export function idsAnnotationsChorus(demarcheNumber: number): IdsAnnotationsChorus {
+  return {
+    tiersFournisseur: DS_ANNOTATION_TIERS_FOURNISSEUR_ELIGIBILITE[demarcheNumber],
+    numeroEj: DS_ANNOTATION_NUMERO_EJ_ELIGIBILITE[demarcheNumber],
+    montantSubvention: DS_ANNOTATION_MONTANT_SUBVENTION_ELIGIBILITE[demarcheNumber],
+  };
+}
