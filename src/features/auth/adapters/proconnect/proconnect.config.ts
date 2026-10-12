@@ -26,7 +26,6 @@ export function getProConnectConfig() {
     callbackUrl: env.PC_CALLBACK_URL,
     postLogoutUrl: env.PC_POST_LOGOUT_URL,
     scopes: env.PC_SCOPES,
-    acrValues: env.PC_ACR_VALUES,
     stateTTL: env.PC_STATE_TTL,
     urls,
   };

@@ -17,7 +17,7 @@ function moyenne(values: number[]): number {
 
 const BAR_COLORS = [
   "#E6EEFE", // AMO
-  "#DAE6FD", // Éligibilité
+  "#DAE6FD", // Réponse AMO
   "#BCD3FC", // Diag
   "#8AB8F9", // Devis
   "#76ADF8", // Factures
@@ -31,8 +31,8 @@ interface DelaisMoyensParEtapeProps {
 export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
   const tooltipId = useId();
   const delais = useMemo(() => {
-    const delaisAmo: number[] = [];
-    const delaisEligibilite: number[] = [];
+    const delaisChoixAmo: number[] = [];
+    const delaisReponseAmo: number[] = [];
     const delaisDiagnostic: number[] = [];
     const delaisDevis: number[] = [];
     const delaisFactures: number[] = [];
@@ -42,14 +42,14 @@ export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
       if (!u.parcours) continue;
       const parcoursCreatedAt = u.parcours.createdAt;
 
-      // Délai AMO : de la création du parcours au choix de l'AMO
+      // Délai de choix : de la création du parcours au choix de l'AMO
       if (u.amoValidation?.choisieAt) {
-        delaisAmo.push(diffJours(parcoursCreatedAt, u.amoValidation.choisieAt));
+        delaisChoixAmo.push(diffJours(parcoursCreatedAt, u.amoValidation.choisieAt));
       }
 
-      // Délai Éligibilité : du choix AMO à la validation AMO
+      // Délai de réponse : du choix de l'AMO à sa réponse (pas le dossier d'éligibilité DN)
       if (u.amoValidation?.choisieAt && u.amoValidation?.valideeAt) {
-        delaisEligibilite.push(diffJours(u.amoValidation.choisieAt, u.amoValidation.valideeAt));
+        delaisReponseAmo.push(diffJours(u.amoValidation.choisieAt, u.amoValidation.valideeAt));
       }
 
       // Délai Diagnostic : de la validation AMO à la soumission du dossier diagnostic
@@ -76,8 +76,8 @@ export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
     }
 
     return [
-      { label: "AMO", jours: moyenne(delaisAmo) },
-      { label: "Éligibilité", jours: moyenne(delaisEligibilite) },
+      { label: "Choix AMO", jours: moyenne(delaisChoixAmo) },
+      { label: "Réponse AMO", jours: moyenne(delaisReponseAmo) },
       { label: "Diag.", jours: moyenne(delaisDiagnostic) },
       { label: "Devis", jours: moyenne(delaisDevis) },
       { label: "Factures", jours: moyenne(delaisFactures) },
@@ -95,7 +95,10 @@ export function DelaisMoyensParEtape({ users }: DelaisMoyensParEtapeProps) {
           Information
         </button>
         <span className="fr-tooltip fr-placement" id={tooltipId} role="tooltip">
-          Données base de données, calculé à partir des dates de chaque étape
+          Données base de données. Choix AMO : de l&apos;inscription au choix de l&apos;AMO. Réponse AMO : du choix à la
+          réponse de l&apos;AMO. Diag. : de la validation de l&apos;AMO au dépôt du diagnostic. Devis, Factures : entre
+          deux dépôts successifs. Total : de l&apos;inscription à la fin du parcours, ou à sa dernière mise à jour ; ce
+          n&apos;est pas la somme des étapes.
         </span>
       </h3>
       <div

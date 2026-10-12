@@ -6,7 +6,6 @@ export * from "./StepGravierProprete";
 export * from "./StepGouttieres";
 export * from "./StepRecuperateurEau";
 export * from "./StepArbreProximite";
-export * from "./StepArbreEssence";
 export * from "./StepHaies";
 export * from "./StepVegetationPiedFacade";
 export * from "./StepMitoyenneteVulnerabilite";

@@ -60,6 +60,22 @@ describe("classifyDossierAnomaly", () => {
     );
   });
 
+  it.each([
+    [DSStatus.ACCEPTE, "accepte"],
+    [DSStatus.REFUSE, "refuse"],
+    [DSStatus.CLASSE_SANS_SUITE, "sans_suite"],
+  ])("%s local + %s DS → décision à jour, pas un bug", (localStatus, state) => {
+    const t = classifyDossierAnomaly({ localStatus, ds: { state } });
+    expect(t).toBe(DsAnomalyType.DECISION_A_JOUR);
+    expect(DS_ANOMALY_EXPLANATIONS[t].isBug).toBe(false);
+  });
+
+  it("classé sans suite local + refusé DS → désync", () => {
+    expect(classifyDossierAnomaly({ localStatus: DSStatus.CLASSE_SANS_SUITE, ds: { state: "refuse" } })).toBe(
+      DsAnomalyType.DESYNC
+    );
+  });
+
   it("état DS inconnu → inattendu", () => {
     expect(classifyDossierAnomaly({ localStatus: DSStatus.EN_INSTRUCTION, ds: { state: "wtf" } })).toBe(
       DsAnomalyType.INATTENDU

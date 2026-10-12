@@ -6,6 +6,7 @@ import type {
   ReponseGouttieres,
   ReponseRecuperateurEau,
   ReponseArbreProximite,
+  ReponseArbreEssence,
   ReponseHaies,
   ReponseVegetationPiedFacade,
   ReponseMitoyennete,
@@ -36,21 +37,39 @@ export interface CategorieAffichage {
   pluriel: string;
   /** Fond du badge, repris du code couleur des anciens labels d'impact. */
   couleur: string;
+  /** Liseré des fiches et des en-têtes de section : jeton DSFR à l'écran, sa valeur claire dans le PDF. */
+  accent: { token: string; hex: string };
   /** Explication affichée sous la réponse sélectionnée et sous le titre de la section de résultat. */
   explication?: string;
 }
 
 export const CATEGORIES_AFFICHAGE: Record<CategorieAffichee, CategorieAffichage> = {
-  critique: { label: "Point critique", pluriel: "Points critiques", couleur: "#FFC7C7" },
-  vigilance: { label: "Point de vigilance", pluriel: "Points de vigilance", couleur: "#FEECC2" },
+  critique: {
+    label: "Point critique",
+    pluriel: "Points critiques",
+    couleur: "#FFC7C7",
+    accent: { token: "var(--border-plain-error)", hex: "#CE0500" },
+  },
+  vigilance: {
+    label: "Point de vigilance",
+    pluriel: "Points de vigilance",
+    couleur: "#FEECC2",
+    accent: { token: "var(--yellow-moutarde-main-679)", hex: "#C3992A" },
+  },
   a_verifier: {
     label: "À surveiller",
     pluriel: "Points à surveiller",
     couleur: "#E8EDFF",
+    accent: { token: "var(--border-plain-blue-ecume)", hex: "#2F4077" },
     explication:
       "A priori sans problème si tout est en bon état. Mais une fuite, un défaut d'entretien ou un changement autour de la maison peut en faire un point critique : assurez-vous de votre réponse et contrôlez-le régulièrement.",
   },
-  bonne_pratique: { label: "Bonne pratique en place", pluriel: "Bonnes pratiques en place", couleur: "#B8FEC9" },
+  bonne_pratique: {
+    label: "Bonne pratique en place",
+    pluriel: "Bonnes pratiques en place",
+    couleur: "#B8FEC9",
+    accent: { token: "var(--border-plain-green-emeraude)", hex: "#00A95F" },
+  },
 };
 
 export function getCategorieAffichage(categorie: CategorieReponse | null): CategorieAffichage | null {
@@ -61,15 +80,14 @@ export function getCategorieAffichage(categorie: CategorieReponse | null): Categ
 export interface ReponseConfig<TReponse extends string = string> {
   reponse: TReponse;
   label: string;
-  /** Absente uniquement sur une question marquée `sansCategorie`. */
-  categorie?: CategorieReponse;
+  /** Précision affichée sous le libellé (exemples, seuils). */
+  precision?: string;
+  categorie: CategorieReponse;
 }
 
 export interface CritereConfig {
   id: string;
   reponses: ReponseConfig[];
-  /** Question posée mais qui ne produit aucun point : ses réponses n'ont pas de catégorie. */
-  sansCategorie?: boolean;
   /** Ce critère ne s'applique que si un autre critère a la réponse indiquée (ex : essence ⇐ arbre proche = "oui"). */
   conditionnelA?: { critereId: string; reponseRequise: string };
 }
@@ -144,28 +162,38 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "arbre_proximite",
     reponses: [
-      { reponse: "oui", label: "Un arbre est proche des fondations", categorie: "critique" },
+      // Le point est porté par l'essence, posée sur le même écran dès qu'un arbre est signalé.
+      { reponse: "oui", label: "Un arbre est proche des fondations", categorie: "sans_objet" },
       { reponse: "ne_sais_pas", label: "Je ne sais pas", categorie: "a_verifier" },
       { reponse: "non", label: "Aucun arbre proche", categorie: "bonne_pratique" },
     ] satisfies ReponseConfig<ReponseArbreProximite>[],
   },
   {
     id: "arbre_essence",
-    // En attente des études par essence : c'est « arbre proche = oui » qui porte le point.
-    sansCategorie: true,
+    // Groupes tirés de Cutler et Richardson (1989), du guide RGA du ministère et de NHBC 4.2 pour les conifères.
     conditionnelA: { critereId: "arbre_proximite", reponseRequise: "oui" },
     reponses: [
-      { reponse: "peuplier", label: "Peuplier" },
-      { reponse: "saule", label: "Saule" },
-      { reponse: "chene", label: "Chêne" },
-      { reponse: "frene", label: "Frêne" },
-      { reponse: "bouleau", label: "Bouleau" },
-      { reponse: "erable", label: "Érable" },
-      { reponse: "fruitier", label: "Arbre fruitier" },
-      { reponse: "conifere", label: "Conifère" },
-      { reponse: "autre", label: "Autre essence" },
-      { reponse: "ne_sais_pas", label: "Je ne sais pas" },
-    ],
+      {
+        reponse: "tres_gourmand",
+        label: "Grand arbre très gourmand en eau",
+        precision: "Chêne, peuplier, saule, frêne, cèdre, cyprès (dont cyprès de Leyland)",
+        categorie: "critique",
+      },
+      {
+        reponse: "grand_ornement",
+        label: "Grand arbre d'ornement ou conifère",
+        precision: "Érable, platane, tilleul, marronnier, robinier (acacia), hêtre, orme, pin, sapin, épicéa, if",
+        categorie: "critique",
+      },
+      {
+        reponse: "fruitier_petit",
+        label: "Arbre fruitier ou petit arbre",
+        precision: "Pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine",
+        categorie: "vigilance",
+      },
+      // Sans essence connue, on retient l'hypothèse prudente.
+      { reponse: "ne_sais_pas", label: "Autre essence ou je ne sais pas", categorie: "critique" },
+    ] satisfies ReponseConfig<ReponseArbreEssence>[],
   },
   {
     id: "haies",

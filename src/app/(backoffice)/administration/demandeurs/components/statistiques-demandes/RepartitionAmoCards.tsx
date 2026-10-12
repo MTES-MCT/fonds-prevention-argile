@@ -41,6 +41,7 @@ export function RepartitionAmoCards({ users, stats, loading = false }: Repartiti
           variation={stats?.demandesAmoEnvoyees.variation ?? null}
           loading={loading}
           compact
+          tooltip="Demandeurs ayant une validation AMO, autonomie comprise : tous ne l'ont pas envoyée à une AMO."
         />
         <DashboardStatCard
           value={counts.validees.toLocaleString("fr-FR")}

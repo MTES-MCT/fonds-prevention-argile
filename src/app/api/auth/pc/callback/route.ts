@@ -7,6 +7,16 @@ import { getAndClearRedirectUrl } from "@/features/auth";
 import { getDefaultRedirect } from "@/features/auth/services/redirects.service";
 import { DEFAULT_REDIRECTS, ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { getServerEnv } from "@/shared/config/env.config";
+import { COOKIE_NAMES } from "@/features/auth/domain/value-objects";
+
+// Un refus ne doit laisser derrière lui aucune session antérieure exploitable.
+function redirigerVersConnexion(errorCode: string, baseUrl: string): NextResponse {
+  const response = NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=${errorCode}`, baseUrl));
+  response.cookies.delete(COOKIE_NAMES.SESSION);
+  response.cookies.delete(COOKIE_NAMES.SESSION_ROLE);
+  response.cookies.delete(COOKIE_NAMES.SESSION_AUTH);
+  return response;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -33,9 +43,13 @@ export async function GET(request: NextRequest) {
     const result = await handleProConnectCallback(code, state);
 
     if (!result.success) {
+      if (result.code) {
+        return redirigerVersConnexion(result.code, baseUrl);
+      }
+
       // Erreurs de sécurité → déconnexion immédiate
       if (result.shouldLogout) {
-        return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=pc_security_error`, baseUrl));
+        return redirigerVersConnexion("pc_security_error", baseUrl);
       }
 
       // Déterminer le code d'erreur approprié
@@ -44,7 +58,7 @@ export async function GET(request: NextRequest) {
           ? "pc_unauthorized"
           : "pc_auth_failed";
 
-      return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=${errorCode}`, baseUrl));
+      return redirigerVersConnexion(errorCode, baseUrl);
     }
 
     // URL intentionnelle prioritaire ; sinon redirection par défaut selon le rôle
@@ -56,6 +70,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(finalRedirect, baseUrl));
   } catch (err) {
     console.error("Erreur lors du callback ProConnect:", err);
-    return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=pc_auth_failed`, baseUrl));
+    return redirigerVersConnexion("pc_auth_failed", baseUrl);
   }
 }

@@ -13,6 +13,7 @@ import {
   isProtectedRoute,
   getDefaultRedirect,
   ROUTES,
+  estSessionConforme,
 } from "@/features/auth/edge";
 import { UserRole } from "@/shared/domain/value-objects";
 
@@ -49,43 +50,22 @@ export async function middleware(request: NextRequest) {
 
   // Si route protégée et pas de session -> rediriger vers connexion
   if (isProtected && !session) {
-    // Détecter si c'est une route backoffice (agents) ou particulier
-    const isBackofficeRoute =
-      path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAgent.root);
-
-    const loginUrl = isBackofficeRoute
-      ? ROUTES.connexion.agent // /connexion/agent
-      : ROUTES.connexion.particulier; // /connexion
-
-    const response = NextResponse.redirect(new URL(loginUrl, request.url));
-
-    // Sauvegarder l'URL demandée pour rediriger après connexion
-    response.cookies.set(COOKIE_NAMES.REDIRECT_TO, path, getCookieOptions(SESSION_DURATION.redirectCookie));
-
-    return response;
+    return redirigerVersConnexion(request, path);
   }
 
   // Si on a une session, gérer les redirections
   if (session) {
-    // Récupérer le rôle depuis un cookie dédié
-    let role = request.cookies.get(COOKIE_NAMES.SESSION_ROLE)?.value;
+    // Décodage non vérifié : il écarte une session sans preuve MFA, il n'en authentifie aucune.
+    const payload = decodeToken(session);
+    if (!estSessionConforme(payload)) {
+      return effacerSession(isProtected ? redirigerVersConnexion(request, path) : NextResponse.next());
+    }
 
-    // Si pas de cookie de rôle, décoder le JWT (rétrocompatibilité)
-    if (!role) {
-      const payload = decodeToken(session);
-      role = payload?.role;
+    // Récupérer le rôle depuis un cookie dédié, sinon depuis le JWT (rétrocompatibilité)
+    const role = request.cookies.get(COOKIE_NAMES.SESSION_ROLE)?.value ?? payload?.role;
 
-      if (!role && isProtected) {
-        // Session invalide - nettoyer et rediriger
-        const response = NextResponse.redirect(new URL(DEFAULT_REDIRECTS.login, request.url));
-
-        // Nettoyer tous les cookies de session
-        response.cookies.delete(COOKIE_NAMES.SESSION);
-        response.cookies.delete(COOKIE_NAMES.SESSION_ROLE);
-        response.cookies.delete(COOKIE_NAMES.SESSION_AUTH);
-
-        return response;
-      }
+    if (!role && isProtected) {
+      return effacerSession(NextResponse.redirect(new URL(DEFAULT_REDIRECTS.login, request.url)));
     }
 
     // Si route d'auth et session existe -> rediriger vers le bon espace
@@ -120,6 +100,26 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
+}
+
+function redirigerVersConnexion(request: NextRequest, path: string): NextResponse {
+  const isBackofficeRoute =
+    path.startsWith(ROUTES.backoffice.administration.root) || path.startsWith(ROUTES.backoffice.espaceAgent.root);
+  const loginUrl = isBackofficeRoute ? ROUTES.connexion.agent : ROUTES.connexion.particulier;
+
+  const response = NextResponse.redirect(new URL(loginUrl, request.url));
+
+  // Sauvegarder l'URL demandée pour rediriger après connexion
+  response.cookies.set(COOKIE_NAMES.REDIRECT_TO, path, getCookieOptions(SESSION_DURATION.redirectCookie));
+
+  return response;
+}
+
+function effacerSession(response: NextResponse): NextResponse {
+  response.cookies.delete(COOKIE_NAMES.SESSION);
+  response.cookies.delete(COOKIE_NAMES.SESSION_ROLE);
+  response.cookies.delete(COOKIE_NAMES.SESSION_AUTH);
+  return response;
 }
 
 // Configuration du middleware

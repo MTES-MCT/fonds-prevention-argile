@@ -59,13 +59,15 @@ export function RepartitionDossiersCards({ users, stats, loading = false }: Repa
           variation={null}
           loading={loading}
           compact
+          tooltip="Dossiers dont le numéro Démarche Numérique existe mais qui ne sont pas encore déposés, hors parcours archivés. Vaut 0 pour les agents non administrateurs : le numéro leur est masqué."
         />
         <DashboardStatCard
           value={counts.deposes.toLocaleString("fr-FR")}
-          label="Dossiers déposés"
+          label="En attente d'instruction"
           variation={stats?.dossiersDemarcheNumerique.variation ?? null}
           loading={loading}
           compact
+          tooltip="État actuel, pas un flux : dossiers déposés dont l'instruction n'a pas commencé. Un dossier instruit n'est plus compté ici. La variation affichée porte sur les dossiers créés, pas sur ceux en attente."
         />
         <DashboardStatCard
           value={counts.enInstruction.toLocaleString("fr-FR")}
@@ -80,6 +82,7 @@ export function RepartitionDossiersCards({ users, stats, loading = false }: Repa
           variation={null}
           loading={loading}
           compact
+          tooltip="Dossiers acceptés, refusés ou classés sans suite : un dossier instruit n'est pas forcément validé."
         />
       </div>
     </div>

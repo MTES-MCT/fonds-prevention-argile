@@ -20,7 +20,6 @@ import {
   StepGouttieres,
   StepRecuperateurEau,
   StepArbreProximite,
-  StepArbreEssence,
   StepHaies,
   StepVegetationPiedFacade,
   StepMitoyenneteVulnerabilite,
@@ -151,10 +150,13 @@ export function VulnerabiliteFormulaire() {
       return <StepRecuperateurEau {...stepProps} initialValue={answers.eaux?.recuperateur_eau} />;
 
     case VulnerabiliteStep.ARBRE_PROXIMITE:
-      return <StepArbreProximite {...stepProps} initialValue={answers.vegetation?.arbre_proximite} />;
-
-    case VulnerabiliteStep.ARBRE_ESSENCE:
-      return <StepArbreEssence {...stepProps} initialValue={answers.vegetation?.arbre_essence} />;
+      return (
+        <StepArbreProximite
+          {...stepProps}
+          initialValue={answers.vegetation?.arbre_proximite}
+          initialEssence={answers.vegetation?.arbre_essence}
+        />
+      );
 
     case VulnerabiliteStep.HAIES:
       return <StepHaies {...stepProps} initialValue={answers.vegetation?.haies} />;

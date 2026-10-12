@@ -1,4 +1,4 @@
-import { DSStatus } from "./ds-status";
+import { DSStatus, dsStatusFromEtatDn, isDSFinalized } from "./ds-status";
 
 /**
  * Taxonomie métier des anomalies d'un dossier après cross-check avec son état RÉEL côté
@@ -17,6 +17,8 @@ export enum DsAnomalyType {
   DESYNC = "desync",
   /** DS = accepté alors qu'on est en_instruction : à propager (recompute + moveToNextStep). */
   DESYNC_A_SYNCER = "desync_a_syncer",
+  /** Décision DDT rendue et déjà reflétée en base. Normal. */
+  DECISION_A_JOUR = "decision_a_jour",
   /** Déposé, en attente réelle de la décision instructeur. Normal. */
   EN_ATTENTE_INSTRUCTEUR = "en_attente_instructeur",
   /** DS est revenu en construction alors qu'on le croyait en instruction (rare). */
@@ -70,6 +72,12 @@ export function classifyDossierAnomaly({
     return s ? DsAnomalyType.JAMAIS_SYNCHRONISE_EXISTE : DsAnomalyType.INATTENDU;
   }
 
+  // Comparer après traduction : DN dit `sans_suite` là où la base dit `classe_sans_suite`.
+  const etatTraduit = s ? dsStatusFromEtatDn(s) : null;
+  if (etatTraduit && etatTraduit === localStatus && isDSFinalized(etatTraduit)) {
+    return DsAnomalyType.DECISION_A_JOUR;
+  }
+
   if (localStatus === DSStatus.EN_CONSTRUCTION) {
     // On le croit en construction : si DS aussi → jamais déposé ; sinon DS a avancé.
     if (s === "en_construction") return DsAnomalyType.JAMAIS_DEPOSE;
@@ -117,6 +125,11 @@ export const DS_ANOMALY_EXPLANATIONS: Record<DsAnomalyType, DsAnomalyExplanation
     explanation:
       "Le dossier est accepté côté Démarches Simplifiées mais notre parcours ne l'a pas encore propagé. Relancer la sync : le parcours doit passer à l'étape suivante.",
     isBug: true,
+  },
+  [DsAnomalyType.DECISION_A_JOUR]: {
+    label: "Décision synchronisée",
+    explanation: "La DDT a rendu sa décision et notre base la reflète déjà. Rien à faire.",
+    isBug: false,
   },
   [DsAnomalyType.EN_ATTENTE_INSTRUCTEUR]: {
     label: "En attente instructeur",

@@ -2,7 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserRole } from "@/shared/domain/value-objects";
 
 // On contrôle entièrement la couche edge (routing/cookies) ; NextResponse reste réel.
-vi.mock("@/features/auth/edge", () => ({
+vi.mock("@/features/auth/edge", async () => ({
+  // Règle de conformité réelle : c'est elle que ces tests éprouvent.
+  estSessionConforme: (
+    await vi.importActual<typeof import("@/features/auth/domain/value-objects/session-mfa")>(
+      "@/features/auth/domain/value-objects/session-mfa"
+    )
+  ).estSessionConforme,
   COOKIE_NAMES: {
     SESSION: "session",
     SESSION_ROLE: "session_role",
@@ -27,7 +33,17 @@ vi.mock("@/features/auth/edge", () => ({
 }));
 
 import { middleware } from "./middleware";
-import { isProtectedRoute } from "@/features/auth/edge";
+import { decodeToken, isProtectedRoute } from "@/features/auth/edge";
+
+const SESSION_AGENT_MFA = { authMethod: "proconnect", role: UserRole.AMO, proConnectAcr: "eidas1-mfa" };
+const SESSION_AGENT_SANS_MFA = { authMethod: "proconnect", role: UserRole.AMO };
+
+function cookiesEffaces(res: Response): string[] {
+  return res.headers
+    .getSetCookie()
+    .filter((cookie) => /Expires=Thu, 01 Jan 1970/i.test(cookie) || /Max-Age=0/i.test(cookie))
+    .map((cookie) => cookie.split("=")[0]);
+}
 
 // Construit un NextRequest minimal (pathname, cookies, url) suffisant pour le middleware.
 function makeRequest(path: string, cookies: Record<string, string> = {}) {
@@ -66,6 +82,7 @@ describe("middleware — authentification & redirection (§7)", () => {
 
   it("AMO authentifié avec redirectTo=/administration → renvoyé vers /espace-amo (pas l'admin)", async () => {
     vi.mocked(isProtectedRoute).mockReturnValue(false);
+    vi.mocked(decodeToken).mockReturnValue(SESSION_AGENT_MFA as never);
 
     const res = await middleware(
       makeRequest("/connexion", {
@@ -84,5 +101,66 @@ describe("middleware — authentification & redirection (§7)", () => {
     const res = await middleware(makeRequest("/"));
 
     expect(res.headers.get("location")).toBeNull();
+  });
+
+  describe("sessions antérieures à la double authentification", () => {
+    it("sur la page de connexion → effacées, sans redirection (pas de boucle)", async () => {
+      vi.mocked(isProtectedRoute).mockReturnValue(false);
+      vi.mocked(decodeToken).mockReturnValue(SESSION_AGENT_SANS_MFA as never);
+
+      const res = await middleware(
+        makeRequest("/connexion/agent", { session: "tok", session_role: UserRole.AMO, session_auth: "proconnect" })
+      );
+
+      expect(res.headers.get("location")).toBeNull();
+      expect(cookiesEffaces(res)).toEqual(expect.arrayContaining(["session", "session_role", "session_auth"]));
+    });
+
+    it("sur une route agent → renvoyées vers /connexion/agent en mémorisant la page", async () => {
+      vi.mocked(isProtectedRoute).mockReturnValue(true);
+      vi.mocked(decodeToken).mockReturnValue(SESSION_AGENT_SANS_MFA as never);
+
+      const res = await middleware(
+        makeRequest("/espace-agent/dossiers", { session: "tok", session_role: UserRole.AMO })
+      );
+
+      expect(res.headers.get("location")).toContain("/connexion/agent");
+      expect(cookiesEffaces(res)).toContain("session");
+      expect(res.headers.getSetCookie().some((cookie) => cookie.startsWith("redirect_to=%2Fespace-agent"))).toBe(true);
+    });
+
+    it("jeton illisible → effacé même si un cookie de rôle subsiste", async () => {
+      vi.mocked(isProtectedRoute).mockReturnValue(true);
+      vi.mocked(decodeToken).mockReturnValue(null);
+
+      const res = await middleware(
+        makeRequest("/administration", { session: "abc", session_role: UserRole.ADMINISTRATEUR })
+      );
+
+      expect(res.headers.get("location")).toContain("/connexion/agent");
+      expect(cookiesEffaces(res)).toContain("session");
+    });
+
+    it("session agent avec preuve MFA → conservée", async () => {
+      vi.mocked(isProtectedRoute).mockReturnValue(true);
+      vi.mocked(decodeToken).mockReturnValue(SESSION_AGENT_MFA as never);
+
+      const res = await middleware(
+        makeRequest("/espace-agent/dossiers", { session: "tok", session_role: UserRole.AMO })
+      );
+
+      expect(res.headers.get("location")).toBeNull();
+      expect(cookiesEffaces(res)).toEqual([]);
+    });
+
+    it("session demandeur FranceConnect → conservée, hors périmètre de la 2FA", async () => {
+      vi.mocked(isProtectedRoute).mockReturnValue(true);
+      vi.mocked(decodeToken).mockReturnValue({ authMethod: "franceconnect", role: UserRole.PARTICULIER } as never);
+
+      const res = await middleware(makeRequest("/mon-compte", { session: "tok", session_role: UserRole.PARTICULIER }));
+
+      expect(res.headers.get("location")).toBeNull();
+      expect(cookiesEffaces(res)).toEqual([]);
+    });
   });
 });

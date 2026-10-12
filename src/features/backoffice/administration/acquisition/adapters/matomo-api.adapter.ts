@@ -467,11 +467,19 @@ function extractDimensionValueFromLabel(label: string): string | null {
   return value || null;
 }
 
+interface OptionsRapportDimension {
+  period?: string;
+  date?: string;
+  extraSegment?: string;
+  /** Matomo s'arrête à 100 lignes par défaut : à demander pour toute liste affichée en entier (départements). */
+  toutesLesLignes?: boolean;
+}
+
 /** Un seul appel `CustomDimensions.getCustomDimension`, segmenté par `eventActionSegment`. */
 async function fetchMatomoDimensionRows(
   dimensionId: number,
   eventActionSegment: string,
-  options?: { period?: string; date?: string; extraSegment?: string }
+  options?: OptionsRapportDimension
 ): Promise<MatomoCustomDimensionRow[]> {
   const config = getMatomoConfig();
 
@@ -486,6 +494,8 @@ async function fetchMatomoDimensionRows(
       format: "JSON",
       token_auth: config.apiToken,
       flat: "1",
+      // Une ligne par couple valeur × URL : la limite par défaut (100) tronquait les départements.
+      filter_limit: options?.toutesLesLignes ? "-1" : undefined,
       segment: combineSegments(eventActionSegment, options?.extraSegment) ?? "",
     },
     config.apiUrl
@@ -504,7 +514,7 @@ async function fetchMatomoDimensionRows(
  */
 export async function fetchMatomoSimulationsGroupedByDimension(
   dimensionId: number,
-  options?: { period?: string; date?: string; extraSegment?: string }
+  options?: OptionsRapportDimension
 ): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
   const [eligibleData, nonEligibleData] = await Promise.all([
     fetchMatomoDimensionRows(dimensionId, "eventAction==simulateur_result_eligible", options),
@@ -548,7 +558,7 @@ export async function fetchMatomoSimulationsGroupedByDimension(
 export async function fetchMatomoCountByDimension(
   dimensionId: number,
   eventActionSegment: string,
-  options?: { period?: string; date?: string; extraSegment?: string }
+  options?: OptionsRapportDimension
 ): Promise<Map<string, number>> {
   const rows = await fetchMatomoDimensionRows(dimensionId, eventActionSegment, options);
 
@@ -562,11 +572,11 @@ export async function fetchMatomoCountByDimension(
 }
 
 /**
- * Alias pour la rétrocompatibilité — récupère les simulations groupées par département.
+ * Simulations groupées par département, liste complète (le tableau affiche tous les départements).
  */
 export async function fetchMatomoSimulationsGroupedByDepartment(
   dimensionId: number,
-  options?: { period?: string; date?: string; extraSegment?: string }
+  options?: Omit<OptionsRapportDimension, "toutesLesLignes">
 ): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
-  return fetchMatomoSimulationsGroupedByDimension(dimensionId, options);
+  return fetchMatomoSimulationsGroupedByDimension(dimensionId, { ...options, toutesLesLignes: true });
 }

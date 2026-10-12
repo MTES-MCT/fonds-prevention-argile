@@ -4,6 +4,7 @@ export { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 // Importer pour utiliser dans les fonctions
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { Status } from "@/shared/domain/value-objects/status.enum";
+import type { DossierState } from "../../adapters/graphql/types";
 
 /**
  * Labels français des statuts Démarches Simplifiées (pour affichage)
@@ -28,6 +29,20 @@ export const DS_TO_INTERNAL_STATUS: Record<DSStatus, Status> = {
   [DSStatus.CLASSE_SANS_SUITE]: Status.EN_INSTRUCTION,
   [DSStatus.NON_ACCESSIBLE]: Status.TODO,
 } as const;
+
+// DN nomme `sans_suite` ce que l'enum Postgres `ds_status` nomme `classe_sans_suite`.
+const ETAT_DN_TO_DS_STATUS: Record<DossierState, DSStatus> = {
+  en_construction: DSStatus.EN_CONSTRUCTION,
+  en_instruction: DSStatus.EN_INSTRUCTION,
+  accepte: DSStatus.ACCEPTE,
+  refuse: DSStatus.REFUSE,
+  sans_suite: DSStatus.CLASSE_SANS_SUITE,
+};
+
+/** Traduit l'état renvoyé par l'API GraphQL DN ; `null` pour un état que DN aurait ajouté depuis. */
+export function dsStatusFromEtatDn(etat: string): DSStatus | null {
+  return Object.hasOwn(ETAT_DN_TO_DS_STATUS, etat) ? ETAT_DN_TO_DS_STATUS[etat as DossierState] : null;
+}
 
 /**
  * Type dérivé des statuts DS

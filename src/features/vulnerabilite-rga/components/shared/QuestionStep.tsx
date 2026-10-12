@@ -10,6 +10,68 @@ import { getCategorieAffichage } from "../../domain/value-objects/grille-categor
 export interface QuestionOption<TValue extends string> {
   value: TValue;
   label: string;
+  /** Précision sous le libellé, en bleu, comme l'étape « état de la maison » du simulateur d'éligibilité. */
+  precision?: string;
+}
+
+interface ChoixRadiosProps<TValue extends string> {
+  fieldsetName: string;
+  critereId: string;
+  legend: string;
+  /** false : légende masquée, la question étant déjà le titre de l'écran. */
+  legendVisible?: boolean;
+  hint?: string;
+  options: QuestionOption<TValue>[];
+  selected: TValue | undefined;
+  onSelect: (value: TValue) => void;
+}
+
+/** Liste de choix (fr-radio-rich) d'une question, catégorie affichée sur l'option sélectionnée. */
+export function ChoixRadios<TValue extends string>({
+  fieldsetName,
+  critereId,
+  legend,
+  legendVisible = false,
+  hint,
+  options,
+  selected,
+  onSelect,
+}: ChoixRadiosProps<TValue>) {
+  return (
+    <fieldset className="fr-fieldset" id={`${fieldsetName}-fieldset`}>
+      <legend className={`fr-fieldset__legend${legendVisible ? "" : " fr-sr-only"}`}>
+        {legend}
+        {hint && <span className="fr-hint-text">{hint}</span>}
+      </legend>
+      {options.map((option) => {
+        const isSelected = selected === option.value;
+        // Catégorie affichée UNIQUEMENT sur l'option sélectionnée : montrer un badge sur
+        // chaque option alourdirait l'écran et casserait la simplicité recherchée.
+        const categorie = isSelected ? getCategorieReponse(critereId, option.value) : null;
+        const explication = getCategorieAffichage(categorie)?.explication;
+
+        return (
+          <div className="fr-fieldset__element" key={option.value}>
+            <div className="fr-radio-group fr-radio-rich">
+              <input
+                type="radio"
+                id={`${fieldsetName}-${option.value}`}
+                name={fieldsetName}
+                checked={isSelected}
+                onChange={() => onSelect(option.value)}
+              />
+              <label className="fr-label" htmlFor={`${fieldsetName}-${option.value}`}>
+                {option.label}
+                <CategorieBadge categorie={categorie} />
+                {option.precision && <span className="fr-hint-text fr-text-default--info">{option.precision}</span>}
+                {explication && <span className="fr-hint-text">{explication}</span>}
+              </label>
+            </div>
+          </div>
+        );
+      })}
+    </fieldset>
+  );
 }
 
 interface QuestionStepProps<TValue extends string> {
@@ -29,11 +91,15 @@ interface QuestionStepProps<TValue extends string> {
   canGoBack: boolean;
   onNext: () => void;
   onBack: () => void;
+  /** Sous-question affichée sous les choix (ex : essence de l'arbre). */
+  complement?: ReactNode;
+  /** Par défaut, « Suivant » attend seulement une réponse à la question principale. */
+  isNextDisabled?: boolean;
 }
 
 /**
  * Squelette commun à toutes les questions du simulateur de vulnérabilité :
- * illustration + paragraphe pédagogique + choix (fr-radio-rich) + navigation.
+ * illustration + paragraphe pédagogique + choix (fr-radio-rich) + sous-question éventuelle + navigation.
  * Un composant `Step*` par question ne fait donc que fournir son contenu.
  */
 export function QuestionStep<TValue extends string>({
@@ -50,6 +116,8 @@ export function QuestionStep<TValue extends string>({
   canGoBack,
   onNext,
   onBack,
+  complement,
+  isNextDisabled = selected === undefined,
 }: QuestionStepProps<TValue>) {
   return (
     <VulnerabiliteLayout title={title} currentStep={numeroEtape} totalSteps={totalEtapes}>
@@ -57,42 +125,18 @@ export function QuestionStep<TValue extends string>({
 
       <p className="fr-mb-3w">{description}</p>
 
-      <fieldset className="fr-fieldset" id={`${fieldsetName}-fieldset`}>
-        <legend className="fr-fieldset__legend fr-sr-only">{title}</legend>
-        {options.map((option) => {
-          const isSelected = selected === option.value;
-          // Catégorie affichée UNIQUEMENT sur l'option sélectionnée : montrer un badge sur
-          // chaque option alourdirait l'écran et casserait la simplicité recherchée.
-          const categorie = isSelected ? getCategorieReponse(critereId, option.value) : null;
-          const explication = getCategorieAffichage(categorie)?.explication;
-
-          return (
-            <div className="fr-fieldset__element" key={option.value}>
-              <div className="fr-radio-group fr-radio-rich">
-                <input
-                  type="radio"
-                  id={`${fieldsetName}-${option.value}`}
-                  name={fieldsetName}
-                  checked={isSelected}
-                  onChange={() => onSelect(option.value)}
-                />
-                <label className="fr-label" htmlFor={`${fieldsetName}-${option.value}`}>
-                  {option.label}
-                  <CategorieBadge categorie={categorie} />
-                  {explication && <span className="fr-hint-text">{explication}</span>}
-                </label>
-              </div>
-            </div>
-          );
-        })}
-      </fieldset>
-
-      <NavigationButtons
-        onPrevious={onBack}
-        onNext={onNext}
-        canGoBack={canGoBack}
-        isNextDisabled={selected === undefined}
+      <ChoixRadios
+        fieldsetName={fieldsetName}
+        critereId={critereId}
+        legend={title}
+        options={options}
+        selected={selected}
+        onSelect={onSelect}
       />
+
+      {complement}
+
+      <NavigationButtons onPrevious={onBack} onNext={onNext} canGoBack={canGoBack} isNextDisabled={isNextDisabled} />
     </VulnerabiliteLayout>
   );
 }

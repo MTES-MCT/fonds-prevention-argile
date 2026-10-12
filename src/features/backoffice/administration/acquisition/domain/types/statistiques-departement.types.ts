@@ -10,7 +10,7 @@ export interface StatistiquesDepartement {
   /** Matomo : nombre de simulations commencées (event simulateur_step_adresse) */
   simulationsCommencees: number;
 
-  /** Matomo : nombre de simulations terminées (events result_eligible + result_non_eligible) */
+  /** Matomo : visites avec un résultat (events result_eligible + result_non_eligible) */
   simulationsTerminees: number;
 
   /** Indique si les données Matomo sont disponibles (false = dimension pas encore configurée ou pas de données) */

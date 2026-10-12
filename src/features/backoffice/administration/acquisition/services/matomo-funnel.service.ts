@@ -5,6 +5,7 @@ import type {
   MatomoFunnelFlowTableResponse,
 } from "../domain/types/matomo-funnels.types";
 import { getClientEnv } from "@/shared/config/env.config";
+import { plageDerniersJours } from "../domain/decoupage-periode";
 
 /**
  * Récupère les statistiques du funnel "Complétude du simulateur RGA" sur les 7 derniers jours
@@ -16,12 +17,7 @@ export async function getFunnelSimulateurRGA(): Promise<FunnelStatistiques> {
     const FUNNEL_ID = clientEnv.NEXT_PUBLIC_MATOMO_FUNNEL_ID || "";
     const NB_JOURS_PERIODE = 7;
 
-    // Calculer la plage des NB_JOURS_PERIODE derniers jours
-    const dateFin = new Date().toISOString().split("T")[0];
-    const dateDebut = new Date();
-    dateDebut.setDate(dateDebut.getDate() - NB_JOURS_PERIODE);
-    const dateDebutStr = dateDebut.toISOString().split("T")[0];
-    const period = `${dateDebutStr},${dateFin}`;
+    const period = plageDerniersJours(NB_JOURS_PERIODE);
 
     // Récupérer les données du funnel
     const funnelData = await fetchMatomoFunnel(FUNNEL_ID, "range", period);

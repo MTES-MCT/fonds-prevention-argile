@@ -6,22 +6,23 @@ import {
   getTableauDeBordStatsAction,
   getMatomoSimulationsStatsAction,
   getDepartementsDisponiblesAction,
-  getTopDepartementsMatomoAction,
   getTopCommunesMatomoAction,
 } from "@/features/backoffice/administration/tableau-de-bord/actions/tableau-de-bord.actions";
 import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
-  DepartementStats,
   CommuneSimulationsStats,
 } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { DepartementDisponible } from "@/features/backoffice/administration/acquisition/domain/types";
+import { totalDepuisEntonnoir } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
 import { getStatistiquesAction } from "@/features/backoffice/administration/acquisition/actions/get-statistiques.action";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
 import EntonnoirEligibilite from "./simulateur/EntonnoirEligibilite";
 import DetailEtapesFunnel from "./simulateur/DetailEtapesFunnel";
 import MotifsIneligibiliteCard from "./simulateur/MotifsIneligibiliteCard";
 import TopSimulationsCard from "./simulateur/TopSimulationsCard";
+import SimulationsParDepartementTable from "./simulateur/SimulationsParDepartementTable";
+import { useTopDepartementsMatomo } from "./simulateur/useTopDepartementsMatomo";
 import SiteVitrineTab from "./site-vitrine/SiteVitrineTab";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import {
@@ -45,8 +46,12 @@ export default function AcquisitionPanel() {
   const [stats, setStats] = useState<TableauDeBordStats | null>(null);
   const [matomoSimuStats, setMatomoSimuStats] = useState<MatomoSimulationsStats | null>(null);
   const [matomoLoaded, setMatomoLoaded] = useState(false);
-  const [topDepartementsMatomo, setTopDepartementsMatomo] = useState<DepartementStats[] | null>(null);
-  const [topDeptsLoading, setTopDeptsLoading] = useState(true);
+  const {
+    departements: topDepartementsMatomo,
+    loading: topDeptsLoading,
+    erreur: topDeptsErreur,
+    reessayer: reessayerTopDepts,
+  } = useTopDepartementsMatomo(periodeId, codeDepartement, partner);
   const [topCommunesMatomo, setTopCommunesMatomo] = useState<CommuneSimulationsStats[] | null>(null);
   const [topCommunesLoading, setTopCommunesLoading] = useState(true);
   const [matomoStats, setMatomoStats] = useState<Statistiques | null>(null);
@@ -121,28 +126,6 @@ export default function AcquisitionPanel() {
     };
   }, [periodeId, codeDepartement, partner]);
 
-  // Charger le top departements Matomo (simulations toutes sources) quand les filtres changent
-  useEffect(() => {
-    let cancelled = false;
-    setTopDepartementsMatomo(null);
-    setTopDeptsLoading(true);
-
-    async function loadTopDepts() {
-      const result = await getTopDepartementsMatomoAction(periodeId, codeDepartement || undefined, partner);
-      if (!cancelled) {
-        if (result.success) {
-          setTopDepartementsMatomo(result.data);
-        }
-        setTopDeptsLoading(false);
-      }
-    }
-
-    loadTopDepts();
-    return () => {
-      cancelled = true;
-    };
-  }, [periodeId, codeDepartement, partner]);
-
   // Charger le top communes Matomo quand les filtres changent
   useEffect(() => {
     let cancelled = false;
@@ -211,7 +194,7 @@ export default function AcquisitionPanel() {
                   aria-selected={activeTab === "simulateur"}
                   aria-controls="tab-acquisition-simulateur-panel"
                   onClick={() => setActiveTab("simulateur")}>
-                  Simulateur d'eligibilite
+                  Simulateur d'éligibilité
                 </button>
               </li>
               <li role="presentation">
@@ -255,18 +238,16 @@ export default function AcquisitionPanel() {
               <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
                 <div className="fr-col-12 fr-col-lg-6">
                   <TopSimulationsCard
-                    title="Top 5 simulations par departement"
-                    columnLabel="Departements"
-                    tooltip="Données Matomo (toutes simulations, y compris anonymes)"
-                    rows={
-                      topDepartementsMatomo
-                        ?.sort((a, b) => b.simulations - a.simulations)
-                        .slice(0, 5)
-                        .map((d) => ({
-                          label: `${d.codeDepartement} ${d.nomDepartement}`,
-                          simulations: d.simulations,
-                        })) ?? []
-                    }
+                    title="Top 5 simulations par département"
+                    columnLabel="Départements"
+                    tooltip="Données Matomo : visites ayant affiché un résultat, anonymes comprises. Ce sont les cinq premières lignes du tableau par département ci-dessous."
+                    rows={[...(topDepartementsMatomo ?? [])]
+                      .sort((a, b) => b.simulations - a.simulations)
+                      .slice(0, 5)
+                      .map((d) => ({
+                        label: `${d.codeDepartement} ${d.nomDepartement}`,
+                        simulations: d.simulations,
+                      }))}
                     loading={topDeptsLoading}
                   />
                 </div>
@@ -274,7 +255,7 @@ export default function AcquisitionPanel() {
                   <TopSimulationsCard
                     title="Top 5 simulations par communes"
                     columnLabel="Communes"
-                    tooltip="Données Matomo (toutes simulations, y compris anonymes)"
+                    tooltip="Données Matomo : visites ayant affiché un résultat par commune, tous départements (le filtre département ne s'applique pas) ; les homonymes de départements différents sont fusionnés. Si Matomo ne répond pas ou ne renvoie rien, parcours de la base ayant une simulation."
                     rows={
                       topCommunesMatomo?.map((c) => ({
                         label: c.commune,
@@ -284,6 +265,19 @@ export default function AcquisitionPanel() {
                     loading={topCommunesLoading}
                   />
                 </div>
+              </div>
+
+              <div className="fr-mt-4w">
+                <SimulationsParDepartementTable
+                  departements={topDepartementsMatomo}
+                  loading={topDeptsLoading}
+                  erreur={topDeptsErreur}
+                  onReessayer={reessayerTopDepts}
+                  periodeId={periodeId}
+                  totalEntonnoir={totalDepuisEntonnoir(matomoSimuStats)}
+                  totalEntonnoirChargement={!matomoLoaded}
+                  filtreDepartementActif={Boolean(codeDepartement)}
+                />
               </div>
             </div>
           )}

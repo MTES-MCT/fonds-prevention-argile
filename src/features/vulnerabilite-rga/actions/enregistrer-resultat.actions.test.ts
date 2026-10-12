@@ -47,7 +47,7 @@ const answers: PartialVulnerabiliteReponses = {
   },
   vegetation: {
     arbre_proximite: "oui",
-    arbre_essence: "peuplier",
+    arbre_essence: "tres_gourmand",
     haies: "proches_denses",
     vegetation_pied_facade: "presente",
   },

@@ -52,11 +52,13 @@ import {
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
+import { appartientAuxMotifs, libelleMotifArchivage, repartirParMotif } from "../domain/motif-archivage";
 import {
   decouperPeriodeMatomo,
   formaterDateMatomo,
 } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
 import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import { regrouperSimulationsParDepartement } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
@@ -97,7 +99,7 @@ async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promi
 }
 
 /**
- * Récupère le nombre de simulations terminées depuis Matomo (eligible + non eligible).
+ * Récupère le nombre de visites avec un résultat depuis Matomo (eligible + non eligible).
  * Utilise les events par département si un code département est spécifié.
  *
  * Requête en `day`/`week`/`month` (granularité adaptée à la durée, cf. `getGranulariteForPeriode`)
@@ -585,14 +587,16 @@ async function getArchiveReasonsDistribution(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
-  partner?: PartnerKey | null
+  partner?: PartnerKey | null,
+  // Les alertes de hausse ne portent que sur des motifs ; le tableau, lui, doit retomber sur « Dossiers archivés ».
+  inclureSansMotif = false
 ): Promise<Map<string, number>> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
-    isNotNull(parcoursPrevention.archiveReason),
     gte(parcoursPrevention.archivedAt, debut),
     lt(parcoursPrevention.archivedAt, fin),
   ];
+  if (!inclureSansMotif) conditions.push(isNotNull(parcoursPrevention.archiveReason));
 
   if (codeDepartement) {
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
@@ -610,13 +614,7 @@ async function getArchiveReasonsDistribution(
     .where(and(...conditions))
     .groupBy(parcoursPrevention.archiveReason);
 
-  const distribution = new Map<string, number>();
-  for (const row of rows) {
-    if (row.reason) {
-      distribution.set(row.reason, row.count);
-    }
-  }
-  return distribution;
+  return repartirParMotif(rows, inclureSansMotif);
 }
 
 /** Nombre de motifs affichés dans le tableau principal (hors ligne "Autre") */
@@ -632,9 +630,9 @@ async function getDemandesArchiveesDetail(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<DemandesArchiveesStats> {
-  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner);
+  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner, true);
   const distributionPrecedente = previousRange
-    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner)
+    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner, true)
     : new Map<string, number>();
 
   // Total archivées sur la période
@@ -693,13 +691,11 @@ export async function getAutresDemandesArchiveesDetail(
     return { total: 0, demandes: [] };
   }
 
-  // Récupérer les parcours individuels ayant ces motifs
+  // Le motif est filtré après lecture, avec la normalisation du comptage (raison vide ou blanche = « Sans motif »).
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
-    isNotNull(parcoursPrevention.archiveReason),
     gte(parcoursPrevention.archivedAt, debut),
     lt(parcoursPrevention.archivedAt, fin),
-    inArray(parcoursPrevention.archiveReason, autresRaisons),
   ];
 
   if (codeDepartement) {
@@ -732,9 +728,10 @@ export async function getAutresDemandesArchiveesDetail(
 
   // Surface nominative : restreindre aux départements de l'agent (analyste DDT).
   // USER-first comme le listing/contrôle d'accès (cf. RBAC-ROLES §6), pas AGENT-first.
+  const lignesDuMotif = rows.filter((row) => appartientAuxMotifs(row.archiveReason, autresRaisons));
   const scopedRows =
     scopeDepartements && scopeDepartements.length > 0
-      ? rows.filter((row) =>
+      ? lignesDuMotif.filter((row) =>
           matchesTerritoire(
             getDemandeurFirstSimulation({
               rgaSimulationData: row.rgaSimulationData,
@@ -744,7 +741,7 @@ export async function getAutresDemandesArchiveesDetail(
             []
           )
         )
-      : rows;
+      : lignesDuMotif;
 
   const demandes: DemandeArchiveeDetail[] = scopedRows.map((row) => ({
     parcoursId: row.parcoursId,
@@ -752,7 +749,7 @@ export async function getAutresDemandesArchiveesDetail(
     agent: row.agentGivenName ? [row.agentGivenName, row.agentUsualName].filter(Boolean).join(" ") : null,
     structureAmo: row.entrepriseAmoNom ?? null,
     archivedAt: row.archivedAt!,
-    raison: row.archiveReason!,
+    raison: libelleMotifArchivage(row.archiveReason),
   }));
 
   return { total: demandes.length, demandes };
@@ -1069,14 +1066,10 @@ export async function getTopDepartementsMatomo(
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
+  // Sans dimension, un zéro serait indiscernable d'une vraie absence de simulation : on signale l'indisponibilité.
+  if (!dimensionId) throw new Error("NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré");
 
-  if (!dimensionId) {
-    console.warn("[getTopDepartementsMatomo] NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré, fallback BDD");
-    return getTopDepartementsStats(debut, fin, partner);
-  }
-
-  // Récupérer simulations Matomo par département + données BDD en parallèle
-  const [matomoByDept, bddStats] = await Promise.all([
+  const [matomoParValeur, bddStats] = await Promise.all([
     fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
       period: "range",
       date: dateRange,
@@ -1084,49 +1077,38 @@ export async function getTopDepartementsMatomo(
     }),
     getTopDepartementsStats(debut, fin, partner),
   ]);
-
+  const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
   if (matomoByDept.size === 0) {
-    console.warn("[getTopDepartementsMatomo] Matomo n'a retourné aucune donnée, fallback BDD");
-    return bddStats;
+    console.warn("[getTopDepartementsMatomo] aucune simulation Matomo par département : colonne Simulations à 0");
   }
 
-  // Indexer les données BDD par code département pour fusion rapide
+  // Les simulations viennent de Matomo seul : un département absent n'est pas complété par des parcours BDD (autre unité).
   const bddByDept = new Map(bddStats.map((d) => [d.codeDepartement, d]));
-
-  // Fusionner : simulations Matomo + comptes/DN BDD
   const allCodes = new Set([...matomoByDept.keys(), ...bddByDept.keys()]);
   const result: DepartementStats[] = [];
 
   for (const code of allCodes) {
     const matomo = matomoByDept.get(code);
     const bdd = bddByDept.get(code);
-    const officialCode = toOfficialCodeDepartement(code);
-    const nom = getDepartementName(code) ?? bdd?.nomDepartement ?? code;
-
-    const simulations = matomo?.total ?? bdd?.simulations ?? 0;
-    const simulationsEligibles = matomo?.eligible ?? bdd?.simulationsEligibles ?? 0;
-    const comptesCrees = bdd?.comptesCrees ?? 0;
+    const simulations = matomo?.total ?? 0;
+    const simulationsEligibles = matomo?.eligible ?? 0;
     const dossiersDN = bdd?.dossiersDN ?? 0;
 
     result.push({
-      codeDepartement: officialCode,
-      nomDepartement: nom,
+      codeDepartement: toOfficialCodeDepartement(code),
+      nomDepartement: getDepartementName(code) ?? bdd?.nomDepartement ?? code,
       simulations,
       simulationsEligibles,
       pourcentageEligibles: simulations > 0 ? Math.round((simulationsEligibles / simulations) * 100) : 0,
-      comptesCrees,
+      comptesCrees: bdd?.comptesCrees ?? 0,
       dossiersDN,
       transformationGlobale: simulations > 0 ? Math.round((dossiersDN / simulations) * 10000) / 100 : 0,
     });
   }
 
-  // Filtrer par département si demandé
-  if (codeDepartement) {
-    const normalizedFilter = normalizeCodeDepartement(codeDepartement);
-    return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
-  }
-
-  return result;
+  if (!codeDepartement) return result;
+  const normalizedFilter = normalizeCodeDepartement(codeDepartement);
+  return result.filter((d) => normalizeCodeDepartement(d.codeDepartement) === normalizedFilter);
 }
 
 /**

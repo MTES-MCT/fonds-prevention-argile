@@ -27,8 +27,7 @@ export interface VulnerabiliteEauxReponses {
 }
 
 export type ReponseArbreProximite = "oui" | "non" | "ne_sais_pas";
-/** Réponse du critère `arbre_essence` (grille-categorisation.ts) — pas de type littéral figé ici pour ne pas dupliquer la liste. */
-export type ReponseArbreEssence = string;
+export type ReponseArbreEssence = "tres_gourmand" | "grand_ornement" | "fruitier_petit" | "ne_sais_pas";
 export type ReponseHaies = "eloignees_peu_denses" | "proches_moyennement_denses" | "proches_denses" | "ne_sais_pas";
 export type ReponseVegetationPiedFacade = "absente" | "presente";
 

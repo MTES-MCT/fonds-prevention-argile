@@ -5,6 +5,8 @@ export type NiveauSynthese = "critique" | "vigilance" | "aucun";
 
 export interface SyntheseResultat {
   niveau: NiveauSynthese;
+  /** Couleur du callout : un cran sous le niveau là où la carte annonce peu ou pas d'argile. */
+  accent: NiveauSynthese;
   /** Porte le niveau en toutes lettres : l'information ne repose pas sur la seule couleur. */
   titre: string;
   texte: string;
@@ -37,9 +39,14 @@ function phrasePoints(critiques: number, vigilances: number): string {
   return `Nous avons identifié ${partCritique} et ${partVigilance}.`;
 }
 
-// La carte d'aléa est une estimation : hors zone, on relativise les points sans les retirer.
-const PHRASE_HORS_ZONE =
-  "Hors zone argileuse, ces points ont a priori peu d'impact sur votre maison. La carte d'aléa reste une estimation : s'il y a malgré tout de l'argile sous vos fondations, ils redeviennent déterminants.";
+// La carte d'aléa est une estimation : en zone faible ou hors zone, on relativise les points sans les retirer.
+const SUITE_ESTIMATION =
+  "La carte d'aléa reste une estimation : si le sol sous votre maison s'avère non argileux, ces points sont sans " +
+  "conséquence ; s'il est argileux, ils comptent et méritent votre attention, à commencer par les points critiques.";
+const PHRASES_ALEA_ATTENUE: Partial<Record<ReponseAleaRga, string>> = {
+  nul: `Hors zone argileuse, ces points ont a priori peu d'impact sur votre maison. ${SUITE_ESTIMATION}`,
+  faible: `En zone d'aléa faible, l'argile est peu présente ou peu sensible : ces points ont a priori un impact limité. ${SUITE_ESTIMATION}`,
+};
 
 export function getNiveauSynthese(compte: ComptePoints): NiveauSynthese {
   if (compte.critique > 0) return "critique";
@@ -51,11 +58,13 @@ export function getNiveauSynthese(compte: ComptePoints): NiveauSynthese {
 export function buildSyntheseResultat(aleaRga: ReponseAleaRga | undefined, compte: ComptePoints): SyntheseResultat {
   const niveau = getNiveauSynthese(compte);
   const aDesPointsATraiter = compte.critique + compte.vigilance + compte.a_verifier > 0;
+  const phraseAttenuee = aleaRga ? PHRASES_ALEA_ATTENUE[aleaRga] : undefined;
   const phrases = [
     aleaRga ? PHRASES_ALEA[aleaRga] : null,
     phrasePoints(compte.critique, compte.vigilance),
-    aleaRga === "nul" && aDesPointsATraiter ? PHRASE_HORS_ZONE : null,
+    phraseAttenuee && aDesPointsATraiter ? phraseAttenuee : null,
   ];
+  const accent = phraseAttenuee && niveau === "critique" ? "vigilance" : niveau;
 
-  return { niveau, titre: TITRES[niveau], texte: phrases.filter(Boolean).join(" ") };
+  return { niveau, accent, titre: TITRES[niveau], texte: phrases.filter(Boolean).join(" ") };
 }

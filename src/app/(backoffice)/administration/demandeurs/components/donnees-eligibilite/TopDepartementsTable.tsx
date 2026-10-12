@@ -32,14 +32,14 @@ export function TopDepartementsTable({ stats, loading }: TopDepartementsTablePro
         border: "1px solid var(--border-default-grey)",
       }}>
       <div className="fr-px-2w fr-pt-2w">
-        <h3 className="fr-h6 fr-mb-0">Top 5 simulations par département</h3>
+        <h3 className="fr-h6 fr-mb-0">Top 5 simulations par département (comptes créés)</h3>
       </div>
       <div className="fr-table fr-mb-0 fr-px-4v fr-pb-2w">
         <div className="fr-table__wrapper" style={{ overflow: "hidden" }}>
           <div className="fr-table__container" style={{ overflow: "hidden" }}>
             <div className="fr-table__content">
               <table>
-                <caption className="sr-only">Top 5 départements par simulations</caption>
+                <caption className="sr-only">Top 5 départements par simulations (comptes créés)</caption>
                 <thead>
                   <tr>
                     <th scope="col">Départements</th>

@@ -117,7 +117,7 @@ export function TableauDeBord() {
   // Simulations : Matomo uniquement (pas de fallback BDD pour eviter de sous-compter)
   const simulationsValue = matomoSimuStats?.simulationsMatomo ?? null;
   const simulationsEligiblesValue = matomoSimuStats?.simulationsEligibles ?? null;
-  // Carte fusionnée "Simulations éligibles" : "éligibles / terminées", même forme que
+  // Carte fusionnée "Visites avec un résultat éligible" : "éligibles / avec un résultat", même forme que
   // "Réponses d'AMO en attente" (X / Y).
   const simulationEligibleValue = !matomoLoaded
     ? "..."
@@ -170,15 +170,15 @@ export function TableauDeBord() {
               variation={matomoSimuStats?.visiteursUniques?.variation ?? null}
               loading={false}
               compact
-              tooltip="Données Matomo (VisitsSummary)"
+              tooltip="Données Matomo : personnes distinctes sur la période. La somme de plusieurs périodes peut dépasser le total : un visiteur revenu compte dans chacune."
             />
             <DashboardStatCard
               value={simulationEligibleValue}
-              label="Simulations éligibles"
+              label="Visites avec un résultat éligible"
               variation={simulationsEligiblesValue?.variation ?? null}
               loading={false}
               compact
-              tooltip="Simulations éligibles / simulations terminées sur la période — données Matomo"
+              tooltip="Données Matomo : visites ayant affiché un résultat éligible / visites ayant affiché un résultat, sur la période. Une visite qui obtient les deux types compte deux fois au total."
             />
             <DashboardStatCard
               value={stats?.comptesCrees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -186,7 +186,7 @@ export function TableauDeBord() {
               variation={stats?.comptesCrees.variation ?? null}
               loading={loading}
               compact
-              tooltip="Données base de données"
+              tooltip="Parcours créés sur la période. Avec un filtre département, seulement ceux qui ont une simulation. La page publique compte tous les parcours présents en base, sans filtre de date."
             />
             <DashboardStatCard
               value={stats?.demandesArchivees.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -208,7 +208,7 @@ export function TableauDeBord() {
               variation={stats?.reponsesAmoEnAttente.variation ?? null}
               loading={loading}
               compact
-              tooltip="Réponses en attente / demandes AMO envoyées sur la période"
+              tooltip="Validations encore en attente (hors parcours archivés) / toutes celles dont la date de choix tombe dans la période, refus et autonomie compris."
             />
             <DashboardStatCard
               value={stats?.dossiersEnAttenteDepot.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -224,7 +224,7 @@ export function TableauDeBord() {
               variation={stats?.dossiersDeposesDN.variation ?? null}
               loading={loading}
               compact
-              tooltip="Données base de données"
+              tooltip="Formulaires transmis pendant la période, toutes étapes confondues. La page publique ne compte que l'éligibilité ; l'onglet Demandeurs montre l'état actuel."
             />
             <DashboardStatCard
               value={stats?.dossiersInstruitsValides.valeur.toLocaleString("fr-FR") ?? "..."}
@@ -232,7 +232,7 @@ export function TableauDeBord() {
               variation={stats?.dossiersInstruitsValides.variation ?? null}
               loading={loading}
               compact
-              tooltip="Données base de données"
+              tooltip="Formulaires acceptés par la DDT pendant la période, toutes étapes confondues. La page publique ne compte que l'éligibilité."
             />
           </div>
 

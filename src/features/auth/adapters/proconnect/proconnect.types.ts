@@ -55,6 +55,8 @@ export interface ProConnectIdToken {
   sub: string; // Identifiant unique
   nonce: string; // Nonce de sécurité
   idp?: string; // Fournisseur d'identité utilisé
+  acr?: string; // Niveau eIDAS de l'authentification
+  amr?: string[]; // Méthodes d'authentification
 }
 
 /**
@@ -76,7 +78,7 @@ export interface ProConnectAuthParams {
   scope: string;
   state: string;
   nonce: string;
-  acr_values: string;
+  claims: string;
 }
 
 /**
@@ -88,4 +90,10 @@ export interface ProConnectCallbackResult {
   shouldLogout?: boolean;
   // Rôle de l'agent authentifié, pour aiguiller la redirection post-login.
   role?: UserRole;
+  // Code d'erreur porté jusqu'à la page de connexion quand il appelle un message dédié.
+  code?: typeof PC_CALLBACK_ERROR_CODES.MFA_REQUISE;
 }
+
+export const PC_CALLBACK_ERROR_CODES = {
+  MFA_REQUISE: "pc_mfa_required",
+} as const;

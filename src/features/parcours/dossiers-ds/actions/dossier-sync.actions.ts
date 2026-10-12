@@ -7,6 +7,7 @@ import { DSStatus } from "../domain/value-objects/ds-status";
 import type { Step } from "../../core/domain/value-objects/step";
 import type { ActionResult } from "@/shared/types";
 import { getParcoursComplet, moveToNextStep } from "../../core/services";
+import { parcoursRepo } from "@/shared/database/repositories";
 
 /**
  * Actions de synchronisation des statuts DS
@@ -20,6 +21,12 @@ interface SyncResult {
   // (sert à l'UI pour rafraîchir même quand `updated` est false — cas d'un
   // dossier déjà `valide` qui passe à l'étape suivante sans changement DS).
   stepAdvanced?: boolean;
+}
+
+// Une progression concurrente (CRON) a pu changer l'étape : ses dossiers n'ont pas été relus ici.
+async function etapeInchangee(parcoursId: string, etapeAttendue: Step): Promise<boolean> {
+  const parcours = await parcoursRepo.findById(parcoursId);
+  return parcours?.currentStep === etapeAttendue;
 }
 
 /**
@@ -80,8 +87,15 @@ export async function syncUserDossierStatus(step: Step): Promise<ActionResult<Sy
     // `moveToNextStep` est idempotent et no-op (aucune écriture) si le statut n'est pas
     // VALIDE. Voir FLOW-AND-SYNC §6.1.
     const stepBefore = parcours.parcours.currentStep;
-    const moveResult = await moveToNextStep(session.userId);
-    const stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
+    if (!syncResult.success && step === stepBefore) {
+      // Même règle que le CRON : pas de progression sur un statut que DN n'a pas confirmé.
+      return syncResult;
+    }
+    let stepAdvanced = false;
+    if (await etapeInchangee(parcours.parcours.id, stepBefore)) {
+      const moveResult = await moveToNextStep(session.userId);
+      stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
+    }
 
     if (!syncResult.success) {
       return syncResult;
@@ -103,7 +117,9 @@ export async function syncUserDossierStatus(step: Step): Promise<ActionResult<Sy
 /**
  * Synchronise tous les dossiers de l'utilisateur
  */
-export async function syncAllUserDossiers(): Promise<ActionResult<{ totalUpdated: number; stepAdvanced?: boolean }>> {
+export async function syncAllUserDossiers(): Promise<
+  ActionResult<{ totalUpdated: number; totalErreurs: number; stepAdvanced?: boolean }>
+> {
   try {
     const session = await getSession();
     if (!session?.userId) {
@@ -134,18 +150,21 @@ export async function syncAllUserDossiers(): Promise<ActionResult<{ totalUpdated
       }))
     );
 
-    // Auto-progression côté UI (no-op si l'étape courante n'est pas VALIDE). Voir §6.1.
-    const stepBefore = parcours.parcours.currentStep;
-    const moveResult = await moveToNextStep(session.userId);
-    const stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
-
     if (!result.success) {
       return result;
     }
 
+    // Auto-progression côté UI (no-op si l'étape courante n'est pas VALIDE). Voir §6.1.
+    const stepBefore = parcours.parcours.currentStep;
+    let stepAdvanced = false;
+    if (!result.data.etapesEnErreur.includes(stepBefore) && (await etapeInchangee(parcours.parcours.id, stepBefore))) {
+      const moveResult = await moveToNextStep(session.userId);
+      stepAdvanced = moveResult.success && moveResult.data.state.step !== stepBefore;
+    }
+
     return {
       success: true,
-      data: { ...result.data, stepAdvanced },
+      data: { totalUpdated: result.data.totalUpdated, totalErreurs: result.data.etapesEnErreur.length, stepAdvanced },
     };
   } catch (error) {
     console.error("Erreur syncAllUserDossiers:", error);

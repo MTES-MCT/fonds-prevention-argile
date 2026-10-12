@@ -35,6 +35,7 @@ interface ResultVulnerabiliteProps {
 export function ResultVulnerabilite({ answers, result, onRestart }: ResultVulnerabiliteProps) {
   const synthese = buildSyntheseResultat(answers.adresse?.aleaRga, compterPoints(result.points));
   const sections = getSectionsRecommandations(result.points);
+  const eligibleFonds = remplitCriteresEligibiliteFonds(answers);
 
   return (
     <div className="bg-[var(--background-alt-grey)] md:bg-transparent">
@@ -45,12 +46,12 @@ export function ResultVulnerabilite({ answers, result, onRestart }: ResultVulner
               <h1 className="fr-h4 fr-mb-4w">Les points de vulnérabilité de votre logement</h1>
 
               <SyntheseResultat synthese={synthese} />
-              <CalloutExpertRga afficherLienEligibilite={remplitCriteresEligibiliteFonds(answers)} />
+              <CalloutExpertRga eligibleFonds={eligibleFonds} />
               <ComprendreSourcesVulnerabilite />
               <RecommandationsList sections={sections} />
 
               <div className="flex flex-col md:flex-row md:justify-end fr-mt-4w">
-                <TelechargerPdfButton synthese={synthese} sections={sections} />
+                <TelechargerPdfButton synthese={synthese} sections={sections} eligibleFonds={eligibleFonds} />
 
                 <button
                   type="button"

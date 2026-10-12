@@ -97,9 +97,9 @@ export interface TableauDeBordStats {
   simulationsLancees: StatAvecVariation;
   simulationsEligibles: StatAvecVariation;
   simulationsNonEligibles: StatAvecVariation;
-  /** Total simulations terminees (Matomo, inclut celles sans inscription FC) */
+  /** Total des visites avec un résultat (Matomo, inclut celles sans inscription FC) */
   simulationsMatomo: StatAvecVariation;
-  /** Simulations terminees sans inscription FC = simulationsMatomo - comptesCrees */
+  /** Visites avec un résultat sans inscription FC = simulationsMatomo - comptesCrees */
   simulationsSansInscription: StatAvecVariation;
   comptesCrees: StatAvecVariation;
   tauxTransformation: StatAvecVariation;

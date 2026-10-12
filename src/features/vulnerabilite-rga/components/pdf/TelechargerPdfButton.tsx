@@ -14,13 +14,14 @@ const CLASSES_BOUTON = "fr-btn fr-btn--secondary !w-full md:!w-auto justify-cent
 interface TelechargerPdfButtonProps {
   synthese: SyntheseResultat;
   sections: SectionRecommandations[];
+  eligibleFonds: boolean;
 }
 
 /**
  * Isolé dans son propre module pour être chargé en `next/dynamic` depuis l'écran de
  * résultat : c'est le seul point d'entrée vers `@react-pdf/renderer` (~256 Ko gzip).
  */
-export function TelechargerPdfButton({ synthese, sections }: TelechargerPdfButtonProps) {
+export function TelechargerPdfButton({ synthese, sections, eligibleFonds }: TelechargerPdfButtonProps) {
   const { trackEvent } = useMatomo();
   const [illustrations, setIllustrations] = useState<IllustrationsPdf | null>(null);
   // Clé texte : `sections` est recalculé à chaque rendu du parent, la liste d'ids non.
@@ -47,7 +48,14 @@ export function TelechargerPdfButton({ synthese, sections }: TelechargerPdfButto
 
   return (
     <PDFDownloadLink
-      document={<VulnerabilitePdfDocument synthese={synthese} sections={sections} illustrations={illustrations} />}
+      document={
+        <VulnerabilitePdfDocument
+          synthese={synthese}
+          sections={sections}
+          illustrations={illustrations}
+          eligibleFonds={eligibleFonds}
+        />
+      }
       fileName="fonds-prevention-argile-vulnerabilite-rga.pdf"
       className={CLASSES_BOUTON}
       onClick={() => trackEvent(MATOMO_EVENTS.VULNERABILITE_PDF_DOWNLOAD)}>

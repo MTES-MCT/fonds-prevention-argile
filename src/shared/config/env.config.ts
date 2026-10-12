@@ -89,7 +89,6 @@ const proConnectEnvSchema = z.object({
 
   // Sécurité
   PC_STATE_TTL: z.coerce.number().default(300),
-  PC_ACR_VALUES: z.string().default("eidas1"),
 });
 
 // Schéma de validation des variables d'environnement côté serveur

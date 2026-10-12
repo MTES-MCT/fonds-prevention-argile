@@ -9,6 +9,7 @@ export * from "./domain/entities";
 export * from "./domain/value-objects/constants";
 export * from "./domain/value-objects/configs/routes.config";
 export * from "./domain/value-objects/configs/session.config";
+export * from "./domain/value-objects/session-mfa";
 
 // JWT decode uniquement (sans crypto Node.js)
 export { decodeToken, isTokenExpired, getRoleFromToken } from "./utils/jwt-decode.utils";
