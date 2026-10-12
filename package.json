@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.85.0",
+  "version": "1.85.1",
   "private": true,
   "packageManager": "pnpm@11.24.0",
   "engines": {
@@ -49,6 +49,7 @@
     "ds:backfill-processed-at": "tsx --tsconfig scripts/tsconfig.json scripts/ops/ds/backfill-processed-at.ts",
     "ds:backfill-tentatives": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/backfill-tentatives.ts",
     "ds:reconcilier": "tsx --tsconfig scripts/tsconfig.json scripts/ops/sync-erreurs/reconcilier-dossiers.ts",
+    "ds:analyser-ecarts": "tsx --tsconfig scripts/tsconfig.json scripts/ops/audit/analyser-ecarts-dn.ts",
     "fix:double-progression": "tsx scripts/ops/fix/fix-double-progression-amo.ts",
     "fix:reouvrir-demande": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/reouvrir-demande.ts",
     "fix:detacher-amo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/detacher-amo.ts",

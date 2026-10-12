@@ -34,13 +34,25 @@ chaque entrée renvoie.
   Le CRON rattrape les parcours actifs à son premier passage, mais `findActiveForSync` exclut les
   parcours archivés ou complétés, et `pnpm ds:backfill-processed-at` ne sélectionne que les dossiers
   déjà finaux en base. Ceux-là restent donc faux.
-- **Préalable** : mesurer en production avec `pnpm ds:analyser-ecarts` (cause « état DN absent de
-  l'enum ds_status »), après le déploiement de #392 et un premier run du CRON. Ce script vit sur la
+- **Préalable** : mesurer en production avec `pnpm ds:analyser-ecarts` (cause « classé sans suite dans DN,
+  jamais recopié en base »), après le déploiement de #392 et un premier run du CRON. Ce script vit sur la
   branche `feat/audit-ecarts-dn`, pas encore mergée : il faut la merger d'abord.
 - **À faire si des dossiers restent** : un script ops ponctuel, dry-run par défaut, qui écrit le
   statut traduit (`dsStatusFromEtatDn`) et les dates DN, **sans** progression ni réouverture du
   parcours.
 - **Référence** : [FLOW-AND-SYNC §3.2](parcours/FLOW-AND-SYNC.md#32-mapping-ds--interne).
+
+### Un lien FPA remplacé par du texte échappe à la détection « modifié à la main »
+
+- **Constat** : `lireAnnotationFpa` ne relève `prefilledValueModified` que sur une annotation dont la
+  valeur contient encore l'URL du dossier. Une annotation écrasée par un texte libre n'est donc pas
+  vue comme modifiée : la réconciliation et `pnpm ds:analyser-ecarts` la classent comme dossier sans
+  lien FPA, au lieu de la signaler pour arbitrage.
+- **Pourquoi reporté** : le helper sert la réconciliation en écriture (`--apply`) ; changer son verdict
+  change les rattachements, ce qui sort d'une PR de script d'analyse.
+- **À faire** : lire le drapeau du descripteur FPA avant d'analyser sa valeur, avec un test sur une
+  annotation modifiée devenue illisible.
+- **Référence** : [FLOW-AND-SYNC §2.6.1](parcours/FLOW-AND-SYNC.md#261-annotation-privée--lien-vers-le-dossier-fpa--adr-0025).
 
 ### Transition d'étape conditionnée à l'étape attendue
 
@@ -65,6 +77,20 @@ chaque entrée renvoie.
 Écarts de définition entre statistiques au libellé proche, listés dans
 [STATISTIQUES.md § Écarts connus](stats/STATISTIQUES.md#9-écarts-connus). Chacun attend un arbitrage
 produit : le code est simple une fois la définition choisie.
+
+### Bornes de mois de `/stats` calculées en heure locale
+
+- **Constat** : `finMoisPrecedent` et `lifetimeMatomoRangeMensuel` (`public-stats.service.ts`) lisent la
+  date en heure **locale** du serveur, alors que les dates en base et `aggregerParMois` sont en UTC.
+  Sur un serveur en `Europe/Paris`, la dernière heure de septembre (22 h 30 UTC) ferait inclure
+  septembre dans le graphique alors qu'il serait exclu en UTC. Scalingo tourne en UTC : aucun écart
+  constaté en production.
+- **Pourquoi reporté** : toucher le calcul d'une statistique publique impose d'en mettre à jour
+  l'inventaire et d'arbitrer la convention, hors du périmètre d'un script d'analyse. `pnpm
+ds:analyser-ecarts` suppose le même serveur en UTC.
+- **À faire** : une définition UTC unique de la fenêtre, partagée par le service et l'audit, avec un
+  test au changement de mois.
+- **Référence** : [STATISTIQUES.md](stats/STATISTIQUES.md).
 
 ### Suivi du simulateur : écrans de correction, réaffichage, nom de l'évènement
 
