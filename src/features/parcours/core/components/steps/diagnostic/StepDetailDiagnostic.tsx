@@ -1,5 +1,6 @@
 "use client";
 
+import { NumeroDossierDn } from "@/features/parcours/dossiers-ds/components/NumeroDossierDn";
 import Link from "next/link";
 import { useTransition, useState } from "react";
 import { isStepBefore, Step } from "../../../domain";
@@ -207,6 +208,7 @@ export default function StepDetailDiagnostic({ pieces }: { pieces?: PieceJustifi
             )}
           </>
         )}
+        <NumeroDossierDn numero={dossiers?.find((d) => d.demarcheEtape === Step.DIAGNOSTIC)?.numeroDs} />
       </div>
     </div>
   );
