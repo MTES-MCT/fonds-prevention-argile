@@ -16,6 +16,7 @@ import {
 import { ROUTES } from "@/features/auth/domain/value-objects";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { formatNomComplet, formatDaysAgoSplit, formatDate } from "@/shared/utils";
+import { ReferenceChorusCell } from "@/features/parcours/dossiers-ds/components/ReferenceChorusCell";
 import { ActionMenu } from "../../shared/components/ActionMenu";
 import { ArchiveModal } from "../../shared/components/ArchiveModal";
 import { UnarchiveModal } from "../../shared/components/UnarchiveModal";
@@ -145,6 +146,7 @@ export function DossiersSuivisTable({
                         )}
                       </span>
                     </th>
+                    <th scope="col">Réf. Chorus</th>
                     <th scope="col" style={{ minWidth: "320px" }}>
                       <span className="flex items-center justify-between gap-2">
                         Précisions
@@ -167,7 +169,7 @@ export function DossiersSuivisTable({
                 <tbody>
                   {dossiers.length === 0 ? (
                     <tr>
-                      <td colSpan={9} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
+                      <td colSpan={10} style={{ textAlign: "center", color: "var(--text-mention-grey)" }}>
                         Aucun dossier
                       </td>
                     </tr>
@@ -258,6 +260,9 @@ export function DossiersSuivisTable({
                             <p className={`fr-badge fr-badge--sm fr-badge--no-icon ${badge.colorClass}`}>
                               {badge.label}
                             </p>
+                          </td>
+                          <td style={greyStyle}>
+                            <ReferenceChorusCell suivi={dossier.suiviChorus} />
                           </td>
                           <td
                             style={{

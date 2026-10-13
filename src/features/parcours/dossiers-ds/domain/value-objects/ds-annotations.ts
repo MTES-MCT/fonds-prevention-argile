@@ -68,6 +68,24 @@ export const DS_ANNOTATION_ZONE_ALEA_ELIGIBILITE: Record<number, string> = {
   146377: "Q2hhbXAtNzAzNTUwOA==", // préprod
 };
 
+/** « Numéro de tiers fournisseur » (nombre entier), saisi par la DDT dans Chorus. */
+export const DS_ANNOTATION_TIERS_FOURNISSEUR_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTkzOQ==", // prod
+  146377: "Q2hhbXAtNzAzNDM2NA==", // préprod
+};
+
+/** « Numéro d'EJ » (nombre entier). */
+export const DS_ANNOTATION_NUMERO_EJ_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTk0MA==", // prod
+  146377: "Q2hhbXAtNzAzNDM2Nw==", // préprod
+};
+
+/** « Montant de subvention » (nombre décimal). */
+export const DS_ANNOTATION_MONTANT_SUBVENTION_ELIGIBILITE: Record<number, string> = {
+  126061: "Q2hhbXAtNzAzNTkzNg==", // prod
+  146377: "Q2hhbXAtNzAzNDM2Mw==", // préprod
+};
+
 export interface IdsAnnotationsInstruction {
   avisImpot?: string;
   typeMenage?: string;
@@ -101,4 +119,18 @@ export function getAnnotationLienFpaId(step: Step, demarcheNumber: number): stri
   if (step === Step.DIAGNOSTIC) return DS_FIELD_IDS.DIAGNOSTIC.ANNOTATION_LIEN_FPA;
   if (step === Step.DEVIS) return DS_FIELD_IDS.DEVIS.ANNOTATION_LIEN_FPA;
   return null;
+}
+
+export interface IdsAnnotationsChorus {
+  tiersFournisseur?: string;
+  numeroEj?: string;
+  montantSubvention?: string;
+}
+
+export function idsAnnotationsChorus(demarcheNumber: number): IdsAnnotationsChorus {
+  return {
+    tiersFournisseur: DS_ANNOTATION_TIERS_FOURNISSEUR_ELIGIBILITE[demarcheNumber],
+    numeroEj: DS_ANNOTATION_NUMERO_EJ_ELIGIBILITE[demarcheNumber],
+    montantSubvention: DS_ANNOTATION_MONTANT_SUBVENTION_ELIGIBILITE[demarcheNumber],
+  };
 }

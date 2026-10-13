@@ -554,6 +554,24 @@ modifier après le préremplissage (`localiserMaison`, `services/adresse-maison.
 > `--afficher-valeurs`),
 > `pnpm ds:lister-instructeurs <numero>` (id et groupes de chaque instructeur).
 
+### 2.6.4 Suivi Chorus (annotations lues après dépôt)
+
+La DDT saisit dans trois annotations privées de la **démarche d'éligibilité** le numéro de tiers
+fournisseur, le numéro d'EJ et le montant de la subvention, au fil du traitement dans Chorus. Le
+CRON les reporte dans `dossiers_demarches_simplifiees` (`chorus_*`), chacune avec la date où la
+synchro l'a **vue** (`chorus_*_at`), pas la date de l'acte côté DDT.
+
+- **Lecture seule** : rien n'est écrit dans DN. `stringValue` couvre les annotations numériques, pas de
+  fragment GraphQL dédié ; un tiers ou un EJ perd ses zéros de tête (entier côté DN).
+- **Règle** : valeur nouvelle ou corrigée = enregistrée avec la date du jour ; inchangée = date de
+  première détection conservée ; vidée dans DN = rien n'est effacé ; non numérique = ignorée
+  (`calculerMajChorus`). Le run dit, pour chacune des trois valeurs, si elle a été reportée, laissée inchangée ou trouvée absente de DN (jamais son contenu) : badges « Chorus : … » par parcours quand une valeur change, ligne « Suivi Chorus » de l'encart (§ 5) et une ligne `[chorus]` dans les logs serveur. Un échec s'y affiche (« Échec Chorus ») sans compter dans les erreurs du run.
+- **Éligibilité seulement** : les démarches diagnostic et devis ne portent pas ces annotations ; les ids
+  vivent dans `ds-annotations.ts` (relever avec `pnpm ds:fetch-schema`).
+- **Affichage** : colonne « Réf. Chorus » du listing agent (tiers et EJ), bloc « Suivi Chorus » sous
+  l'étape éligibilité du détail dossier, masqué tant que rien n'est saisi. Le demandeur ne voit que le
+  numéro de son dossier DN, jamais le suivi Chorus.
+
 ### 2.7 Arrêt de l'accompagnement (demandeur ou AMO) — ADR-0018
 
 Contrairement au détachement ops (§2.5), l'arrêt est ici **déclenchable depuis l'UI**, des
@@ -1302,7 +1320,7 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 3. Récupère tous les parcours actifs via `parcoursRepo.findActiveForSync()` (`archived_at IS NULL AND completed_at IS NULL`).
 4. Pour chaque parcours, dans un `try/catch` indépendant :
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
-   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
+   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Pour l'éligibilité, reporte le suivi Chorus (§ 2.6.4, best-effort). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
    c. Appelle `recomputeParcoursStatus` une fois.
    d. Si `current_status === VALIDE`, que la synchro du dossier de l'étape courante n'a **pas échoué** (une étape sans dossier numéroté n'est pas un échec) et que l'étape n'a pas changé pendant la synchro, appelle `moveToNextStep` qui :
    - avance à l'étape suivante si non finale ;
@@ -1400,7 +1418,7 @@ URL : `/administration/synchronisations` (réservée `SUPER_ADMINISTRATEUR`).
 colonne de badges (annotations écrites, « À jour », « Échec », « Échec du lien FPA », « Adresse non
 géocodée »). Un lien FPA
 complété sans contrôle de l'avis laisse l'issue à `null` : il n'est pas compté comme un contrôle.
-Trois règles :
+Le suivi Chorus (§ 2.6.4) s'y ajoute : une ligne « Suivi Chorus » (dossiers lus ; par valeur, reportés / inchangés / absents de DN ; échecs) et des badges « Chorus : tiers fournisseur / N° d'EJ / montant » par parcours dont une valeur a changé. Trois règles :
 
 - **Des actions, jamais des valeurs.** Une ligne ne garde que l'issue et les **noms** des
   annotations écrites ; ni montant, ni tranche, ni taux, ni verdict.

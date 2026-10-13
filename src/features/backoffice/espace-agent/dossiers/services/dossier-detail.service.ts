@@ -19,6 +19,7 @@ import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { toSuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
@@ -161,6 +162,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       };
     }
 
+    const dossierEligibilite = allDossiersDS.find((d) => d.step === Step.ELIGIBILITE);
     const dossierCourant = allDossiersDS.find((d) => d.step === dossier.parcours.currentStep);
     const formulaireCourant: FormulaireCourant | null = dossierCourant
       ? {
@@ -218,6 +220,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       suiviDepuis: dossier.validation.valideeAt,
       dates,
       dossiersTimeline,
+      suiviChorus: dossierEligibilite ? toSuiviChorus(dossierEligibilite) : null,
       formulaireCourant,
       agentEditInfo,
       creator,
