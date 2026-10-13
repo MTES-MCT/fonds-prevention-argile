@@ -1,4 +1,5 @@
 import { getServerEnv } from "@/shared/config/env.config";
+import { DS_FIELD_IDS } from "../../domain/value-objects/ds-field-ids";
 import type {
   DemarcheDetailed,
   Dossier,
@@ -536,6 +537,8 @@ export class DemarchesSimplifieesClient {
     dateTraitement?: string;
     dateDerniereModificationChamps?: string;
     annotations: AnnotationLue[];
+    /** Réponse à « Avez-vous un mandataire, et si oui, est-il financier ? » (éligibilité). */
+    reponseMandataire?: string | null;
   } | null> {
     const dossier = await this.getDossier(dossierNumber);
     if (!dossier) return null;
@@ -550,6 +553,8 @@ export class DemarchesSimplifieesClient {
         champDescriptorId: a.champDescriptorId ?? "",
         stringValue: a.stringValue ?? null,
       })),
+      reponseMandataire:
+        (dossier.champs ?? []).find((c) => c.id === DS_FIELD_IDS.ELIGIBILITE.MANDATAIRE_FINANCIER)?.stringValue ?? null,
     };
   }
 

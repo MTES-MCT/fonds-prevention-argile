@@ -19,6 +19,8 @@ import {
 } from "@/shared/domain/value-objects/bilan-annotations-dn";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
+import { renseignerMandatFinancierSiInconnu } from "../../amo/services/mandat-financier.service";
+import { estMandatFinancierDeclareDansDn } from "../domain/mandat-financier-dn";
 import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
 import { synchroniserChorus } from "./chorus-sync.service";
 import { completerLienFpa } from "./lien-fpa.service";
@@ -275,6 +277,21 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       } catch (error) {
         console.warn(`Suivi Chorus non reporté (parcours ${parcoursId}) :`, error);
         echecChorus = true;
+      }
+    }
+
+    if (
+      dossier.step === Step.ELIGIBILITE &&
+      result.success &&
+      estMandatFinancierDeclareDansDn(result.data?.reponseMandataire)
+    ) {
+      // Best-effort : ne remplit qu'un mandat inconnu, jamais une réponse déjà donnée par l'AMO.
+      try {
+        if (await renseignerMandatFinancierSiInconnu(parcoursId)) {
+          console.info(`Mandat financier repris de DN (parcours ${parcoursId})`);
+        }
+      } catch (error) {
+        console.warn(`Mandat financier non repris de DN (parcours ${parcoursId}) :`, error);
       }
     }
 
