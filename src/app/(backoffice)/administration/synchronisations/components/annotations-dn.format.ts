@@ -1,3 +1,4 @@
+import { CHORUS_REPORTES } from "@/shared/domain/value-objects/bilan-annotations-dn";
 import type {
   AnnotationDn,
   BilanAnnotationsDn,
@@ -45,8 +46,10 @@ export function resumerBilanAnnotationsDn(bilan: BilanAnnotationsDn | null): str
   const liens = bilan.ecritures.lienFpa;
   if (liens > 0) parties.push(liens > 1 ? `${liens} liens FPA complétés` : "1 lien FPA complété");
   if (bilan.echecsLienFpa > 0) parties.push(`${pluriel(bilan.echecsLienFpa, "échec")} de lien FPA`);
-  if (bilan.chorus && bilan.chorus.dossiers > 0)
-    parties.push(`${bilan.chorus.dossiers} Chorus reporté${bilan.chorus.dossiers > 1 ? "s" : ""}`);
+  if (bilan.chorus && bilan.chorus.lus > 0) {
+    const reportes = CHORUS_REPORTES.reduce((somme, nom) => somme + bilan.chorus!.statuts[nom].reporte, 0);
+    parties.push(`${pluriel(reportes, "valeur")} Chorus reportée${reportes > 1 ? "s" : ""}`);
+  }
   if (bilan.chorus && bilan.chorus.echecs > 0) parties.push(`${pluriel(bilan.chorus.echecs, "échec")} Chorus`);
   return parties.join(" · ");
 }

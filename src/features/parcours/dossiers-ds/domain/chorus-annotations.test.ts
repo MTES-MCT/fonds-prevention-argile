@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculerMajChorus } from "./chorus-annotations";
+import { calculerMajChorus, evaluerChorus } from "./chorus-annotations";
 import { getReferenceChorus, toSuiviChorus, type ColonnesChorus } from "./value-objects/suivi-chorus";
 
 const PROD = 126061;
@@ -68,6 +68,22 @@ describe("calculerMajChorus", () => {
 
   it("ne fait rien sur une démarche sans annotations Chorus répertoriées", () => {
     expect(calculerMajChorus(vide, [lue(EJ, "2100456789")], 129894, maintenant)).toEqual({});
+  });
+});
+
+describe("evaluerChorus", () => {
+  it("donne le statut de chacune des trois valeurs, sans jamais les contenir", () => {
+    const actuel = { ...vide, chorusNumeroEj: "2100456789", chorusNumeroEjAt: new Date("2026-09-15") };
+    const { statuts } = evaluerChorus(actuel, [lue(TIERS, "4521"), lue(EJ, "2100456789")], PROD, maintenant);
+
+    expect(statuts).toEqual({ tiersFournisseur: "reporte", numeroEj: "inchange", montantSubvention: "absent" });
+  });
+
+  it("traite une valeur non numérique comme absente", () => {
+    const { statuts } = evaluerChorus(vide, [lue(EJ, "EJ-12"), lue(MONTANT, "abc")], PROD, maintenant);
+
+    expect(statuts.numeroEj).toBe("absent");
+    expect(statuts.montantSubvention).toBe("absent");
   });
 });
 

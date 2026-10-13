@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ajouterAuBilanAnnotationsDn, bilanAnnotationsDnVide } from "./bilan-annotations-dn";
+import { ajouterAuBilanAnnotationsDn, ajouterChorusAuBilan, bilanAnnotationsDnVide } from "./bilan-annotations-dn";
 
 describe("ajouterAuBilanAnnotationsDn", () => {
   it("compte un contrôle qui a écrit deux annotations", () => {
@@ -17,36 +17,54 @@ describe("ajouterAuBilanAnnotationsDn", () => {
       echecsLienFpa: 0,
       adressesNonGeocodees: 0,
       verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
-      chorus: { dossiers: 0, valeurs: { tiersFournisseur: 0, numeroEj: 0, montantSubvention: 0 }, echecs: 0 },
+      chorus: {
+        lus: 0,
+        statuts: {
+          tiersFournisseur: { reporte: 0, inchange: 0, absent: 0 },
+          numeroEj: { reporte: 0, inchange: 0, absent: 0 },
+          montantSubvention: { reporte: 0, inchange: 0, absent: 0 },
+        },
+        echecs: 0,
+      },
     });
   });
 
-  it("compte à part le suivi Chorus reporté, sans en faire un contrôle", () => {
+  it("compte, pour chaque valeur Chorus, les dossiers reportés, inchangés ou absents de DN", () => {
     let bilan = bilanAnnotationsDnVide();
-    bilan = ajouterAuBilanAnnotationsDn(
+    bilan = ajouterChorusAuBilan(
       bilan,
-      { issue: null, annotationsEcrites: [], chorusReporte: ["tiersFournisseur", "numeroEj"] },
-      null
+      { tiersFournisseur: "reporte", numeroEj: "absent", montantSubvention: "absent" },
+      false
     );
-    bilan = ajouterAuBilanAnnotationsDn(bilan, { issue: null, annotationsEcrites: [], echecChorus: true }, null);
+    bilan = ajouterChorusAuBilan(
+      bilan,
+      { tiersFournisseur: "inchange", numeroEj: "reporte", montantSubvention: "absent" },
+      false
+    );
+    bilan = ajouterChorusAuBilan(bilan, null, true);
+    bilan = ajouterChorusAuBilan(bilan, null, false);
 
     expect(bilan.controles).toBe(0);
     expect(bilan.chorus).toEqual({
-      dossiers: 1,
-      valeurs: { tiersFournisseur: 1, numeroEj: 1, montantSubvention: 0 },
+      lus: 2,
+      statuts: {
+        tiersFournisseur: { reporte: 1, inchange: 1, absent: 0 },
+        numeroEj: { reporte: 1, inchange: 0, absent: 1 },
+        montantSubvention: { reporte: 0, inchange: 0, absent: 2 },
+      },
       echecs: 1,
     });
   });
 
   it("accepte un bilan enregistré avant le suivi Chorus", () => {
     const { chorus: _chorus, ...ancien } = bilanAnnotationsDnVide();
-    const bilan = ajouterAuBilanAnnotationsDn(
+    const bilan = ajouterChorusAuBilan(
       ancien,
-      { issue: null, annotationsEcrites: [], chorusReporte: ["montantSubvention"] },
-      null
+      { tiersFournisseur: "absent", numeroEj: "absent", montantSubvention: "reporte" },
+      false
     );
 
-    expect(bilan.chorus?.valeurs.montantSubvention).toBe(1);
+    expect(bilan.chorus?.statuts.montantSubvention.reporte).toBe(1);
   });
 
   it("additionne les contrôles d'un run, échec compris, sans verdict pour un échec", () => {

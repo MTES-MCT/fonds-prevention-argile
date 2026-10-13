@@ -565,7 +565,7 @@ synchro l'a **vue** (`chorus_*_at`), pas la date de l'acte côté DDT.
   fragment GraphQL dédié ; un tiers ou un EJ perd ses zéros de tête (entier côté DN).
 - **Règle** : valeur nouvelle ou corrigée = enregistrée avec la date du jour ; inchangée = date de
   première détection conservée ; vidée dans DN = rien n'est effacé ; non numérique = ignorée
-  (`calculerMajChorus`). Le run en garde la trace, par nom de valeur et jamais par valeur : badges « Chorus : … » par parcours, ligne « Suivi Chorus reporté » de l'encart (§ 5). Un échec s'y affiche (« Échec Chorus ») sans compter dans les erreurs du run.
+  (`calculerMajChorus`). Le run dit, pour chacune des trois valeurs, si elle a été reportée, laissée inchangée ou trouvée absente de DN (jamais son contenu) : badges « Chorus : … » par parcours quand une valeur change, ligne « Suivi Chorus » de l'encart (§ 5) et une ligne `[chorus]` dans les logs serveur. Un échec s'y affiche (« Échec Chorus ») sans compter dans les erreurs du run.
 - **Éligibilité seulement** : les démarches diagnostic et devis ne portent pas ces annotations ; les ids
   vivent dans `ds-annotations.ts` (relever avec `pnpm ds:fetch-schema`).
 - **Affichage** : colonne « Réf. Chorus » du listing agent (tiers et EJ), bloc « Suivi Chorus » sous
@@ -1418,7 +1418,7 @@ URL : `/administration/synchronisations` (réservée `SUPER_ADMINISTRATEUR`).
 colonne de badges (annotations écrites, « À jour », « Échec », « Échec du lien FPA », « Adresse non
 géocodée »). Un lien FPA
 complété sans contrôle de l'avis laisse l'issue à `null` : il n'est pas compté comme un contrôle.
-Le suivi Chorus (§ 2.6.4) s'y ajoute : une ligne « Suivi Chorus reporté » (dossiers et valeurs reportés, échecs) et des badges « Chorus : tiers fournisseur / N° d'EJ / montant » par parcours. Trois règles :
+Le suivi Chorus (§ 2.6.4) s'y ajoute : une ligne « Suivi Chorus » (dossiers lus ; par valeur, reportés / inchangés / absents de DN ; échecs) et des badges « Chorus : tiers fournisseur / N° d'EJ / montant » par parcours dont une valeur a changé. Trois règles :
 
 - **Des actions, jamais des valeurs.** Une ligne ne garde que l'issue et les **noms** des
   annotations écrites ; ni montant, ni tranche, ni taux, ni verdict.

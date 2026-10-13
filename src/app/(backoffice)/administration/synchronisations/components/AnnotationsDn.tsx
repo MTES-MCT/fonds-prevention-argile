@@ -25,7 +25,7 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
     bilan.controles === 0 &&
     bilan.ecritures.lienFpa === 0 &&
     bilan.echecsLienFpa === 0 &&
-    !chorus?.dossiers &&
+    !chorus?.lus &&
     !chorus?.echecs;
   return (
     <div className="fr-callout fr-mb-4w">
@@ -43,10 +43,13 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
             {ANNOTATIONS_DN.map((a) => `${LIBELLES_ANNOTATIONS_DN[a]} ${bilan.ecritures[a]}`).join(" · ")}
             {bilan.echecsLienFpa > 0 && ` · Échecs du lien FPA : ${bilan.echecsLienFpa}`}
           </li>
-          {chorus && (chorus.dossiers > 0 || chorus.echecs > 0) && (
+          {chorus && (chorus.lus > 0 || chorus.echecs > 0) && (
             <li>
-              Suivi Chorus reporté : {chorus.dossiers} {chorus.dossiers > 1 ? "dossiers" : "dossier"} (
-              {CHORUS_REPORTES.map((c) => `${LIBELLES_CHORUS[c]} ${chorus.valeurs[c]}`).join(" · ")})
+              Suivi Chorus ({chorus.lus} {chorus.lus > 1 ? "dossiers lus" : "dossier lu"}) :{" "}
+              {CHORUS_REPORTES.map((c) => {
+                const n = chorus.statuts[c];
+                return `${LIBELLES_CHORUS[c]} ${n.reporte} reporté · ${n.inchange} inchangé · ${n.absent} absent dans DN`;
+              }).join(" ; ")}
               {chorus.echecs > 0 && ` · Échecs : ${chorus.echecs}`}
             </li>
           )}

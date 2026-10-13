@@ -66,6 +66,7 @@ const mockedMoveToNextStep = vi.mocked(moveToNextStep);
 const mockedControleAvisImpot = vi.mocked(controlerAvisImpotApresSync);
 const mockedCompleterLienFpa = vi.mocked(completerLienFpa);
 const mockedSynchroniserChorus = vi.mocked(synchroniserChorus);
+const AUCUN_STATUT = { tiersFournisseur: "absent", numeroEj: "absent", montantSubvention: "absent" } as const;
 
 /** Type guard pour narrow dans les tests qui attendent un run effectif. */
 function assertExecuted<T extends { skipped: boolean }>(result: T): asserts result is Extract<T, { skipped: false }> {
@@ -96,7 +97,7 @@ function fakeParcours(
 describe("runSyncBatch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedSynchroniserChorus.mockResolvedValue([]);
+    mockedSynchroniserChorus.mockResolvedValue(AUCUN_STATUT);
     mockedSyncRunRepo.createRun.mockResolvedValue({ id: "run-1" } as never);
     mockedSyncRunRepo.addEntry.mockResolvedValue({ id: "entry-1" } as never);
     mockedSyncRunRepo.finalizeRun.mockResolvedValue({ id: "run-1" } as never);
@@ -550,7 +551,15 @@ describe("runSyncBatch", () => {
             echecsLienFpa: 0,
             adressesNonGeocodees: 0,
             verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
-            chorus: { dossiers: 0, valeurs: { tiersFournisseur: 0, numeroEj: 0, montantSubvention: 0 }, echecs: 0 },
+            chorus: {
+              lus: 0,
+              statuts: {
+                tiersFournisseur: { reporte: 0, inchange: 0, absent: 0 },
+                numeroEj: { reporte: 0, inchange: 0, absent: 0 },
+                montantSubvention: { reporte: 0, inchange: 0, absent: 0 },
+              },
+              echecs: 0,
+            },
           },
         })
       );
@@ -637,7 +646,11 @@ describe("runSyncBatch", () => {
 
     it("trace dans le run les valeurs reportées, par nom", async () => {
       preparer();
-      mockedSynchroniserChorus.mockResolvedValue(["numeroEj", "montantSubvention"]);
+      mockedSynchroniserChorus.mockResolvedValue({
+        tiersFournisseur: "inchange",
+        numeroEj: "reporte",
+        montantSubvention: "reporte",
+      });
 
       await runSyncBatch(SyncRunTrigger.CRON);
 
@@ -650,19 +663,42 @@ describe("runSyncBatch", () => {
         "run-1",
         expect.objectContaining({
           bilanAnnotationsDn: expect.objectContaining({
-            chorus: { dossiers: 1, valeurs: { tiersFournisseur: 0, numeroEj: 1, montantSubvention: 1 }, echecs: 0 },
+            chorus: {
+              lus: 1,
+              statuts: {
+                tiersFournisseur: { reporte: 0, inchange: 1, absent: 0 },
+                numeroEj: { reporte: 1, inchange: 0, absent: 0 },
+                montantSubvention: { reporte: 1, inchange: 0, absent: 0 },
+              },
+              echecs: 0,
+            },
           }),
         })
       );
     });
 
-    it("ne crée aucune ligne quand rien n'a changé", async () => {
+    it("ne crée aucune ligne quand rien n'a changé, mais compte le dossier lu et journalise le bilan", async () => {
       preparer();
-      mockedSynchroniserChorus.mockResolvedValue([]);
+      mockedSynchroniserChorus.mockResolvedValue({
+        tiersFournisseur: "inchange",
+        numeroEj: "absent",
+        montantSubvention: "absent",
+      });
+      const info = vi.spyOn(console, "info").mockImplementation(() => {});
 
       await runSyncBatch(SyncRunTrigger.CRON);
 
       expect(mockedSyncRunRepo.addEntry).not.toHaveBeenCalled();
+      expect(mockedSyncRunRepo.finalizeRun).toHaveBeenCalledWith(
+        "run-1",
+        expect.objectContaining({
+          bilanAnnotationsDn: expect.objectContaining({
+            chorus: expect.objectContaining({ lus: 1 }),
+          }),
+        })
+      );
+      expect(info).toHaveBeenCalledWith(expect.stringContaining("[chorus] 1 dossier(s)"));
+      expect(info).toHaveBeenCalledWith(expect.not.stringMatching(/\d{7,}/));
     });
 
     it("trace un échec sans le compter comme une erreur de synchro", async () => {

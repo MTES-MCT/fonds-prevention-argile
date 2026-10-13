@@ -1,3 +1,4 @@
+import type { StatutChorus, StatutsChorus } from "@/shared/domain/value-objects/bilan-annotations-dn";
 import type { AnnotationLue } from "../adapters/graphql/types";
 import { idsAnnotationsChorus } from "./value-objects/ds-annotations";
 import type { ColonnesChorus } from "./value-objects/suivi-chorus";
@@ -20,30 +21,54 @@ function parserMontant(brut: string | null): number | null {
   return Number.isFinite(montant) && montant >= 0 ? montant : null;
 }
 
+export interface EvaluationChorus {
+  maj: MajChorus;
+  statuts: StatutsChorus;
+}
+
+function statut<T>(lu: T | null, actuel: T | null): StatutChorus {
+  if (lu === null) return "absent";
+  return lu === actuel ? "inchange" : "reporte";
+}
+
 // Une valeur vidée dans DN n'efface rien chez nous ; la date n'avance que si la valeur change.
+export function evaluerChorus(
+  actuel: ColonnesChorus,
+  annotations: AnnotationLue[],
+  demarcheNumber: number,
+  maintenant: Date
+): EvaluationChorus {
+  const ids = idsAnnotationsChorus(demarcheNumber);
+  const tiers = parserNumero(lire(annotations, ids.tiersFournisseur));
+  const ej = parserNumero(lire(annotations, ids.numeroEj));
+  const montant = parserMontant(lire(annotations, ids.montantSubvention));
+  const statuts: StatutsChorus = {
+    tiersFournisseur: statut(tiers, actuel.chorusTiersFournisseur),
+    numeroEj: statut(ej, actuel.chorusNumeroEj),
+    montantSubvention: statut(montant, actuel.chorusMontantSubvention),
+  };
+  const maj: MajChorus = {};
+
+  if (statuts.tiersFournisseur === "reporte") {
+    maj.chorusTiersFournisseur = tiers;
+    maj.chorusTiersFournisseurAt = maintenant;
+  }
+  if (statuts.numeroEj === "reporte") {
+    maj.chorusNumeroEj = ej;
+    maj.chorusNumeroEjAt = maintenant;
+  }
+  if (statuts.montantSubvention === "reporte") {
+    maj.chorusMontantSubvention = montant;
+    maj.chorusMontantSubventionAt = maintenant;
+  }
+  return { maj, statuts };
+}
+
 export function calculerMajChorus(
   actuel: ColonnesChorus,
   annotations: AnnotationLue[],
   demarcheNumber: number,
   maintenant: Date
 ): MajChorus {
-  const ids = idsAnnotationsChorus(demarcheNumber);
-  const tiers = parserNumero(lire(annotations, ids.tiersFournisseur));
-  const ej = parserNumero(lire(annotations, ids.numeroEj));
-  const montant = parserMontant(lire(annotations, ids.montantSubvention));
-  const maj: MajChorus = {};
-
-  if (tiers !== null && tiers !== actuel.chorusTiersFournisseur) {
-    maj.chorusTiersFournisseur = tiers;
-    maj.chorusTiersFournisseurAt = maintenant;
-  }
-  if (ej !== null && ej !== actuel.chorusNumeroEj) {
-    maj.chorusNumeroEj = ej;
-    maj.chorusNumeroEjAt = maintenant;
-  }
-  if (montant !== null && montant !== actuel.chorusMontantSubvention) {
-    maj.chorusMontantSubvention = montant;
-    maj.chorusMontantSubventionAt = maintenant;
-  }
-  return maj;
+  return evaluerChorus(actuel, annotations, demarcheNumber, maintenant).maj;
 }

@@ -32,9 +32,14 @@ export interface AnnotationsDnEntree {
   echecChorus?: boolean;
 }
 
+export const STATUTS_CHORUS = ["reporte", "inchange", "absent"] as const;
+export type StatutChorus = (typeof STATUTS_CHORUS)[number];
+export type StatutsChorus = Record<ChorusReporte, StatutChorus>;
+
+/** Pour chaque valeur Chorus : combien de dossiers lus l'ont reportée, laissée inchangée ou trouvée absente de DN. */
 export interface BilanChorus {
-  dossiers: number;
-  valeurs: Record<ChorusReporte, number>;
+  lus: number;
+  statuts: Record<ChorusReporte, Record<StatutChorus, number>>;
   echecs: number;
 }
 
@@ -51,8 +56,20 @@ export interface BilanAnnotationsDn {
   chorus?: BilanChorus;
 }
 
-function bilanChorusVide(): BilanChorus {
-  return { dossiers: 0, valeurs: { tiersFournisseur: 0, numeroEj: 0, montantSubvention: 0 }, echecs: 0 };
+function compteursStatutsVides(): Record<StatutChorus, number> {
+  return { reporte: 0, inchange: 0, absent: 0 };
+}
+
+export function bilanChorusVide(): BilanChorus {
+  return {
+    lus: 0,
+    statuts: {
+      tiersFournisseur: compteursStatutsVides(),
+      numeroEj: compteursStatutsVides(),
+      montantSubvention: compteursStatutsVides(),
+    },
+    echecs: 0,
+  };
 }
 
 export function bilanAnnotationsDnVide(): BilanAnnotationsDn {
@@ -77,10 +94,6 @@ export function ajouterAuBilanAnnotationsDn(
   for (const annotation of entree.annotationsEcrites) ecritures[annotation] += 1;
   const verdicts = { ...bilan.verdicts };
   if (verdict) verdicts[verdict] += 1;
-  const chorusAvant = bilan.chorus ?? bilanChorusVide();
-  const reportes = entree.chorusReporte ?? [];
-  const valeurs = { ...chorusAvant.valeurs };
-  for (const nom of reportes) valeurs[nom] += 1;
   return {
     controles: bilan.controles + (entree.issue ? 1 : 0),
     ecritures,
@@ -89,10 +102,26 @@ export function ajouterAuBilanAnnotationsDn(
     echecsLienFpa: bilan.echecsLienFpa + (entree.echecLienFpa ? 1 : 0),
     adressesNonGeocodees: bilan.adressesNonGeocodees + (entree.adresseNonGeocodee ? 1 : 0),
     verdicts,
-    chorus: {
-      dossiers: chorusAvant.dossiers + (reportes.length > 0 ? 1 : 0),
-      valeurs,
-      echecs: chorusAvant.echecs + (entree.echecChorus ? 1 : 0),
-    },
+    chorus: bilan.chorus,
+  };
+}
+
+/** `statuts` est null quand le dossier d'éligibilité n'a pas été relu (rien à compter) ou que le report a échoué. */
+export function ajouterChorusAuBilan(
+  bilan: BilanAnnotationsDn,
+  statuts: StatutsChorus | null,
+  echec: boolean
+): BilanAnnotationsDn {
+  const avant = bilan.chorus ?? bilanChorusVide();
+  if (!statuts && !echec) return bilan;
+  const compteurs = {
+    tiersFournisseur: { ...avant.statuts.tiersFournisseur },
+    numeroEj: { ...avant.statuts.numeroEj },
+    montantSubvention: { ...avant.statuts.montantSubvention },
+  };
+  if (statuts) for (const nom of CHORUS_REPORTES) compteurs[nom][statuts[nom]] += 1;
+  return {
+    ...bilan,
+    chorus: { lus: avant.lus + (statuts ? 1 : 0), statuts: compteurs, echecs: avant.echecs + (echec ? 1 : 0) },
   };
 }
