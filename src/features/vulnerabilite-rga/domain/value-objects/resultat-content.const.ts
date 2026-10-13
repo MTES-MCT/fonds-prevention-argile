@@ -7,13 +7,13 @@
 export const CALLOUT_EXPERT_TITLE = "Comment réduire cette vulnérabilité ?";
 const CALLOUT_EXPERT_TEXT_BASE =
   "Ce simulateur donne une estimation simplifiée, pas un diagnostic. Pour évaluer précisément la vulnérabilité de " +
-  "votre logement et prioriser les travaux, rapprochez-vous d'un expert RGA.";
+  "votre logement et prioriser les travaux, rapprochez-vous d'un expert RGA afin de réaliser un diagnostic de vulnérabilité.";
 const CALLOUT_EXPERT_TEXT_FONDS =
-  "C'est justement à cela que sert le Fonds Prévention Argile : il peut financer ce diagnostic de vulnérabilité approfondi.";
+  "C'est justement à cela que sert le Fonds Prévention Argile : il peut financer en partie ce diagnostic de vulnérabilité approfondi par un expert en RGA.";
 
 // La promesse de financement ne vaut que pour un logement qui remplit les critères du fonds.
 export function getCalloutExpertTexte(eligibleFonds: boolean): string {
-  return eligibleFonds ? `${CALLOUT_EXPERT_TEXT_BASE} ${CALLOUT_EXPERT_TEXT_FONDS}` : CALLOUT_EXPERT_TEXT_BASE;
+  return eligibleFonds ? `${CALLOUT_EXPERT_TEXT_BASE}\n${CALLOUT_EXPERT_TEXT_FONDS}` : CALLOUT_EXPERT_TEXT_BASE;
 }
 
 export const SOURCES_VULNERABILITE_TITRE = "Comprendre les sources de vulnérabilité";

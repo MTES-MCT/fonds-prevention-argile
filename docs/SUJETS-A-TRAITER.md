@@ -174,6 +174,24 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 
 ---
 
+## Simulateur de vulnérabilité RGA
+
+### Vérifier que la table `vulnerabilite_simulations` est vide en production avant tout changement de grille
+
+- **Constat** : le simulateur est masqué en production (`isVulnerabiliteRgaActive`), mais trois
+  surfaces relisent la grille pour recatégoriser des réponses déjà enregistrées : l'encart
+  vulnérabilité de l'espace agent (`build-info-vulnerabilite.service.ts`), l'onglet
+  `/administration/vulnerabilite` (masqué lui aussi) et le détail des dossiers. Si la table contient
+  des lignes en production, une recatégorisation de la grille (PR #409 : gouttières, mitoyenneté)
+  change leurs points critiques et de vigilance après déploiement, sans migration de données.
+- **Préalable** : un `SELECT count(*)` sur `vulnerabilite_simulations` en production, en lecture
+  seule (cf. [scalingo.md](ops/scalingo.md)). Non vérifié : la PR ne pouvait pas lire cette base.
+- **À faire** : si la table est vide, retirer cette entrée. Sinon, décider si l'encart agent doit
+  relire la grille courante ou la catégorie figée à l'enregistrement.
+- **Référence** : [guide du simulateur](vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md).
+
+---
+
 ## Sécurité et dépendances
 
 ### Vulnérabilité High `source-map-js` (`pnpm audit --prod`)

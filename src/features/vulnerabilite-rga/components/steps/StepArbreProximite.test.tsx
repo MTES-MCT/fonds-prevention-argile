@@ -19,7 +19,9 @@ describe("StepArbreProximite", () => {
     rendre();
     expect(screen.queryByText("Quelle est l'essence de cet arbre ?")).toBeNull();
 
-    await userEvent.click(screen.getByLabelText("Oui, un arbre est proche des fondations"));
+    await userEvent.click(
+      screen.getByLabelText("Oui, un arbre est proche des fondations (moins de 1,5 fois sa hauteur adulte)")
+    );
 
     expect(screen.getByText("Quelle est l'essence de cet arbre ?")).toBeInTheDocument();
     expect(screen.getByText(/Chêne, peuplier, saule, frêne, cèdre/)).toBeInTheDocument();
@@ -28,7 +30,9 @@ describe("StepArbreProximite", () => {
   it("attend l'essence avant de passer à la suite, puis envoie les deux réponses", async () => {
     const { onSubmit, suivant } = rendre();
 
-    await userEvent.click(screen.getByLabelText("Oui, un arbre est proche des fondations"));
+    await userEvent.click(
+      screen.getByLabelText("Oui, un arbre est proche des fondations (moins de 1,5 fois sa hauteur adulte)")
+    );
     expect(suivant()).toBeDisabled();
 
     await userEvent.click(screen.getByLabelText(/Arbre fruitier ou petit arbre/));

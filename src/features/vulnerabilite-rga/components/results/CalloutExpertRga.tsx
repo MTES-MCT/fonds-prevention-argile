@@ -15,7 +15,7 @@ export function CalloutExpertRga({ eligibleFonds }: CalloutExpertRgaProps) {
   return (
     <div className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-my-4w">
       <p className="fr-callout__title">{CALLOUT_EXPERT_TITLE}</p>
-      <p className="fr-callout__text">{getCalloutExpertTexte(eligibleFonds)}</p>
+      <p className="fr-callout__text whitespace-pre-line">{getCalloutExpertTexte(eligibleFonds)}</p>
       {eligibleFonds && (
         <Link href="/simulateur" className="fr-btn fr-btn--secondary fr-mt-2w">
           Vérifier mon éligibilité au Fonds Prévention Argile

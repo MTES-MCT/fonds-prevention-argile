@@ -48,7 +48,7 @@ export function StepArbreProximite({
       illustration={<Image src={schemaArbreProximite} alt="" className="w-full h-auto" />}
       description="Un arbre proche (distance au mur inférieure à 1,5x sa hauteur adulte) va chercher l'humidité sous la maison en été. Ses racines assèchent l'argile localement, ce qui favorise son retrait et le RGA."
       options={[
-        { value: "oui", label: "Oui, un arbre est proche des fondations" },
+        { value: "oui", label: "Oui, un arbre est proche des fondations (moins de 1,5 fois sa hauteur adulte)" },
         { value: "non", label: "Non, aucun arbre proche" },
         { value: "ne_sais_pas", label: "Je ne sais pas" },
       ]}

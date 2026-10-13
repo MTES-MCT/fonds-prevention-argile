@@ -7,7 +7,11 @@ describe("getCategorieReponse", () => {
     expect(getCategorieReponse("gravier_proprete", "present_tout_pourtour")).toBe("critique");
     expect(getCategorieReponse("gravier_proprete", "present_localise")).toBe("vigilance");
     expect(getCategorieReponse("gravier_proprete", "absent")).toBe("a_verifier");
-    expect(getCategorieReponse("gouttieres", "entretenues_evacuation_proche")).toBe("bonne_pratique");
+    expect(getCategorieReponse("gouttieres", "absentes_ou_debordantes")).toBe("critique");
+    expect(getCategorieReponse("gouttieres", "entretenues_evacuation_proche")).toBe("vigilance");
+    expect(getCategorieReponse("gouttieres", "entretenues_evacuation_loin")).toBe("bonne_pratique");
+    expect(getCategorieReponse("mitoyennete", "mitoyen_voisin_sans_travaux")).toBe("vigilance");
+    expect(getCategorieReponse("mitoyennete", "mitoyen_voisin_travaux_prevention")).toBe("a_verifier");
     expect(getCategorieReponse("source_chaleur_sous_sol", "pas_de_sous_sol")).toBe("sans_objet");
   });
 
@@ -69,7 +73,7 @@ describe("categoriserReponses", () => {
 describe("compterPoints", () => {
   it("compte les points par catégorie", () => {
     const { points } = computeResultat({
-      eaux: { reseaux_enterres: "sous_fondations", gouttieres: "absentes_ou_debordantes", pente_terrain: "plat" },
+      eaux: { reseaux_enterres: "sous_fondations", gouttieres: "entretenues_evacuation_proche", pente_terrain: "plat" },
       vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand", haies: "eloignees_peu_denses" },
       divers: { source_chaleur_sous_sol: "oui_mur_non_isole", ensoleillement: "modere" },
     });
