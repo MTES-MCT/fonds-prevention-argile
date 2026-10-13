@@ -1271,6 +1271,13 @@ jalons franchis (date présente) :
   « Parcours du demandeur ». Les dates par étape sont assemblées dans
   `getDossierDetail` (`dossiersTimeline`).
 
+Le **numéro du dossier DN** (`NumeroDossierDn`) suit le même découpage : sous la carte de chaque
+étape côté demandeur, sous chaque étape DS du « Parcours du demandeur » côté agent
+(`getDossierDetail`, `numerosDn`). Il s'affiche dès qu'un pointeur existe, déposé ou non : c'est
+ce numéro qui sert à rattacher ou réinitialiser un formulaire (ADR-0027). Il n'est pas cliquable :
+l'URL instructeur refuse un agent AMO ou Aller-vers, l'URL usager ne s'ouvre que pour le
+propriétaire du dossier, et le lien prefill rend propriétaire celui qui l'ouvre (ADR-0044).
+
 ### 3.5 Backfill de processed_at (one-shot après le changement de sémantique)
 
 Le passage de `processed_at` à « date de décision DS, tout état final » (§3.2) ne se voit

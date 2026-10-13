@@ -152,6 +152,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     // Dates clés (brouillon/dépôt/instruction/décision) par étape pour la timeline détaillée.
     const dossiersTimeline: Partial<Record<Step, DossierTimelineData>> = {};
+    const numerosDn: Partial<Record<Step, string>> = {};
     for (const d of allDossiersDS) {
       dossiersTimeline[d.step as Step] = {
         etatDs: d.dsStatus,
@@ -160,6 +161,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
         instructedAt: d.instructedAt,
         processedAt: d.processedAt,
       };
+      if (d.dsNumber) numerosDn[d.step as Step] = d.dsNumber;
     }
 
     const dossierEligibilite = allDossiersDS.find((d) => d.step === Step.ELIGIBILITE);
@@ -220,6 +222,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       suiviDepuis: dossier.validation.valideeAt,
       dates,
       dossiersTimeline,
+      numerosDn,
       suiviChorus: dossierEligibilite ? toSuiviChorus(dossierEligibilite) : null,
       formulaireCourant,
       agentEditInfo,
