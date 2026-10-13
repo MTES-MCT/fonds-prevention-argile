@@ -104,7 +104,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-gouttieres",
     critereId: "gouttieres",
-    reponsesDeclenchantes: ["absentes_ou_debordantes", "ne_sais_pas"],
+    reponsesDeclenchantes: ["absentes_ou_debordantes", "entretenues_evacuation_proche", "ne_sais_pas"],
     titre: "Entretenir les gouttières et éloigner leur évacuation",
     problemes: ["Des gouttières bouchées ou absentes déversent l'eau de pluie directement contre le mur"],
     ameliorations: [
@@ -145,11 +145,13 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     critereId: "haies",
     reponsesDeclenchantes: ["proches_moyennement_denses", "proches_denses", "ne_sais_pas"],
     titre: "Éloigner ou espacer la haie des fondations",
-    problemes: ["Une haie dense (donc gourmande en eau) et proche (moins de 1,5m) de la maison assèche le sol comme le ferait un arbre"],
+    problemes: [
+      "Une haie dense (donc gourmande en eau) et proche (moins de 1,5 m) de la maison assèche le sol comme le ferait un arbre",
+    ],
     ameliorations: [
       "Tailler régulièrement pour limiter le développement des racines",
       "Privilégier une distance de plantation d'au moins quelques mètres pour toute nouvelle haie",
-      "Préférer des palissades non végétales pour les clotures à moins de 2 mètres de la maison"
+      "Préférer des palissades non végétales pour les clôtures à moins de 2 mètres de la maison",
     ],
     illustrationId: "haies",
   },
@@ -170,7 +172,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "divers-mitoyennete",
     critereId: "mitoyennete",
-    reponsesDeclenchantes: ["mitoyen_voisin_sans_travaux"],
+    reponsesDeclenchantes: ["mitoyen_voisin_sans_travaux", "mitoyen_voisin_travaux_prevention"],
     titre: "Échanger avec le voisin mitoyen sur la prévention RGA",
     problemes: ["Sur une maison mitoyenne, les mouvements de sol du côté du voisin peuvent affecter votre propre bâti"],
     ameliorations: [

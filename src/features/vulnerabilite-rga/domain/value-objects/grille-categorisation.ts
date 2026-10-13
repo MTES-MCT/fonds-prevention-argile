@@ -138,12 +138,12 @@ export const CRITERES_CONFIG: CritereConfig[] = [
       { reponse: "ne_sais_pas", label: "Je ne sais pas", categorie: "a_verifier" },
       {
         reponse: "entretenues_evacuation_proche",
-        label: "Entretenues, évacuation proche des fondations",
+        label: "Entretenues, évacuation en pied de façade",
         categorie: "vigilance",
       },
       {
         reponse: "entretenues_evacuation_loin",
-        label: "Entretenues, évacuation loin des fondations",
+        label: "Entretenues, évacuation loin des fondations (> 1,5 m)",
         categorie: "bonne_pratique",
       },
     ] satisfies ReponseConfig<ReponseGouttieres>[],
