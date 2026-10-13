@@ -380,6 +380,17 @@ fréquent est déjà propre — annuler **avant** d'avoir créé le dossier d'é
 `createEligibiliteDossier` préremplira sans AMO le moment venu. Seul un dossier déjà créé
 garde des infos AMO obsolètes, à corriger manuellement côté formulaire.
 
+**Mandat inconnu pour les validations d'avant le 20/07/2026.** Les validations antérieures à la
+question ont `est_mandataire_financier` à `NULL`, lu comme « non » : l'AMO payée ne pouvait pas
+initier la demande de paiement du diagnostic (§ 2.13). Deux rattrapages, qui ne remplissent que
+des `NULL` et n'écrivent que `true`, via `renseignerMandatFinancierSiInconnu` :
+
+- `pnpm fix:mandat-financier --siret=…` : structures connues pour être mandataires financières
+  (dry-run par défaut, `--apply`) ;
+- lecture de DN : le CRON, au passage du dossier d'éligibilité, reprend la réponse « Mandataire
+  administratif et financier » ; `pnpm ds:rattraper-mandat-financier` fait de même pour les parcours
+  archivés ou complétés. « Administratif » n'est jamais repris : c'est la valeur préremplie.
+
 ### 2.6.1 Annotation privée « Lien vers le dossier FPA » — ADR-0025
 
 Les trois démarches (éligibilité, diagnostic, devis) portent une annotation privée
