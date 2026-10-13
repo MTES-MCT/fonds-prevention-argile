@@ -134,12 +134,12 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "gouttieres",
     reponses: [
-      { reponse: "absentes_ou_debordantes", label: "Absentes, débordantes ou mal entretenues", categorie: "vigilance" },
+      { reponse: "absentes_ou_debordantes", label: "Absentes, débordantes ou mal entretenues", categorie: "critique" },
       { reponse: "ne_sais_pas", label: "Je ne sais pas", categorie: "a_verifier" },
       {
         reponse: "entretenues_evacuation_proche",
         label: "Entretenues, évacuation proche des fondations",
-        categorie: "bonne_pratique",
+        categorie: "vigilance",
       },
       {
         reponse: "entretenues_evacuation_loin",
@@ -223,12 +223,12 @@ export const CRITERES_CONFIG: CritereConfig[] = [
       {
         reponse: "mitoyen_voisin_sans_travaux",
         label: "Mitoyenne, voisin sans travaux de prévention",
-        categorie: "a_verifier",
+        categorie: "vigilance",
       },
       {
         reponse: "mitoyen_voisin_travaux_prevention",
         label: "Mitoyenne, voisin déjà en travaux de prévention",
-        categorie: "bonne_pratique",
+        categorie: "a_verifier",
       },
       { reponse: "pas_mitoyen", label: "Maison individuelle, non mitoyenne", categorie: "bonne_pratique" },
     ] satisfies ReponseConfig<ReponseMitoyennete>[],

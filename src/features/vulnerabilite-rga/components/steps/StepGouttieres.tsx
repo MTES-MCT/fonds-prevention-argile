@@ -34,8 +34,8 @@ export function StepGouttieres({
       description="Des gouttières bouchées, absentes ou débordantes déversent l'eau de pluie directement au pied du mur. Cela fait gonfler l'argile localement et favorise le RGA."
       options={[
         { value: "absentes_ou_debordantes", label: "Absentes, débordantes ou mal entretenues" },
-        { value: "entretenues_evacuation_proche", label: "Entretenues, mais l'évacuation est proche des fondations" },
-        { value: "entretenues_evacuation_loin", label: "Entretenues, avec une évacuation loin des fondations" },
+        { value: "entretenues_evacuation_proche", label: "Entretenues, mais l'évacuation est en pied de façade." },
+        { value: "entretenues_evacuation_loin", label: "Entretenues, avec une évacuation loin des fondations (> 1,5m)" },
         { value: "ne_sais_pas", label: "Je ne sais pas" },
       ]}
       selected={selected}
