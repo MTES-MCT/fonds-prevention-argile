@@ -28,11 +28,11 @@ describe("ResultVulnerabilite — callout de synthèse", () => {
       vegetation: { haies: "proches_denses" },
     });
 
-    expect(
-      screen.getByText(
-        "Votre maison est située en zone d'aléa fort. Nous avons identifié 2 points critiques et 1 point de vigilance."
-      )
-    ).toBeInTheDocument();
+    expect(container.querySelector(".fr-callout__text")).toHaveTextContent(
+      "Votre maison est située en zone d'aléa fort. Nous avons identifié 2 points critiques et 1 point de vigilance."
+    );
+    const gras = Array.from(container.querySelectorAll(".fr-callout__text strong"), (el) => el.textContent);
+    expect(gras).toEqual(["en zone d'aléa fort", "2 points critiques", "1 point de vigilance"]);
     expect(screen.getByRole("heading", { name: "Points critiques identifiés" })).toBeInTheDocument();
     expect(container.querySelector(".fr-callout--pink-tuile")).not.toBeNull();
   });
