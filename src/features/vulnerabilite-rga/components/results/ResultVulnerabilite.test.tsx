@@ -24,7 +24,7 @@ describe("ResultVulnerabilite — callout de synthèse", () => {
   it("annonce l'aléa et les points, en accent rouge dès qu'un point est critique", () => {
     const { container } = rendre({
       ...ELIGIBLE,
-      eaux: { reseaux_enterres: "sous_fondations", gouttieres: "absentes_ou_debordantes" },
+      eaux: { reseaux_enterres: "sous_fondations", gouttieres: "entretenues_evacuation_proche" },
       vegetation: { haies: "proches_denses" },
     });
 
@@ -50,7 +50,7 @@ describe("ResultVulnerabilite — callout de synthèse", () => {
   });
 
   it("passe en accent jaune sans point critique mais avec un point de vigilance", () => {
-    const { container } = rendre({ ...ELIGIBLE, eaux: { gouttieres: "absentes_ou_debordantes" } });
+    const { container } = rendre({ ...ELIGIBLE, eaux: { gouttieres: "entretenues_evacuation_proche" } });
 
     expect(screen.getByRole("heading", { name: "Points de vigilance identifiés" })).toBeInTheDocument();
     expect(container.querySelector(".fr-callout--yellow-moutarde")).not.toBeNull();
@@ -93,7 +93,7 @@ describe("ResultVulnerabilite — renvoi vers le simulateur d'éligibilité", ()
   it("annonce le financement du diagnostic quand le logement remplit les critères", () => {
     rendre(ELIGIBLE);
 
-    expect(screen.getByText(/il peut financer ce diagnostic/)).toBeInTheDocument();
+    expect(screen.getByText(/il peut financer en partie ce diagnostic/)).toBeInTheDocument();
   });
 });
 
@@ -101,7 +101,7 @@ describe("ResultVulnerabilite — sections de fiches", () => {
   it("range les fiches sous critiques, vigilance puis à surveiller, et masque les sections vides", () => {
     rendre({
       ...ELIGIBLE,
-      eaux: { pente_terrain: "ne_sais_pas", gouttieres: "absentes_ou_debordantes" },
+      eaux: { pente_terrain: "ne_sais_pas", gouttieres: "entretenues_evacuation_proche" },
       vegetation: { vegetation_pied_facade: "presente" },
     });
 
@@ -120,7 +120,7 @@ describe("ResultVulnerabilite — sections de fiches", () => {
   it("donne à chaque section son nombre de points et à chaque fiche le badge de sa catégorie", () => {
     rendre({
       ...ELIGIBLE,
-      eaux: { gouttieres: "absentes_ou_debordantes", reseaux_enterres: "sous_fondations" },
+      eaux: { gouttieres: "entretenues_evacuation_proche", reseaux_enterres: "sous_fondations" },
       vegetation: { vegetation_pied_facade: "presente" },
     });
 
