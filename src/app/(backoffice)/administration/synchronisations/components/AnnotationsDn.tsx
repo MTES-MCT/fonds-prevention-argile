@@ -1,6 +1,15 @@
 import type { AnnotationsDnEntree, BilanAnnotationsDn } from "@/shared/domain/value-objects/bilan-annotations-dn";
-import { ANNOTATIONS_DN, VERDICTS_CONTROLE_DN } from "@/shared/domain/value-objects/bilan-annotations-dn";
-import { LIBELLES_ANNOTATIONS_DN, LIBELLES_VERDICTS_DN, dossiersMisAJour } from "./annotations-dn.format";
+import {
+  ANNOTATIONS_DN,
+  CHORUS_REPORTES,
+  VERDICTS_CONTROLE_DN,
+} from "@/shared/domain/value-objects/bilan-annotations-dn";
+import {
+  LIBELLES_ANNOTATIONS_DN,
+  LIBELLES_CHORUS,
+  LIBELLES_VERDICTS_DN,
+  dossiersMisAJour,
+} from "./annotations-dn.format";
 
 /** Synthèse d'un run : compteurs agrégés, aucune donnée de dossier. */
 export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn | null }) {
@@ -11,7 +20,13 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
       </p>
     );
   }
-  const aucuneActivite = bilan.controles === 0 && bilan.ecritures.lienFpa === 0 && bilan.echecsLienFpa === 0;
+  const chorus = bilan.chorus;
+  const aucuneActivite =
+    bilan.controles === 0 &&
+    bilan.ecritures.lienFpa === 0 &&
+    bilan.echecsLienFpa === 0 &&
+    !chorus?.dossiers &&
+    !chorus?.echecs;
   return (
     <div className="fr-callout fr-mb-4w">
       <h2 className="fr-callout__title fr-h6">Annotations DN</h2>
@@ -28,6 +43,13 @@ export function BilanAnnotationsDnEncart({ bilan }: { bilan: BilanAnnotationsDn 
             {ANNOTATIONS_DN.map((a) => `${LIBELLES_ANNOTATIONS_DN[a]} ${bilan.ecritures[a]}`).join(" · ")}
             {bilan.echecsLienFpa > 0 && ` · Échecs du lien FPA : ${bilan.echecsLienFpa}`}
           </li>
+          {chorus && (chorus.dossiers > 0 || chorus.echecs > 0) && (
+            <li>
+              Suivi Chorus reporté : {chorus.dossiers} {chorus.dossiers > 1 ? "dossiers" : "dossier"} (
+              {CHORUS_REPORTES.map((c) => `${LIBELLES_CHORUS[c]} ${chorus.valeurs[c]}`).join(" · ")})
+              {chorus.echecs > 0 && ` · Échecs : ${chorus.echecs}`}
+            </li>
+          )}
           {bilan.adressesNonGeocodees > 0 && (
             <li>
               Adresses non géocodées (lien en recherche texte, zone d&apos;aléa non écrite) :{" "}
@@ -53,6 +75,10 @@ export function AnnotationsDnBadges({ entree }: { entree: AnnotationsDnEntree | 
     badges.push({ libelle: LIBELLES_ANNOTATIONS_DN[annotation], classe: "fr-badge--info" });
   }
   if (entree.echecLienFpa) badges.push({ libelle: "Échec du lien FPA", classe: "fr-badge--error" });
+  for (const nom of new Set(entree.chorusReporte ?? [])) {
+    badges.push({ libelle: `Chorus : ${LIBELLES_CHORUS[nom]}`, classe: "fr-badge--success" });
+  }
+  if (entree.echecChorus) badges.push({ libelle: "Échec Chorus", classe: "fr-badge--error" });
   if (entree.adresseNonGeocodee) badges.push({ libelle: "Adresse non géocodée", classe: "fr-badge--warning" });
   return (
     <ul className="fr-badges-group">

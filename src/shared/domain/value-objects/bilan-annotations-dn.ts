@@ -9,6 +9,10 @@ export const ANNOTATIONS_DN = [
 ] as const;
 export type AnnotationDn = (typeof ANNOTATIONS_DN)[number];
 
+/** Valeurs Chorus lues dans DN et reportées chez nous, désignées par leur nom, jamais par leur valeur. */
+export const CHORUS_REPORTES = ["tiersFournisseur", "numeroEj", "montantSubvention"] as const;
+export type ChorusReporte = (typeof CHORUS_REPORTES)[number];
+
 export const ISSUES_ANNOTATIONS_DN = ["ecrite", "inchangee", "echec"] as const;
 export type IssueAnnotationsDn = (typeof ISSUES_ANNOTATIONS_DN)[number];
 
@@ -24,6 +28,14 @@ export interface AnnotationsDnEntree {
   echecLienFpa?: boolean;
   /** Adresse de la maison sans point BAN sûr : lien en recherche texte, zone d'aléa non écrite. */
   adresseNonGeocodee?: boolean;
+  chorusReporte?: ChorusReporte[];
+  echecChorus?: boolean;
+}
+
+export interface BilanChorus {
+  dossiers: number;
+  valeurs: Record<ChorusReporte, number>;
+  echecs: number;
 }
 
 /** Totaux d'un run, agrégés et non nominatifs : le verdict n'est compté qu'ici. */
@@ -35,6 +47,12 @@ export interface BilanAnnotationsDn {
   echecsLienFpa: number;
   adressesNonGeocodees: number;
   verdicts: Record<VerdictControleDn, number>;
+  /** Absent des runs antérieurs au suivi Chorus. */
+  chorus?: BilanChorus;
+}
+
+function bilanChorusVide(): BilanChorus {
+  return { dossiers: 0, valeurs: { tiersFournisseur: 0, numeroEj: 0, montantSubvention: 0 }, echecs: 0 };
 }
 
 export function bilanAnnotationsDnVide(): BilanAnnotationsDn {
@@ -46,6 +64,7 @@ export function bilanAnnotationsDnVide(): BilanAnnotationsDn {
     echecsLienFpa: 0,
     adressesNonGeocodees: 0,
     verdicts: { coherent: 0, a_verifier: 0, non_verifiable: 0 },
+    chorus: bilanChorusVide(),
   };
 }
 
@@ -58,6 +77,10 @@ export function ajouterAuBilanAnnotationsDn(
   for (const annotation of entree.annotationsEcrites) ecritures[annotation] += 1;
   const verdicts = { ...bilan.verdicts };
   if (verdict) verdicts[verdict] += 1;
+  const chorusAvant = bilan.chorus ?? bilanChorusVide();
+  const reportes = entree.chorusReporte ?? [];
+  const valeurs = { ...chorusAvant.valeurs };
+  for (const nom of reportes) valeurs[nom] += 1;
   return {
     controles: bilan.controles + (entree.issue ? 1 : 0),
     ecritures,
@@ -66,5 +89,10 @@ export function ajouterAuBilanAnnotationsDn(
     echecsLienFpa: bilan.echecsLienFpa + (entree.echecLienFpa ? 1 : 0),
     adressesNonGeocodees: bilan.adressesNonGeocodees + (entree.adresseNonGeocodee ? 1 : 0),
     verdicts,
+    chorus: {
+      dossiers: chorusAvant.dossiers + (reportes.length > 0 ? 1 : 0),
+      valeurs,
+      echecs: chorusAvant.echecs + (entree.echecChorus ? 1 : 0),
+    },
   };
 }

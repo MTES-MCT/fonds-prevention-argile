@@ -17,7 +17,36 @@ describe("ajouterAuBilanAnnotationsDn", () => {
       echecsLienFpa: 0,
       adressesNonGeocodees: 0,
       verdicts: { coherent: 0, a_verifier: 1, non_verifiable: 0 },
+      chorus: { dossiers: 0, valeurs: { tiersFournisseur: 0, numeroEj: 0, montantSubvention: 0 }, echecs: 0 },
     });
+  });
+
+  it("compte à part le suivi Chorus reporté, sans en faire un contrôle", () => {
+    let bilan = bilanAnnotationsDnVide();
+    bilan = ajouterAuBilanAnnotationsDn(
+      bilan,
+      { issue: null, annotationsEcrites: [], chorusReporte: ["tiersFournisseur", "numeroEj"] },
+      null
+    );
+    bilan = ajouterAuBilanAnnotationsDn(bilan, { issue: null, annotationsEcrites: [], echecChorus: true }, null);
+
+    expect(bilan.controles).toBe(0);
+    expect(bilan.chorus).toEqual({
+      dossiers: 1,
+      valeurs: { tiersFournisseur: 1, numeroEj: 1, montantSubvention: 0 },
+      echecs: 1,
+    });
+  });
+
+  it("accepte un bilan enregistré avant le suivi Chorus", () => {
+    const { chorus: _chorus, ...ancien } = bilanAnnotationsDnVide();
+    const bilan = ajouterAuBilanAnnotationsDn(
+      ancien,
+      { issue: null, annotationsEcrites: [], chorusReporte: ["montantSubvention"] },
+      null
+    );
+
+    expect(bilan.chorus?.valeurs.montantSubvention).toBe(1);
   });
 
   it("additionne les contrôles d'un run, échec compris, sans verdict pour un échec", () => {

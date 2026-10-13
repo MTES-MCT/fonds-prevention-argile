@@ -10,6 +10,7 @@ import {
   bilanAnnotationsDnVide,
   type AnnotationDn,
   type AnnotationsDnEntree,
+  type ChorusReporte,
   type VerdictControleDn,
 } from "@/shared/domain/value-objects/bilan-annotations-dn";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
@@ -211,6 +212,8 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   let verdictControle: VerdictControleDn | null = null;
   const liensEcrits: AnnotationDn[] = [];
   let echecLienFpa = false;
+  const chorusReportes: ChorusReporte[] = [];
+  let echecChorus = false;
   let etapeCouranteNonRelue = false;
 
   // 1. Synchronise tous les dossiers (sans toucher au current_status du parcours).
@@ -254,9 +257,10 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     if (dossier.step === Step.ELIGIBILITE && result.success && result.data?.annotations) {
       // Hors erreurs du run : un suivi Chorus manqué sera repris au passage suivant.
       try {
-        await synchroniserChorus(dossier, result.data.annotations);
+        chorusReportes.push(...(await synchroniserChorus(dossier, result.data.annotations)));
       } catch (error) {
         console.warn(`Suivi Chorus non reporté (parcours ${parcoursId}) :`, error);
+        echecChorus = true;
       }
     }
 
@@ -279,11 +283,14 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     }
   }
 
-  if (liensEcrits.length > 0 || echecLienFpa) {
+  if (liensEcrits.length > 0 || echecLienFpa || chorusReportes.length > 0 || echecChorus) {
     annotationsDn = {
       issue: annotationsDn?.issue ?? null,
       annotationsEcrites: [...(annotationsDn?.annotationsEcrites ?? []), ...liensEcrits],
+      ...(annotationsDn?.adresseNonGeocodee && { adresseNonGeocodee: true }),
       ...(echecLienFpa && { echecLienFpa }),
+      ...(chorusReportes.length > 0 && { chorusReporte: chorusReportes }),
+      ...(echecChorus && { echecChorus }),
     };
   }
 
