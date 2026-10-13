@@ -13,7 +13,7 @@ const CALLOUT_EXPERT_TEXT_FONDS =
 
 // La promesse de financement ne vaut que pour un logement qui remplit les critères du fonds.
 export function getCalloutExpertTexte(eligibleFonds: boolean): string {
-  return eligibleFonds ? `${CALLOUT_EXPERT_TEXT_BASE} ${CALLOUT_EXPERT_TEXT_FONDS}` : CALLOUT_EXPERT_TEXT_BASE;
+  return eligibleFonds ? `${CALLOUT_EXPERT_TEXT_BASE}\n${CALLOUT_EXPERT_TEXT_FONDS}` : CALLOUT_EXPERT_TEXT_BASE;
 }
 
 export const SOURCES_VULNERABILITE_TITRE = "Comprendre les sources de vulnérabilité";
