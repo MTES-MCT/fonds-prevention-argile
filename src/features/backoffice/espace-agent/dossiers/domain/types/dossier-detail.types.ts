@@ -83,6 +83,8 @@ export interface DossierDetail {
   dates: ParcoursDateProgression;
   /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape */
   dossiersTimeline: Partial<Record<Step, DossierTimelineData>>;
+  /** Numéro du dossier DN par étape, déposé ou non. */
+  numerosDn: Partial<Record<Step, string>>;
   /** Suivi Chorus du dossier DN d'éligibilité, null tant que la DDT n'a rien saisi. */
   suiviChorus: SuiviChorus | null;
   /** Formulaire DN de l'étape courante, null tant qu'aucun n'a été créé. */
