@@ -6,6 +6,7 @@ import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/sha
 import { SuiviChorusAgent } from "@/features/parcours/dossiers-ds/components/SuiviChorusAgent";
 import type { SuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { DossierTimeline, type DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
+import { NumeroDossierDn } from "@/features/parcours/dossiers-ds/components/NumeroDossierDn";
 
 interface ParcoursDateProgression {
   compteCreatedAt: Date;
@@ -33,6 +34,8 @@ interface ParcoursDemandeurProps {
   creator?: ParcoursCreatorInfo | null;
   /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape. */
   dossiersTimeline?: Partial<Record<Step, DossierTimelineData>>;
+  /** Numéro du dossier DN par étape. */
+  numerosDn?: Partial<Record<Step, string>>;
   /** Suivi Chorus de l'éligibilité, affiché sous cette étape seulement. */
   suiviChorus?: SuiviChorus | null;
 }
@@ -150,6 +153,7 @@ export function ParcoursDemandeur({
   lastUpdatedAt,
   creator,
   dossiersTimeline,
+  numerosDn,
   suiviChorus,
 }: ParcoursDemandeurProps) {
   const hasInvitation = !!dates.invitationSentAt;
@@ -229,6 +233,10 @@ export function ParcoursDemandeur({
                         Invité par {creator.displayName}
                         {creator.structureNom && ` — ${creator.structureNom}`}
                       </div>
+                    )}
+
+                    {stepConfig.step && (
+                      <NumeroDossierDn numero={numerosDn?.[stepConfig.step]} className="fr-ml-3v fr-mt-1v fr-mb-0" />
                     )}
 
                     {/* Dates clés du dossier DS (brouillon/dépôt/instruction/décision) */}
