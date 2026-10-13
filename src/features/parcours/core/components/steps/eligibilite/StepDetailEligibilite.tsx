@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NumeroDossierDn } from "@/features/parcours/dossiers-ds/components/NumeroDossierDn";
 import { isStepBefore, Step } from "../../../domain";
 import { useParcours } from "../../../context/useParcours";
 import { DSStatus } from "@/features/parcours/dossiers-ds/domain";
@@ -219,6 +220,7 @@ export default function StepDetailEligibilite({ pieces }: { pieces?: PieceJustif
             )}
           </>
         )}
+        <NumeroDossierDn numero={dossiers?.find((d) => d.demarcheEtape === Step.ELIGIBILITE)?.numeroDs} />
       </div>
     </div>
   );

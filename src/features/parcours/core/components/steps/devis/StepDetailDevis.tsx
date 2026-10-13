@@ -1,10 +1,11 @@
 import { useParcours } from "../../../context/useParcours";
+import { NumeroDossierDn } from "@/features/parcours/dossiers-ds/components/NumeroDossierDn";
 import { isStepBefore, Step } from "../../../domain";
 import type { PieceJustificative } from "@/features/parcours/dossiers-ds/domain/pieces-justificatives";
 import PiecesAPrevoir from "../../common/PiecesAPrevoir";
 
 export default function StepDetailDevis({ pieces }: { pieces?: PieceJustificative[] }) {
-  const { currentStep } = useParcours();
+  const { currentStep, dossiers } = useParcours();
   const isActive = currentStep === Step.DEVIS;
   const isStepBeforeCurrent = currentStep ? isStepBefore(currentStep, Step.DEVIS) : false;
 
@@ -36,6 +37,7 @@ export default function StepDetailDevis({ pieces }: { pieces?: PieceJustificativ
             </div>
           </>
         )}
+        <NumeroDossierDn numero={dossiers?.find((d) => d.demarcheEtape === Step.DEVIS)?.numeroDs} />
       </div>
     </div>
   );

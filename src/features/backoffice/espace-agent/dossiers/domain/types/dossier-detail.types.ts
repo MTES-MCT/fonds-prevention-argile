@@ -1,4 +1,5 @@
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import type { SuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
@@ -82,6 +83,10 @@ export interface DossierDetail {
   dates: ParcoursDateProgression;
   /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape */
   dossiersTimeline: Partial<Record<Step, DossierTimelineData>>;
+  /** Numéro du dossier DN par étape, déposé ou non. */
+  numerosDn: Partial<Record<Step, string>>;
+  /** Suivi Chorus du dossier DN d'éligibilité, null tant que la DDT n'a rien saisi. */
+  suiviChorus: SuiviChorus | null;
   /** Formulaire DN de l'étape courante, null tant qu'aucun n'a été créé. */
   formulaireCourant: FormulaireCourant | null;
   /** Informations sur les modifications agent (si données éditées) */

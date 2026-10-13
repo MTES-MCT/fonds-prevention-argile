@@ -7,14 +7,20 @@ import { moveToNextStep } from "@/features/parcours/core/services";
 import type { DsStatusChange } from "@/shared/database/schema/sync-run-entries";
 import {
   ajouterAuBilanAnnotationsDn,
+  ajouterChorusAuBilan,
+  type BilanAnnotationsDn,
   bilanAnnotationsDnVide,
   type AnnotationDn,
   type AnnotationsDnEntree,
+  CHORUS_REPORTES,
+  type ChorusReporte,
+  type StatutsChorus,
   type VerdictControleDn,
 } from "@/shared/domain/value-objects/bilan-annotations-dn";
 import { getAllDossiersByParcours } from "./dossier-ds.service";
 import { recomputeParcoursStatus, syncDossierStatus } from "./ds-sync.service";
 import { controlerAvisImpotApresSync } from "./controle-avis-impot.service";
+import { synchroniserChorus } from "./chorus-sync.service";
 import { completerLienFpa } from "./lien-fpa.service";
 
 /**
@@ -101,6 +107,11 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
       const hadErrors = result.errors.length > 0;
       // Un contrôle lancé ou un lien complété mérite sa ligne, même sans rien écrire : on voit ce qui a tourné.
       const controleLance = result.annotationsDn !== null;
+      bilanAnnotationsDn = ajouterChorusAuBilan(
+        bilanAnnotationsDn,
+        result.chorusStatuts,
+        result.annotationsDn?.echecChorus ?? false
+      );
       if (result.annotationsDn) {
         bilanAnnotationsDn = ajouterAuBilanAnnotationsDn(
           bilanAnnotationsDn,
@@ -165,6 +176,8 @@ export async function runSyncBatch(triggeredBy: SyncRunTrigger): Promise<SyncRun
     status = SyncRunStatus.PARTIAL;
   }
 
+  if (bilanAnnotationsDn.chorus) console.info(resumerChorusPourLogs(bilanAnnotationsDn.chorus));
+
   await syncRunRepo.finalizeRun(run.id, {
     status,
     totalParcoursScanned: parcoursList.length,
@@ -195,6 +208,7 @@ interface SyncOneResult {
   /** Null quand le CRON n'a ni contrôlé l'avis ni touché au lien FPA de ce parcours. */
   annotationsDn: AnnotationsDnEntree | null;
   verdictControle: VerdictControleDn | null;
+  chorusStatuts: StatutsChorus | null;
 }
 
 async function syncOneParcours(parcoursId: string, userId: string): Promise<SyncOneResult> {
@@ -210,6 +224,9 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
   let verdictControle: VerdictControleDn | null = null;
   const liensEcrits: AnnotationDn[] = [];
   let echecLienFpa = false;
+  const chorusReportes: ChorusReporte[] = [];
+  let chorusStatuts: StatutsChorus | null = null;
+  let echecChorus = false;
   let etapeCouranteNonRelue = false;
 
   // 1. Synchronise tous les dossiers (sans toucher au current_status du parcours).
@@ -250,6 +267,17 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
       }
     }
 
+    if (dossier.step === Step.ELIGIBILITE && result.success && result.data?.annotations) {
+      // Hors erreurs du run : un suivi Chorus manqué sera repris au passage suivant.
+      try {
+        chorusStatuts = await synchroniserChorus(dossier, result.data.annotations);
+        chorusReportes.push(...CHORUS_REPORTES.filter((nom) => chorusStatuts?.[nom] === "reporte"));
+      } catch (error) {
+        console.warn(`Suivi Chorus non reporté (parcours ${parcoursId}) :`, error);
+        echecChorus = true;
+      }
+    }
+
     if (dossier.step === Step.ELIGIBILITE && result.success && !result.data?.notObserved) {
       // Best-effort : un échec est tracé dans le run sans bloquer la sync, et retenté au suivant.
       try {
@@ -269,11 +297,14 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     }
   }
 
-  if (liensEcrits.length > 0 || echecLienFpa) {
+  if (liensEcrits.length > 0 || echecLienFpa || chorusReportes.length > 0 || echecChorus) {
     annotationsDn = {
       issue: annotationsDn?.issue ?? null,
       annotationsEcrites: [...(annotationsDn?.annotationsEcrites ?? []), ...liensEcrits],
+      ...(annotationsDn?.adresseNonGeocodee && { adresseNonGeocodee: true }),
       ...(echecLienFpa && { echecLienFpa }),
+      ...(chorusReportes.length > 0 && { chorusReporte: chorusReportes }),
+      ...(echecChorus && { echecChorus }),
     };
   }
 
@@ -318,5 +349,15 @@ async function syncOneParcours(parcoursId: string, userId: string): Promise<Sync
     errors: dossierErrors,
     annotationsDn,
     verdictControle,
+    chorusStatuts,
   };
+}
+
+// Une ligne par run : pour chaque valeur Chorus, combien de dossiers l'ont reportée, laissée inchangée ou trouvée absente de DN.
+function resumerChorusPourLogs(chorus: NonNullable<BilanAnnotationsDn["chorus"]>): string {
+  const parties = CHORUS_REPORTES.map((nom) => {
+    const c = chorus.statuts[nom];
+    return `${nom}=${c.reporte} reporté/${c.inchange} inchangé/${c.absent} absent`;
+  });
+  return `[chorus] ${chorus.lus} dossier(s) d'éligibilité lu(s) : ${parties.join(", ")}, ${chorus.echecs} échec(s)`;
 }

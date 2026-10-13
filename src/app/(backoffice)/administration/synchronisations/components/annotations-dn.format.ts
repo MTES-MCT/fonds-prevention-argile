@@ -1,6 +1,8 @@
+import { CHORUS_REPORTES } from "@/shared/domain/value-objects/bilan-annotations-dn";
 import type {
   AnnotationDn,
   BilanAnnotationsDn,
+  ChorusReporte,
   VerdictControleDn,
 } from "@/shared/domain/value-objects/bilan-annotations-dn";
 
@@ -11,6 +13,12 @@ export const LIBELLES_ANNOTATIONS_DN: Record<AnnotationDn, string> = {
   lienCarte: "Lien carte",
   zoneAlea: "Zone d'aléa",
   lienFpa: "Lien FPA",
+};
+
+export const LIBELLES_CHORUS: Record<ChorusReporte, string> = {
+  tiersFournisseur: "Tiers fournisseur",
+  numeroEj: "N° d'EJ",
+  montantSubvention: "Montant",
 };
 
 export const LIBELLES_VERDICTS_DN: Record<VerdictControleDn, string> = {
@@ -38,5 +46,10 @@ export function resumerBilanAnnotationsDn(bilan: BilanAnnotationsDn | null): str
   const liens = bilan.ecritures.lienFpa;
   if (liens > 0) parties.push(liens > 1 ? `${liens} liens FPA complétés` : "1 lien FPA complété");
   if (bilan.echecsLienFpa > 0) parties.push(`${pluriel(bilan.echecsLienFpa, "échec")} de lien FPA`);
+  if (bilan.chorus && bilan.chorus.lus > 0) {
+    const reportes = CHORUS_REPORTES.reduce((somme, nom) => somme + bilan.chorus!.statuts[nom].reporte, 0);
+    parties.push(`${pluriel(reportes, "valeur")} Chorus reportée${reportes > 1 ? "s" : ""}`);
+  }
+  if (bilan.chorus && bilan.chorus.echecs > 0) parties.push(`${pluriel(bilan.chorus.echecs, "échec")} Chorus`);
   return parties.join(" · ");
 }

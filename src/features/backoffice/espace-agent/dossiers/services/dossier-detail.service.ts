@@ -19,6 +19,7 @@ import { unstable_rethrow } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
+import { toSuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { peutPasserEnAutonomie } from "@/features/parcours/amo/domain/value-objects/departements-amo";
 import { Status } from "@/shared/domain/value-objects/status.enum";
 import { parseCoordinatesString } from "@/shared/utils/geo.utils";
@@ -151,6 +152,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
 
     // Dates clés (brouillon/dépôt/instruction/décision) par étape pour la timeline détaillée.
     const dossiersTimeline: Partial<Record<Step, DossierTimelineData>> = {};
+    const numerosDn: Partial<Record<Step, string>> = {};
     for (const d of allDossiersDS) {
       dossiersTimeline[d.step as Step] = {
         etatDs: d.dsStatus,
@@ -159,8 +161,10 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
         instructedAt: d.instructedAt,
         processedAt: d.processedAt,
       };
+      if (d.dsNumber) numerosDn[d.step as Step] = d.dsNumber;
     }
 
+    const dossierEligibilite = allDossiersDS.find((d) => d.step === Step.ELIGIBILITE);
     const dossierCourant = allDossiersDS.find((d) => d.step === dossier.parcours.currentStep);
     const formulaireCourant: FormulaireCourant | null = dossierCourant
       ? {
@@ -218,6 +222,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       suiviDepuis: dossier.validation.valideeAt,
       dates,
       dossiersTimeline,
+      numerosDn,
+      suiviChorus: dossierEligibilite ? toSuiviChorus(dossierEligibilite) : null,
       formulaireCourant,
       agentEditInfo,
       creator,

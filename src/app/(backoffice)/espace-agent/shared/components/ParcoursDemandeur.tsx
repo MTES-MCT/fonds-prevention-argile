@@ -3,7 +3,10 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
 import { formatDate, daysBetween } from "@/shared/utils";
 import type { ParcoursCreatorInfo } from "@/features/backoffice/espace-agent/shared/services/parcours-creator.service";
+import { SuiviChorusAgent } from "@/features/parcours/dossiers-ds/components/SuiviChorusAgent";
+import type { SuiviChorus } from "@/features/parcours/dossiers-ds/domain/value-objects/suivi-chorus";
 import { DossierTimeline, type DossierTimelineData } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
+import { NumeroDossierDn } from "@/features/parcours/dossiers-ds/components/NumeroDossierDn";
 
 interface ParcoursDateProgression {
   compteCreatedAt: Date;
@@ -31,6 +34,10 @@ interface ParcoursDemandeurProps {
   creator?: ParcoursCreatorInfo | null;
   /** Dates clés (brouillon/dépôt/instruction/décision) du dossier DS, par étape. */
   dossiersTimeline?: Partial<Record<Step, DossierTimelineData>>;
+  /** Numéro du dossier DN par étape. */
+  numerosDn?: Partial<Record<Step, string>>;
+  /** Suivi Chorus de l'éligibilité, affiché sous cette étape seulement. */
+  suiviChorus?: SuiviChorus | null;
 }
 
 interface StepConfig {
@@ -146,6 +153,8 @@ export function ParcoursDemandeur({
   lastUpdatedAt,
   creator,
   dossiersTimeline,
+  numerosDn,
+  suiviChorus,
 }: ParcoursDemandeurProps) {
   const hasInvitation = !!dates.invitationSentAt;
   const stepsConfig = buildStepsConfig(hasInvitation);
@@ -226,10 +235,20 @@ export function ParcoursDemandeur({
                       </div>
                     )}
 
+                    {stepConfig.step && (
+                      <NumeroDossierDn numero={numerosDn?.[stepConfig.step]} className="fr-ml-3v fr-mt-1v fr-mb-0" />
+                    )}
+
                     {/* Dates clés du dossier DS (brouillon/dépôt/instruction/décision) */}
                     {timeline && (
                       <div className="fr-ml-3v fr-mt-1v text-(--text-mention-grey)">
                         <DossierTimeline dossier={timeline} />
+                      </div>
+                    )}
+
+                    {stepConfig.step === Step.ELIGIBILITE && suiviChorus && (
+                      <div className="fr-ml-3v fr-mt-1v">
+                        <SuiviChorusAgent suivi={suiviChorus} />
                       </div>
                     )}
                   </li>
