@@ -50,7 +50,7 @@ export function ResultVulnerabilite({ answers, result, onRestart }: ResultVulner
               <ComprendreSourcesVulnerabilite />
               <RecommandationsList sections={sections} />
 
-              <div className="flex flex-col md:flex-row md:justify-end fr-mt-4w">
+              <div className="flex flex-col md:flex-row md:justify-end gap-2 fr-mt-4w">
                 <TelechargerPdfButton synthese={synthese} sections={sections} eligibleFonds={eligibleFonds} />
 
                 <button
