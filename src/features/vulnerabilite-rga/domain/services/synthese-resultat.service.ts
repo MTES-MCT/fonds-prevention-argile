@@ -10,6 +10,13 @@ export interface SyntheseResultat {
   /** Porte le niveau en toutes lettres : l'information ne repose pas sur la seule couleur. */
   titre: string;
   texte: string;
+  /** Même texte découpé, pour mettre l'aléa et les comptes de points en gras à l'écran. */
+  segments: SegmentTexte[];
+}
+
+export interface SegmentTexte {
+  texte: string;
+  gras?: boolean;
 }
 
 const TITRES: Record<NiveauSynthese, string> = {
@@ -18,25 +25,33 @@ const TITRES: Record<NiveauSynthese, string> = {
   aucun: "Aucun point critique ni de vigilance",
 };
 
-const PHRASES_ALEA: Record<ReponseAleaRga, string> = {
-  fort: "Votre maison est située en zone d'aléa fort.",
-  moyen: "Votre maison est située en zone d'aléa moyen.",
-  faible: "Votre maison est située en zone d'aléa faible.",
-  nul: "Votre maison est située hors zone argileuse.",
+const ZONES_ALEA: Record<ReponseAleaRga, string> = {
+  fort: "en zone d'aléa fort",
+  moyen: "en zone d'aléa moyen",
+  faible: "en zone d'aléa faible",
+  nul: "hors zone argileuse",
 };
 
-function accorder(nombre: number, singulier: string, pluriel: string): string {
-  return `${nombre} ${nombre > 1 ? pluriel : singulier}`;
+function phraseAlea(alea: ReponseAleaRga): SegmentTexte[] {
+  return [{ texte: "Votre maison est située " }, { texte: ZONES_ALEA[alea], gras: true }, { texte: "." }];
 }
 
-function phrasePoints(critiques: number, vigilances: number): string {
+function accorder(nombre: number, singulier: string, pluriel: string): SegmentTexte {
+  return { texte: `${nombre} ${nombre > 1 ? pluriel : singulier}`, gras: true };
+}
+
+function phrasePoints(critiques: number, vigilances: number): SegmentTexte[] {
   const partCritique = accorder(critiques, "point critique", "points critiques");
   const partVigilance = accorder(vigilances, "point de vigilance", "points de vigilance");
 
-  if (critiques === 0 && vigilances === 0) return "Nous n'avons identifié aucun point critique ni point de vigilance.";
-  if (critiques === 0) return `Nous n'avons identifié aucun point critique, mais ${partVigilance}.`;
-  if (vigilances === 0) return `Nous avons identifié ${partCritique} et aucun point de vigilance.`;
-  return `Nous avons identifié ${partCritique} et ${partVigilance}.`;
+  if (critiques === 0 && vigilances === 0) {
+    return [{ texte: "Nous n'avons identifié aucun point critique ni point de vigilance." }];
+  }
+  if (critiques === 0)
+    return [{ texte: "Nous n'avons identifié aucun point critique, mais " }, partVigilance, { texte: "." }];
+  if (vigilances === 0)
+    return [{ texte: "Nous avons identifié " }, partCritique, { texte: " et aucun point de vigilance." }];
+  return [{ texte: "Nous avons identifié " }, partCritique, { texte: " et " }, partVigilance, { texte: "." }];
 }
 
 // La carte d'aléa est une estimation : en zone faible ou hors zone, on relativise les points sans les retirer.
@@ -60,11 +75,18 @@ export function buildSyntheseResultat(aleaRga: ReponseAleaRga | undefined, compt
   const aDesPointsATraiter = compte.critique + compte.vigilance + compte.a_verifier > 0;
   const phraseAttenuee = aleaRga ? PHRASES_ALEA_ATTENUE[aleaRga] : undefined;
   const phrases = [
-    aleaRga ? PHRASES_ALEA[aleaRga] : null,
+    aleaRga ? phraseAlea(aleaRga) : null,
     phrasePoints(compte.critique, compte.vigilance),
-    phraseAttenuee && aDesPointsATraiter ? phraseAttenuee : null,
-  ];
+    phraseAttenuee && aDesPointsATraiter ? [{ texte: phraseAttenuee }] : null,
+  ].filter((phrase): phrase is SegmentTexte[] => phrase !== null);
+  const segments = phrases.flatMap((phrase, i) => (i === 0 ? phrase : [{ texte: " " }, ...phrase]));
   const accent = phraseAttenuee && niveau === "critique" ? "vigilance" : niveau;
 
-  return { niveau, accent, titre: TITRES[niveau], texte: phrases.filter(Boolean).join(" ") };
+  return {
+    niveau,
+    accent,
+    titre: TITRES[niveau],
+    texte: segments.map((segment) => segment.texte).join(""),
+    segments,
+  };
 }

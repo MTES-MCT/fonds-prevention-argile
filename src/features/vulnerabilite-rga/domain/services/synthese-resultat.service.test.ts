@@ -80,4 +80,15 @@ describe("buildSyntheseResultat", () => {
     expect(buildSyntheseResultat("fort", compte(0, 1)).titre).toBe("Points de vigilance identifiés");
     expect(buildSyntheseResultat("fort", compte(0, 0)).titre).toBe("Aucun point critique ni de vigilance");
   });
+
+  it("découpe le texte en segments, aléa et comptes en gras", () => {
+    const { segments, texte } = buildSyntheseResultat("fort", compte(2, 1));
+
+    expect(segments.map((segment) => segment.texte).join("")).toBe(texte);
+    expect(segments.filter((segment) => segment.gras).map((segment) => segment.texte)).toEqual([
+      "en zone d'aléa fort",
+      "2 points critiques",
+      "1 point de vigilance",
+    ]);
+  });
 });

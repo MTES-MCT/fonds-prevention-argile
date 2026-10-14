@@ -7,7 +7,7 @@ describe("getSectionsRecommandations", () => {
     const sections = getSectionsRecommandations(
       categoriserReponses({
         pente_terrain: "ne_sais_pas",
-        gouttieres: "absentes_ou_debordantes",
+        gouttieres: "entretenues_evacuation_proche",
         haies: "proches_denses",
       })
     );
@@ -23,7 +23,7 @@ describe("getSectionsRecommandations", () => {
   });
 
   it("omet une section vide", () => {
-    const sections = getSectionsRecommandations(categoriserReponses({ gouttieres: "absentes_ou_debordantes" }));
+    const sections = getSectionsRecommandations(categoriserReponses({ gouttieres: "entretenues_evacuation_proche" }));
 
     expect(sections.map((s) => s.categorie)).toEqual(["vigilance"]);
   });
@@ -33,7 +33,7 @@ describe("getSectionsRecommandations", () => {
       categoriserReponses({
         aleaRga: "fort",
         reseaux_enterres: "eloignes",
-        gouttieres: "entretenues_evacuation_proche",
+        gouttieres: "entretenues_evacuation_loin",
         ensoleillement: "modere",
       })
     );

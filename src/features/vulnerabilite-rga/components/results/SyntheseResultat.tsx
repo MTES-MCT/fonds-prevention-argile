@@ -16,7 +16,11 @@ export function SyntheseResultat({ synthese }: SyntheseResultatProps) {
   return (
     <div className={`fr-callout ${CLASSES_NIVEAU[synthese.accent]} fr-mb-4w`}>
       <h2 className="fr-callout__title">{synthese.titre}</h2>
-      <p className="fr-callout__text">{synthese.texte}</p>
+      <p className="fr-callout__text">
+        {synthese.segments.map((segment, i) =>
+          segment.gras ? <strong key={i}>{segment.texte}</strong> : <span key={i}>{segment.texte}</span>
+        )}
+      </p>
     </div>
   );
 }
