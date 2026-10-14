@@ -20,6 +20,8 @@ interface SimulateurContextValue {
   onSave?: (rgaData: RGASimulationData) => Promise<ActionResult<unknown>>;
   /** Afficher le lien "Besoin d'aide ?" */
   showHelpLink?: boolean;
+  /** Proposer le simulateur de vulnérabilité à l'écran « non éligible ». Défaut vrai ; faux en iframe partenaire. */
+  proposerVulnerabilite?: boolean;
   /** Données initiales du demandeur (mode édition, pour comparaison) */
   initialData?: RGASimulationData | null;
   /** ID du dossier ou parcours (mode édition, pour la sauvegarde) */
