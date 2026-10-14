@@ -17,3 +17,6 @@ export type {
   BanCoordinates,
   BanAddressData,
 } from "./ban.types";
+
+export { adresseChoisieDepuisBan, banFeatureDepuisAdresse } from "./adresse-choisie";
+export type { AdresseChoisie } from "./adresse-choisie";

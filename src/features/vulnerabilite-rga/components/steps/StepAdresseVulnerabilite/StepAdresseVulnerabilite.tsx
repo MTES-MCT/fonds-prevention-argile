@@ -6,9 +6,12 @@ import {
   searchAddress,
   mapBanFeatureToAddressData,
   formatCoordinatesString,
+  adresseChoisieDepuisBan,
+  banFeatureDepuisAdresse,
   MIN_QUERY_LENGTH,
   type BanFeature,
 } from "@/shared/adapters/ban";
+import { lireAdresseChoisie, useAdresseChoisieStore } from "@/shared/stores";
 import { RgaMapContainer } from "@/features/rga-map";
 import { getRgaRiskLevel, type BuildingData } from "@/shared/services/bdnb";
 import { VulnerabiliteLayout } from "../../shared/VulnerabiliteLayout";
@@ -47,11 +50,17 @@ export function StepAdresseVulnerabilite({
   const inputId = useId();
   const radioGroupId = useId();
 
-  const [addressInput, setAddressInput] = useState(initialValue?.label ?? "");
+  const memoriserAdresse = useAdresseChoisieStore((state) => state.memoriser);
+  // Adresse déjà choisie dans le simulateur d'éligibilité, ou à l'étape précédente de celui-ci.
+  const [adressePartagee] = useState(lireAdresseChoisie);
+
+  const [addressInput, setAddressInput] = useState(adressePartagee?.label ?? initialValue?.label ?? "");
   const [addressResults, setAddressResults] = useState<BanFeature[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [selectedAddress, setSelectedAddress] = useState<BanFeature | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<BanFeature | null>(() =>
+    adressePartagee ? banFeatureDepuisAdresse(adressePartagee) : null
+  );
   const [buildingData, setBuildingData] = useState<BuildingData | null>(null);
 
   const debouncedInput = useDebounce(addressInput, SEARCH_DEBOUNCE_DELAY);
@@ -105,6 +114,15 @@ export function StepAdresseVulnerabilite({
 
     const addressData = mapBanFeatureToAddressData(selectedAddress);
 
+    memoriserAdresse(
+      adresseChoisieDepuisBan(selectedAddress, {
+        rnb: buildingData.rnbId || null,
+        coordonnees: { lat: buildingData.lat, lon: buildingData.lon },
+        // L'EPCI ne se déduit pas d'ici : on ne garde que celui de la même commune.
+        codeEpci: adressePartagee?.codeInsee === addressData.codeCommune ? adressePartagee.codeEpci : null,
+      })
+    );
+
     onSubmit({
       adresse: {
         label: buildingData.adresse || addressData.label,
@@ -116,7 +134,7 @@ export function StepAdresseVulnerabilite({
         aleaRga: getRgaRiskLevel(buildingData.aleaArgiles),
       },
     });
-  }, [selectedAddress, buildingData, onSubmit]);
+  }, [selectedAddress, buildingData, onSubmit, memoriserAdresse, adressePartagee]);
 
   // aleaIndetermine bloque : getRgaRiskLevel(null) rendrait "nul" (= hors zone) un aléa qu'on
   // n'a pas pu déterminer, faussant la synthèse du résultat et la simulation enregistrée.
@@ -211,6 +229,11 @@ export function StepAdresseVulnerabilite({
 
           <RgaMapContainer
             center={mapCenter}
+            initialRnbId={
+              selectedAddress.properties.id === adressePartagee?.clefBan
+                ? (adressePartagee.rnb ?? undefined)
+                : undefined
+            }
             showMarker={true}
             showLegend={true}
             variant="minimal"
