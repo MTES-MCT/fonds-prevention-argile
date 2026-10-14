@@ -138,17 +138,25 @@
   "vulnerabilite_section": {
     "badge": "Nouveau",
     "title": "Vous n'êtes pas sûr de remplir ces critères ?",
-    "description": "Le simulateur d'éligibilité vous répond en 2 minutes. Dans tous les cas, le simulateur de vulnérabilité repère les points faibles autour de votre maison et les gestes simples pour les réduire.",
-    "points": ["Sans inscription", "5 minutes", "Des gestes à moindre coût"],
-    "cta_label": "Tester ma vulnérabilité (5 min)",
+    "description": "Découvrez la vulnérabilité de votre logement face au RGA en 5 minutes. Répondez à quelques questions sur votre logement et son environnement pour identifier ses points faibles et obtenir des pistes d'actions concrètes, que vous soyez éligible ou non au Fonds Prévention Argile.",
+    "etapes": [
+      "Répondez à quelques questions simples",
+      "Identifiez les points critiques et de vigilance de votre logement",
+      "Obtenez des conseils pratiques à mettre en œuvre vous-même ou à confier à un expert."
+    ],
+    "cta_label": "Estimer la vulnérabilité de mon logement",
     "cta_url": "/vulnerabilite-rga",
+    "mention": "Résultat en 5 minutes - Sans inscription",
     "apercu": {
-      "legende": "Exemple de résultat",
-      "titre": "Points de vigilance identifiés",
+      "titre": "Exemple de résultat",
+      "resume": [
+        { "categorie": "critique", "nombre": 2 },
+        { "categorie": "vigilance", "nombre": 1 }
+      ],
       "lignes": [
-        { "categorie": "critique", "nombre": 1 },
-        { "categorie": "vigilance", "nombre": 2 },
-        { "categorie": "a_verifier", "nombre": 3 }
+        { "label": "Supprimer le gravier en pied de façade", "categorie": "critique" },
+        { "label": "Supprimer la végétation en pied de façade", "categorie": "critique" },
+        { "label": "Éviter la proximité des arbres", "categorie": "vigilance" }
       ]
     }
   },
