@@ -17,7 +17,7 @@ export function StepIntro({ onStart }: StepIntroProps) {
               <h1 className="fr-h3 fr-mb-1w">Découvrez la vulnérabilité de votre logement</h1>
 
               <p className="fr-mb-3w fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
-                Environ 2 minutes - Aucune inscription
+                Environ 5 minutes - Aucune inscription
               </p>
 
               <p className="fr-mb-3w">
