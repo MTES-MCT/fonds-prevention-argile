@@ -75,7 +75,7 @@ export default async function MaVulnerabilitePage() {
             <LancerTestVulnerabiliteButton
               adresse={adresse}
               recommencer
-              className="fr-btn fr-btn--secondary !w-full md:!w-auto justify-center fr-mb-2w md:fr-mb-0 md:fr-mr-2w">
+              className="fr-btn fr-btn--secondary !w-full md:!w-auto justify-center">
               Refaire le test
             </LancerTestVulnerabiliteButton>
             <Link href={ROUTES.particulier.monCompte} className="fr-btn !w-full md:!w-auto justify-center">

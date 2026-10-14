@@ -9,7 +9,7 @@ import { MATOMO_EVENTS } from "@/shared/constants";
 import type { SectionRecommandations } from "../../domain/services/recommandations.service";
 import type { SyntheseResultat } from "../../domain/services/synthese-resultat.service";
 
-const CLASSES_BOUTON = "fr-btn fr-btn--secondary !w-full md:!w-auto justify-center fr-mb-2w md:fr-mb-0 md:fr-mr-2w";
+const CLASSES_BOUTON = "fr-btn fr-btn--secondary !w-full md:!w-auto justify-center";
 
 interface TelechargerPdfButtonProps {
   synthese: SyntheseResultat;

@@ -18,7 +18,7 @@ import type { PartialVulnerabiliteReponses, ReponseAleaRga } from "../../domain/
 
 // Classes redéclarées plutôt qu'importées de `TelechargerPdfButton` : un import statique
 // depuis ce module y ramènerait `@react-pdf/renderer` et annulerait le découpage.
-const CLASSES_BOUTON_PDF = "fr-btn fr-btn--secondary !w-full md:!w-auto justify-center fr-mb-2w md:fr-mb-0 md:fr-mr-2w";
+const CLASSES_BOUTON_PDF = "fr-btn fr-btn--secondary !w-full md:!w-auto justify-center";
 
 // En statique, `@react-pdf/renderer` (~256 Ko gzip) entrait dans le first-load de
 // /vulnerabilite-rga et de l'iframe partenaire — 13 étapes avant que ce bouton existe.
@@ -62,7 +62,7 @@ export function ContenuResultatVulnerabilite({
               <ComprendreSourcesVulnerabilite />
               <RecommandationsList sections={sections} />
 
-              <div className="flex flex-col md:flex-row md:justify-end fr-mt-4w">
+              <div className="flex flex-col md:flex-row md:flex-wrap md:justify-end gap-3 fr-mt-4w">
                 <TelechargerPdfButton synthese={synthese} sections={sections} eligibleFonds={eligibleFonds} />
                 {actions}
               </div>

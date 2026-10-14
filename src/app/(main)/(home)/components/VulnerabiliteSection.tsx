@@ -49,17 +49,16 @@ export default function VulnerabiliteSection() {
           <div className="fr-col-12 fr-col-md-6">
             <div className="fr-mt-md-6w border border-solid border-(--border-default-grey) bg-(--background-default-grey) p-6 md:p-8">
               <p className="fr-h6 fr-mb-3w">{section.apercu.titre}</p>
-              <p className="fr-mb-3w">
+              <div className="flex flex-wrap gap-2 fr-mb-3w">
                 {section.apercu.resume.map(({ categorie, nombre }) => (
-                  <span key={categorie} className="fr-mr-1w">
-                    <CategorieBadge
-                      categorie={categorie as CategorieAffichee}
-                      inline={false}
-                      libelle={libelleDecompte(categorie as CategorieAffichee, nombre)}
-                    />
-                  </span>
+                  <CategorieBadge
+                    key={categorie}
+                    categorie={categorie as CategorieAffichee}
+                    inline={false}
+                    libelle={libelleDecompte(categorie as CategorieAffichee, nombre)}
+                  />
                 ))}
-              </p>
+              </div>
               <ul className="fr-raw-list">
                 {section.apercu.lignes.map(({ label, categorie }) => (
                   <li

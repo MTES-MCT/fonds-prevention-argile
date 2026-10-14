@@ -68,7 +68,7 @@ export default function VulnerabiliteMaListe() {
             </>
           ) : (
             <>
-              <p className="fr-mb-1w">
+              <div className="flex flex-wrap gap-2 fr-mb-1w">
                 {resume.compte.critique > 0 && (
                   <CategorieBadge
                     categorie="critique"
@@ -77,15 +77,13 @@ export default function VulnerabiliteMaListe() {
                   />
                 )}
                 {resume.compte.vigilance > 0 && (
-                  <span className={resume.compte.critique > 0 ? "fr-ml-1w" : undefined}>
-                    <CategorieBadge
-                      categorie="vigilance"
-                      inline={false}
-                      libelle={libelleDecompte("vigilance", resume.compte.vigilance)}
-                    />
-                  </span>
+                  <CategorieBadge
+                    categorie="vigilance"
+                    inline={false}
+                    libelle={libelleDecompte("vigilance", resume.compte.vigilance)}
+                  />
                 )}
-              </p>
+              </div>
               <p className="fr-text--sm fr-mb-1w">À traiter en priorité : {resume.pointsPrioritaires.join(", ")}.</p>
             </>
           )}
