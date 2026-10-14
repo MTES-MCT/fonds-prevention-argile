@@ -73,6 +73,27 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 3. basculer `isVulnerabiliteRgaActive()` (ajouter `"production"` à `ENVIRONNEMENTS_ACTIFS`) ;
 4. retirer le `noindex` des deux pages **et** les entrées correspondantes de `src/app/robots.ts`.
 
+### Points d'entrée
+
+Tous derrière la même bascule : hors des environnements actifs, aucun ne s'affiche, pour ne pas mener à un 404.
+
+| Entrée                 | Où                                                                       | Condition d'affichage                                                    |
+| ---------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État » | bascule active ; l'aperçu de résultat est illustratif, sans score        |
+| Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton        | bascule active, site principal (pas l'iframe), maison, propriétaire      |
+| « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top    | bascule active, étape « choix de l'accompagnement » seulement            |
+| Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base          | bascule active, test rattaché au compte, sinon renvoi vers le simulateur |
+
+> `/vulnerabilite-rga` vit dans le groupe de routes `(tunnel)` ([ADR-0040](../adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)),
+> comme `/simulateur` : header réduit à l'aide, pas de navigation. L'iframe `/embed-vulnerabilite-rga` n'est pas concernée.
+
+### Passage d'un simulateur à l'autre
+
+L'adresse choisie dans l'un s'ouvre dans l'autre, bâtiment présélectionné, via un store partagé en
+`sessionStorage` ([ADR-0048](../adr/0048-adresse-partagee-entre-simulateurs.md)). L'aléa est recalculé depuis la
+BDNB et non repris de l'éligibilité ; l'EPCI, absent côté vulnérabilité, est retrouvé à l'arrivée sur l'éligibilité.
+Depuis le compte, l'adresse de la simulation d'éligibilité préremplit le test.
+
 ---
 
 ## 3. Architecture
@@ -247,6 +268,14 @@ dans `handleFranceConnectCallback` (mirror de `FC_CLAIM_TOKEN`). Détail : ADR-0
 > [PARTNER-TRACKING.md](../partners/PARTNER-TRACKING.md)) ; à reprendre si le rattachement doit
 > marcher côté partenaires.
 
+### Le demandeur relit son résultat
+
+`parcours_prevention.vulnerabilite_simulation_id` sert aussi le demandeur : `getMaVulnerabilite` (service
+`parcours/core`) relit la ligne du parcours **de la session**, sans identifiant venu du client, et rejoue la
+catégorisation. « Ma liste » n'en tire qu'un résumé (`buildResumeVulnerabilite` : niveau, décompte, trois points
+prioritaires), jamais un score ; la page `/mon-compte/vulnerabilite` rend le résultat complet, avec le PDF. Un test
+refait écrase le pointeur : le compte ne garde que le dernier.
+
 ---
 
 ## 6. Améliorations à faire
@@ -307,3 +336,6 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Rattachement à la connexion            | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
 | Stats back-office                      | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`             |
 | Carte espace agent                     | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                 |
+| Résultat relu côté demandeur           | `parcours/core/services/ma-vulnerabilite.service.ts`, `app/(main)/mon-compte/vulnerabilite`   |
+| Encart « Ma liste »                    | `parcours/core/components/common/VulnerabiliteMaListe.tsx`                                    |
+| Adresse partagée (ADR-0048)            | `shared/adapters/ban/adresse-choisie.ts`, `shared/stores/adresse-choisie.store.ts`            |

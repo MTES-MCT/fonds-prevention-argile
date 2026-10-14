@@ -57,6 +57,7 @@ Sous-modules notables :
 | `config/`                                                    | Configuration d'environnement validée par Zod (`env.config.ts`)           |
 | `utils/`                                                     | Helpers (dates, géo, crypto, async, téléphone, parsing)                   |
 | `types/`                                                     | Types TypeScript globaux (`ActionResult`, coordonnées, etc.)              |
+| `stores/`                                                    | Stores client partagés entre features (adresse choisie, ADR-0048)         |
 | `hooks/`, `constants/`, `services/`, `adapters/`, `testing/` | Divers transverses                                                        |
 
 ---
@@ -66,7 +67,7 @@ Sous-modules notables :
 | Groupe                  | Rôle                                                                                                                                                                                                |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `(main)`                | Site public + parcours demandeur (accueil, parcours, mon-compte et ses données de simulation, pages légales, statistiques publiques `/stats` — [ADR-0035](adr/0035-page-statistiques-publiques.md)) |
-| `(tunnel)`              | Simulateur d'éligibilité (`/simulateur`) : header réduit à l'aide, sans navigation — [ADR-0040](adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)                                               |
+| `(tunnel)`              | Simulateurs d'éligibilité (`/simulateur`) et de vulnérabilité (`/vulnerabilite-rga`) : header réduit à l'aide, sans navigation — [ADR-0040](adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)   |
 | `(backoffice)`          | Espaces agents privés ProConnect (`espace-agent`, `administration`)                                                                                                                                 |
 | `(embed)`               | Pages embarquées pour partenaires (iframes) — voir `docs/partners/`                                                                                                                                 |
 | `api/auth`              | Callbacks et logout FranceConnect / ProConnect                                                                                                                                                      |
