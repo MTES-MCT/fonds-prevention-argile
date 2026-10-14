@@ -19,6 +19,7 @@ import { AnnulerAccompagnementModal } from "@/features/parcours/amo/components/s
 import { DemanderAccompagnementModal } from "@/features/parcours/amo/components/steps/DemanderAccompagnementModal";
 import { DossierTimeline } from "@/features/parcours/dossiers-ds/components/DossierTimeline";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
+import VulnerabiliteMaListe from "./VulnerabiliteMaListe";
 
 const COMPLETED_STYLE: React.CSSProperties = {
   textDecoration: "line-through",
@@ -148,6 +149,8 @@ export default function MaListe() {
                 </li>
               ))}
             </ol>
+            {/* Le test de vulnérabilité se propose tant que le demandeur choisit son accompagnement. */}
+            {currentStep === Step.CHOIX_AMO && <VulnerabiliteMaListe />}
           </div>
         </div>
       </div>

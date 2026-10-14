@@ -24,6 +24,7 @@ export const ROUTES = {
   particulier: {
     monCompte: "/mon-compte",
     maSimulation: "/mon-compte/simulation",
+    maVulnerabilite: "/mon-compte/vulnerabilite",
     mesDossiers: "/mes-dossiers",
     mesDemandes: "/mes-demandes",
   },

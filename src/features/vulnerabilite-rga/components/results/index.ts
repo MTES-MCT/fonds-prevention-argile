@@ -4,3 +4,4 @@ export * from "./ComprendreSourcesVulnerabilite";
 export * from "./RecommandationCard";
 export * from "./RecommandationsList";
 export * from "./ResultVulnerabilite";
+export * from "./LancerTestVulnerabiliteButton";
