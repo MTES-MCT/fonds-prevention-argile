@@ -272,6 +272,10 @@ Téléchargement tracké via l'évènement Matomo `vulnerabilite_pdf_download`
 (`MATOMO_EVENTS.VULNERABILITE_PDF_DOWNLOAD`), même mécanique que les autres évènements du funnel —
 consultable directement dans Matomo, pas de compteur dédié côté admin.
 
+Les renvois entre les deux simulateurs sont tracés dans les deux sens : `vulnerabilite_cta_non_eligible`
+depuis l'écran « non éligible » du simulateur d'éligibilité, `vulnerabilite_cta_eligibilite` depuis le
+bouton « Vérifier mon éligibilité » du résultat de vulnérabilité. Le second n'est pas émis pour un agent.
+
 ---
 
 ## 5. Rattachement au compte demandeur
