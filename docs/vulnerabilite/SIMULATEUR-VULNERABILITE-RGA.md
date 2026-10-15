@@ -49,15 +49,25 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 | Onglet « Vulnérabilité » de la nav backoffice | masqué (`AdminNavTab.estDisponible`)                                     |
 | `enregistrerResultatVulnerabiliteAction`      | no-op — une Server Action reste appelable même quand sa page renvoie 404 |
 
-> La carte « Vulnérabilité au RGA » de l'espace agent n'est pas gardée : elle ne s'affiche que si
-> une simulation est rattachée au parcours, ce qui ne peut pas arriver en production tant que
-> l'écriture est bloquée.
+> La carte « Vulnérabilité au RGA » de l'espace agent (`VulnerabiliteDossier`) suit la même bascule : inactive,
+> elle disparaît, résultat existant compris. L'adresse partagée entre simulateurs (ADR-0048) n'est pas non plus
+> gardée en `sessionStorage` quand la feature est inactive.
 
 > **Liste d'autorisation, pas de refus de la production.** Le lecteur d'environnement partagé
 > applique un défaut "local" quand la variable est absente : une app mal configurée servirait
 > alors le simulateur. La bascule teste donc l'appartenance à la liste ci-dessus — variable
 > absente ou valeur inconnue = **inactif**. Conséquence à connaître : un poste de dev sans
 > `NEXT_PUBLIC_APP_ENV` dans son `.env.local` obtient un 404, pas une page.
+
+> **Voir le comportement de la production en staging** : `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE=false`, posée au
+> build, désactive tous les points d'entrée sans toucher à `NEXT_PUBLIC_APP_ENV` (dont dépendent Matomo, les e-mails
+> et les garde-fous des scripts ops ; une valeur hors des quatre connues est refusée par Zod). C'est un interrupteur
+> de désactivation seulement : la production reste inactive, quelle que soit sa valeur. Comme toute variable
+> `NEXT_PUBLIC_*`, elle n'agit qu'après un **nouveau build** : un simple redémarrage ne suffit pas.
+
+> **Garde-fou.** `garde-hors-production.test.ts` échoue quand un fichier pose un lien vers le simulateur (URL,
+> routes du compte et de l'espace agent, contenu de la home) sans passer par `isVulnerabiliteRgaActive()`, quand un
+> composant ou une action listés ne la portent plus, ou quand une page `*vulnerabilite*` ne répond plus 404.
 
 > `NEXT_PUBLIC_APP_ENV` est une variable `NEXT_PUBLIC_*` : elle est **figée au build** pour tout ce
 > qui tourne côté navigateur (l'onglet de navigation backoffice). Elle doit donc être présente au

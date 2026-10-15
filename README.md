@@ -41,6 +41,7 @@ Configurez les variables selon votre environnement. Les principales variables in
 
 - `NODE_ENV` : Environnement d'exécution (`development` ou `production`)
 - `NEXT_PUBLIC_APP_ENV` : Environnement applicatif (`local`, `docker`, `staging`, `production`). **À poser sur chaque app, y compris au build** : c'est elle qui décide de l'initialisation de Matomo, du widget Messages, des garde-fous des scripts ops, et de la disponibilité du [simulateur de vulnérabilité](docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) (servi hors production uniquement — une valeur absente ou inconnue le désactive)
+- `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE` : mettre `false` (**au build**) pour masquer tout ce qui touche au simulateur de vulnérabilité, par exemple en staging pour y voir le comportement de la production. Elle ne fait que désactiver : la production reste inactive quelle que soit sa valeur.
 - `NEXT_PUBLIC_MATOMO_SITE_ID` : ID Matomo pour l'analytics
 - `NEXT_PUBLIC_MATOMO_URL` : URL de l'instance Matomo
 - `MATOMO_API_TOKEN` : Token d'API Matomo (Reporting API) alimentant les statistiques du back-office. **Obligatoire côté serveur** : s'il est absent, expiré ou révoqué, les tuiles Matomo de `/administration` affichent « Indisponible »
