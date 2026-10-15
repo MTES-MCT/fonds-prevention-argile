@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CategorieBadge } from "@/features/vulnerabilite-rga/components/shared/CategorieBadge";
 import {
   CATEGORIES_AFFICHAGE,
@@ -8,13 +9,15 @@ import type { InfoVulnerabiliteData } from "@/features/backoffice/espace-agent/s
 
 interface InfoVulnerabiliteProps {
   data: InfoVulnerabiliteData;
+  /** Action propre au dossier (ex. refaire le test), posée en bas de la carte. */
+  action?: ReactNode;
 }
 
 /**
  * Carte « Vulnérabilité au RGA » — résultat du simulateur public rattaché au compte du demandeur.
  * Une seule carte compacte : le décompte des points, puis chaque réponse avec sa catégorie.
  */
-export function InfoVulnerabilite({ data }: InfoVulnerabiliteProps) {
+export function InfoVulnerabilite({ data, action }: InfoVulnerabiliteProps) {
   return (
     <div
       className="bg-(--background-default-grey) p-6"
@@ -45,6 +48,8 @@ export function InfoVulnerabilite({ data }: InfoVulnerabiliteProps) {
           ))}
         </ul>
       )}
+
+      {action && <div className="fr-mt-3w">{action}</div>}
     </div>
   );
 }

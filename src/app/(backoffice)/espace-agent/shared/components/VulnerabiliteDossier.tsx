@@ -25,10 +25,16 @@ export async function VulnerabiliteDossier({ id, vulnerabilite }: VulnerabiliteD
 
   if (!vulnerabilite && !peutFaireLeTest) return null;
 
+  const lancerLeTest = peutFaireLeTest && (
+    <Link href={ROUTES.backoffice.espaceAgent.testVulnerabilite(id)} className="fr-btn fr-btn--secondary fr-btn--sm">
+      {vulnerabilite ? "Refaire le test avec le demandeur" : "Faire le test avec le demandeur"}
+    </Link>
+  );
+
   return (
     <div className="fr-mb-4w">
       {vulnerabilite ? (
-        <InfoVulnerabilite data={vulnerabilite} />
+        <InfoVulnerabilite data={vulnerabilite} action={lancerLeTest} />
       ) : (
         <div className="bg-(--background-default-grey) border border-solid border-(--border-default-grey) p-6">
           <h3 className="fr-h5 fr-mb-1w">
@@ -39,15 +45,8 @@ export async function VulnerabiliteDossier({ id, vulnerabilite }: VulnerabiliteD
             Le demandeur n&apos;a pas encore fait le test de vulnérabilité. Vous pouvez le faire avec lui au téléphone
             (environ 5 minutes) : le résultat sera rattaché à son dossier.
           </p>
+          {lancerLeTest && <div className="fr-mt-3w">{lancerLeTest}</div>}
         </div>
-      )}
-
-      {peutFaireLeTest && (
-        <Link
-          href={ROUTES.backoffice.espaceAgent.testVulnerabilite(id)}
-          className="fr-btn fr-btn--secondary fr-btn--sm fr-mt-2w">
-          {vulnerabilite ? "Refaire le test avec le demandeur" : "Faire le test avec le demandeur"}
-        </Link>
       )}
     </div>
   );

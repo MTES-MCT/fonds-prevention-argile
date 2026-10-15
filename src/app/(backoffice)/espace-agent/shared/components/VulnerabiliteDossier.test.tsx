@@ -9,7 +9,14 @@ vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({ getCurren
 vi.mock("@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite", () => ({
   isVulnerabiliteRgaActive: vi.fn(),
 }));
-vi.mock("./InfoVulnerabilite", () => ({ InfoVulnerabilite: () => <p>Carte du résultat</p> }));
+vi.mock("./InfoVulnerabilite", () => ({
+  InfoVulnerabilite: ({ action }: { action?: React.ReactNode }) => (
+    <div>
+      <p>Carte du résultat</p>
+      {action}
+    </div>
+  ),
+}));
 
 const RESULTAT = { compte: {}, completedAt: new Date(), reponses: [] } as never;
 
