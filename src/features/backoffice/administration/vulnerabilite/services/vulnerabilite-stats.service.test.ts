@@ -43,7 +43,6 @@ function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): Vulnerabilit
     vegetationPiedFacade: null,
     mitoyennete: null,
     ensoleillement: null,
-    sourceChaleurSousSol: null,
     ...overrides,
   };
 }

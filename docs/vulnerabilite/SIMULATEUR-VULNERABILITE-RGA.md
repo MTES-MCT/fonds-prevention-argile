@@ -27,7 +27,7 @@ moindre coût. Ce n'est **pas** un diagnostic, et ce n'est **pas** le simulateur
 | Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                             |
 
 Le questionnaire ne porte volontairement **ni sur le bâti** (année, niveaux, fondations) **ni sur les
-revenus** : 13 questions, observables depuis le jardin ou le sous-sol.
+revenus** : 12 questions, observables depuis le jardin.
 
 ---
 
@@ -134,7 +134,7 @@ domain/
   rules/navigation/step-flow.rules.ts      ← ordre des étapes + branchement arbre → essence
   value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 15 étapes, 11 illustrations SVG, synthèse, recommandations
+components/                                ← 14 étapes, 10 illustrations SVG, synthèse, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
@@ -143,10 +143,10 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 ### Parcours
 
 `intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (et son essence) →
-haies → végétation en pied de façade → mitoyenneté → ensoleillement → source de chaleur en
-sous-sol → résultat`
+haies → végétation en pied de façade → mitoyenneté → ensoleillement → résultat`
 
-Parcours linéaire, 12 étapes numérotées. L'essence de l'arbre n'a plus d'écran propre : elle
+Parcours linéaire, 11 étapes numérotées. La question sur une source de chaleur en sous-sol a été
+retirée, sa colonne supprimée (migration `0058`) : elle n'avait servi qu'en préproduction. L'essence de l'arbre n'a plus d'écran propre : elle
 apparaît sous la question de proximité dès la réponse « Oui », et « Suivant » l'exige alors.
 Revenir à « Non » ou « Je ne sais pas » l'efface.
 
@@ -260,7 +260,7 @@ synthèse ou le callout. Le titre d'une section est attaché à sa première fic
 insécable : `minPresenceAhead` a été essayé et ne l'empêchait pas de rester seul en bas de page.
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
-que tout le reste de la page, alors que le bouton n'apparaît qu'à la 15e étape. `ResultVulnerabilite`
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 14e étape. `ResultVulnerabilite`
 la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
 l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
 compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
@@ -333,7 +333,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 - Ajouter un test négatif RBAC sur les trois Server Actions de `vulnerabilite-stats.actions.ts`
   (cf. [RBAC-TEST-PLAN §5](../security/RBAC-TEST-PLAN.md)) — gravité faible (agrégats anonymes),
   mais c'est la règle du repo pour toute nouvelle surface.
-- Créer le funnel Matomo du simulateur, avec l'étape `vulnerabilite_step_source_chaleur_sous_sol`,
+- Créer le funnel Matomo du simulateur (sans l'étape `vulnerabilite_step_source_chaleur_sous_sol`, retirée),
   et renseigner `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` sur staging (sans elle, le widget
   funnel affiche « données non disponibles », le reste de l'onglet fonctionne).
 - La limitation de débit de l'écriture anonyme est suivie comme **étape de mise en ligne** (§2),
@@ -353,7 +353,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Renvoi conditionnel vers `/simulateur` | `vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`                                                      |
 | Sections de recommandations            | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                                        |
 | Navigation et branchement              | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                                        |
-| Orchestrateur des 15 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
+| Orchestrateur des 14 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
 | Écriture anonyme                       | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                                           |
 | Table anonyme                          | `shared/database/schema/vulnerabilite-simulations.ts`                                                                 |
 | PDF téléchargeable                     | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                                                       |

@@ -407,6 +407,13 @@
       "when": 1791796776519,
       "tag": "0057_jazzy_synch",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1792071322306,
+      "tag": "0058_vulnerabilite_supprime_source_chaleur",
+      "breakpoints": true
     }
   ]
 }
