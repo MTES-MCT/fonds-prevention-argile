@@ -37,6 +37,8 @@ export const MATOMO_EVENTS = {
   VULNERABILITE_PDF_DOWNLOAD: "vulnerabilite_pdf_download",
   // Clic sur la proposition de vulnérabilité, depuis l'écran « non éligible » du simulateur d'éligibilité.
   VULNERABILITE_CTA_NON_ELIGIBLE: "vulnerabilite_cta_non_eligible",
+  // Clic sur le renvoi vers le simulateur d'éligibilité, depuis le résultat de vulnérabilité.
+  VULNERABILITE_CTA_ELIGIBILITE: "vulnerabilite_cta_eligibilite",
 } as const;
 
 export type MatomoEvent = (typeof MATOMO_EVENTS)[keyof typeof MATOMO_EVENTS];
