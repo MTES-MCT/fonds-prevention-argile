@@ -54,7 +54,6 @@ const answers: PartialVulnerabiliteReponses = {
   divers: {
     mitoyennete: "mitoyen_voisin_sans_travaux",
     ensoleillement: "fort_sud",
-    source_chaleur_sous_sol: "oui_mur_non_isole",
   },
 };
 const payload = toSimulationPayload(answers);
@@ -107,7 +106,6 @@ describe("enregistrerResultatVulnerabiliteAction", () => {
     expect(inserted.codeDepartement).toBe("36");
     expect(inserted.aleaRga).toBe("fort");
     expect(inserted.penteTerrain).toBe("vers_facade");
-    expect(inserted.sourceChaleurSousSol).toBe("oui_mur_non_isole");
     expect(JSON.stringify(inserted)).not.toContain("1 rue Test");
     expect(JSON.stringify(inserted)).not.toContain("clef-test");
   });

@@ -25,7 +25,6 @@ import {
   StepVegetationPiedFacade,
   StepMitoyenneteVulnerabilite,
   StepEnsoleillement,
-  StepSourceChaleurSousSol,
 } from "./steps";
 import { ResultVulnerabilite, ContenuResultatVulnerabilite } from "./results";
 import { VulnerabiliteProvider, type ContexteAgentVulnerabilite } from "./shared/VulnerabiliteContext";
@@ -202,9 +201,6 @@ function FormulaireInterne({ agent }: { agent?: ContexteAgentVulnerabilite }) {
 
     case VulnerabiliteStep.ENSOLEILLEMENT:
       return <StepEnsoleillement {...stepProps} initialValue={answers.divers?.ensoleillement} />;
-
-    case VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL:
-      return <StepSourceChaleurSousSol {...stepProps} initialValue={answers.divers?.source_chaleur_sous_sol} />;
 
     case VulnerabiliteStep.RESULTAT:
       if (!result) {

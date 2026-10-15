@@ -12,7 +12,7 @@ describe("getCategorieReponse", () => {
     expect(getCategorieReponse("gouttieres", "entretenues_evacuation_loin")).toBe("bonne_pratique");
     expect(getCategorieReponse("mitoyennete", "mitoyen_voisin_sans_travaux")).toBe("vigilance");
     expect(getCategorieReponse("mitoyennete", "mitoyen_voisin_travaux_prevention")).toBe("a_verifier");
-    expect(getCategorieReponse("source_chaleur_sous_sol", "pas_de_sous_sol")).toBe("sans_objet");
+    expect(getCategorieReponse("recuperateur_eau", "absent")).toBe("sans_objet");
   });
 
   it("ne renvoie rien pour l'aléa ou une réponse inconnue", () => {
@@ -41,7 +41,7 @@ describe("categoriserReponses", () => {
   });
 
   it("ignore les réponses sans objet", () => {
-    expect(categoriserReponses({ recuperateur_eau: "absent", source_chaleur_sous_sol: "pas_de_sous_sol" })).toEqual([]);
+    expect(categoriserReponses({ recuperateur_eau: "absent" })).toEqual([]);
   });
 
   it("tire le point de l'arbre de son essence : critique pour les grands arbres, vigilance pour les fruitiers", () => {
@@ -75,10 +75,9 @@ describe("compterPoints", () => {
     const { points } = computeResultat({
       eaux: { reseaux_enterres: "sous_fondations", gouttieres: "entretenues_evacuation_proche", pente_terrain: "plat" },
       vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand", haies: "eloignees_peu_denses" },
-      divers: { source_chaleur_sous_sol: "oui_mur_non_isole" },
     });
 
-    expect(compterPoints(points)).toEqual({ critique: 3, vigilance: 1, a_verifier: 1, bonne_pratique: 1 });
+    expect(compterPoints(points)).toEqual({ critique: 2, vigilance: 1, a_verifier: 1, bonne_pratique: 1 });
   });
 
   it("part de zéro partout", () => {

@@ -10,4 +10,3 @@ export * from "./StepHaies";
 export * from "./StepVegetationPiedFacade";
 export * from "./StepMitoyenneteVulnerabilite";
 export * from "./StepEnsoleillement";
-export * from "./StepSourceChaleurSousSol";

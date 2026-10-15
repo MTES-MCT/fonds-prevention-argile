@@ -11,7 +11,6 @@ import type {
   ReponseVegetationPiedFacade,
   ReponseMitoyennete,
   ReponseEnsoleillement,
-  ReponseSourceChaleurSousSol,
 } from "../types/vulnerabilite-reponses.types";
 
 /**
@@ -253,15 +252,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
         categorie: "bonne_pratique",
       },
     ] satisfies ReponseConfig<ReponseEnsoleillement>[],
-  },
-  {
-    id: "source_chaleur_sous_sol",
-    reponses: [
-      { reponse: "oui_mur_isole", label: "Oui, sur un mur isolé", categorie: "a_verifier" },
-      { reponse: "oui_mur_non_isole", label: "Oui, sur un mur non isolé", categorie: "critique" },
-      { reponse: "non", label: "Non", categorie: "bonne_pratique" },
-      { reponse: "pas_de_sous_sol", label: "Pas de sous-sol", categorie: "sans_objet" },
-    ] satisfies ReponseConfig<ReponseSourceChaleurSousSol>[],
   },
 ];
 

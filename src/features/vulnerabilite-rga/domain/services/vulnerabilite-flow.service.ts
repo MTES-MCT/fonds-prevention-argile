@@ -36,7 +36,6 @@ const STEP_SPECIFIC_KEYS: Partial<
   [VulnerabiliteStep.VEGETATION_PIED_FACADE]: { section: "vegetation", keys: ["vegetation_pied_facade"] },
   [VulnerabiliteStep.MITOYENNETE]: { section: "divers", keys: ["mitoyennete"] },
   [VulnerabiliteStep.ENSOLEILLEMENT]: { section: "divers", keys: ["ensoleillement"] },
-  [VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL]: { section: "divers", keys: ["source_chaleur_sous_sol"] },
 };
 
 function clearAnswersForStep(

@@ -62,7 +62,7 @@ describe("QuestionStep — label de catégorie", () => {
   });
 
   it("n'affiche aucun label sur une réponse sans objet", () => {
-    rendre("source_chaleur_sous_sol", "pas_de_sous_sol");
+    rendre("recuperateur_eau", "absent");
 
     expect(labelsAffiches()).toEqual([]);
   });

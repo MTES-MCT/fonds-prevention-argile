@@ -54,13 +54,13 @@ describe("VulnerabiliteFlowService", () => {
     let state = VulnerabiliteFlowService.create();
     state = {
       ...state,
-      currentStep: VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL,
-      history: [VulnerabiliteStep.ENSOLEILLEMENT],
+      currentStep: VulnerabiliteStep.ENSOLEILLEMENT,
+      history: [VulnerabiliteStep.MITOYENNETE],
     };
-    state = VulnerabiliteFlowService.submitAnswer(state, { divers: { source_chaleur_sous_sol: "oui_mur_non_isole" } });
+    state = VulnerabiliteFlowService.submitAnswer(state, { divers: { ensoleillement: "fort_sud" } });
     expect(state.currentStep).toBe(VulnerabiliteStep.RESULTAT);
     expect(state.result?.points).toEqual([
-      { critereId: "source_chaleur_sous_sol", reponse: "oui_mur_non_isole", categorie: "critique" },
+      { critereId: "ensoleillement", reponse: "fort_sud", categorie: "vigilance" },
     ]);
   });
 
