@@ -61,10 +61,11 @@ describe("VulnerabiliteDossier", () => {
     expect(screen.queryByText(/Vulnérabilité au RGA/)).not.toBeInTheDocument();
   });
 
-  it("ne propose pas le test quand la feature est inactive", async () => {
+  it("n'affiche rien quand la feature est inactive, résultat existant compris", async () => {
     vi.mocked(isVulnerabiliteRgaActive).mockReturnValue(false);
-    await rendre(UserRole.AMO, null);
+    await rendre(UserRole.AMO, RESULTAT);
 
-    expect(screen.queryByRole("link", { name: /Faire le test/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Carte du résultat")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /le test/ })).not.toBeInTheDocument();
   });
 });

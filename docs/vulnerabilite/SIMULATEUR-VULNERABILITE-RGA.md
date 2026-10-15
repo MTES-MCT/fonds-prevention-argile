@@ -39,7 +39,7 @@ une méthode qu'il ne peut pas encore défendre.
 
 Bascule unique : `isVulnerabiliteRgaActive()`
 (`domain/value-objects/vulnerabilite-disponibilite.ts`), dérivée de `NEXT_PUBLIC_APP_ENV` —
-actif en `local`, `docker` et `staging`, **inactif en `production`**.
+actif en `local`, `docker` et `staging`, **inactif en `production`** — sauf interrupteur explicite, voir plus bas.
 
 | Surface                                       | Comportement quand inactif                                               |
 | --------------------------------------------- | ------------------------------------------------------------------------ |
@@ -49,15 +49,32 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 | Onglet « Vulnérabilité » de la nav backoffice | masqué (`AdminNavTab.estDisponible`)                                     |
 | `enregistrerResultatVulnerabiliteAction`      | no-op — une Server Action reste appelable même quand sa page renvoie 404 |
 
-> La carte « Vulnérabilité au RGA » de l'espace agent n'est pas gardée : elle ne s'affiche que si
-> une simulation est rattachée au parcours, ce qui ne peut pas arriver en production tant que
-> l'écriture est bloquée.
+> La carte « Vulnérabilité au RGA » de l'espace agent (`VulnerabiliteDossier`) suit la même bascule : inactive,
+> elle disparaît, résultat existant compris. L'adresse partagée entre simulateurs (ADR-0048) n'est pas non plus
+> gardée en `sessionStorage` quand la feature est inactive.
 
 > **Liste d'autorisation, pas de refus de la production.** Le lecteur d'environnement partagé
 > applique un défaut "local" quand la variable est absente : une app mal configurée servirait
 > alors le simulateur. La bascule teste donc l'appartenance à la liste ci-dessus — variable
 > absente ou valeur inconnue = **inactif**. Conséquence à connaître : un poste de dev sans
 > `NEXT_PUBLIC_APP_ENV` dans son `.env.local` obtient un 404, pas une page.
+
+> **Interrupteur explicite** : `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE` prime sur l'environnement, dans les deux
+> sens, sans toucher à `NEXT_PUBLIC_APP_ENV` (dont dépendent Matomo, les e-mails et les garde-fous des scripts
+> ops ; une valeur hors des quatre connues est refusée par Zod).
+>
+> | Valeur                        | Effet                                                                                            |
+> | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+> | `false`                       | désactive tous les points d'entrée, staging compris : on y voit le comportement de la production |
+> | `true`                        | active partout, **production comprise** : c'est la mise en ligne                                 |
+> | absente ou toute autre valeur | la liste d'environnements ci-dessus décide (`TRUE`, `1` ou `oui` ne publient donc rien)          |
+>
+> Comme toute variable `NEXT_PUBLIC_*`, elle n'agit qu'après un **nouveau build** : un simple redémarrage ne suffit
+> pas. Poser `true` sur la production publie le simulateur : respecter d'abord les prérequis ci-dessous.
+
+> **Garde-fou.** `garde-hors-production.test.ts` échoue quand un fichier pose un lien vers le simulateur (URL,
+> routes du compte et de l'espace agent, contenu de la home) sans passer par `isVulnerabiliteRgaActive()`, quand un
+> composant ou une action listés ne la portent plus, ou quand une page `*vulnerabilite*` ne répond plus 404.
 
 > `NEXT_PUBLIC_APP_ENV` est une variable `NEXT_PUBLIC_*` : elle est **figée au build** pour tout ce
 > qui tourne côté navigateur (l'onglet de navigation backoffice). Elle doit donc être présente au
@@ -70,7 +87,7 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
    authentifié, sans plafond ni déduplication — tant que la feature est hors production le risque
    est théorique (l'action est un no-op avant tout accès base), il devient réel le jour de la
    bascule ;
-3. basculer `isVulnerabiliteRgaActive()` (ajouter `"production"` à `ENVIRONNEMENTS_ACTIFS`) ;
+3. poser `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE=true` sur l'app de production **avant le build** (aucune modification de code) ;
 4. retirer le `noindex` des deux pages **et** les entrées correspondantes de `src/app/robots.ts`.
 
 ### Points d'entrée

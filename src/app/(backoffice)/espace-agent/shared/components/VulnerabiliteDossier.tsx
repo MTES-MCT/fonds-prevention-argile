@@ -18,10 +18,11 @@ interface VulnerabiliteDossierProps {
  * Sans test rattaché, la carte n'existe que pour qui peut le faire.
  */
 export async function VulnerabiliteDossier({ id, vulnerabilite }: VulnerabiliteDossierProps) {
+  // Feature hors production tant que la grille n'est pas validée (ADR-0030) : inactive, la carte entière disparaît.
+  if (!isVulnerabiliteRgaActive()) return null;
+
   const agent = await getCurrentAgent();
-  // Feature hors production tant que la grille n'est pas validée (ADR-0030).
-  const peutFaireLeTest =
-    isVulnerabiliteRgaActive() && agent.success && peutFaireTestVulnerabilitePourDemandeur(agent.data.role as UserRole);
+  const peutFaireLeTest = agent.success && peutFaireTestVulnerabilitePourDemandeur(agent.data.role as UserRole);
 
   if (!vulnerabilite && !peutFaireLeTest) return null;
 

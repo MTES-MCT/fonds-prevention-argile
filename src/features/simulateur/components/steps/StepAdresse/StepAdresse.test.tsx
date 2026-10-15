@@ -11,6 +11,9 @@ vi.mock("@/shared/services/bdnb", async (importOriginal) => ({
   getRgaRiskLevel: (await importOriginal<typeof import("@/shared/services/bdnb")>()).getRgaRiskLevel,
   ...bdnb,
 }));
+vi.mock("@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite", () => ({
+  isVulnerabiliteRgaActive: () => true,
+}));
 vi.mock("@/shared/adapters/geo", () => ({ getEpciByCommune: vi.fn().mockResolvedValue("243600327") }));
 vi.mock("@/features/rga-map", () => ({
   ALEA_COLORS: { fort: "#F09790", moyen: "#F6D396", faible: "#F8F775", nul: "transparent" },
