@@ -28,6 +28,7 @@ interface SyncResult {
   /** Id GraphQL et annotations du dossier, pour compléter le lien FPA sans relire DN. */
   dossierDnId?: string;
   annotations?: AnnotationLue[];
+  reponseMandataire?: string | null;
 }
 
 /**
@@ -133,6 +134,7 @@ export async function syncDossierStatus(
         champsModifiesAt: dsResult.dateDerniereModificationChamps,
         dossierDnId: dsResult.id,
         annotations: dsResult.annotations,
+        reponseMandataire: dsResult.reponseMandataire,
       },
     };
   }
@@ -154,6 +156,7 @@ export async function syncDossierStatus(
       champsModifiesAt: dsResult.dateDerniereModificationChamps,
       dossierDnId: dsResult.id,
       annotations: dsResult.annotations,
+      reponseMandataire: dsResult.reponseMandataire,
     },
   };
 }
