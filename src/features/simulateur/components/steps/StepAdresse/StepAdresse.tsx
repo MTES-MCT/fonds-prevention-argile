@@ -14,6 +14,7 @@ import {
   type BanFeature,
 } from "@/shared/adapters/ban";
 import { lireAdresseChoisie, useAdresseChoisieStore } from "@/shared/stores";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { getEpciByCommune } from "@/shared/adapters/geo";
 import { RgaMapContainer } from "@/features/rga-map";
 import { getBuildingDataByRnbId, getBuildingDataFallback, type BuildingData } from "@/shared/services/bdnb";
@@ -57,8 +58,9 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const { embedded } = useSimulateurContext();
 
   // Adresse reprise du simulateur de vulnérabilité. Seul le parcours public la partage : un agent
-  // qui saisit pour un demandeur ne doit ni la recevoir ni la laisser à la session suivante.
-  const partageAdresse = !editMode && !embedded;
+  // qui saisit pour un demandeur ne doit ni la recevoir ni la laisser à la session suivante. Hors des
+  // environnements où ce simulateur existe, rien n'est gardé : personne ne la lirait.
+  const partageAdresse = !editMode && !embedded && isVulnerabiliteRgaActive();
   const [adressePartagee] = useState(() =>
     partageAdresse && !asString(initialValue?.adresse) ? lireAdresseChoisie() : null
   );

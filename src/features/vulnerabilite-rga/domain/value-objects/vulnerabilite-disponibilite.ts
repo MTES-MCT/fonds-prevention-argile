@@ -12,5 +12,9 @@ const ENVIRONNEMENTS_ACTIFS = ["local", "docker", "staging"];
  * publier un résultat non validé à un ménage coûte plus cher qu'un 404 sur un poste de dev.
  */
 export function isVulnerabiliteRgaActive(): boolean {
+  // Interrupteur de désactivation seulement : il permet de voir le comportement de la production en
+  // staging, sans changer NEXT_PUBLIC_APP_ENV (Matomo, e-mails et garde-fous des scripts en dépendent).
+  // Il n'active jamais rien : « true » ou toute autre valeur laisse la liste d'autorisation décider.
+  if (process.env.NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE === "false") return false;
   return ENVIRONNEMENTS_ACTIFS.includes(process.env.NEXT_PUBLIC_APP_ENV ?? "");
 }

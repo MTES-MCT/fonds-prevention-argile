@@ -7,6 +7,7 @@ import {
   buildResumeVulnerabilite,
   type ResumeVulnerabilite,
 } from "@/features/vulnerabilite-rga/domain/services/resume-vulnerabilite.service";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { getAdresseMaSimulation, getMaVulnerabilite } from "../services/ma-vulnerabilite.service";
 
 export interface EtatMaVulnerabilite {
@@ -21,6 +22,9 @@ export async function getEtatMaVulnerabiliteAction(): Promise<ActionResult<EtatM
   try {
     const session = await getSession();
     if (!session?.userId) return { success: false, error: "Non connecté" };
+
+    // Une Server Action reste appelable même quand l'encart qui l'utilise ne s'affiche pas.
+    if (!isVulnerabiliteRgaActive()) return { success: true, data: { resume: null, adresse: null } };
 
     const [vulnerabilite, adresse] = await Promise.all([getMaVulnerabilite(), getAdresseMaSimulation()]);
 

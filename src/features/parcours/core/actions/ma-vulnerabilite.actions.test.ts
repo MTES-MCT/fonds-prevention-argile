@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSession } from "@/features/auth/server";
 import { getEtatMaVulnerabiliteAction } from "./ma-vulnerabilite.actions";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { getAdresseMaSimulation, getMaVulnerabilite } from "../services/ma-vulnerabilite.service";
 
 vi.mock("@/features/auth/server", () => ({ getSession: vi.fn() }));
+vi.mock("@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite", () => ({
+  isVulnerabiliteRgaActive: vi.fn(),
+}));
 vi.mock("../services/ma-vulnerabilite.service", () => ({
   getMaVulnerabilite: vi.fn(),
   getAdresseMaSimulation: vi.fn(),
@@ -12,6 +16,16 @@ vi.mock("../services/ma-vulnerabilite.service", () => ({
 describe("getEtatMaVulnerabiliteAction", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(isVulnerabiliteRgaActive).mockReturnValue(true);
+  });
+
+  it("ne lit rien quand la feature est inactive", async () => {
+    vi.mocked(isVulnerabiliteRgaActive).mockReturnValue(false);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user-1" } as never);
+
+    expect(await getEtatMaVulnerabiliteAction()).toEqual({ success: true, data: { resume: null, adresse: null } });
+    expect(getMaVulnerabilite).not.toHaveBeenCalled();
+    expect(getAdresseMaSimulation).not.toHaveBeenCalled();
   });
 
   it("refuse sans session et ne lit rien", async () => {
