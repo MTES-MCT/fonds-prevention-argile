@@ -7,3 +7,4 @@ coverage/
 storybook-static/
 *.log
 .env*
+src/shared/database/migrations/meta/
