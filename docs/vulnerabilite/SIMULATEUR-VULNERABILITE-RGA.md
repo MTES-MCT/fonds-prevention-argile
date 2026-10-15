@@ -170,16 +170,17 @@ Quatre règles à connaître :
 - **C'est l'essence qui porte le point de l'arbre**, « arbre proche = oui » étant `sans_objet`.
   Elle se choisit parmi quatre groupes (exemples d'essences affichés en bleu sous chaque groupe) :
 
-  | Groupe                             | Exemples                                                                 | Catégorie |
-  | ---------------------------------- | ------------------------------------------------------------------------ | --------- |
-  | Grand arbre très gourmand en eau   | chêne, peuplier, saule, frêne, cèdre, cyprès                             | critique  |
-  | Grand arbre d'ornement ou conifère | érable, platane, tilleul, marronnier, robinier, hêtre, orme, pin, sapin… | critique  |
-  | Arbre fruitier ou petit arbre      | pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine          | vigilance |
-  | Autre essence ou je ne sais pas    | —                                                                        | critique  |
+  | Groupe                          | Exemples                                                                             | Catégorie    |
+  | ------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
+  | Arbre très agressif             | chêne, peuplier, saule, cèdre, frêne                                                 | critique     |
+  | Arbre moyennement agressif      | acacia, marronnier, tilleul, aubépine, hêtre                                         | vigilance    |
+  | Arbre peu agressif              | platane, pommier, poirier, érable, cerisier, prunier, bouleau, cyprès, sorbier, orme | à surveiller |
+  | Autre essence ou je ne sais pas | —                                                                                    | critique     |
 
-  Sources : Cutler et Richardson (1989) pour le score de sécurité et la distance d'influence, le
-  guide RGA du ministère pour le saule et le cèdre, NHBC Standards 4.2 pour les conifères absents
-  de l'étude (cyprès à forte demande en eau, les autres modérée). Voir l'amendement d'ADR-0045.
+  Les groupes sont nommés par agressivité, plus par type d'arbre. Ils reprennent le classement de
+  l'étude britannique de Cutler et Richardson (1989), cité sous la question, avec la répartition
+  arrêtée par le métier en octobre 2026. Les simulations enregistrées avant ce changement
+  (préproduction seulement) gardent d'anciennes valeurs, que la grille ne reconnaît plus.
 
 - **« À surveiller » s'explique** : un point sans problème a priori, qui peut devenir critique
   (fuite, défaut d'entretien). L'explication (`CATEGORIES_AFFICHAGE.a_verifier.explication`)

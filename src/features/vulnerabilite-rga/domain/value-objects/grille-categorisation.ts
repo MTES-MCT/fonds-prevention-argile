@@ -179,26 +179,26 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   },
   {
     id: "arbre_essence",
-    // Groupes tirés de Cutler et Richardson (1989), du guide RGA du ministère et de NHBC 4.2 pour les conifères.
+    // Groupes d'agressivité tirés de Cutler et Richardson (1989), répartis par le métier.
     conditionnelA: { critereId: "arbre_proximite", reponseRequise: "oui" },
     reponses: [
       {
-        reponse: "tres_gourmand",
-        label: "Grand arbre très gourmand en eau",
-        precision: "Chêne, peuplier, saule, frêne, cèdre, cyprès (dont cyprès de Leyland)",
+        reponse: "tres_agressif",
+        label: "Arbre très agressif",
+        precision: "Chêne, peuplier, saule, cèdre, frêne",
         categorie: "critique",
       },
       {
-        reponse: "grand_ornement",
-        label: "Grand arbre d'ornement ou conifère",
-        precision: "Érable, platane, tilleul, marronnier, robinier (acacia), hêtre, orme, pin, sapin, épicéa, if",
-        categorie: "critique",
-      },
-      {
-        reponse: "fruitier_petit",
-        label: "Arbre fruitier ou petit arbre",
-        precision: "Pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine",
+        reponse: "moyennement_agressif",
+        label: "Arbre moyennement agressif",
+        precision: "Acacia, marronnier, tilleul, aubépine, hêtre",
         categorie: "vigilance",
+      },
+      {
+        reponse: "peu_agressif",
+        label: "Arbre peu agressif",
+        precision: "Platane, pommier, poirier, érable, cerisier, prunier, bouleau, cyprès, sorbier, orme",
+        categorie: "a_verifier",
       },
       // Sans essence connue, on retient l'hypothèse prudente.
       { reponse: "ne_sais_pas", label: "Autre essence ou je ne sais pas", categorie: "critique" },

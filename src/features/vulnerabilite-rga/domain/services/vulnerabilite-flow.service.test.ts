@@ -31,10 +31,10 @@ describe("VulnerabiliteFlowService", () => {
     let state = VulnerabiliteFlowService.create();
     state = { ...state, currentStep: VulnerabiliteStep.ARBRE_PROXIMITE };
     state = VulnerabiliteFlowService.submitAnswer(state, {
-      vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand" },
+      vegetation: { arbre_proximite: "oui", arbre_essence: "tres_agressif" },
     });
     expect(state.currentStep).toBe(VulnerabiliteStep.HAIES);
-    expect(state.answers.vegetation?.arbre_essence).toBe("tres_gourmand");
+    expect(state.answers.vegetation?.arbre_essence).toBe("tres_agressif");
   });
 
   it("submitAnswer() efface l'essence quand l'arbre n'est plus signalé", () => {
@@ -42,7 +42,7 @@ describe("VulnerabiliteFlowService", () => {
     state = {
       ...state,
       currentStep: VulnerabiliteStep.ARBRE_PROXIMITE,
-      answers: { vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand" } },
+      answers: { vegetation: { arbre_proximite: "oui", arbre_essence: "tres_agressif" } },
     };
     state = VulnerabiliteFlowService.submitAnswer(state, {
       vegetation: { arbre_proximite: "non", arbre_essence: undefined },

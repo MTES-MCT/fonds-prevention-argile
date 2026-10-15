@@ -24,7 +24,7 @@ describe("StepArbreProximite", () => {
     );
 
     expect(screen.getByText("Quelle est l'essence de cet arbre ?")).toBeInTheDocument();
-    expect(screen.getByText(/Chêne, peuplier, saule, frêne, cèdre/)).toBeInTheDocument();
+    expect(screen.getByText(/Chêne, peuplier, saule, cèdre, frêne/)).toBeInTheDocument();
   });
 
   it("attend l'essence avant de passer à la suite, puis envoie les deux réponses", async () => {
@@ -35,17 +35,17 @@ describe("StepArbreProximite", () => {
     );
     expect(suivant()).toBeDisabled();
 
-    await userEvent.click(screen.getByLabelText(/Arbre fruitier ou petit arbre/));
-    expect(screen.getByText("Point de vigilance")).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText(/Arbre peu agressif/));
+    expect(screen.getByText("À surveiller")).toBeInTheDocument();
     await userEvent.click(suivant());
 
     expect(onSubmit).toHaveBeenCalledWith({
-      vegetation: { arbre_proximite: "oui", arbre_essence: "fruitier_petit" },
+      vegetation: { arbre_proximite: "oui", arbre_essence: "peu_agressif" },
     });
   });
 
   it("efface l'essence quand l'arbre n'est plus signalé", async () => {
-    const { onSubmit, suivant } = rendre({ initialValue: "oui", initialEssence: "tres_gourmand" });
+    const { onSubmit, suivant } = rendre({ initialValue: "oui", initialEssence: "tres_agressif" });
 
     await userEvent.click(screen.getByLabelText("Non, aucun arbre proche"));
     await userEvent.click(suivant());

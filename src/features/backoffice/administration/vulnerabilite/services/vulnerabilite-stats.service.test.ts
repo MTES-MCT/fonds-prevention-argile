@@ -96,23 +96,23 @@ describe("getVulnerabiliteStatsBdd", () => {
 
   it("résout le libellé du groupe d'essences", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
-      makeRow({ arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
-      makeRow({ arbreProximite: "oui", arbreEssence: "fruitier_petit" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "tres_agressif" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "tres_agressif" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "peu_agressif" }),
     ]);
 
     const stats = await getVulnerabiliteStatsBdd("30j");
 
     const essence = stats.reponses.find((c) => c.critereId === "arbre_essence")!;
     expect(essence.total).toBe(3);
-    const gourmand = essence.reponses.find((r) => r.reponse === "tres_gourmand")!;
-    expect(gourmand).toMatchObject({ label: "Grand arbre très gourmand en eau", count: 2, pourcentage: 67 });
+    const gourmand = essence.reponses.find((r) => r.reponse === "tres_agressif")!;
+    expect(gourmand).toMatchObject({ label: "Arbre très agressif", count: 2, pourcentage: 67 });
   });
 
   it("calcule le nombre moyen de points par catégorie et par simulation, aléa exclu", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
       // 2 critiques (réseaux, essence de l'arbre), 1 vigilance (pente) ; l'aléa ne compte pas.
-      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
+      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "tres_agressif" }),
       // 1 critique (haies), 1 à vérifier (pente), 1 bonne pratique (réseaux), 1 sans objet.
       makeRow({
         penteTerrain: "plat",

@@ -27,7 +27,7 @@ export interface VulnerabiliteEauxReponses {
 }
 
 export type ReponseArbreProximite = "oui" | "non" | "ne_sais_pas";
-export type ReponseArbreEssence = "tres_gourmand" | "grand_ornement" | "fruitier_petit" | "ne_sais_pas";
+export type ReponseArbreEssence = "tres_agressif" | "moyennement_agressif" | "peu_agressif" | "ne_sais_pas";
 export type ReponseHaies = "eloignees_peu_denses" | "proches_moyennement_denses" | "proches_denses" | "ne_sais_pas";
 export type ReponseVegetationPiedFacade = "absente" | "presente";
 

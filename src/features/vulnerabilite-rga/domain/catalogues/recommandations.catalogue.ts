@@ -131,7 +131,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "veg-arbre",
     critereId: "arbre_essence",
-    reponsesDeclenchantes: ["tres_gourmand", "grand_ornement", "fruitier_petit", "ne_sais_pas"],
+    reponsesDeclenchantes: ["tres_agressif", "moyennement_agressif", "peu_agressif", "ne_sais_pas"],
     ...FICHE_ARBRE,
   },
   {
