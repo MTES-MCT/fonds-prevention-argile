@@ -11,4 +11,3 @@ export * from "./AFaire";
 export * from "./Actions";
 export * from "./QualificationAllersVers";
 export * from "./RenvoyerInvitationButton";
-export * from "./VulnerabiliteDossier";

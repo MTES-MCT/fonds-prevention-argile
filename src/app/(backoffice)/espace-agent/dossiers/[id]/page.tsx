@@ -9,13 +9,13 @@ import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers
 import {
   InfoDemandeur,
   InfoLogement,
-  VulnerabiliteDossier,
   ParcoursDemandeur,
   AFaire,
   QualificationAllersVers,
   RenvoyerInvitationButton,
 } from "../../shared";
 import { ActionsRealisees } from "../../shared";
+import { VulnerabiliteDossier } from "../../shared/components/VulnerabiliteDossier";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
