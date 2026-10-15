@@ -146,8 +146,8 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 haies → végétation en pied de façade → mitoyenneté → ensoleillement → résultat`
 
 Parcours linéaire, 11 étapes numérotées. La question sur une source de chaleur en sous-sol a été
-retirée, sa colonne supprimée (migration `0058`) : elle n'avait servi qu'en préproduction. L'essence de l'arbre n'a plus d'écran propre : elle
-apparaît sous la question de proximité dès la réponse « Oui », et « Suivant » l'exige alors.
+retirée, sa colonne supprimée (migration `0058`) : elle n'avait servi qu'en préproduction.
+L'essence de l'arbre n'a plus d'écran propre : elle apparaît sous la question de proximité dès la réponse « Oui », et « Suivant » l'exige alors.
 Revenir à « Non » ou « Je ne sais pas » l'efface.
 
 ### Catégorisation des réponses
