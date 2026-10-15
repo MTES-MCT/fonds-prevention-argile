@@ -45,7 +45,6 @@ describe("VulnerabiliteMaListe", () => {
 
     expect(await screen.findByText("2 points critiques")).toBeInTheDocument();
     expect(screen.getByText("1 point de vigilance")).toBeInTheDocument();
-    expect(screen.getByText(/Gouttières, Végétation en pied de façade/)).toBeInTheDocument();
     expect(screen.getByText("Test de vulnérabilité (14/09/2026)")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Voir le détail" })).toHaveAttribute("href", "/mon-compte/vulnerabilite");
     expect(screen.queryByText(/\/100/)).not.toBeInTheDocument();

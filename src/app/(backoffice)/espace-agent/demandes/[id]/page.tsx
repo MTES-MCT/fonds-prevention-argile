@@ -8,7 +8,7 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import {
   InfoDemandeur,
   InfoLogement,
-  InfoVulnerabilite,
+  VulnerabiliteDossier,
   ParcoursDemandeur,
   AFaire,
   QualificationAllersVers,
@@ -174,11 +174,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   agentEditInfo={demande.agentEditInfo}
                 />
               </div>
-              {demande.vulnerabilite && (
-                <div className="fr-mb-4w">
-                  <InfoVulnerabilite data={demande.vulnerabilite} />
-                </div>
-              )}
+              <VulnerabiliteDossier id={demande.id} vulnerabilite={demande.vulnerabilite} />
               <div>
                 <PiecesJustificatives
                   pieces={piecesJustificatives}

@@ -46,6 +46,7 @@ export const ROUTES = {
       prospects: "/espace-agent/prospects",
       prospect: (id: string) => `/espace-agent/prospects/${id}` as const,
       editionDonneesSimulation: (dossierId: string) => `/espace-agent/edition-donnees-simulation/${dossierId}` as const,
+      testVulnerabilite: (dossierId: string) => `/espace-agent/vulnerabilite/${dossierId}` as const,
     },
   },
 

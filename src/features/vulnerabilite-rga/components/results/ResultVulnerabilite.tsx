@@ -37,6 +37,8 @@ interface ContenuResultatVulnerabiliteProps {
   eligibleFonds: boolean;
   /** Boutons de bas de page : propres à chaque écran (recommencer, retour au compte). */
   actions: ReactNode;
+  /** Message d'état au-dessus du titre (ex. enregistrement du test fait par un agent). */
+  entete?: ReactNode;
 }
 
 /** Corps du résultat, partagé entre la fin du simulateur et la page de consultation du compte. */
@@ -45,6 +47,7 @@ export function ContenuResultatVulnerabilite({
   points,
   eligibleFonds,
   actions,
+  entete,
 }: ContenuResultatVulnerabiliteProps) {
   const synthese = buildSyntheseResultat(aleaRga, compterPoints(points));
   const sections = getSectionsRecommandations(points);
@@ -55,6 +58,7 @@ export function ContenuResultatVulnerabilite({
         <div className="fr-grid-row fr-grid-row--center">
           <div className="fr-col-12 fr-col-md-8 fr-col-lg-8 md:bg-[var(--background-alt-grey)] p-0 md:p-10">
             <div className="px-4 md:px-6 pb-4 md:pb-0 fr-mt-3w md:fr-mt-4w">
+              {entete}
               <h1 className="fr-h4 fr-mb-4w">Les points de vulnérabilité de votre logement</h1>
 
               <SyntheseResultat synthese={synthese} />

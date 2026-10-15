@@ -5,7 +5,7 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { formatNomComplet, formatDateShort } from "@/shared/utils";
 import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
-import { InfoDemandeur, InfoLogement, InfoVulnerabilite, ParcoursDemandeur, AFaire } from "../../shared";
+import { InfoDemandeur, InfoLogement, VulnerabiliteDossier, ParcoursDemandeur, AFaire } from "../../shared";
 import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
 import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
 import { Status } from "@/shared/domain/value-objects/status.enum";
@@ -207,11 +207,7 @@ export default async function ProspectDetailPage({ params, searchParams }: PageP
                   agentEditInfo={prospect.agentEditInfo}
                 />
               </div>
-              {prospect.vulnerabilite && (
-                <div className="fr-mb-4w">
-                  <InfoVulnerabilite data={prospect.vulnerabilite} />
-                </div>
-              )}
+              <VulnerabiliteDossier id={prospect.parcoursId} vulnerabilite={prospect.vulnerabilite} />
               <div>
                 <PiecesJustificatives
                   pieces={piecesJustificatives}

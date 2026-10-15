@@ -752,6 +752,7 @@ de `/administration/activite` — ce qui n'est pas tracé n'est pas mesuré.
 | Archivage à la création (mode `amo`)          | `dossier_archive`                                                  | `creation-dossier/services/creation-dossier.service.ts`             |
 | Arrêt d'accompagnement, ré-ouverture, relance | `accompagnement_arrete`, `dossier_reouvert`, `invitation_renvoyee` | cf. §2.4, §2.7                                                      |
 | Formulaire diagnostic initié par l'AMO        | `formulaire_initie_par_amo`                                        | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` (§2.13) |
+| Test de vulnérabilité fait avec le demandeur  | `vulnerabilite_realisee_par_agent`                                 | `shared/actions/test-vulnerabilite-agent.actions.ts`                |
 
 Trois règles à connaître :
 

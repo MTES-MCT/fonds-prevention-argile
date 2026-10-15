@@ -77,12 +77,13 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 
 Tous derrière la même bascule : hors des environnements actifs, aucun ne s'affiche, pour ne pas mener à un 404.
 
-| Entrée                 | Où                                                                       | Condition d'affichage                                                    |
-| ---------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État » | bascule active ; l'aperçu de résultat est illustratif, sans score        |
-| Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton        | bascule active, site principal (pas l'iframe), maison, propriétaire      |
-| « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top    | bascule active, à toutes les étapes du parcours                          |
-| Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base          | bascule active, test rattaché au compte, sinon renvoi vers le simulateur |
+| Entrée                 | Où                                                                                                      | Condition d'affichage                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État »                                | bascule active ; l'aperçu de résultat est illustratif, sans score                            |
+| Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton                                       | bascule active, site principal (pas l'iframe), maison, propriétaire                          |
+| « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top                                   | bascule active, à toutes les étapes du parcours                                              |
+| Dossier côté agent     | `VulnerabiliteDossier` sur les pages dossier, demande et prospect : « Faire le test avec le demandeur » | bascule active ; AMO, Aller-vers et hybride (ni super-admin, ni analyste, ni administrateur) |
+| Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base                                         | bascule active, test rattaché au compte, sinon renvoi vers le simulateur                     |
 
 > `/vulnerabilite-rga` vit dans le groupe de routes `(tunnel)` ([ADR-0040](../adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)),
 > comme `/simulateur` : header réduit à l'aide, pas de navigation. L'iframe `/embed-vulnerabilite-rga` n'est pas concernée.
@@ -268,6 +269,14 @@ dans `handleFranceConnectCallback` (mirror de `FC_CLAIM_TOKEN`). Détail : ADR-0
 > [PARTNER-TRACKING.md](../partners/PARTNER-TRACKING.md)) ; à reprendre si le rattachement doit
 > marcher côté partenaires.
 
+### L'agent fait le test pour le demandeur
+
+Au téléphone, l'AMO ou l'Aller-vers lance le simulateur depuis le dossier (`/espace-agent/vulnerabilite/[id]`, même
+identifiant que l'édition de simulation). L'adresse vient de la simulation du dossier, et le résultat est rattaché au
+parcours par `enregistrerTestVulnerabiliteAgentAction`, avec une action système dans l'historique. Pas de funnel
+Matomo, pas d'adresse partagée avec le navigateur de l'agent, et le store est remis à zéro entre deux dossiers
+([ADR-0032](../adr/0032-rattachement-simulation-vulnerabilite-compte.md), amendement).
+
 ### Le demandeur relit son résultat
 
 `parcours_prevention.vulnerabilite_simulation_id` sert aussi le demandeur : `getMaVulnerabilite` (service
@@ -317,25 +326,26 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ## 7. Fichiers clés
 
-| Rôle                                   | Fichier                                                                                       |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Méthode (catégorie par réponse)        | `vulnerabilite-rga/domain/value-objects/grille-categorisation.ts`                             |
-| Bascule d'environnement                | `vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite.ts`                       |
-| Charge utile + validation Zod          | `vulnerabilite-rga/domain/value-objects/simulation-payload.ts`                                |
-| Catégorisation et décompte des points  | `vulnerabilite-rga/domain/services/categorisation.service.ts`                                 |
-| Synthèse du résultat (callout)         | `vulnerabilite-rga/domain/services/synthese-resultat.service.ts`                              |
-| Renvoi conditionnel vers `/simulateur` | `vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`                              |
-| Sections de recommandations            | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                |
-| Navigation et branchement              | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                |
-| Orchestrateur des 15 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                    |
-| Écriture anonyme                       | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                   |
-| Table anonyme                          | `shared/database/schema/vulnerabilite-simulations.ts`                                         |
-| PDF téléchargeable                     | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                               |
-| Bouton PDF (chargement dynamique)      | `vulnerabilite-rga/components/pdf/TelechargerPdfButton.tsx`                                   |
-| Textes partagés HTML + PDF             | `vulnerabilite-rga/domain/value-objects/resultat-content.const.ts`                            |
-| Rattachement à la connexion            | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`) |
-| Stats back-office                      | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`             |
-| Carte espace agent                     | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                 |
-| Résultat relu côté demandeur           | `parcours/core/services/ma-vulnerabilite.service.ts`, `app/(main)/mon-compte/vulnerabilite`   |
-| Encart « Ma liste »                    | `parcours/core/components/common/VulnerabiliteMaListe.tsx`                                    |
-| Adresse partagée (ADR-0048)            | `shared/adapters/ban/adresse-choisie.ts`, `shared/stores/adresse-choisie.store.ts`            |
+| Rôle                                   | Fichier                                                                                                               |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Méthode (catégorie par réponse)        | `vulnerabilite-rga/domain/value-objects/grille-categorisation.ts`                                                     |
+| Bascule d'environnement                | `vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite.ts`                                               |
+| Charge utile + validation Zod          | `vulnerabilite-rga/domain/value-objects/simulation-payload.ts`                                                        |
+| Catégorisation et décompte des points  | `vulnerabilite-rga/domain/services/categorisation.service.ts`                                                         |
+| Synthèse du résultat (callout)         | `vulnerabilite-rga/domain/services/synthese-resultat.service.ts`                                                      |
+| Renvoi conditionnel vers `/simulateur` | `vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`                                                      |
+| Sections de recommandations            | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                                        |
+| Navigation et branchement              | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                                        |
+| Orchestrateur des 15 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
+| Écriture anonyme                       | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                                           |
+| Table anonyme                          | `shared/database/schema/vulnerabilite-simulations.ts`                                                                 |
+| PDF téléchargeable                     | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                                                       |
+| Bouton PDF (chargement dynamique)      | `vulnerabilite-rga/components/pdf/TelechargerPdfButton.tsx`                                                           |
+| Textes partagés HTML + PDF             | `vulnerabilite-rga/domain/value-objects/resultat-content.const.ts`                                                    |
+| Rattachement à la connexion            | `auth/adapters/franceconnect/franceconnect.service.ts` (`lierSimulationVulnerabiliteAnonyme`)                         |
+| Stats back-office                      | `backoffice/administration/vulnerabilite/services/vulnerabilite-stats.service.ts`                                     |
+| Carte espace agent                     | `backoffice/espace-agent/shared/services/build-info-vulnerabilite.service.ts`                                         |
+| Résultat relu côté demandeur           | `parcours/core/services/ma-vulnerabilite.service.ts`, `app/(main)/mon-compte/vulnerabilite`                           |
+| Test fait par l'agent                  | `espace-agent/shared/actions/test-vulnerabilite-agent.actions.ts`, `app/(backoffice)/espace-agent/vulnerabilite/[id]` |
+| Encart « Ma liste »                    | `parcours/core/components/common/VulnerabiliteMaListe.tsx`                                                            |
+| Adresse partagée (ADR-0048)            | `shared/adapters/ban/adresse-choisie.ts`, `shared/stores/adresse-choisie.store.ts`                                    |

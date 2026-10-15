@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useVulnerabiliteFormulaire } from "../hooks/useVulnerabiliteFormulaire";
 import { VulnerabiliteStep } from "../domain/value-objects/vulnerabilite-step.enum";
 import { VULNERABILITE_STEP_EVENTS } from "../domain/value-objects/vulnerabilite-matomo-events";
@@ -26,7 +27,10 @@ import {
   StepEnsoleillement,
   StepSourceChaleurSousSol,
 } from "./steps";
-import { ResultVulnerabilite } from "./results";
+import { ResultVulnerabilite, ContenuResultatVulnerabilite } from "./results";
+import { VulnerabiliteProvider, type ContexteAgentVulnerabilite } from "./shared/VulnerabiliteContext";
+import { remplitCriteresEligibiliteFonds } from "../domain/services/eligibilite-fonds.service";
+import { Alert } from "@/shared/components";
 
 /**
  * Composant orchestrateur du simulateur de vulnérabilité RGA — même rôle que
@@ -35,7 +39,17 @@ import { ResultVulnerabilite } from "./results";
  * (Matomo) et enregistré de façon anonyme (best-effort) pour les stats d'usage,
  * cf. `/administration/vulnerabilite`.
  */
-export function VulnerabiliteFormulaire() {
+export function VulnerabiliteFormulaire({ agent }: { agent?: ContexteAgentVulnerabilite } = {}) {
+  return (
+    <VulnerabiliteProvider agent={agent}>
+      <FormulaireInterne agent={agent} />
+    </VulnerabiliteProvider>
+  );
+}
+
+type EnregistrementAgent = "en_cours" | "ok" | "erreur";
+
+function FormulaireInterne({ agent }: { agent?: ContexteAgentVulnerabilite }) {
   const {
     isLoading,
     currentStep,
@@ -53,6 +67,19 @@ export function VulnerabiliteFormulaire() {
   const { trackEvent } = useMatomo();
   const previousStepRef = useRef<VulnerabiliteStep | null>(null);
   const hasInitializedRef = useRef(false);
+  const [enregistrementAgent, setEnregistrementAgent] = useState<EnregistrementAgent>("en_cours");
+
+  // Test fait par un agent : le résultat va sur le dossier, jamais dans l'enregistrement anonyme,
+  // dont le rattachement par cookie se ferait au navigateur de l'agent.
+  const enregistrerPourAgent = useCallback(() => {
+    if (!agent) return;
+    setEnregistrementAgent("en_cours");
+    const payload = toSimulationPayload(useVulnerabiliteStore.getState().vulnerabilite.answers);
+    agent
+      .enregistrer(payload)
+      .then((resultat) => setEnregistrementAgent(resultat.success ? "ok" : "erreur"))
+      .catch(() => setEnregistrementAgent("erreur"));
+  }, [agent]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -74,6 +101,12 @@ export function VulnerabiliteFormulaire() {
     }
     if (previousStepRef.current === currentStep) return;
     previousStepRef.current = currentStep;
+
+    // Ni funnel Matomo ni statistiques publiques : l'agent n'est pas le visiteur du simulateur.
+    if (agent) {
+      if (currentStep === VulnerabiliteStep.RESULTAT) enregistrerPourAgent();
+      return;
+    }
 
     const currentAnswers = useVulnerabiliteStore.getState().vulnerabilite.answers;
     const codeDepartement = currentAnswers.adresse?.codeDepartement;
@@ -100,10 +133,10 @@ export function VulnerabiliteFormulaire() {
         trackEvent(eventName, undefined, customDimensions);
       }
     }
-  }, [isLoading, currentStep, trackEvent]);
+  }, [isLoading, currentStep, trackEvent, agent, enregistrerPourAgent]);
 
   const handleStart = () => {
-    trackEvent(MATOMO_EVENTS.VULNERABILITE_START);
+    if (!agent) trackEvent(MATOMO_EVENTS.VULNERABILITE_START);
     start();
   };
 
@@ -185,6 +218,31 @@ export function VulnerabiliteFormulaire() {
           </div>
         );
       }
+      if (agent) {
+        return (
+          <ContenuResultatVulnerabilite
+            aleaRga={answers.adresse?.aleaRga}
+            points={result.points}
+            eligibleFonds={remplitCriteresEligibiliteFonds(answers)}
+            entete={
+              <EnteteEnregistrementAgent etat={enregistrementAgent} agent={agent} onRetry={enregistrerPourAgent} />
+            }
+            actions={
+              <>
+                <button
+                  type="button"
+                  className="fr-btn fr-btn--secondary !w-full md:!w-auto justify-center"
+                  onClick={reset}>
+                  Refaire le test
+                </button>
+                <Link href={agent.urlRetour} className="fr-btn !w-full md:!w-auto justify-center">
+                  Retour au dossier
+                </Link>
+              </>
+            }
+          />
+        );
+      }
       return <ResultVulnerabilite answers={answers} result={result} onRestart={reset} />;
 
     default:
@@ -197,4 +255,40 @@ export function VulnerabiliteFormulaire() {
         </div>
       );
   }
+}
+
+function EnteteEnregistrementAgent({
+  etat,
+  agent,
+  onRetry,
+}: {
+  etat: EnregistrementAgent;
+  agent: ContexteAgentVulnerabilite;
+  onRetry: () => void;
+}) {
+  if (etat === "ok") {
+    return (
+      <Alert
+        type="success"
+        closable={false}
+        className="fr-mb-3w"
+        title="Résultat enregistré sur le dossier"
+        description={`${agent.nomDemandeur} le retrouvera dans son espace.`}
+      />
+    );
+  }
+  if (etat === "erreur") {
+    return (
+      <div className="fr-alert fr-alert--error fr-mb-3w">
+        <h3 className="fr-alert__title">Le résultat n&apos;a pas pu être enregistré</h3>
+        <p>Il n&apos;est pas encore rattaché au dossier.</p>
+        <button type="button" className="fr-btn fr-btn--sm fr-mt-1w" onClick={onRetry}>
+          Réessayer l&apos;enregistrement
+        </button>
+      </div>
+    );
+  }
+  return (
+    <Alert type="info" closable={false} className="fr-mb-3w" title="Enregistrement du résultat sur le dossier..." />
+  );
 }
