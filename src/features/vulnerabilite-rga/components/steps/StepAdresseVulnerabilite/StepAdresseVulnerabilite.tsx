@@ -12,6 +12,7 @@ import {
   type BanFeature,
 } from "@/shared/adapters/ban";
 import { lireAdresseChoisie, useAdresseChoisieStore } from "@/shared/stores";
+import { useAdresseTransmise } from "@/shared/hooks/useAdresseTransmise";
 import { RgaMapContainer } from "@/features/rga-map";
 import { getRgaRiskLevel, type BuildingData } from "@/shared/services/bdnb";
 import { VulnerabiliteLayout } from "../../shared/VulnerabiliteLayout";
@@ -101,6 +102,24 @@ export function StepAdresseVulnerabilite({
     setBuildingData(null);
   }, []);
 
+  // Adresse fournie par l'intégrateur de l'iframe, dans le fragment d'URL : elle prime sur celle reprise.
+  const [transmise, setTransmise] = useState<{ clefBan: string; rnb: string | null } | null>(null);
+  useAdresseTransmise(!agent && !initialValue?.label, (resolution) => {
+    if (resolution.statut === "resolue") {
+      handleAddressSelect(resolution.feature);
+      setTransmise({ clefBan: resolution.feature.properties.id, rnb: resolution.rnb });
+    } else {
+      setAddressInput(resolution.texte);
+    }
+  });
+
+  const changerAdresse = useCallback(() => {
+    setAddressInput("");
+    setSelectedAddress(null);
+    setBuildingData(null);
+    setTransmise(null);
+  }, []);
+
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -157,6 +176,7 @@ export function StepAdresseVulnerabilite({
     return "fr-input-group";
   };
 
+  const adresseTransmise = transmise !== null && selectedAddress?.properties.id === transmise.clefBan;
   const showResults = addressResults && addressResults.length > 0 && !selectedAddress;
   const showNoResults = addressResults && addressResults.length === 0 && !selectedAddress && !isSearching;
 
@@ -192,6 +212,15 @@ export function StepAdresseVulnerabilite({
             )}
           </div>
         </div>
+
+        {adresseTransmise && (
+          <p className="fr-text--sm fr-mt-1w fr-mb-0 text-(--text-mention-grey)">
+            Adresse renseignée par le site depuis lequel vous accédez au simulateur.{" "}
+            <button type="button" className="fr-link fr-link--sm" onClick={changerAdresse}>
+              Changer d&apos;adresse
+            </button>
+          </p>
+        )}
 
         {showResults && (
           <fieldset
@@ -236,9 +265,11 @@ export function StepAdresseVulnerabilite({
           <RgaMapContainer
             center={mapCenter}
             initialRnbId={
-              selectedAddress.properties.id === adressePartagee?.clefBan
-                ? (adressePartagee.rnb ?? undefined)
-                : undefined
+              adresseTransmise
+                ? (transmise.rnb ?? undefined)
+                : selectedAddress.properties.id === adressePartagee?.clefBan
+                  ? (adressePartagee.rnb ?? undefined)
+                  : undefined
             }
             showMarker={true}
             showLegend={true}

@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { StepAdresseVulnerabilite } from "./StepAdresseVulnerabilite";
 import { useAdresseChoisieStore } from "@/shared/stores";
 import { VulnerabiliteProvider } from "../../shared/VulnerabiliteContext";
+
+const ban = vi.hoisted(() => ({ searchAddress: vi.fn() }));
+vi.mock("@/shared/adapters/ban/ban.adapter", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/adapters/ban/ban.adapter")>()),
+  searchAddress: ban.searchAddress,
+}));
 
 const carte = vi.hoisted(() => ({ initialRnbId: undefined as string | undefined }));
 
@@ -113,5 +119,65 @@ describe("StepAdresseVulnerabilite : adresse reprise du simulateur d'éligibilit
 
       expect(useAdresseChoisieStore.getState().adresse).toBeNull();
     });
+  });
+});
+
+const resultatBan = (score: number) => ({
+  type: "Feature",
+  geometry: { type: "Point", coordinates: [1.68, 46.8] },
+  properties: {
+    label: "97 Rue de Notz 36000 Châteauroux",
+    score,
+    id: "36044_2080_00097",
+    type: "housenumber",
+    name: "97 Rue de Notz",
+    postcode: "36000",
+    citycode: "36044",
+    city: "Châteauroux",
+    context: "36, Indre",
+  },
+});
+
+describe("StepAdresseVulnerabilite : adresse transmise par l'intégrateur de l'iframe", () => {
+  beforeEach(() => {
+    useAdresseChoisieStore.getState().oublier();
+    ban.searchAddress.mockReset();
+    carte.initialRnbId = undefined;
+    window.location.hash = "#adresse=97%20rue%20de%20Notz%20Ch%C3%A2teauroux&rnb=ABCD-1234-EFGH";
+  });
+  afterEach(() => {
+    window.location.hash = "";
+  });
+
+  it("préremplit l'adresse et présélectionne le bâtiment quand la réponse est nette", async () => {
+    ban.searchAddress.mockResolvedValue([resultatBan(0.97)]);
+    render(<StepAdresseVulnerabilite {...props} onSubmit={vi.fn()} />);
+
+    expect(await screen.findByText(/Adresse renseignée par le site/)).toBeInTheDocument();
+    expect(carte.initialRnbId).toBe("ABCD-1234-EFGH");
+  });
+
+  it("laisse choisir quand la réponse est ambiguë", async () => {
+    ban.searchAddress.mockResolvedValue([resultatBan(0.9), resultatBan(0.89)]);
+    render(<StepAdresseVulnerabilite {...props} onSubmit={vi.fn()} />);
+
+    expect(await screen.findByText("Sélectionnez votre adresse parmi les résultats suivants :")).toBeInTheDocument();
+    expect(screen.queryByText(/Adresse renseignée par le site/)).not.toBeInTheDocument();
+  });
+
+  it("n'applique pas l'adresse transmise à un test fait par un agent", () => {
+    render(
+      <VulnerabiliteProvider
+        agent={{
+          nomDemandeur: "Angela Dubois",
+          adresseInitiale: null,
+          enregistrer: vi.fn(),
+          urlRetour: "/espace-agent/dossiers/val-1",
+        }}>
+        <StepAdresseVulnerabilite {...props} onSubmit={vi.fn()} />
+      </VulnerabiliteProvider>
+    );
+
+    expect(ban.searchAddress).not.toHaveBeenCalled();
   });
 });
