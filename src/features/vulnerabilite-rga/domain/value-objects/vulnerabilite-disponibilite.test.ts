@@ -43,20 +43,38 @@ describe("isVulnerabiliteRgaActive", () => {
       expect(isVulnerabiliteRgaActive()).toBe(false);
     });
 
-    it("n'active jamais la production, même à « true »", () => {
+    it("active la production quand il vaut « true » : c'est la mise en ligne", () => {
       process.env.NEXT_PUBLIC_APP_ENV = "production";
       process.env.NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE = "true";
 
-      expect(isVulnerabiliteRgaActive()).toBe(false);
+      expect(isVulnerabiliteRgaActive()).toBe(true);
     });
 
-    it("laisse l'environnement décider quand il vaut « true » ou est absent", () => {
-      process.env.NEXT_PUBLIC_APP_ENV = "staging";
+    it("active aussi une app dont NEXT_PUBLIC_APP_ENV est absente", () => {
+      delete process.env.NEXT_PUBLIC_APP_ENV;
       process.env.NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE = "true";
+
+      expect(isVulnerabiliteRgaActive()).toBe(true);
+    });
+
+    it.each(["TRUE", "1", "oui", ""])(
+      "ne publie rien sur la valeur %j : une faute de frappe n'ouvre pas la production",
+      (valeur) => {
+        process.env.NEXT_PUBLIC_APP_ENV = "production";
+        process.env.NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE = valeur;
+
+        expect(isVulnerabiliteRgaActive()).toBe(false);
+      }
+    );
+
+    it("laisse l'environnement décider quand il est absent", () => {
+      delete process.env.NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE;
+
+      process.env.NEXT_PUBLIC_APP_ENV = "staging";
       expect(isVulnerabiliteRgaActive()).toBe(true);
 
-      delete process.env.NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE;
-      expect(isVulnerabiliteRgaActive()).toBe(true);
+      process.env.NEXT_PUBLIC_APP_ENV = "production";
+      expect(isVulnerabiliteRgaActive()).toBe(false);
     });
   });
 });

@@ -145,6 +145,17 @@ Le `noindex` et les entrées `robots.txt` sont **conservés** : ils protègent s
 si elle se fait avant la validation de la grille. Les trois leviers (validation de la grille, bascule, retrait du
 `noindex`) sont à lever ensemble.
 
+## Amendement (2026-10-15) — interrupteur explicite
+
+La mise en ligne ne demande plus de modifier la liste d'environnements : `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE` prime
+sur elle, dans les deux sens. `false` désactive tout (staging compris, pour y voir la production sans toucher à
+`NEXT_PUBLIC_APP_ENV`, dont dépendent Matomo, les e-mails et les garde-fous des scripts) ; `true` active partout,
+production comprise. Toute autre valeur, absence comprise, laisse la liste décider : seule la chaîne exacte `true`
+publie, une faute de frappe n'ouvre rien. Le défaut est inchangé : inactif en production.
+
+Contrepartie : un `true` posé par erreur sur la production publie le simulateur. Les prérequis de mise en ligne
+(grille validée, limitation de débit, retrait du `noindex`) restent à respecter à la main.
+
 Périmètre, méthode et backlog d'améliorations :
 [docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md](../vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md).
 

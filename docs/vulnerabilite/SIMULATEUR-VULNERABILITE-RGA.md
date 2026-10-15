@@ -39,7 +39,7 @@ une méthode qu'il ne peut pas encore défendre.
 
 Bascule unique : `isVulnerabiliteRgaActive()`
 (`domain/value-objects/vulnerabilite-disponibilite.ts`), dérivée de `NEXT_PUBLIC_APP_ENV` —
-actif en `local`, `docker` et `staging`, **inactif en `production`**.
+actif en `local`, `docker` et `staging`, **inactif en `production`** — sauf interrupteur explicite, voir plus bas.
 
 | Surface                                       | Comportement quand inactif                                               |
 | --------------------------------------------- | ------------------------------------------------------------------------ |
@@ -59,11 +59,18 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
 > absente ou valeur inconnue = **inactif**. Conséquence à connaître : un poste de dev sans
 > `NEXT_PUBLIC_APP_ENV` dans son `.env.local` obtient un 404, pas une page.
 
-> **Voir le comportement de la production en staging** : `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE=false`, posée au
-> build, désactive tous les points d'entrée sans toucher à `NEXT_PUBLIC_APP_ENV` (dont dépendent Matomo, les e-mails
-> et les garde-fous des scripts ops ; une valeur hors des quatre connues est refusée par Zod). C'est un interrupteur
-> de désactivation seulement : la production reste inactive, quelle que soit sa valeur. Comme toute variable
-> `NEXT_PUBLIC_*`, elle n'agit qu'après un **nouveau build** : un simple redémarrage ne suffit pas.
+> **Interrupteur explicite** : `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE` prime sur l'environnement, dans les deux
+> sens, sans toucher à `NEXT_PUBLIC_APP_ENV` (dont dépendent Matomo, les e-mails et les garde-fous des scripts
+> ops ; une valeur hors des quatre connues est refusée par Zod).
+>
+> | Valeur                        | Effet                                                                                            |
+> | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+> | `false`                       | désactive tous les points d'entrée, staging compris : on y voit le comportement de la production |
+> | `true`                        | active partout, **production comprise** : c'est la mise en ligne                                 |
+> | absente ou toute autre valeur | la liste d'environnements ci-dessus décide (`TRUE`, `1` ou `oui` ne publient donc rien)          |
+>
+> Comme toute variable `NEXT_PUBLIC_*`, elle n'agit qu'après un **nouveau build** : un simple redémarrage ne suffit
+> pas. Poser `true` sur la production publie le simulateur : respecter d'abord les prérequis ci-dessous.
 
 > **Garde-fou.** `garde-hors-production.test.ts` échoue quand un fichier pose un lien vers le simulateur (URL,
 > routes du compte et de l'espace agent, contenu de la home) sans passer par `isVulnerabiliteRgaActive()`, quand un
@@ -80,7 +87,7 @@ actif en `local`, `docker` et `staging`, **inactif en `production`**.
    authentifié, sans plafond ni déduplication — tant que la feature est hors production le risque
    est théorique (l'action est un no-op avant tout accès base), il devient réel le jour de la
    bascule ;
-3. basculer `isVulnerabiliteRgaActive()` (ajouter `"production"` à `ENVIRONNEMENTS_ACTIFS`) ;
+3. poser `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE=true` sur l'app de production **avant le build** (aucune modification de code) ;
 4. retirer le `noindex` des deux pages **et** les entrées correspondantes de `src/app/robots.ts`.
 
 ### Points d'entrée
