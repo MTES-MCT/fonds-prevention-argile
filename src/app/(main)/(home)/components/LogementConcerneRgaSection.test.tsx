@@ -13,11 +13,11 @@ describe("LogementConcerneRgaSection : premier CTA de la page", () => {
     active.mockReturnValue(true);
   });
 
-  it("garde le CTA d'éligibilité et ajoute le lien vers le simulateur de vulnérabilité", () => {
+  it("garde le CTA d'éligibilité et ajoute, dessous, le lien vers le simulateur de vulnérabilité", () => {
     render(<LogementConcerneRgaSection />);
 
     expect(screen.getByRole("link", { name: /Vérifier mon éligibilité/ })).toHaveAttribute("href", "/simulateur");
-    expect(screen.getByRole("link", { name: /Estimer la vulnérabilité de mon logement/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Ou estimer d'abord la vulnérabilité de mon logement/ })).toHaveAttribute(
       "href",
       "/vulnerabilite-rga"
     );
