@@ -11,7 +11,7 @@ export interface VulnerabiliteAdresseReponses {
   aleaRga: ReponseAleaRga;
 }
 
-export type ReponsePenteTerrain = "plat" | "eloignee_facade" | "vers_facade" | "ne_sais_pas";
+export type ReponsePenteTerrain = "plat" | "eloignee_facade" | "vers_facade_drainee" | "vers_facade" | "ne_sais_pas";
 export type ReponseReseauxEnterres = "eloignes" | "proches" | "sous_fondations" | "ne_sais_pas";
 export type ReponseGravierProprete = "absent" | "present_localise" | "present_tout_pourtour";
 export type ReponseGouttieres =
@@ -27,7 +27,7 @@ export interface VulnerabiliteEauxReponses {
 }
 
 export type ReponseArbreProximite = "oui" | "non" | "ne_sais_pas";
-export type ReponseArbreEssence = "tres_gourmand" | "grand_ornement" | "fruitier_petit" | "ne_sais_pas";
+export type ReponseArbreEssence = "tres_agressif" | "moyennement_agressif" | "peu_agressif" | "ne_sais_pas";
 export type ReponseHaies = "eloignees_peu_denses" | "proches_moyennement_denses" | "proches_denses" | "ne_sais_pas";
 export type ReponseVegetationPiedFacade = "absente" | "presente";
 
@@ -39,13 +39,11 @@ export interface VulnerabiliteVegetationReponses {
 }
 
 export type ReponseMitoyennete = "pas_mitoyen" | "mitoyen_voisin_travaux_prevention" | "mitoyen_voisin_sans_travaux";
-export type ReponseEnsoleillement = "faible_ombrage" | "modere" | "fort_sud";
-export type ReponseSourceChaleurSousSol = "oui_mur_isole" | "oui_mur_non_isole" | "non" | "pas_de_sous_sol";
+export type ReponseEnsoleillement = "faible_ombrage" | "fort_sud";
 
 export interface VulnerabiliteDiversReponses {
   mitoyennete?: ReponseMitoyennete;
   ensoleillement?: ReponseEnsoleillement;
-  source_chaleur_sous_sol?: ReponseSourceChaleurSousSol;
 }
 
 /** Réponses collectées au fil du parcours, section par section (miroir de `PartialRGASimulationData`). */

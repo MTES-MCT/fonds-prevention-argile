@@ -1,0 +1,1 @@
+ALTER TABLE "vulnerabilite_simulations" DROP COLUMN "source_chaleur_sous_sol";

@@ -8,7 +8,6 @@ import schemaArbreProximite from "./SchemaArbreProximite.svg";
 import schemaHaies from "./SchemaHaies.svg";
 import schemaVegetationPiedFacade from "./SchemaVegetationPiedFacade.svg";
 import schemaEnsoleillement from "./SchemaEnsoleillement.svg";
-import schemaSourceChaleurSousSol from "./SchemaSourceChaleurSousSol.svg";
 
 /** Illustrations des fiches, par `illustrationId` du catalogue : partagées entre l'écran et le PDF. */
 export const ILLUSTRATIONS_RECOMMANDATIONS: Record<string, StaticImageData> = {
@@ -21,5 +20,4 @@ export const ILLUSTRATIONS_RECOMMANDATIONS: Record<string, StaticImageData> = {
   haies: schemaHaies,
   "pied-facade": schemaVegetationPiedFacade,
   ensoleillement: schemaEnsoleillement,
-  "source-chaleur": schemaSourceChaleurSousSol,
 };

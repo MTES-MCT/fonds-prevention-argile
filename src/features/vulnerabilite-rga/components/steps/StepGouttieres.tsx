@@ -37,7 +37,7 @@ export function StepGouttieres({
         { value: "entretenues_evacuation_proche", label: "Entretenues, mais l'évacuation est en pied de façade" },
         {
           value: "entretenues_evacuation_loin",
-          label: "Entretenues, avec une évacuation loin des fondations (> 1,5 m)",
+          label: "Entretenues, avec une évacuation loin des fondations (> 2 mètres)",
         },
         { value: "ne_sais_pas", label: "Je ne sais pas" },
       ]}

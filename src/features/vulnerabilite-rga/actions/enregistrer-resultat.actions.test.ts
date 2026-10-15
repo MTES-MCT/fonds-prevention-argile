@@ -47,14 +47,13 @@ const answers: PartialVulnerabiliteReponses = {
   },
   vegetation: {
     arbre_proximite: "oui",
-    arbre_essence: "tres_gourmand",
+    arbre_essence: "tres_agressif",
     haies: "proches_denses",
     vegetation_pied_facade: "presente",
   },
   divers: {
     mitoyennete: "mitoyen_voisin_sans_travaux",
     ensoleillement: "fort_sud",
-    source_chaleur_sous_sol: "oui_mur_non_isole",
   },
 };
 const payload = toSimulationPayload(answers);
@@ -107,7 +106,6 @@ describe("enregistrerResultatVulnerabiliteAction", () => {
     expect(inserted.codeDepartement).toBe("36");
     expect(inserted.aleaRga).toBe("fort");
     expect(inserted.penteTerrain).toBe("vers_facade");
-    expect(inserted.sourceChaleurSousSol).toBe("oui_mur_non_isole");
     expect(JSON.stringify(inserted)).not.toContain("1 rue Test");
     expect(JSON.stringify(inserted)).not.toContain("clef-test");
   });

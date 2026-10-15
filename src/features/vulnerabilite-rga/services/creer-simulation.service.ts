@@ -17,6 +17,5 @@ export async function creerSimulationVulnerabilite({ codeDepartement, reponses }
     vegetationPiedFacade: reponses.vegetation_pied_facade ?? null,
     mitoyennete: reponses.mitoyennete ?? null,
     ensoleillement: reponses.ensoleillement ?? null,
-    sourceChaleurSousSol: reponses.source_chaleur_sous_sol ?? null,
   });
 }

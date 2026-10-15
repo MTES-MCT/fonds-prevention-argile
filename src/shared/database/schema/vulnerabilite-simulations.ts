@@ -31,7 +31,6 @@ export const vulnerabiliteSimulations = pgTable(
     vegetationPiedFacade: varchar("vegetation_pied_facade", { length: 32 }),
     mitoyennete: varchar("mitoyennete", { length: 48 }),
     ensoleillement: varchar("ensoleillement", { length: 32 }),
-    sourceChaleurSousSol: varchar("source_chaleur_sous_sol", { length: 32 }),
   },
   (table) => ({
     createdAtIdx: index("vulnerabilite_simulations_created_at_idx").on(table.createdAt),

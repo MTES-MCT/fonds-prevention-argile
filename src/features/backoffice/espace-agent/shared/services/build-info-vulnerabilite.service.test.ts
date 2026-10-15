@@ -32,7 +32,7 @@ describe("buildInfoVulnerabilite", () => {
     mockedFindById.mockResolvedValue({
       id: "sim-1",
       createdAt: new Date("2026-06-01T10:00:00Z"),
-      penteTerrain: "vers_facade",
+      penteTerrain: "vers_facade_drainee",
       reseauxEnterres: null,
       gravierProprete: null,
       gouttieres: null,
@@ -53,7 +53,10 @@ describe("buildInfoVulnerabilite", () => {
     expect(result?.reponses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ label: "Aléa RGA (sol)", valeur: "Aléa fort" }),
-        expect.objectContaining({ label: "Pente du terrain", valeur: "La pente descend vers une façade" }),
+        expect.objectContaining({
+          label: "Pente du terrain",
+          valeur: "La pente descend vers une façade, avec un dispositif de drainage",
+        }),
         expect.objectContaining({ label: "Proximité d'un arbre", valeur: "Aucun arbre proche" }),
       ])
     );

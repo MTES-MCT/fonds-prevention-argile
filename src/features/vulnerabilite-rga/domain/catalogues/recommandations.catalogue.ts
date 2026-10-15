@@ -32,7 +32,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-pente",
     critereId: "pente_terrain",
-    reponsesDeclenchantes: ["vers_facade", "ne_sais_pas", "plat", "eloignee_facade"],
+    reponsesDeclenchantes: ["vers_facade", "vers_facade_drainee", "ne_sais_pas", "plat", "eloignee_facade"],
     titre: "Détourner les eaux de ruissellement de la façade",
     problemes: [
       "Une pente qui descend vers la maison ramène l'eau de pluie contre la façade à chaque orage, provoquant des cycles de gonflement et de retrait du sol argileux juste sous les fondations",
@@ -131,7 +131,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "veg-arbre",
     critereId: "arbre_essence",
-    reponsesDeclenchantes: ["tres_gourmand", "grand_ornement", "fruitier_petit", "ne_sais_pas"],
+    reponsesDeclenchantes: ["tres_agressif", "moyennement_agressif", "peu_agressif", "ne_sais_pas"],
     ...FICHE_ARBRE,
   },
   {
@@ -146,7 +146,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     reponsesDeclenchantes: ["proches_moyennement_denses", "proches_denses", "ne_sais_pas"],
     titre: "Éloigner la haie des fondations ou la tailler régulièrement",
     problemes: [
-      "Une haie dense (donc gourmande en eau) et proche (moins de 1,5 m) de la maison assèche le sol comme le ferait un arbre",
+      "Une haie dense (donc gourmande en eau) et proche (moins de 2 mètres) de la maison assèche le sol comme le ferait un arbre",
     ],
     ameliorations: [
       "Tailler régulièrement pour limiter le développement des racines",
@@ -191,20 +191,5 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
       "Un arrosage léger et régulier en période de sécheresse peut aider à stabiliser l'humidité du sol (à éviter en cas d'arrêté sécheresse)",
     ],
     illustrationId: "ensoleillement",
-  },
-  {
-    id: "divers-source-chaleur",
-    critereId: "source_chaleur_sous_sol",
-    reponsesDeclenchantes: ["oui_mur_non_isole", "oui_mur_isole"],
-    titre: "Limiter la chaleur transmise au sol par le mur du sous-sol",
-    problemes: [
-      "Une chaudière ou une autre source de chaleur contre un mur donnant sur l'extérieur chauffe le sol de l'autre côté, toute l'année",
-      "Le sol argileux s'y assèche plus vite qu'ailleurs autour de la maison, ce qui crée un risque de tassement localisé sous ce mur",
-    ],
-    ameliorations: [
-      "Isoler le mur du sous-sol derrière la source de chaleur, ou vérifier que l'isolation existante est continue et en bon état",
-      "Lors d'un remplacement d'équipement, l'éloigner des murs donnant sur l'extérieur",
-    ],
-    illustrationId: "source-chaleur",
   },
 ];

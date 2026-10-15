@@ -61,7 +61,7 @@ export function StepArbreProximite({
             critereId="arbre_essence"
             legend="Quelle est l'essence de cet arbre ?"
             legendVisible
-            hint="Certaines essences assèchent l'argile bien plus que d'autres ; les arbres fruitiers assèchent beaucoup moins. S'il y a plusieurs arbres, choisissez le groupe le plus haut dans la liste."
+            hint="Certaines essences assèchent l'argile bien plus que d'autres : ces groupes reprennent le classement de l'étude britannique de Cutler et Richardson (1989). S'il y a plusieurs arbres, choisissez le groupe le plus haut dans la liste."
             options={OPTIONS_ESSENCE}
             selected={essence}
             onSelect={setEssence}

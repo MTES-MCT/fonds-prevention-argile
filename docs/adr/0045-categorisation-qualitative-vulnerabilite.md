@@ -127,3 +127,20 @@ gravier présent. Le contenu d'une fiche ne dépend pas de la catégorie qui la 
 L'affichage « point sans conseil » disparaît, puisque plus rien ne l'alimente. Le test
 `getReponsesSansCarte` attend désormais une liste vide : une réponse à traiter ajoutée sans fiche
 le fait échouer, au lieu de s'afficher sans conseil.
+
+## Amendement (2026-10-15) : retours métier avant ouverture
+
+La feature n'étant pas en production, ces changements ne reprennent aucune valeur déjà enregistrée.
+
+- La question sur la source de chaleur en sous-sol est retirée : la colonne est supprimée
+  (`0058_vulnerabilite_supprime_source_chaleur`) et l'étape disparaît du funnel Matomo, la mention
+  de `0056` et de son étape ci-dessus ne valant plus que pour l'historique.
+- « Mi-ombre » disparaît de l'ensoleillement, qui n'a plus que deux réponses.
+- La pente vers une façade distingue le drainage : `vers_facade` (sans drainage) devient critique,
+  `vers_facade_drainee` reste en vigilance. Un récupérateur d'eau qui fuit passe en critique, et
+  « je ne sais pas » en vigilance.
+- Les essences sont regroupées par agressivité (très, moyennement, peu agressif) selon la répartition
+  du métier, qui remplace celle de l'amendement du 2026-10-08. Les seuils de distance des gouttières
+  et des haies passent à 2 mètres.
+- La clé de `sessionStorage` passe en `-v4` : un parcours persisté sous les anciennes réponses n'est
+  pas relu.

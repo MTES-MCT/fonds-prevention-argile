@@ -34,7 +34,7 @@ describe("getSectionsRecommandations", () => {
         aleaRga: "fort",
         reseaux_enterres: "eloignes",
         gouttieres: "entretenues_evacuation_loin",
-        ensoleillement: "modere",
+        recuperateur_eau: "absent",
       })
     );
 
@@ -53,16 +53,16 @@ describe("getSectionsRecommandations", () => {
 
   it("porte la fiche arbre sur l'essence, rangée selon sa catégorie", () => {
     const gourmand = getSectionsRecommandations(
-      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_gourmand" })
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_agressif" })
     );
     const fruitier = getSectionsRecommandations(
-      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "fruitier_petit" })
+      categoriserReponses({ arbre_proximite: "oui", arbre_essence: "peu_agressif" })
     );
 
     expect(gourmand).toHaveLength(1);
     expect(gourmand[0].categorie).toBe("critique");
     expect(gourmand[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
-    expect(fruitier[0].categorie).toBe("vigilance");
+    expect(fruitier[0].categorie).toBe("a_verifier");
     expect(fruitier[0].recommandations.map((r) => r.id)).toEqual(["veg-arbre"]);
   });
 });

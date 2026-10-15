@@ -12,7 +12,7 @@ describe("getCategorieReponse", () => {
     expect(getCategorieReponse("gouttieres", "entretenues_evacuation_loin")).toBe("bonne_pratique");
     expect(getCategorieReponse("mitoyennete", "mitoyen_voisin_sans_travaux")).toBe("vigilance");
     expect(getCategorieReponse("mitoyennete", "mitoyen_voisin_travaux_prevention")).toBe("a_verifier");
-    expect(getCategorieReponse("source_chaleur_sous_sol", "pas_de_sous_sol")).toBe("sans_objet");
+    expect(getCategorieReponse("recuperateur_eau", "absent")).toBe("sans_objet");
   });
 
   it("ne renvoie rien pour l'aléa ou une réponse inconnue", () => {
@@ -30,7 +30,7 @@ describe("categoriserReponses", () => {
     });
 
     expect(points).toEqual([
-      { critereId: "pente_terrain", reponse: "vers_facade", categorie: "vigilance" },
+      { critereId: "pente_terrain", reponse: "vers_facade", categorie: "critique" },
       { critereId: "reseaux_enterres", reponse: "eloignes", categorie: "bonne_pratique" },
       { critereId: "haies", reponse: "proches_denses", categorie: "critique" },
     ]);
@@ -41,18 +41,18 @@ describe("categoriserReponses", () => {
   });
 
   it("ignore les réponses sans objet", () => {
-    expect(categoriserReponses({ ensoleillement: "modere", source_chaleur_sous_sol: "pas_de_sous_sol" })).toEqual([]);
+    expect(categoriserReponses({ recuperateur_eau: "absent" })).toEqual([]);
   });
 
-  it("tire le point de l'arbre de son essence : critique pour les grands arbres, vigilance pour les fruitiers", () => {
-    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_gourmand" })).toEqual([
-      { critereId: "arbre_essence", reponse: "tres_gourmand", categorie: "critique" },
+  it("tire le point de l'arbre de son essence : une catégorie par groupe d'agressivité", () => {
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "tres_agressif" })).toEqual([
+      { critereId: "arbre_essence", reponse: "tres_agressif", categorie: "critique" },
     ]);
-    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "grand_ornement" })).toEqual([
-      { critereId: "arbre_essence", reponse: "grand_ornement", categorie: "critique" },
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "moyennement_agressif" })).toEqual([
+      { critereId: "arbre_essence", reponse: "moyennement_agressif", categorie: "vigilance" },
     ]);
-    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "fruitier_petit" })).toEqual([
-      { critereId: "arbre_essence", reponse: "fruitier_petit", categorie: "vigilance" },
+    expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "peu_agressif" })).toEqual([
+      { critereId: "arbre_essence", reponse: "peu_agressif", categorie: "a_verifier" },
     ]);
     expect(categoriserReponses({ arbre_proximite: "oui", arbre_essence: "ne_sais_pas" })).toEqual([
       { critereId: "arbre_essence", reponse: "ne_sais_pas", categorie: "critique" },
@@ -60,7 +60,7 @@ describe("categoriserReponses", () => {
   });
 
   it("ignore une essence restée en mémoire quand l'arbre n'est plus signalé", () => {
-    expect(categoriserReponses({ arbre_proximite: "non", arbre_essence: "tres_gourmand" })).toEqual([
+    expect(categoriserReponses({ arbre_proximite: "non", arbre_essence: "tres_agressif" })).toEqual([
       { critereId: "arbre_proximite", reponse: "non", categorie: "bonne_pratique" },
     ]);
   });
@@ -74,11 +74,10 @@ describe("compterPoints", () => {
   it("compte les points par catégorie", () => {
     const { points } = computeResultat({
       eaux: { reseaux_enterres: "sous_fondations", gouttieres: "entretenues_evacuation_proche", pente_terrain: "plat" },
-      vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand", haies: "eloignees_peu_denses" },
-      divers: { source_chaleur_sous_sol: "oui_mur_non_isole", ensoleillement: "modere" },
+      vegetation: { arbre_proximite: "oui", arbre_essence: "tres_agressif", haies: "eloignees_peu_denses" },
     });
 
-    expect(compterPoints(points)).toEqual({ critique: 3, vigilance: 1, a_verifier: 1, bonne_pratique: 1 });
+    expect(compterPoints(points)).toEqual({ critique: 2, vigilance: 1, a_verifier: 1, bonne_pratique: 1 });
   });
 
   it("part de zéro partout", () => {

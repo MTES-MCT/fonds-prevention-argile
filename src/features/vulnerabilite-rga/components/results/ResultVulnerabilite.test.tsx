@@ -139,13 +139,4 @@ describe("ResultVulnerabilite — sections de fiches", () => {
     expect(screen.queryByRole("heading", { name: /^Points (critiques|de vigilance|à surveiller)$/ })).toBeNull();
     expect(screen.getByText(/Aucun point critique, de vigilance ou à surveiller/)).toBeInTheDocument();
   });
-
-  it("donne une fiche à la source de chaleur contre un mur non isolé", () => {
-    rendre({ ...ELIGIBLE, divers: { mitoyennete: "pas_mitoyen", source_chaleur_sous_sol: "oui_mur_non_isole" } });
-
-    const critiques = screen.getByRole("heading", { level: 2, name: "Points critiques" }).closest("section")!;
-    expect(
-      within(critiques).getByRole("heading", { name: "Limiter la chaleur transmise au sol par le mur du sous-sol" })
-    ).toBeInTheDocument();
-  });
 });

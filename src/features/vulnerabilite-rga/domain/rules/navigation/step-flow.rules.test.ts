@@ -10,8 +10,7 @@ describe("getNextStep", () => {
   it("avance étape par étape", () => {
     expect(getNextStep(VulnerabiliteStep.INTRO)).toBe(VulnerabiliteStep.ADRESSE);
     expect(getNextStep(VulnerabiliteStep.ADRESSE)).toBe(VulnerabiliteStep.PENTE_TERRAIN);
-    expect(getNextStep(VulnerabiliteStep.ENSOLEILLEMENT)).toBe(VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL);
-    expect(getNextStep(VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL)).toBe(VulnerabiliteStep.RESULTAT);
+    expect(getNextStep(VulnerabiliteStep.ENSOLEILLEMENT)).toBe(VulnerabiliteStep.RESULTAT);
   });
 
   it("renvoie null après la dernière étape", () => {

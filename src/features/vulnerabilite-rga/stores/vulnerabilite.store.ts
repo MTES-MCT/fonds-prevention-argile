@@ -5,7 +5,7 @@ import type { PartialVulnerabiliteReponses } from "../domain/types/vulnerabilite
 import { VulnerabiliteFlowService } from "../domain/services/vulnerabilite-flow.service";
 
 // v3 : l'étape « essence » a disparu et ses réponses ont changé — une session antérieure ne doit pas être relue.
-const VULNERABILITE_STORAGE_KEY = "fonds-argile-vulnerabilite-rga-v3";
+const VULNERABILITE_STORAGE_KEY = "fonds-argile-vulnerabilite-rga-v4";
 
 interface VulnerabiliteStoreState {
   vulnerabilite: VulnerabiliteState;

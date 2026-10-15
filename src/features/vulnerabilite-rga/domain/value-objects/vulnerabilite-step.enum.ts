@@ -14,7 +14,6 @@ export const VulnerabiliteStep = {
   VEGETATION_PIED_FACADE: "vegetation_pied_facade",
   MITOYENNETE: "mitoyennete",
   ENSOLEILLEMENT: "ensoleillement",
-  SOURCE_CHALEUR_SOUS_SOL: "source_chaleur_sous_sol",
   RESULTAT: "resultat",
 } as const;
 
@@ -33,7 +32,6 @@ const ETAPES_NUMEROTEES: VulnerabiliteStep[] = [
   VulnerabiliteStep.VEGETATION_PIED_FACADE,
   VulnerabiliteStep.MITOYENNETE,
   VulnerabiliteStep.ENSOLEILLEMENT,
-  VulnerabiliteStep.SOURCE_CHALEUR_SOUS_SOL,
 ];
 
 /** Numéro d'étape affiché (1-based), ou null pour intro/résultat. */

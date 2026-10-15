@@ -11,7 +11,6 @@ import type {
   ReponseVegetationPiedFacade,
   ReponseMitoyennete,
   ReponseEnsoleillement,
-  ReponseSourceChaleurSousSol,
 } from "../types/vulnerabilite-reponses.types";
 
 /**
@@ -107,7 +106,16 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "pente_terrain",
     reponses: [
-      { reponse: "vers_facade", label: "La pente descend vers une façade", categorie: "vigilance" },
+      {
+        reponse: "vers_facade",
+        label: "La pente descend vers une façade, sans dispositif de drainage",
+        categorie: "critique",
+      },
+      {
+        reponse: "vers_facade_drainee",
+        label: "La pente descend vers une façade, avec un dispositif de drainage",
+        categorie: "vigilance",
+      },
       { reponse: "ne_sais_pas", label: "Je ne sais pas", categorie: "a_verifier" },
       { reponse: "plat", label: "Le terrain est plat", categorie: "a_verifier" },
       { reponse: "eloignee_facade", label: "La pente s'éloigne de la maison", categorie: "a_verifier" },
@@ -143,7 +151,7 @@ export const CRITERES_CONFIG: CritereConfig[] = [
       },
       {
         reponse: "entretenues_evacuation_loin",
-        label: "Entretenues, évacuation loin des fondations (> 1,5 m)",
+        label: "Entretenues, évacuation loin des fondations (> 2 mètres)",
         categorie: "bonne_pratique",
       },
     ] satisfies ReponseConfig<ReponseGouttieres>[],
@@ -151,8 +159,8 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "recuperateur_eau",
     reponses: [
-      { reponse: "present_fuite_ou_mal_raccorde", label: "Présent, mais fuit ou mal raccordé", categorie: "vigilance" },
-      { reponse: "ne_sais_pas", label: "Je ne sais pas dans quel état il est", categorie: "a_verifier" },
+      { reponse: "present_fuite_ou_mal_raccorde", label: "Présent, mais fuit ou mal raccordé", categorie: "critique" },
+      { reponse: "ne_sais_pas", label: "Je ne sais pas dans quel état il est", categorie: "vigilance" },
       { reponse: "present_bon_etat", label: "Présent, en bon état et bien raccordé", categorie: "a_verifier" },
       { reponse: "absent", label: "Pas de récupérateur d'eau", categorie: "sans_objet" },
     ] satisfies ReponseConfig<ReponseRecuperateurEau>[],
@@ -170,26 +178,26 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   },
   {
     id: "arbre_essence",
-    // Groupes tirés de Cutler et Richardson (1989), du guide RGA du ministère et de NHBC 4.2 pour les conifères.
+    // Groupes d'agressivité tirés de Cutler et Richardson (1989), répartis par le métier.
     conditionnelA: { critereId: "arbre_proximite", reponseRequise: "oui" },
     reponses: [
       {
-        reponse: "tres_gourmand",
-        label: "Grand arbre très gourmand en eau",
-        precision: "Chêne, peuplier, saule, frêne, cèdre, cyprès (dont cyprès de Leyland)",
+        reponse: "tres_agressif",
+        label: "Arbre très agressif",
+        precision: "Chêne, peuplier, saule, cèdre, frêne",
         categorie: "critique",
       },
       {
-        reponse: "grand_ornement",
-        label: "Grand arbre d'ornement ou conifère",
-        precision: "Érable, platane, tilleul, marronnier, robinier (acacia), hêtre, orme, pin, sapin, épicéa, if",
-        categorie: "critique",
-      },
-      {
-        reponse: "fruitier_petit",
-        label: "Arbre fruitier ou petit arbre",
-        precision: "Pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine",
+        reponse: "moyennement_agressif",
+        label: "Arbre moyennement agressif",
+        precision: "Acacia, marronnier, tilleul, aubépine, hêtre",
         categorie: "vigilance",
+      },
+      {
+        reponse: "peu_agressif",
+        label: "Arbre peu agressif",
+        precision: "Platane, pommier, poirier, érable, cerisier, prunier, bouleau, cyprès, sorbier, orme",
+        categorie: "a_verifier",
       },
       // Sans essence connue, on retient l'hypothèse prudente.
       { reponse: "ne_sais_pas", label: "Autre essence ou je ne sais pas", categorie: "critique" },
@@ -237,22 +245,12 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     id: "ensoleillement",
     reponses: [
       { reponse: "fort_sud", label: "Très ensoleillé, exposition sud sans protection", categorie: "vigilance" },
-      { reponse: "modere", label: "Mi-ombre", categorie: "sans_objet" },
       {
         reponse: "faible_ombrage",
         label: "Peu ensoleillé, ombragé une bonne partie de la journée",
         categorie: "bonne_pratique",
       },
     ] satisfies ReponseConfig<ReponseEnsoleillement>[],
-  },
-  {
-    id: "source_chaleur_sous_sol",
-    reponses: [
-      { reponse: "oui_mur_isole", label: "Oui, sur un mur isolé", categorie: "a_verifier" },
-      { reponse: "oui_mur_non_isole", label: "Oui, sur un mur non isolé", categorie: "critique" },
-      { reponse: "non", label: "Non", categorie: "bonne_pratique" },
-      { reponse: "pas_de_sous_sol", label: "Pas de sous-sol", categorie: "sans_objet" },
-    ] satisfies ReponseConfig<ReponseSourceChaleurSousSol>[],
   },
 ];
 

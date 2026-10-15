@@ -27,7 +27,7 @@ moindre coût. Ce n'est **pas** un diagnostic, et ce n'est **pas** le simulateur
 | Compte requis  | oui à terme (FranceConnect)                      | non, jamais                                             |
 
 Le questionnaire ne porte volontairement **ni sur le bâti** (année, niveaux, fondations) **ni sur les
-revenus** : 13 questions, observables depuis le jardin ou le sous-sol.
+revenus** : 12 questions, observables depuis le jardin.
 
 ---
 
@@ -134,7 +134,7 @@ domain/
   rules/navigation/step-flow.rules.ts      ← ordre des étapes + branchement arbre → essence
   value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 15 étapes, 11 illustrations SVG, synthèse, recommandations
+components/                                ← 14 étapes, 10 illustrations SVG, synthèse, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
@@ -143,11 +143,11 @@ actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
 ### Parcours
 
 `intro → adresse → 5 questions eaux (dont récupérateur d'eau) → arbre (et son essence) →
-haies → végétation en pied de façade → mitoyenneté → ensoleillement → source de chaleur en
-sous-sol → résultat`
+haies → végétation en pied de façade → mitoyenneté → ensoleillement → résultat`
 
-Parcours linéaire, 12 étapes numérotées. L'essence de l'arbre n'a plus d'écran propre : elle
-apparaît sous la question de proximité dès la réponse « Oui », et « Suivant » l'exige alors.
+Parcours linéaire, 11 étapes numérotées. La question sur une source de chaleur en sous-sol a été
+retirée, sa colonne supprimée (migration `0058`) : elle n'avait servi qu'en préproduction.
+L'essence de l'arbre n'a plus d'écran propre : elle apparaît sous la question de proximité dès la réponse « Oui », et « Suivant » l'exige alors.
 Revenir à « Non » ou « Je ne sais pas » l'efface.
 
 ### Catégorisation des réponses
@@ -170,16 +170,17 @@ Quatre règles à connaître :
 - **C'est l'essence qui porte le point de l'arbre**, « arbre proche = oui » étant `sans_objet`.
   Elle se choisit parmi quatre groupes (exemples d'essences affichés en bleu sous chaque groupe) :
 
-  | Groupe                             | Exemples                                                                 | Catégorie |
-  | ---------------------------------- | ------------------------------------------------------------------------ | --------- |
-  | Grand arbre très gourmand en eau   | chêne, peuplier, saule, frêne, cèdre, cyprès                             | critique  |
-  | Grand arbre d'ornement ou conifère | érable, platane, tilleul, marronnier, robinier, hêtre, orme, pin, sapin… | critique  |
-  | Arbre fruitier ou petit arbre      | pommier, poirier, prunier, cerisier, sorbier, bouleau, aubépine          | vigilance |
-  | Autre essence ou je ne sais pas    | —                                                                        | critique  |
+  | Groupe                          | Exemples                                                                             | Catégorie    |
+  | ------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
+  | Arbre très agressif             | chêne, peuplier, saule, cèdre, frêne                                                 | critique     |
+  | Arbre moyennement agressif      | acacia, marronnier, tilleul, aubépine, hêtre                                         | vigilance    |
+  | Arbre peu agressif              | platane, pommier, poirier, érable, cerisier, prunier, bouleau, cyprès, sorbier, orme | à surveiller |
+  | Autre essence ou je ne sais pas | —                                                                                    | critique     |
 
-  Sources : Cutler et Richardson (1989) pour le score de sécurité et la distance d'influence, le
-  guide RGA du ministère pour le saule et le cèdre, NHBC Standards 4.2 pour les conifères absents
-  de l'étude (cyprès à forte demande en eau, les autres modérée). Voir l'amendement d'ADR-0045.
+  Les groupes sont nommés par agressivité, plus par type d'arbre. Ils reprennent le classement de
+  l'étude britannique de Cutler et Richardson (1989), cité sous la question, avec la répartition
+  arrêtée par le métier en octobre 2026. Les simulations enregistrées avant ce changement
+  (préproduction seulement) gardent d'anciennes valeurs, que la grille ne reconnaît plus.
 
 - **« À surveiller » s'explique** : un point sans problème a priori, qui peut devenir critique
   (fuite, défaut d'entretien). L'explication (`CATEGORIES_AFFICHAGE.a_verifier.explication`)
@@ -260,7 +261,7 @@ synthèse ou le callout. Le titre d'une section est attaché à sa première fic
 insécable : `minPresenceAhead` a été essayé et ne l'empêchait pas de rester seul en bas de page.
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
-que tout le reste de la page, alors que le bouton n'apparaît qu'à la 15e étape. `ResultVulnerabilite`
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 14e étape. `ResultVulnerabilite`
 la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
 l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
 compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
@@ -333,7 +334,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 - Ajouter un test négatif RBAC sur les trois Server Actions de `vulnerabilite-stats.actions.ts`
   (cf. [RBAC-TEST-PLAN §5](../security/RBAC-TEST-PLAN.md)) — gravité faible (agrégats anonymes),
   mais c'est la règle du repo pour toute nouvelle surface.
-- Créer le funnel Matomo du simulateur, avec l'étape `vulnerabilite_step_source_chaleur_sous_sol`,
+- Créer le funnel Matomo du simulateur (sans l'étape `vulnerabilite_step_source_chaleur_sous_sol`, retirée),
   et renseigner `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` sur staging (sans elle, le widget
   funnel affiche « données non disponibles », le reste de l'onglet fonctionne).
 - La limitation de débit de l'écriture anonyme est suivie comme **étape de mise en ligne** (§2),
@@ -353,7 +354,7 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Renvoi conditionnel vers `/simulateur` | `vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`                                                      |
 | Sections de recommandations            | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                                        |
 | Navigation et branchement              | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                                        |
-| Orchestrateur des 15 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
+| Orchestrateur des 14 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
 | Écriture anonyme                       | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                                           |
 | Table anonyme                          | `shared/database/schema/vulnerabilite-simulations.ts`                                                                 |
 | PDF téléchargeable                     | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                                                       |

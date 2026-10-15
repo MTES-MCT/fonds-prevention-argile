@@ -34,7 +34,7 @@ export function StepVegetationPiedFacade({
       critereId="vegetation_pied_facade"
       title="Y a-t-il des plantations juste au pied des façades ?"
       illustration={<Image src={schemaVegetationPiedFacade} alt="" className="w-full h-auto" />}
-      description="Un potager, des rosiers ou des arbustes arrosés au pied de la façade créent des apports d'eau localisés et irréguliers. Sur sol argileux, ces à-coups font gonfler puis rétracter l'argile et favorisent le RGA."
+      description="Des plantations arrosées au pied de la façade créent des apports d'eau localisés et irréguliers. Sur sol argileux, ces à-coups font gonfler puis rétracter l'argile et favorisent le RGA."
       options={[
         { value: "presente", label: "Oui, il y a des plantations arrosées contre le mur" },
         { value: "absente", label: "Non, rien contre les murs" },

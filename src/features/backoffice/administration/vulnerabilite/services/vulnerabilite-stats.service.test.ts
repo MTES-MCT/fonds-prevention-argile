@@ -32,7 +32,7 @@ function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): Vulnerabilit
     createdAt: new Date("2026-06-01"),
     codeDepartement: "36",
     aleaRga: "fort",
-    penteTerrain: "vers_facade",
+    penteTerrain: "vers_facade_drainee",
     reseauxEnterres: null,
     gravierProprete: null,
     gouttieres: null,
@@ -43,7 +43,6 @@ function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): Vulnerabilit
     vegetationPiedFacade: null,
     mitoyennete: null,
     ensoleillement: null,
-    sourceChaleurSousSol: null,
     ...overrides,
   };
 }
@@ -68,8 +67,8 @@ describe("getVulnerabiliteStatsBdd", () => {
 
   it("calcule le pourcentage par réponse sur le dénominateur des seules réponses données", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ penteTerrain: "vers_facade" }),
-      makeRow({ penteTerrain: "vers_facade" }),
+      makeRow({ penteTerrain: "vers_facade_drainee" }),
+      makeRow({ penteTerrain: "vers_facade_drainee" }),
       makeRow({ penteTerrain: "plat" }),
       // Critère conditionnel non répondu par cette simulation (pas d'arbre proche) :
       // ne doit pas fausser le dénominateur des autres critères.
@@ -81,9 +80,13 @@ describe("getVulnerabiliteStatsBdd", () => {
     expect(stats.totalSimulations).toBe(4);
     const pente = stats.reponses.find((c) => c.critereId === "pente_terrain")!;
     expect(pente.total).toBe(4);
-    const versFacade = pente.reponses.find((r) => r.reponse === "vers_facade")!;
+    const versFacade = pente.reponses.find((r) => r.reponse === "vers_facade_drainee")!;
     const plat = pente.reponses.find((r) => r.reponse === "plat")!;
-    expect(versFacade).toMatchObject({ count: 2, pourcentage: 50, label: "La pente descend vers une façade" });
+    expect(versFacade).toMatchObject({
+      count: 2,
+      pourcentage: 50,
+      label: "La pente descend vers une façade, avec un dispositif de drainage",
+    });
     expect(plat).toMatchObject({ count: 2, pourcentage: 50, label: "Le terrain est plat" });
 
     const essence = stats.reponses.find((c) => c.critereId === "arbre_essence")!;
@@ -93,25 +96,30 @@ describe("getVulnerabiliteStatsBdd", () => {
 
   it("résout le libellé du groupe d'essences", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
-      makeRow({ arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
-      makeRow({ arbreProximite: "oui", arbreEssence: "fruitier_petit" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "tres_agressif" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "tres_agressif" }),
+      makeRow({ arbreProximite: "oui", arbreEssence: "peu_agressif" }),
     ]);
 
     const stats = await getVulnerabiliteStatsBdd("30j");
 
     const essence = stats.reponses.find((c) => c.critereId === "arbre_essence")!;
     expect(essence.total).toBe(3);
-    const gourmand = essence.reponses.find((r) => r.reponse === "tres_gourmand")!;
-    expect(gourmand).toMatchObject({ label: "Grand arbre très gourmand en eau", count: 2, pourcentage: 67 });
+    const gourmand = essence.reponses.find((r) => r.reponse === "tres_agressif")!;
+    expect(gourmand).toMatchObject({ label: "Arbre très agressif", count: 2, pourcentage: 67 });
   });
 
   it("calcule le nombre moyen de points par catégorie et par simulation, aléa exclu", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
       // 2 critiques (réseaux, essence de l'arbre), 1 vigilance (pente) ; l'aléa ne compte pas.
-      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
+      makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "tres_agressif" }),
       // 1 critique (haies), 1 à vérifier (pente), 1 bonne pratique (réseaux), 1 sans objet.
-      makeRow({ penteTerrain: "plat", haies: "proches_denses", reseauxEnterres: "eloignes", ensoleillement: "modere" }),
+      makeRow({
+        penteTerrain: "plat",
+        haies: "proches_denses",
+        reseauxEnterres: "eloignes",
+        recuperateurEau: "absent",
+      }),
       // 1 vigilance (pente).
       makeRow(),
     ]);

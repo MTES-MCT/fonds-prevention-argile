@@ -21,7 +21,7 @@ import type { PartialVulnerabiliteReponses, ReponseAleaRga } from "../../domain/
 const CLASSES_BOUTON_PDF = "fr-btn fr-btn--secondary !w-full md:!w-auto justify-center";
 
 // En statique, `@react-pdf/renderer` (~256 Ko gzip) entrait dans le first-load de
-// /vulnerabilite-rga et de l'iframe partenaire — 13 étapes avant que ce bouton existe.
+// /vulnerabilite-rga et de l'iframe partenaire — tout le questionnaire avant que ce bouton existe.
 const TelechargerPdfButton = dynamic(() => import("../pdf/TelechargerPdfButton").then((m) => m.TelechargerPdfButton), {
   ssr: false,
   loading: () => (

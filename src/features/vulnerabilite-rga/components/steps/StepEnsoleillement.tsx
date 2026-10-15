@@ -37,7 +37,6 @@ export function StepEnsoleillement({
       description="Une façade très ensoleillée, notamment exposée au sud, s'assèche plus vite en été, ce qui accentue le retrait argileux à cet endroit précis."
       options={[
         { value: "fort_sud", label: "Très ensoleillée, exposition sud sans protection" },
-        { value: "modere", label: "Mi-ombre" },
         { value: "faible_ombrage", label: "Peu ensoleillée, ombragée une bonne partie de la journée" },
       ]}
       selected={selected}

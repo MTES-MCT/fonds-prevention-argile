@@ -19,7 +19,6 @@ export const CRITERE_FIELDS: { critereId: string; field: string }[] = [
   { critereId: "vegetation_pied_facade", field: "vegetationPiedFacade" },
   { critereId: "mitoyennete", field: "mitoyennete" },
   { critereId: "ensoleillement", field: "ensoleillement" },
-  { critereId: "source_chaleur_sous_sol", field: "sourceChaleurSousSol" },
 ];
 
 /** Réponses aplaties par identifiant de critère — forme pivot entre les sections du parcours,
@@ -41,7 +40,6 @@ export function toReponsesParCritere(answers: PartialVulnerabiliteReponses): Rep
     vegetation_pied_facade: answers.vegetation?.vegetation_pied_facade,
     mitoyennete: answers.divers?.mitoyennete,
     ensoleillement: answers.divers?.ensoleillement,
-    source_chaleur_sous_sol: answers.divers?.source_chaleur_sous_sol,
   };
 }
 
@@ -70,7 +68,6 @@ export const QUESTION_LABELS: Record<string, string> = {
   vegetation_pied_facade: "Végétation en pied de façade",
   mitoyennete: "Mitoyenneté",
   ensoleillement: "Ensoleillement",
-  source_chaleur_sous_sol: "Source de chaleur en sous-sol",
 };
 
 /** Libellé lisible d'une réponse donnée à une question, ou de l'aléa issu de la carte. */
