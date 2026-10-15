@@ -24,7 +24,7 @@ export function StepHaies({ initialValue, numeroEtape, totalEtapes, canGoBack, o
       critereId="haies"
       title="Y a-t-il une haie proche de la maison ?"
       illustration={<Image src={schemaHaies} alt="" className="w-full h-auto" />}
-      description="Comme un arbre, une haie dense et proche de la maison assèche l'argile à son pied, ce qui favorise son retrait et le RGA. Plus la haie est hautes et large, plus elle ira puiser de l'eau dans le sol."
+      description="Comme un arbre, une haie dense et proche de la maison assèche l'argile à son pied, ce qui favorise son retrait et le RGA. Plus la haie est haute et large, plus elle ira puiser de l'eau dans le sol."
       options={[
         { value: "proches_denses", label: "Proche des fondations et dense" },
         {

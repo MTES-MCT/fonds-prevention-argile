@@ -106,7 +106,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "pente_terrain",
     reponses: [
-      // « vers_facade » conserve sa clé pour les simulations déjà enregistrées, avant la nuance drainage.
       {
         reponse: "vers_facade",
         label: "La pente descend vers une façade, sans dispositif de drainage",
@@ -152,7 +151,7 @@ export const CRITERES_CONFIG: CritereConfig[] = [
       },
       {
         reponse: "entretenues_evacuation_loin",
-        label: "Entretenues, évacuation loin des fondations (> 1,5 m)",
+        label: "Entretenues, évacuation loin des fondations (> 2 mètres)",
         categorie: "bonne_pratique",
       },
     ] satisfies ReponseConfig<ReponseGouttieres>[],
