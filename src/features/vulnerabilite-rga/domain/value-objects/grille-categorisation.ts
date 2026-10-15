@@ -154,7 +154,7 @@ export const CRITERES_CONFIG: CritereConfig[] = [
       { reponse: "present_fuite_ou_mal_raccorde", label: "Présent, mais fuit ou mal raccordé", categorie: "vigilance" },
       { reponse: "ne_sais_pas", label: "Je ne sais pas dans quel état il est", categorie: "a_verifier" },
       { reponse: "present_bon_etat", label: "Présent, en bon état et bien raccordé", categorie: "a_verifier" },
-      { reponse: "absent", label: "Pas de récupérateur d'eau", categorie: "bonne_pratique" },
+      { reponse: "absent", label: "Pas de récupérateur d'eau", categorie: "sans_objet" },
     ] satisfies ReponseConfig<ReponseRecuperateurEau>[],
   },
 
