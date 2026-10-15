@@ -42,8 +42,8 @@ export function StepProprietaire({
           <p>Les résidences secondaires et les maisons en location sont exclues du dispositif.</p>
           <p>Les propriétaires en indivision sont éligibles à l&rsquo;aide.</p>
           <p>
-            Les SCI, les nus-propriétaires, les usufruitiers et les particuliers en cours
-            d&rsquo;acquisition d&rsquo;une maison individuelle ne sont pas éligibles à l&rsquo;aide.
+            Les SCI, les nus-propriétaires, les usufruitiers et les particuliers en cours d&rsquo;acquisition
+            d&rsquo;une maison individuelle ne sont pas éligibles à l&rsquo;aide.
           </p>
         </>
       }

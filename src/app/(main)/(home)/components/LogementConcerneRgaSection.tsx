@@ -2,6 +2,7 @@ import content from "../content/content.json";
 import Image from "next/image";
 
 import Link from "next/link";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 
 export default function LogementConcerneRgaSection() {
   return (
@@ -17,6 +18,14 @@ export default function LogementConcerneRgaSection() {
               href={content.logement_concerne_section.cta_url}>
               {content.logement_concerne_section.cta_label}
             </Link>
+            {/* Feature hors production tant que la grille n'est pas validée (ADR-0030). */}
+            {isVulnerabiliteRgaActive() && (
+              <p className="fr-mt-2w fr-mb-0">
+                <Link href={content.logement_concerne_section.cta_vulnerabilite_url}>
+                  {content.logement_concerne_section.cta_vulnerabilite_label}
+                </Link>
+              </p>
+            )}
           </div>
 
           {/* Zone image */}

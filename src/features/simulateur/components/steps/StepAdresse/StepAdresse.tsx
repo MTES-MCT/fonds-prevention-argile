@@ -8,9 +8,12 @@ import {
   searchAddress,
   mapBanFeatureToAddressData,
   formatCoordinatesString,
+  adresseChoisieDepuisBan,
+  banFeatureDepuisAdresse,
   MIN_QUERY_LENGTH,
   type BanFeature,
 } from "@/shared/adapters/ban";
+import { lireAdresseChoisie, useAdresseChoisieStore } from "@/shared/stores";
 import { getEpciByCommune } from "@/shared/adapters/geo";
 import { RgaMapContainer } from "@/features/rga-map";
 import { getBuildingDataByRnbId, getBuildingDataFallback, type BuildingData } from "@/shared/services/bdnb";
@@ -18,6 +21,7 @@ import { asString } from "@/shared/utils";
 
 import { SimulateurLayout } from "../../shared/SimulateurLayout";
 import { NavigationButtons } from "../../shared/NavigationButtons";
+import { useSimulateurContext } from "../../shared/SimulateurContext";
 import { peutReprendreAdresseExistante } from "./adresse-reprise";
 import { BatimentSelectionne } from "./BatimentSelectionne";
 import { useSimulateurStore, selectEditMode } from "../../../stores/simulateur.store";
@@ -49,6 +53,15 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   const editMode = useSimulateurStore(selectEditMode);
   const isAddressLocked = editMode && peutReprendreAdresseExistante(initialValue);
   const setPrefillBatiment = useSimulateurStore((state) => state.setPrefillBatiment);
+  const memoriserAdresse = useAdresseChoisieStore((state) => state.memoriser);
+  const { embedded } = useSimulateurContext();
+
+  // Adresse reprise du simulateur de vulnérabilité. Seul le parcours public la partage : un agent
+  // qui saisit pour un demandeur ne doit ni la recevoir ni la laisser à la session suivante.
+  const partageAdresse = !editMode && !embedded;
+  const [adressePartagee] = useState(() =>
+    partageAdresse && !asString(initialValue?.adresse) ? lireAdresseChoisie() : null
+  );
 
   // IDs uniques pour l'accessibilité
   const inputId = useId();
@@ -61,7 +74,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     if (adresse && communeNom && !adresse.includes(communeNom)) {
       return `${adresse}, ${communeNom}`;
     }
-    return adresse || "";
+    return adresse || adressePartagee?.label || "";
   });
   const [addressResults, setAddressResults] = useState<BanFeature[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -98,14 +111,16 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         };
       }
     }
-    return null;
+    return adressePartagee ? banFeatureDepuisAdresse(adressePartagee) : null;
   });
 
   // RNB ID initial pour pré-sélectionner le bâtiment sur la carte en mode édition
-  const initialRnbId = asString(initialValue?.rnb);
+  const initialRnbId = asString(initialValue?.rnb) || adressePartagee?.rnb || "";
 
   // Code EPCI récupéré via API Geo
-  const [codeEpci, setCodeEpci] = useState<string | null>(asString(initialValue?.epci) || null);
+  const [codeEpci, setCodeEpci] = useState<string | null>(
+    asString(initialValue?.epci) || adressePartagee?.codeEpci || null
+  );
 
   // Bâtiment sélectionné sur la carte (après clic sur point bleu)
   // En mode édition, on construit directement le buildingData depuis la simulation existante (pas d'appel BDNB)
@@ -126,6 +141,20 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
       surfaceHabitable: null,
     } as BuildingData;
   });
+
+  // L'EPCI ne voyage pas depuis le simulateur de vulnérabilité : sans lui, l'AMO du territoire ne se retrouve pas.
+  useEffect(() => {
+    if (!adressePartagee || codeEpci || selectedAddress?.properties.citycode !== adressePartagee.codeInsee) return;
+    let annule = false;
+    getEpciByCommune(adressePartagee.codeInsee)
+      .then((epci) => {
+        if (!annule) setCodeEpci(epci);
+      })
+      .catch((error) => console.error("Erreur récupération EPCI:", error));
+    return () => {
+      annule = true;
+    };
+  }, [adressePartagee, codeEpci, selectedAddress?.properties.citycode]);
 
   // Debounce de l'input pour éviter trop d'appels API
   const debouncedInput = useDebounce(addressInput, SEARCH_DEBOUNCE_DELAY);
@@ -264,6 +293,16 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         donneesIndisponibles: Boolean(batiment.donneesIndisponibles),
       });
 
+      if (partageAdresse) {
+        memoriserAdresse(
+          adresseChoisieDepuisBan(selectedAddress, {
+            rnb: batiment.rnbId || null,
+            coordonnees: { lat: batiment.lat, lon: batiment.lon },
+            codeEpci,
+          })
+        );
+      }
+
       onSubmit({
         logement: {
           adresse: batiment.adresse || addressData.label,
@@ -283,7 +322,16 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
         },
       });
     },
-    [selectedAddress, codeEpci, onSubmit, isAddressLocked, initialRnbId, setPrefillBatiment]
+    [
+      selectedAddress,
+      codeEpci,
+      onSubmit,
+      isAddressLocked,
+      initialRnbId,
+      setPrefillBatiment,
+      partageAdresse,
+      memoriserAdresse,
+    ]
   );
 
   const handleSubmit = useCallback(() => {
@@ -300,6 +348,9 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
   // sens métier propre ("hors zone", cf. checkZoneForte) qu'un échec de récupération ne doit pas masquer.
   const aleaIndetermine = Boolean(buildingData?.aleaIndetermine);
   const isValid = selectedAddress !== null && buildingData !== null && !aleaIndetermine;
+
+  // Le bâtiment repris ne vaut que pour l'adresse reprise : une autre adresse choisie ensuite l'écarte.
+  const batimentRepris = !adressePartagee || selectedAddress?.properties.id === adressePartagee.clefBan;
 
   // Coordonnées pour centrer la carte
   const mapCenter = selectedAddress
@@ -403,7 +454,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
           <RgaMapContainer
             center={mapCenter}
-            initialRnbId={isAddressLocked ? undefined : initialRnbId}
+            initialRnbId={isAddressLocked || !batimentRepris ? undefined : initialRnbId}
             locked={isAddressLocked}
             showMarker={true}
             showLegend={true}

@@ -1,7 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { vulnerabiliteSimulationsRepo, parcoursRepo } from "@/shared/database/repositories";
+import { parcoursRepo } from "@/shared/database/repositories";
+import { creerSimulationVulnerabilite } from "../services/creer-simulation.service";
 import { getSession, COOKIE_NAMES, getCookieOptions, SESSION_DURATION } from "@/features/auth/server";
 import { vulnerabiliteSimulationPayloadSchema } from "../domain/value-objects/simulation-payload";
 import { isVulnerabiliteRgaActive } from "../domain/value-objects/vulnerabilite-disponibilite";
@@ -32,25 +33,8 @@ export async function enregistrerResultatVulnerabiliteAction(payload: unknown): 
     return;
   }
 
-  const { codeDepartement, reponses } = parsed.data;
-
   try {
-    const simulation = await vulnerabiliteSimulationsRepo.create({
-      codeDepartement,
-      aleaRga: reponses.aleaRga ?? null,
-      penteTerrain: reponses.pente_terrain ?? null,
-      reseauxEnterres: reponses.reseaux_enterres ?? null,
-      gravierProprete: reponses.gravier_proprete ?? null,
-      gouttieres: reponses.gouttieres ?? null,
-      recuperateurEau: reponses.recuperateur_eau ?? null,
-      arbreProximite: reponses.arbre_proximite ?? null,
-      arbreEssence: reponses.arbre_essence ?? null,
-      haies: reponses.haies ?? null,
-      vegetationPiedFacade: reponses.vegetation_pied_facade ?? null,
-      mitoyennete: reponses.mitoyennete ?? null,
-      ensoleillement: reponses.ensoleillement ?? null,
-      sourceChaleurSousSol: reponses.source_chaleur_sous_sol ?? null,
-    });
+    const simulation = await creerSimulationVulnerabilite(parsed.data);
 
     const session = await getSession();
     if (session?.userId) {

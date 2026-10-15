@@ -8,13 +8,13 @@ import { Status } from "@/shared/domain/value-objects/status.enum";
 import {
   InfoDemandeur,
   InfoLogement,
-  InfoVulnerabilite,
   ParcoursDemandeur,
   AFaire,
   QualificationAllersVers,
   RenvoyerInvitationButton,
 } from "../../shared";
 import { ActionsRealisees } from "../../shared";
+import { VulnerabiliteDossier } from "../../shared/components/VulnerabiliteDossier";
 import { Step, STEP_LABELS_NUMBERED } from "@/shared/domain/value-objects/step.enum";
 import { PiecesJustificatives } from "@/features/parcours/dossiers-ds/components";
 import { getPiecesJustificativesForStep } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
@@ -174,11 +174,7 @@ export default async function DemandeDetailPage({ params }: PageProps) {
                   agentEditInfo={demande.agentEditInfo}
                 />
               </div>
-              {demande.vulnerabilite && (
-                <div className="fr-mb-4w">
-                  <InfoVulnerabilite data={demande.vulnerabilite} />
-                </div>
-              )}
+              <VulnerabiliteDossier id={demande.id} vulnerabilite={demande.vulnerabilite} />
               <div>
                 <PiecesJustificatives
                   pieces={piecesJustificatives}

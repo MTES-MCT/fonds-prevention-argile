@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { StepAdresse } from "./StepAdresse";
 import { useSimulateurStore } from "../../../stores/simulateur.store";
+import { useAdresseChoisieStore } from "@/shared/stores";
+import { SimulateurProvider } from "../../shared/SimulateurContext";
 
 const bdnb = vi.hoisted(() => ({ getBuildingDataFallback: vi.fn(), getBuildingDataByRnbId: vi.fn() }));
 
@@ -79,6 +81,7 @@ const props = { numeroEtape: 2, totalEtapes: 9, canGoBack: true, onBack: () => {
 describe("StepAdresse", () => {
   beforeEach(() => {
     useSimulateurStore.getState().reset();
+    useAdresseChoisieStore.getState().oublier();
     bdnb.getBuildingDataFallback.mockReset();
   });
 
@@ -158,6 +161,60 @@ describe("StepAdresse", () => {
       fireEvent.click(screen.getByRole("button", { name: "Suivant" }));
 
       expect(onSubmit.mock.calls[0][0].logement.adresse).toBe("99 Rue de Notz 36000 Châteauroux");
+    });
+  });
+
+  describe("adresse reprise du simulateur de vulnérabilité", () => {
+    const ADRESSE_PARTAGEE = {
+      label: "97 Rue de Notz 36000 Châteauroux",
+      lat: 46.8,
+      lon: 1.68,
+      clefBan: "36044_2080_00097",
+      codeInsee: "36044",
+      communeNom: "Châteauroux",
+      codeDepartement: "36",
+      rnb: "RNB1",
+      codeEpci: null,
+    };
+
+    it("préremplit l'adresse et ouvre la carte sans nouvelle recherche", () => {
+      useAdresseChoisieStore.getState().memoriser(ADRESSE_PARTAGEE);
+      render(<StepAdresse {...props} onSubmit={vi.fn()} />);
+
+      expect(screen.getByRole("textbox")).toHaveValue("97 Rue de Notz 36000 Châteauroux");
+      expect(screen.getByText("Adresse validée")).toBeInTheDocument();
+    });
+
+    it("retrouve l'EPCI, que le simulateur de vulnérabilité ne connaît pas", async () => {
+      useAdresseChoisieStore.getState().memoriser(ADRESSE_PARTAGEE);
+      const onSubmit = vi.fn();
+      render(<StepAdresse {...props} onSubmit={onSubmit} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Cliquer le 97 rue de Notz" }));
+      await waitFor(() => expect(screen.getByRole("button", { name: "Suivant" })).toBeEnabled());
+      fireEvent.click(screen.getByRole("button", { name: "Suivant" }));
+
+      expect(onSubmit.mock.calls[0][0].logement).toMatchObject({ commune: "36044", epci: "243600327" });
+    });
+
+    it("mémorise l'adresse validée pour le simulateur de vulnérabilité", () => {
+      render(<StepAdresse {...props} initialValue={ADRESSE_CHOISIE} onSubmit={vi.fn()} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Cliquer le 97 rue de Notz" }));
+      fireEvent.click(screen.getByRole("button", { name: "Suivant" }));
+
+      expect(useAdresseChoisieStore.getState().adresse).toMatchObject({ clefBan: "36044_2080_00097", rnb: "RNB1" });
+    });
+
+    it("ne reprend ni ne mémorise rien dans le wizard agent embarqué", () => {
+      useAdresseChoisieStore.getState().memoriser(ADRESSE_PARTAGEE);
+      render(
+        <SimulateurProvider embedded>
+          <StepAdresse {...props} onSubmit={vi.fn()} />
+        </SimulateurProvider>
+      );
+
+      expect(screen.getByRole("textbox")).toHaveValue("");
     });
   });
 });

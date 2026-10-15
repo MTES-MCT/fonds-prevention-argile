@@ -172,6 +172,14 @@ Gardes principales :
 - Garde entreprise AMO : `src/app/(backoffice)/components/AmoGuard.tsx` — bloque
   un `AMO` / `AMO_ET_ALLERS_VERS` sans entreprise rattachée.
 - Routes : `src/features/auth/domain/value-objects/configs/routes.config.ts`.
+- Test de vulnérabilité fait **par l'agent** pour le demandeur : `enregistrerTestVulnerabiliteAgentAction` et la page
+  `/espace-agent/vulnerabilite/[id]`, réservés à `AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS` dans le périmètre de
+  l'édition de simulation (ownership entreprise, ou territoire sans AMO). Super-administrateur, administrateur et
+  analyste sont refusés : aucune nouvelle exception au read-only.
+- Test de vulnérabilité du demandeur : `/mon-compte/vulnerabilite` et `getEtatMaVulnerabiliteAction` relisent
+  le résultat rattaché au **parcours de la session** (`PARTICULIER` seulement, aucun identifiant accepté du client,
+  [ADR-0032](../adr/0032-rattachement-simulation-vulnerabilite-compte.md)). Ils ne renvoient que des catégories, sans
+  adresse ni donnée d'un autre demandeur ; hors production, la page répond 404.
 
 ### 3.1 Navigation backoffice (deux rangées, pilotées par rôle) — ADR-0015
 
@@ -615,4 +623,6 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Garde initiation du formulaire diagnostic   | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` + `parcours/core/services/diagnostic.service.ts` (`refusInitiateur`)                         |
 | Garde rattachement / réinit. DN             | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                              |
 | Garde édition simulation                    | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                        |
+| Test de vulnérabilité fait par l'agent      | `espace-agent/shared/actions/test-vulnerabilite-agent.actions.ts` + `services/test-vulnerabilite-agent.service.ts` (`resoudreDossierTestVulnerabilite`)  |
+| Résultat de vulnérabilité du demandeur      | `parcours/core/services/ma-vulnerabilite.service.ts` + `actions/ma-vulnerabilite.actions.ts` (parcours résolu par la session)                            |
 | Résolution du permalien parcours            | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                |

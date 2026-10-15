@@ -73,6 +73,9 @@ export const ACTION_TYPE_DOSSIER_DN_REINITIALISE = "dossier_dn_reinitialise";
 /** Action système : l'AMO mandataire financier a créé le formulaire DN à la place du demandeur. */
 export const ACTION_TYPE_FORMULAIRE_INITIE_PAR_AMO = "formulaire_initie_par_amo";
 
+/** Action système : l'agent a fait le test de vulnérabilité pour le compte du demandeur (au téléphone). */
+export const ACTION_TYPE_VULNERABILITE_REALISEE_PAR_AGENT = "vulnerabilite_realisee_par_agent";
+
 /**
  * Liste groupée des types d'action proposés dans le formulaire (cf. maquette).
  * Le groupe `null` correspond aux options affichées hors libellé de groupe.
@@ -160,6 +163,7 @@ export const ACTION_LABELS_BY_VALUE: Record<string, string> = ACTION_TYPE_GROUPS
     [ACTION_TYPE_DOSSIER_DESARCHIVE]: "📤 Dossier désarchivé",
     [ACTION_TYPE_AMO_RATTACHEE]: "🔗 AMO rattachée",
     [ACTION_TYPE_FORMULAIRE_INITIE_PAR_AMO]: "📝 Demande de paiement initiée par l'AMO",
+    [ACTION_TYPE_VULNERABILITE_REALISEE_PAR_AGENT]: "🧭 Test de vulnérabilité réalisé avec le demandeur",
   } as Record<string, string>
 );
 
@@ -187,6 +191,7 @@ export const ACTION_TYPES_SYSTEME: ReadonlySet<string> = new Set([
   ACTION_TYPE_DOSSIER_DESARCHIVE,
   ACTION_TYPE_AMO_RATTACHEE,
   ACTION_TYPE_FORMULAIRE_INITIE_PAR_AMO,
+  ACTION_TYPE_VULNERABILITE_REALISEE_PAR_AGENT,
 ]);
 
 /** Une action système est une trace d'audit : lecture seule dans l'historique. */

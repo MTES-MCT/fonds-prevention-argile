@@ -9,13 +9,13 @@ import { DOSSIER_STEP_LABELS } from "@/features/backoffice/espace-agent/dossiers
 import {
   InfoDemandeur,
   InfoLogement,
-  InfoVulnerabilite,
   ParcoursDemandeur,
   AFaire,
   QualificationAllersVers,
   RenvoyerInvitationButton,
 } from "../../shared";
 import { ActionsRealisees } from "../../shared";
+import { VulnerabiliteDossier } from "../../shared/components/VulnerabiliteDossier";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { InfoDossierCallout } from "./components/InfoDossierCallout";
@@ -304,11 +304,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   agentEditInfo={dossier.agentEditInfo}
                 />
               </div>
-              {dossier.vulnerabilite && (
-                <div className="fr-mb-4w">
-                  <InfoVulnerabilite data={dossier.vulnerabilite} />
-                </div>
-              )}
+              <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
               <div>
                 <GagnezDuTempsTravaux />
               </div>

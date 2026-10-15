@@ -35,10 +35,10 @@ export function StepMitoyennete({
   };
 
   return (
-    <SimulateurLayout 
-      title="La maison est-elle mitoyenne ?" 
+    <SimulateurLayout
+      title="La maison est-elle mitoyenne ?"
       subtitle="Il s’agit d’une mitoyenneté physique (pas de mur en commun)."
-      currentStep={numeroEtape} 
+      currentStep={numeroEtape}
       totalSteps={totalEtapes}>
       <fieldset className="fr-fieldset md:w-1/2" id="mitoyennete-fieldset">
         <legend className="fr-fieldset__legend fr-sr-only">Mitoyenneté</legend>

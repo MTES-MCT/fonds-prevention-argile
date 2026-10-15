@@ -4,8 +4,7 @@ import { PartialRGASimulationData } from "../domain";
 import { decryptData } from "../services/encryption.service";
 
 export type DecryptRGADataResult =
-  | { success: true; data: PartialRGASimulationData }
-  | { success: false; error: string };
+  { success: true; data: PartialRGASimulationData } | { success: false; error: string };
 
 /**
  * Déchiffre les données RGA côté serveur

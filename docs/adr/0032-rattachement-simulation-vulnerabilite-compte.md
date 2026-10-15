@@ -93,7 +93,19 @@ données ni casser l'anonymat de la table stats pour les visiteurs qui restent a
 - Pas de purge/anonymisation RGPD dédiée au-delà de `onDelete: set null` sur la FK.
 - Pas d'émission d'évènement Brevo à ce rattachement (contrairement à `SIMULATION_ENREGISTREE` pour
   l'éligibilité).
-- Pas d'édition agent de cette donnée : lecture seule côté dossier/prospect/demande.
+- ~~Pas d'édition agent de cette donnée~~ — levé en octobre 2026, voir l'amendement ci-dessous.
+
+## Amendement (octobre 2026) — le test fait par l'agent pour le demandeur
+
+Un AMO ou un Aller-vers au téléphone avec le demandeur peut faire le test à sa place. Le pointeur est posé
+par `enregistrerTestVulnerabiliteAgentAction`, **jamais** par l'enregistrement anonyme : celui-ci rattache par
+cookie au navigateur courant, qui est ici celui de l'agent. Le parcours est déduit côté serveur de l'identifiant
+de la page d'origine, avec le périmètre de l'édition de simulation (ownership de l'entreprise AMO, ou territoire
+pour un dossier sans AMO). Rôles : `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS` ; le super-administrateur reste en
+lecture seule et aucune nouvelle exception n'est ouverte. Le résultat remplace le précédent, comme quand le
+demandeur refait le test, et une action système `vulnerabilite_realisee_par_agent` en garde la trace (décomptes
+seulement). Le navigateur de l'agent ne garde ni réponses ni adresse : le store du simulateur est remis à zéro à
+l'arrivée et au départ, et l'adresse vient du dossier.
 
 ## Liens
 

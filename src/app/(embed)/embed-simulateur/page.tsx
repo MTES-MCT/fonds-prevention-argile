@@ -12,7 +12,7 @@ export default async function EmbedSimulateurPage({ searchParams }: EmbedSimulat
   // Sans header du site dans l'iframe, l'aide reste accessible depuis l'en-tête des étapes.
   return (
     <div className="w-full" style={{ minHeight: "650px" }}>
-      <SimulateurProvider showHelpLink>
+      <SimulateurProvider showHelpLink proposerVulnerabilite={false}>
         <SimulateurFormulaire partner={partner ?? null} />
       </SimulateurProvider>
     </div>

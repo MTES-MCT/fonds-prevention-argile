@@ -34,7 +34,7 @@ export function StepSourceChaleurSousSol({
       critereId="source_chaleur_sous_sol"
       title="Y a-t-il une source de chaleur en sous-sol contre un mur donnant sur l'extérieur ?"
       illustration={<Image src={schemaSourceChaleurSousSol} alt="" className="w-full h-auto" />}
-      description="Une chaudière ou une autre source de chaleur placée contre un mur donnant sur l'extérieur peut, si ce mur n'est pas isolé, assécher le sol argileux de l'autre côté."
+      description="Une source de chaleur placée contre un mur donnant sur l'extérieur peut, si ce mur n'est pas isolé, assécher le sol argileux de l'autre côté."
       options={[
         { value: "oui_mur_isole", label: "Oui, sur un mur isolé" },
         { value: "oui_mur_non_isole", label: "Oui, sur un mur non isolé" },

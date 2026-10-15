@@ -115,9 +115,7 @@ export function calculerTrancheRevenu(
  */
 export function calculateNiveauRevenuFromRga(
   rgaData:
-    | { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } }
-    | null
-    | undefined
+    { menage?: { revenu_rga?: number; personnes?: number }; logement?: { code_region?: string } } | null | undefined
 ): string | null {
   const revenu = rgaData?.menage?.revenu_rga;
   const personnes = rgaData?.menage?.personnes;

@@ -144,7 +144,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
     id: "veg-haies",
     critereId: "haies",
     reponsesDeclenchantes: ["proches_moyennement_denses", "proches_denses", "ne_sais_pas"],
-    titre: "Éloigner ou espacer la haie des fondations",
+    titre: "Éloigner la haie des fondations ou la tailler régulièrement",
     problemes: [
       "Une haie dense (donc gourmande en eau) et proche (moins de 1,5 m) de la maison assèche le sol comme le ferait un arbre",
     ],
