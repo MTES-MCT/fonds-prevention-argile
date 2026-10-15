@@ -81,7 +81,7 @@ Tous derrière la même bascule : hors des environnements actifs, aucun ne s'aff
 | ---------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État » | bascule active ; l'aperçu de résultat est illustratif, sans score        |
 | Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton        | bascule active, site principal (pas l'iframe), maison, propriétaire      |
-| « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top    | bascule active, étape « choix de l'accompagnement » seulement            |
+| « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top    | bascule active, à toutes les étapes du parcours                          |
 | Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base          | bascule active, test rattaché au compte, sinon renvoi vers le simulateur |
 
 > `/vulnerabilite-rga` vit dans le groupe de routes `(tunnel)` ([ADR-0040](../adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)),

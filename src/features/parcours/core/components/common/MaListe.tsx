@@ -149,8 +149,8 @@ export default function MaListe() {
                 </li>
               ))}
             </ol>
-            {/* Le test de vulnérabilité se propose tant que le demandeur choisit son accompagnement. */}
-            {currentStep === Step.CHOIX_AMO && <VulnerabiliteMaListe />}
+            {/* Facultatif et sans lien avec l'avancement du dossier : proposé à toutes les étapes. */}
+            <VulnerabiliteMaListe />
           </div>
         </div>
       </div>
