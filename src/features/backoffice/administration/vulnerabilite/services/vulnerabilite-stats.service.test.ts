@@ -115,7 +115,12 @@ describe("getVulnerabiliteStatsBdd", () => {
       // 2 critiques (réseaux, essence de l'arbre), 1 vigilance (pente) ; l'aléa ne compte pas.
       makeRow({ reseauxEnterres: "sous_fondations", arbreProximite: "oui", arbreEssence: "tres_gourmand" }),
       // 1 critique (haies), 1 à vérifier (pente), 1 bonne pratique (réseaux), 1 sans objet.
-      makeRow({ penteTerrain: "plat", haies: "proches_denses", reseauxEnterres: "eloignes", ensoleillement: "modere" }),
+      makeRow({
+        penteTerrain: "plat",
+        haies: "proches_denses",
+        reseauxEnterres: "eloignes",
+        recuperateurEau: "absent",
+      }),
       // 1 vigilance (pente).
       makeRow(),
     ]);

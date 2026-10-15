@@ -41,7 +41,7 @@ describe("categoriserReponses", () => {
   });
 
   it("ignore les réponses sans objet", () => {
-    expect(categoriserReponses({ ensoleillement: "modere", source_chaleur_sous_sol: "pas_de_sous_sol" })).toEqual([]);
+    expect(categoriserReponses({ recuperateur_eau: "absent", source_chaleur_sous_sol: "pas_de_sous_sol" })).toEqual([]);
   });
 
   it("tire le point de l'arbre de son essence : critique pour les grands arbres, vigilance pour les fruitiers", () => {
@@ -75,7 +75,7 @@ describe("compterPoints", () => {
     const { points } = computeResultat({
       eaux: { reseaux_enterres: "sous_fondations", gouttieres: "entretenues_evacuation_proche", pente_terrain: "plat" },
       vegetation: { arbre_proximite: "oui", arbre_essence: "tres_gourmand", haies: "eloignees_peu_denses" },
-      divers: { source_chaleur_sous_sol: "oui_mur_non_isole", ensoleillement: "modere" },
+      divers: { source_chaleur_sous_sol: "oui_mur_non_isole" },
     });
 
     expect(compterPoints(points)).toEqual({ critique: 3, vigilance: 1, a_verifier: 1, bonne_pratique: 1 });

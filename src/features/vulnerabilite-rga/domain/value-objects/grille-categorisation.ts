@@ -247,7 +247,6 @@ export const CRITERES_CONFIG: CritereConfig[] = [
     id: "ensoleillement",
     reponses: [
       { reponse: "fort_sud", label: "Très ensoleillé, exposition sud sans protection", categorie: "vigilance" },
-      { reponse: "modere", label: "Mi-ombre", categorie: "sans_objet" },
       {
         reponse: "faible_ombrage",
         label: "Peu ensoleillé, ombragé une bonne partie de la journée",

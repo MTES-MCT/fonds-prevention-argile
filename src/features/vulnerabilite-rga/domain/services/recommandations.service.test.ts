@@ -34,7 +34,7 @@ describe("getSectionsRecommandations", () => {
         aleaRga: "fort",
         reseaux_enterres: "eloignes",
         gouttieres: "entretenues_evacuation_loin",
-        ensoleillement: "modere",
+        recuperateur_eau: "absent",
       })
     );
 
