@@ -138,11 +138,11 @@
   "vulnerabilite_section": {
     "badge": "Nouveau",
     "title": "Vous n'êtes pas sûr de remplir ces critères ?",
-    "description": "Découvrez la vulnérabilité de votre logement face au RGA en 5 minutes. Répondez à quelques questions sur votre logement et son environnement pour identifier ses points faibles et obtenir des pistes d'actions concrètes, que vous soyez éligible ou non au Fonds Prévention Argile.",
+    "description": "Découvrez la vulnérabilité de votre logement face au RGA en 5 minutes. Répondez à quelques questions sur l'environnement de votre logement pour identifier ses facteurs aggravants et obtenir des pistes d'actions concrètes, que vous soyez éligible ou non au Fonds Prévention Argile.",
     "etapes": [
       "Répondez à quelques questions simples",
       "Identifiez les points critiques et de vigilance de votre logement",
-      "Obtenez des conseils pratiques à mettre en œuvre vous-même ou à confier à un expert."
+      "Obtenez des bonnes pratiques face au RGA et identifiez si un diagnostic de vulnérabilité est nécessaire."
     ],
     "cta_label": "Estimer la vulnérabilité de mon logement",
     "cta_url": "/vulnerabilite-rga",
@@ -155,8 +155,8 @@
       ],
       "lignes": [
         { "label": "Supprimer le gravier en pied de façade", "categorie": "critique" },
-        { "label": "Supprimer la végétation en pied de façade", "categorie": "critique" },
-        { "label": "Éviter la proximité des arbres", "categorie": "vigilance" }
+        { "label": "Faire expertiser l'arbre proche des fondations", "categorie": "critique" },
+        { "label": "Vérifier le raccordement et l'étanchéité du récupérateur d'eau", "categorie": "vigilance" }
       ]
     }
   },

@@ -84,7 +84,7 @@ export default function VulnerabiliteMaListe() {
                   />
                 )}
               </div>
-              <p className="fr-text--sm fr-mb-1w">À traiter en priorité : {resume.pointsPrioritaires.join(", ")}.</p>
+              {/*<p className="fr-text--sm fr-mb-1w">À traiter en priorité : {resume.pointsPrioritaires.join(", ")}.</p>*/}
             </>
           )}
 
