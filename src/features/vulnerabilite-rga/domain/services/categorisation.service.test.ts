@@ -30,7 +30,7 @@ describe("categoriserReponses", () => {
     });
 
     expect(points).toEqual([
-      { critereId: "pente_terrain", reponse: "vers_facade", categorie: "vigilance" },
+      { critereId: "pente_terrain", reponse: "vers_facade", categorie: "critique" },
       { critereId: "reseaux_enterres", reponse: "eloignes", categorie: "bonne_pratique" },
       { critereId: "haies", reponse: "proches_denses", categorie: "critique" },
     ]);

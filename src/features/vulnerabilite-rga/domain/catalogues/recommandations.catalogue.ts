@@ -32,7 +32,7 @@ export const RECOMMANDATIONS_CATALOGUE: RecommandationDef[] = [
   {
     id: "eaux-pente",
     critereId: "pente_terrain",
-    reponsesDeclenchantes: ["vers_facade", "ne_sais_pas", "plat", "eloignee_facade"],
+    reponsesDeclenchantes: ["vers_facade", "vers_facade_drainee", "ne_sais_pas", "plat", "eloignee_facade"],
     titre: "Détourner les eaux de ruissellement de la façade",
     problemes: [
       "Une pente qui descend vers la maison ramène l'eau de pluie contre la façade à chaque orage, provoquant des cycles de gonflement et de retrait du sol argileux juste sous les fondations",

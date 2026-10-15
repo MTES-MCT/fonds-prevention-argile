@@ -107,7 +107,17 @@ export const CRITERES_CONFIG: CritereConfig[] = [
   {
     id: "pente_terrain",
     reponses: [
-      { reponse: "vers_facade", label: "La pente descend vers une façade", categorie: "vigilance" },
+      // « vers_facade » conserve sa clé pour les simulations déjà enregistrées, avant la nuance drainage.
+      {
+        reponse: "vers_facade",
+        label: "La pente descend vers une façade, sans dispositif de drainage",
+        categorie: "critique",
+      },
+      {
+        reponse: "vers_facade_drainee",
+        label: "La pente descend vers une façade, avec un dispositif de drainage",
+        categorie: "vigilance",
+      },
       { reponse: "ne_sais_pas", label: "Je ne sais pas", categorie: "a_verifier" },
       { reponse: "plat", label: "Le terrain est plat", categorie: "a_verifier" },
       { reponse: "eloignee_facade", label: "La pente s'éloigne de la maison", categorie: "a_verifier" },

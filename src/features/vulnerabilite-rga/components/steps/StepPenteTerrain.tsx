@@ -34,9 +34,10 @@ export function StepPenteTerrain({
       critereId="pente_terrain"
       title="Quelle est la pente du terrain autour de la maison ?"
       illustration={<Image src={schemaPenteTerrain} alt="" className="w-full h-auto" />}
-      description="Vérifiez le sens d'écoulement de l'eau sur votre terrain. Une pente orientée vers la maison accumule l'eau au pied des fondations, ce qui fait gonfler l'argile localement et favorise le RGA."
+      description="Vérifiez le sens d'écoulement de l'eau sur votre terrain. Une pente orientée vers la maison accumule l'eau au pied de façade, ce qui fait gonfler l'argile localement et favorise le RGA."
       options={[
-        { value: "vers_facade", label: "La pente descend vers une façade de la maison" },
+        { value: "vers_facade", label: "La pente descend vers une façade, sans dispositif de drainage" },
+        { value: "vers_facade_drainee", label: "La pente descend vers une façade, avec un dispositif de drainage" },
         { value: "plat", label: "Le terrain est plat" },
         { value: "eloignee_facade", label: "La pente s'éloigne de la maison" },
         { value: "ne_sais_pas", label: "Je ne sais pas" },

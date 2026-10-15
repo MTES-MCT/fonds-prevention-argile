@@ -32,7 +32,7 @@ function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): Vulnerabilit
     createdAt: new Date("2026-06-01"),
     codeDepartement: "36",
     aleaRga: "fort",
-    penteTerrain: "vers_facade",
+    penteTerrain: "vers_facade_drainee",
     reseauxEnterres: null,
     gravierProprete: null,
     gouttieres: null,
@@ -68,8 +68,8 @@ describe("getVulnerabiliteStatsBdd", () => {
 
   it("calcule le pourcentage par réponse sur le dénominateur des seules réponses données", async () => {
     vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ penteTerrain: "vers_facade" }),
-      makeRow({ penteTerrain: "vers_facade" }),
+      makeRow({ penteTerrain: "vers_facade_drainee" }),
+      makeRow({ penteTerrain: "vers_facade_drainee" }),
       makeRow({ penteTerrain: "plat" }),
       // Critère conditionnel non répondu par cette simulation (pas d'arbre proche) :
       // ne doit pas fausser le dénominateur des autres critères.
@@ -81,9 +81,13 @@ describe("getVulnerabiliteStatsBdd", () => {
     expect(stats.totalSimulations).toBe(4);
     const pente = stats.reponses.find((c) => c.critereId === "pente_terrain")!;
     expect(pente.total).toBe(4);
-    const versFacade = pente.reponses.find((r) => r.reponse === "vers_facade")!;
+    const versFacade = pente.reponses.find((r) => r.reponse === "vers_facade_drainee")!;
     const plat = pente.reponses.find((r) => r.reponse === "plat")!;
-    expect(versFacade).toMatchObject({ count: 2, pourcentage: 50, label: "La pente descend vers une façade" });
+    expect(versFacade).toMatchObject({
+      count: 2,
+      pourcentage: 50,
+      label: "La pente descend vers une façade, avec un dispositif de drainage",
+    });
     expect(plat).toMatchObject({ count: 2, pourcentage: 50, label: "Le terrain est plat" });
 
     const essence = stats.reponses.find((c) => c.critereId === "arbre_essence")!;

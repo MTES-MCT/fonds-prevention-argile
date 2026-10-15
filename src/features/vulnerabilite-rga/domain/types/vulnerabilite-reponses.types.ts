@@ -11,7 +11,7 @@ export interface VulnerabiliteAdresseReponses {
   aleaRga: ReponseAleaRga;
 }
 
-export type ReponsePenteTerrain = "plat" | "eloignee_facade" | "vers_facade" | "ne_sais_pas";
+export type ReponsePenteTerrain = "plat" | "eloignee_facade" | "vers_facade_drainee" | "vers_facade" | "ne_sais_pas";
 export type ReponseReseauxEnterres = "eloignes" | "proches" | "sous_fondations" | "ne_sais_pas";
 export type ReponseGravierProprete = "absent" | "present_localise" | "present_tout_pourtour";
 export type ReponseGouttieres =
