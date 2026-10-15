@@ -216,3 +216,9 @@ Si le besoin émerge, l'ajout est straightforward (~30 min) :
 - **Pas d'attribution multi-touch** : on capture uniquement l'origine au moment de la création du compte. Un user qui passe par MAIF puis revient via un autre canal reste attribué à MAIF.
 - **Funnels Matomo non segmentables** : limitation de l'API Matomo, hors de notre contrôle. Workaround : utiliser les events `SIMULATEUR_STEP_*` qui sont segmentables.
 - **Cookie tiers en cas d'iframe sans navigation** : si un user ne clique jamais "Continuer" (reste dans l'iframe), aucun cookie n'est posé sur notre domaine — ce qui est conforme aux attentes (pas de compte créé = rien à attribuer).
+
+## Adresse transmise par le partenaire
+
+Le partenaire peut préremplir l'adresse du logement avec `#adresse=<texte encodé>` (et `&rnb=` en
+option) à la fin de l'URL d'embed. Le fragment n'est ni envoyé au serveur ni suivi par Matomo
+(`discardHashTag`). Détail et règles de résolution : [ADR-0049](../adr/0049-adresse-transmise-par-integrateur-iframe.md).
