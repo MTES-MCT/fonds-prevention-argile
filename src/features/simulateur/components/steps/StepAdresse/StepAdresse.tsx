@@ -16,6 +16,7 @@ import {
 import { lireAdresseChoisie, useAdresseChoisieStore } from "@/shared/stores";
 import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { getEpciByCommune } from "@/shared/adapters/geo";
+import { useAdresseTransmise } from "@/shared/hooks/useAdresseTransmise";
 import { RgaMapContainer } from "@/features/rga-map";
 import { getBuildingDataByRnbId, getBuildingDataFallback, type BuildingData } from "@/shared/services/bdnb";
 import { asString } from "@/shared/utils";
@@ -214,6 +215,25 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
     }
   }, []);
 
+  // Adresse fournie par l'intégrateur de l'iframe, dans le fragment d'URL : elle prime sur celle reprise.
+  const [transmise, setTransmise] = useState<{ clefBan: string; rnb: string | null } | null>(null);
+  useAdresseTransmise(!editMode && !embedded && !asString(initialValue?.adresse), (resolution) => {
+    if (resolution.statut === "resolue") {
+      handleAddressSelect(resolution.feature);
+      setTransmise({ clefBan: resolution.feature.properties.id, rnb: resolution.rnb });
+    } else {
+      setAddressInput(resolution.texte);
+    }
+  });
+
+  const changerAdresse = useCallback(() => {
+    setAddressInput("");
+    setSelectedAddress(null);
+    setBuildingData(null);
+    setCodeEpci(null);
+    setTransmise(null);
+  }, []);
+
   // Gestionnaire de changement d'input
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -353,6 +373,8 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
   // Le bâtiment repris ne vaut que pour l'adresse reprise : une autre adresse choisie ensuite l'écarte.
   const batimentRepris = !adressePartagee || selectedAddress?.properties.id === adressePartagee.clefBan;
+  const adresseTransmise = transmise !== null && selectedAddress?.properties.id === transmise.clefBan;
+  const rnbCarte = adresseTransmise ? (transmise.rnb ?? undefined) : batimentRepris ? initialRnbId : undefined;
 
   // Coordonnées pour centrer la carte
   const mapCenter = selectedAddress
@@ -413,6 +435,15 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
           </div>
         </div>
 
+        {adresseTransmise && (
+          <p className="fr-text--sm fr-mt-1w fr-mb-0 text-(--text-mention-grey)">
+            Adresse renseignée par le site depuis lequel vous accédez au simulateur.{" "}
+            <button type="button" className="fr-link fr-link--sm" onClick={changerAdresse}>
+              Changer d&apos;adresse
+            </button>
+          </p>
+        )}
+
         {/* Liste des résultats (RadioButtons) */}
         {showResults && (
           <fieldset
@@ -456,7 +487,7 @@ export function StepAdresse({ initialValue, numeroEtape, totalEtapes, canGoBack,
 
           <RgaMapContainer
             center={mapCenter}
-            initialRnbId={isAddressLocked || !batimentRepris ? undefined : initialRnbId}
+            initialRnbId={isAddressLocked ? undefined : rnbCarte}
             locked={isAddressLocked}
             showMarker={true}
             showLegend={true}

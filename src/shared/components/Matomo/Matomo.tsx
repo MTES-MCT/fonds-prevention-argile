@@ -21,6 +21,8 @@ const MatomoContent = () => {
     if (!isProduction()) return;
 
     if (clientEnv.NEXT_PUBLIC_MATOMO_URL && clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID && !initialised) {
+      // Le fragment peut porter l'adresse transmise par un partenaire : jamais dans les statistiques.
+      push(["discardHashTag", true]);
       init({
         siteId: clientEnv.NEXT_PUBLIC_MATOMO_SITE_ID,
         url: clientEnv.NEXT_PUBLIC_MATOMO_URL,

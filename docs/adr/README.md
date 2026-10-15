@@ -77,4 +77,6 @@ purement cosmétique.
 | 0047 | [Double authentification obligatoire pour les agents ProConnect](0047-double-authentification-proconnect.md)                            | Accepté               |
 | 0048 | [Une adresse partagée entre les deux simulateurs publics](0048-adresse-partagee-entre-simulateurs.md)                                   | Accepté               |
 
+| 0049 | [Adresse transmise par l'intégrateur d'une iframe](0049-adresse-transmise-par-integrateur-iframe.md) | Accepté |
+
 <!-- Ajouter chaque nouvel ADR ici -->

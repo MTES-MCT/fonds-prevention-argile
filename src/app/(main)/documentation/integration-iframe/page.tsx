@@ -29,6 +29,18 @@ export default function DocumentationIntegrationPage() {
   referrerpolicy="no-referrer-when-downgrade"
 ></iframe>`;
 
+  const iframeCodeAdresse = `<iframe
+  src="https://fonds-prevention-argile.beta.gouv.fr/embed-simulateur#adresse=97%20rue%20de%20Notz%2036000%20Ch%C3%A2teauroux"
+  title="Simulateur d'éligibilité au Fonds prévention argile"
+  style="width: 100%; height: 800px; border: none;"
+  referrerpolicy="no-referrer-when-downgrade"
+></iframe>`;
+
+  const iframeCodeAdresseJs = `const adresse = "97 rue de Notz 36000 Châteauroux";
+iframe.src =
+  "https://fonds-prevention-argile.beta.gouv.fr/embed-simulateur#adresse=" +
+  encodeURIComponent(adresse);`;
+
   return (
     <div className="fr-container fr-py-6w">
       {/* Breadcrumb */}
@@ -127,6 +139,57 @@ export default function DocumentationIntegrationPage() {
           <li>
             À la fin de la simulation, une nouvelle fenêtre s'ouvre automatiquement vers la page de connexion
             (comportement normal pour les iframes)
+          </li>
+        </ul>
+      </div>
+
+      {/* Préremplissage de l'adresse */}
+      <h2 className="fr-mt-8w">Préremplir l&apos;adresse du logement (facultatif)</h2>
+      <p>
+        Si votre site connaît déjà l&apos;adresse du logement de l&apos;utilisateur, vous pouvez la transmettre au
+        simulateur : il la retrouve et centre la carte dessus, l&apos;utilisateur n&apos;a plus qu&apos;à désigner son
+        bâtiment. Ajoutez-la à la fin de l&apos;URL de l&apos;iframe, après un <code>#</code>, en texte et encodée (
+        <code>encodeURIComponent</code>) :
+      </p>
+      <div className="fr-highlight">
+        <pre>
+          <code>{iframeCodeAdresse}</code>
+        </pre>
+      </div>
+      <p>
+        Si l&apos;adresse est connue au moment du chargement de la page, vous pouvez aussi l&apos;ajouter en JavaScript
+        :
+      </p>
+      <div className="fr-highlight">
+        <pre>
+          <code>{iframeCodeAdresseJs}</code>
+        </pre>
+      </div>
+      <div className="fr-alert fr-alert--info fr-mt-4w">
+        <h3 className="fr-alert__title">Ce qu&apos;il faut savoir</h3>
+        <ul>
+          <li>
+            Utilisez le{" "}
+            <strong>
+              fragment (<code>#</code>)
+            </strong>{" "}
+            et non un paramètre <code>?</code> : le fragment n&apos;est envoyé à aucun serveur, ni le nôtre, ni dans le{" "}
+            <code>Referer</code> ni dans nos statistiques. Une adresse est une donnée personnelle.
+          </li>
+          <li>
+            Écrivez l&apos;adresse complète (numéro, rue, code postal, commune). Si une seule adresse correspond, elle
+            est sélectionnée ; sinon l&apos;utilisateur choisit parmi les propositions. Il peut toujours la modifier.
+          </li>
+          <li>
+            Facultatif : si vous connaissez l&apos;identifiant du bâtiment dans le{" "}
+            <a href="https://rnb.beta.gouv.fr" target="_blank" rel="noopener noreferrer">
+              Référentiel National des Bâtiments
+            </a>
+            , ajoutez-le avec <code>&amp;rnb=XXXX-XXXX-XXXX</code> pour présélectionner directement le bâtiment.
+          </li>
+          <li>
+            L&apos;adresse n&apos;est ni stockée ni conservée par le simulateur avant que l&apos;utilisateur ne la
+            valide.
           </li>
         </ul>
       </div>

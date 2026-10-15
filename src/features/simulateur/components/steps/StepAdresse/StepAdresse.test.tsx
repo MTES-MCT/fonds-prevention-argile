@@ -1,9 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { StepAdresse } from "./StepAdresse";
 import { useSimulateurStore } from "../../../stores/simulateur.store";
 import { useAdresseChoisieStore } from "@/shared/stores";
 import { SimulateurProvider } from "../../shared/SimulateurContext";
+
+const ban = vi.hoisted(() => ({ searchAddress: vi.fn() }));
+vi.mock("@/shared/adapters/ban/ban.adapter", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/adapters/ban/ban.adapter")>()),
+  searchAddress: ban.searchAddress,
+}));
 
 const bdnb = vi.hoisted(() => ({ getBuildingDataFallback: vi.fn(), getBuildingDataByRnbId: vi.fn() }));
 
@@ -20,11 +26,14 @@ vi.mock("@/features/rga-map", () => ({
   RgaMapContainer: ({
     onCarteIndisponible,
     onBuildingSelect,
+    initialRnbId,
   }: {
     onCarteIndisponible?: () => void;
     onBuildingSelect?: (data: unknown) => void;
+    initialRnbId?: string;
   }) => (
     <>
+      <span data-testid="rnb-initial">{initialRnbId ?? ""}</span>
       <button type="button" onClick={onCarteIndisponible}>
         Simuler une carte indisponible
       </button>
@@ -219,5 +228,73 @@ describe("StepAdresse", () => {
 
       expect(screen.getByRole("textbox")).toHaveValue("");
     });
+  });
+});
+
+const resultatBan = (score: number) => ({
+  type: "Feature",
+  geometry: { type: "Point", coordinates: [1.68, 46.8] },
+  properties: {
+    label: "97 Rue de Notz 36000 Châteauroux",
+    score,
+    id: "36044_2080_00097",
+    type: "housenumber",
+    name: "97 Rue de Notz",
+    postcode: "36000",
+    citycode: "36044",
+    city: "Châteauroux",
+    context: "36, Indre",
+  },
+});
+
+describe("StepAdresse : adresse transmise par l'intégrateur de l'iframe", () => {
+  beforeEach(() => {
+    useSimulateurStore.getState().reset();
+    useAdresseChoisieStore.getState().oublier();
+    ban.searchAddress.mockReset();
+    window.location.hash = "#adresse=97%20rue%20de%20Notz%20Ch%C3%A2teauroux&rnb=ABCD-1234-EFGH";
+  });
+  afterEach(() => {
+    window.location.hash = "";
+  });
+
+  it("préremplit l'adresse et présélectionne le bâtiment quand la réponse est nette", async () => {
+    ban.searchAddress.mockResolvedValue([resultatBan(0.97)]);
+    render(<StepAdresse {...props} onSubmit={vi.fn()} />);
+
+    expect(await screen.findByText(/Adresse renseignée par le site/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue("97 Rue de Notz 36000 Châteauroux")).toBeInTheDocument();
+    expect(screen.getByTestId("rnb-initial")).toHaveTextContent("ABCD-1234-EFGH");
+  });
+
+  it("laisse choisir quand la réponse est ambiguë", async () => {
+    ban.searchAddress.mockResolvedValue([resultatBan(0.9), resultatBan(0.89)]);
+    render(<StepAdresse {...props} onSubmit={vi.fn()} />);
+
+    expect(await screen.findByText("Sélectionnez votre adresse parmi les résultats suivants :")).toBeInTheDocument();
+    expect(screen.queryByText(/Adresse renseignée par le site/)).not.toBeInTheDocument();
+  });
+
+  it("repart d'un champ vide quand l'usager change d'adresse", async () => {
+    ban.searchAddress.mockResolvedValue([resultatBan(0.97)]);
+    render(<StepAdresse {...props} onSubmit={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Changer d'adresse" }));
+
+    expect(screen.getByRole("textbox")).toHaveValue("");
+    expect(screen.queryByTestId("rnb-initial")).not.toBeInTheDocument();
+  });
+
+  it("ne touche à rien sans adresse dans le fragment", () => {
+    window.location.hash = "";
+    render(<StepAdresse {...props} onSubmit={vi.fn()} />);
+
+    expect(ban.searchAddress).not.toHaveBeenCalled();
+  });
+
+  it("n'applique pas l'adresse transmise à une simulation qui a déjà la sienne", () => {
+    render(<StepAdresse {...props} initialValue={ADRESSE_CHOISIE} onSubmit={vi.fn()} />);
+
+    expect(ban.searchAddress).not.toHaveBeenCalled();
   });
 });
