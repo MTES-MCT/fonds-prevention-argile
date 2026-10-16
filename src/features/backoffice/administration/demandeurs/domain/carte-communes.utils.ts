@@ -75,3 +75,18 @@ export function construireCarteCommunes(communes: DemandeursCommune[], centres: 
     }),
   };
 }
+
+/** Une carte par département : chacune est regroupée à part, si bien qu'un groupe ne franchit jamais une limite départementale. */
+export function repartirParDepartement(carte: CarteCommunes): Map<string, CarteCommunes> {
+  const parDepartement = new Map<string, CarteCommunes>();
+  for (const feature of carte.features) {
+    const departement = codeDepartementDeCommune(feature.properties.code);
+    const existante = parDepartement.get(departement);
+    if (existante) {
+      existante.features.push(feature);
+    } else {
+      parDepartement.set(departement, { type: "FeatureCollection", features: [feature] });
+    }
+  }
+  return parDepartement;
+}

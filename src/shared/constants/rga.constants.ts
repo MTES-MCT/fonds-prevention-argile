@@ -2,7 +2,7 @@
  * Constantes liées au dispositif RGA (Retrait-Gonflement des Argiles)
  */
 
-import { DEPARTEMENTS } from "./departements.constants";
+import { DEPARTEMENTS, toOfficialCodeDepartement } from "./departements.constants";
 
 /**
  * Codes des 11 départements éligibles au dispositif RGA
@@ -50,4 +50,23 @@ export function getAllDepartementsEligibles(): Array<{ code: string; nom: string
     code,
     nom: DEPARTEMENTS[code] ?? code,
   }));
+}
+
+/**
+ * Ordre des listes de départements : ceux du fonds d'abord, dans l'ordre de `DEPARTEMENTS_ELIGIBLES_RGA`,
+ * puis les autres par code. Accepte les codes avec ou sans zéro de tête (« 3 » comme « 03 »).
+ */
+export function comparerDepartementsFondsEnTete(a: string, b: string): number {
+  const codeA = toOfficialCodeDepartement(a);
+  const codeB = toOfficialCodeDepartement(b);
+  const rangA = DEPARTEMENTS_ELIGIBLES_RGA.indexOf(codeA as CodeDepartementEligible);
+  const rangB = DEPARTEMENTS_ELIGIBLES_RGA.indexOf(codeB as CodeDepartementEligible);
+
+  if (rangA !== -1 || rangB !== -1) {
+    if (rangA === -1) return 1;
+    if (rangB === -1) return -1;
+    return rangA - rangB;
+  }
+  // Codes officiels comparés en chaîne : « 2A » et « 2B » tombent après 29, l'outre-mer après 95.
+  return codeA < codeB ? -1 : codeA > codeB ? 1 : 0;
 }
