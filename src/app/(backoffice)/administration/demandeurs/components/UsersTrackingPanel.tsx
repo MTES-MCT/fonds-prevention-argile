@@ -13,6 +13,7 @@ import {
 import { ArchivageIneligibiliteTab } from "./archivage-ineligibilite/ArchivageIneligibiliteTab";
 import { StatistiquesDemandesTab } from "./statistiques-demandes/StatistiquesDemandesTab";
 import { DonneesEligibiliteTab } from "./donnees-eligibilite/DonneesEligibiliteTab";
+import { CarteDemandeursTab } from "./carte/CarteDemandeursTab";
 import Loading from "@/app/(main)/loading";
 import { getUsersForStats, getUsersWithParcours, UserWithParcoursDetails } from "@/features/backoffice";
 import { useHasPermission } from "@/features/auth/hooks/usePermissions";
@@ -36,14 +37,18 @@ import {
   selectCodeDepartement,
 } from "@/features/backoffice/administration/stores/administration-filters.store";
 
-type DemandeursTab = "tous" | "archivage" | "statistiques" | "eligibilite";
+type DemandeursTab = "tous" | "archivage" | "statistiques" | "eligibilite" | "carte";
 
 const SUB_TABS: { id: DemandeursTab; label: string }[] = [
   { id: "tous", label: "Tous les demandeurs" },
   { id: "archivage", label: "Archivage & inéligibilité" },
   { id: "statistiques", label: "Statistiques demandes" },
   { id: "eligibilite", label: "Données d'éligibilité" },
+  { id: "carte", label: "Carte des demandeurs" },
 ];
+
+// Onglets agrégés, filtrés par période et par département du référentiel.
+const ONGLETS_STATS: DemandeursTab[] = ["archivage", "statistiques", "eligibilite", "carte"];
 
 const STEP_LABELS: Record<Step, string> = {
   [Step.INVITATION]: "Invitation envoyée",
@@ -262,7 +267,7 @@ export default function UsersTrackingPanel() {
             {(canViewUserDetails || canViewStats) && (
               <div className="fr-col-auto">
                 <div className="flex items-end gap-4">
-                  {activeTab === "tous" && canViewUserDetails && (
+                  {((activeTab === "tous" && canViewUserDetails) || activeTab === "carte") && (
                     <div className="fr-select-group fr-mb-0">
                       <select
                         className="fr-select"
@@ -280,7 +285,7 @@ export default function UsersTrackingPanel() {
                     </div>
                   )}
 
-                  {(activeTab === "archivage" || activeTab === "statistiques" || activeTab === "eligibilite") && (
+                  {ONGLETS_STATS.includes(activeTab) && (
                     <div className="fr-select-group fr-mb-0">
                       <select
                         className="fr-select"
@@ -325,7 +330,7 @@ export default function UsersTrackingPanel() {
                     </div>
                   )}
 
-                  {(activeTab === "archivage" || activeTab === "statistiques" || activeTab === "eligibilite") && (
+                  {ONGLETS_STATS.includes(activeTab) && (
                     <div className="fr-select-group fr-mb-0">
                       <select
                         className="fr-select"
@@ -520,6 +525,16 @@ export default function UsersTrackingPanel() {
             {activeTab === "eligibilite" && (
               <div id="tab-eligibilite-panel" role="tabpanel">
                 <DonneesEligibiliteTab users={users} periodeId={periodeId} codeDepartement={codeDepartementArchivage} />
+              </div>
+            )}
+            {activeTab === "carte" && (
+              <div id="tab-carte-panel" role="tabpanel">
+                <CarteDemandeursTab
+                  users={users}
+                  periodeId={periodeId}
+                  codeDepartement={codeDepartementArchivage}
+                  etape={selectedStep}
+                />
               </div>
             )}
           </div>
