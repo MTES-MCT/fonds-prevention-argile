@@ -4,12 +4,21 @@ import type { UserWithParcoursDetails } from "@/features/backoffice";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
 const getCentres = vi.hoisted(() => vi.fn());
-vi.mock("@/features/backoffice/administration/demandeurs/actions", () => ({ getCentresCommunesAction: getCentres }));
+const getContour = vi.hoisted(() => vi.fn());
+vi.mock("@/features/backoffice/administration/demandeurs/actions", () => ({
+  getCentresCommunesAction: getCentres,
+  getContourDepartementAction: getContour,
+}));
 // La carte elle-même (WebGL) est hors de portée de jsdom : on ne vérifie que ce qu'elle reçoit.
 vi.mock("next/dynamic", () => ({
   default: () =>
-    function CarteStub({ carte }: { carte: { features: unknown[] } }) {
-      return <p>{carte.features.length} points sur la carte</p>;
+    function CarteStub({ carte, contour }: { carte: { features: unknown[] }; contour: unknown }) {
+      return (
+        <>
+          <p>{carte.features.length} points sur la carte</p>
+          {contour !== null && <p>Contour tracé</p>}
+        </>
+      );
     },
 }));
 
@@ -35,6 +44,8 @@ const USERS = [
 
 describe("CarteDemandeursTab", () => {
   beforeEach(() => {
+    getContour.mockReset();
+    getContour.mockResolvedValue({ success: true, data: { type: "Polygon", coordinates: [] } });
     getCentres.mockReset();
     getCentres.mockResolvedValue({
       success: true,
@@ -80,5 +91,34 @@ describe("CarteDemandeursTab", () => {
     render(<CarteDemandeursTab users={USERS} periodeId="tout" codeDepartement="" etape="" />);
 
     await waitFor(() => expect(screen.getByText(/Les communes de 03 n'ont pas pu être placées/)).toBeInTheDocument());
+  });
+
+  it("ne demande aucun contour sans filtre département", async () => {
+    render(<CarteDemandeursTab users={USERS} periodeId="tout" codeDepartement="" etape="" />);
+    await screen.findByText("3 demandeurs dans 2 communes");
+
+    expect(getContour).not.toHaveBeenCalled();
+    expect(screen.queryByText("Contour tracé")).not.toBeInTheDocument();
+  });
+
+  it("trace le département filtré, sans redemander son contour au changement d'étape", async () => {
+    const { rerender } = render(<CarteDemandeursTab users={USERS} periodeId="tout" codeDepartement="3" etape="" />);
+
+    expect(await screen.findByText("Contour tracé")).toBeInTheDocument();
+    expect(getContour).toHaveBeenCalledWith("3");
+
+    rerender(<CarteDemandeursTab users={USERS} periodeId="tout" codeDepartement="3" etape={Step.CHOIX_AMO} />);
+
+    expect(screen.getByText("Contour tracé")).toBeInTheDocument();
+    expect(getContour).toHaveBeenCalledTimes(1);
+  });
+
+  it("affiche la carte sans tracé quand le contour n'a pas pu être chargé", async () => {
+    getContour.mockResolvedValue({ success: false, error: "indisponible" });
+
+    render(<CarteDemandeursTab users={USERS} periodeId="tout" codeDepartement="3" etape="" />);
+
+    expect(await screen.findByText("3 demandeurs dans 2 communes")).toBeInTheDocument();
+    expect(screen.queryByText("Contour tracé")).not.toBeInTheDocument();
   });
 });

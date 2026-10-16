@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getEpciByCommune, fetchCommuneByCode, fetchCentresCommunesDepartement } from "./geo.adapter";
+import {
+  getEpciByCommune,
+  fetchCommuneByCode,
+  fetchCentresCommunesDepartement,
+  fetchContoursDepartements,
+} from "./geo.adapter";
 
 describe("Geo Adapter", () => {
   beforeEach(() => {
@@ -119,5 +124,37 @@ describe("fetchCentresCommunesDepartement", () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, statusText: "Service Unavailable" });
 
     await expect(fetchCentresCommunesDepartement("03")).rejects.toThrow("503");
+  });
+});
+
+describe("fetchContoursDepartements", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("indexe chaque contour par code officiel du département", async () => {
+    const allier = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [2.2, 46.2],
+          [3.9, 46.2],
+          [3.0, 46.8],
+          [2.2, 46.2],
+        ],
+      ],
+    };
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ features: [{ properties: { code: "03", nom: "Allier" }, geometry: allier }] }),
+    });
+
+    expect(await fetchContoursDepartements()).toEqual({ "03": allier });
+  });
+
+  it("lève une erreur quand le fichier ne répond pas", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, statusText: "Service Unavailable" });
+
+    await expect(fetchContoursDepartements()).rejects.toThrow("503");
   });
 });

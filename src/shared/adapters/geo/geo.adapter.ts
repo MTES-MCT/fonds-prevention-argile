@@ -5,7 +5,7 @@
  * Documentation : https://geo.api.gouv.fr/decoupage-administratif
  */
 
-import type { GeoApiCommuneResponse, GeoCentreCommune, GeoEpciData } from "./geo.types";
+import type { GeoApiCommuneResponse, GeoCentreCommune, GeoContourDepartement, GeoEpciData } from "./geo.types";
 
 /**
  * URL de base de l'API Geo
@@ -106,4 +106,28 @@ export async function fetchCentresCommunesDepartement(codeDepartement: string): 
   return communes.flatMap((c) =>
     c.centre ? [{ code: c.code, lon: c.centre.coordinates[0], lat: c.centre.coordinates[1] }] : []
   );
+}
+
+// Contours Etalab simplifiés à 1 km (≈ 340 Ko pour la France) : assez précis pour un tracé à l'échelle d'un département.
+const CONTOURS_DEPARTEMENTS_URL =
+  "https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2024/geojson/departements-1000m.geojson";
+
+interface ContoursDepartementsResponse {
+  features: { properties: { code: string }; geometry: GeoContourDepartement }[];
+}
+
+/**
+ * Contours de tous les départements, par code officiel ("03", "2A", "974")
+ *
+ * @throws Si le fichier ne peut pas être lu : l'appelant ne doit pas mettre l'échec en cache
+ */
+export async function fetchContoursDepartements(): Promise<Record<string, GeoContourDepartement>> {
+  const response = await fetch(CONTOURS_DEPARTEMENTS_URL);
+
+  if (!response.ok) {
+    throw new Error(`Erreur contours départements: ${response.status} ${response.statusText}`);
+  }
+
+  const { features } = (await response.json()) as ContoursDepartementsResponse;
+  return Object.fromEntries(features.map((f) => [f.properties.code, f.geometry]));
 }

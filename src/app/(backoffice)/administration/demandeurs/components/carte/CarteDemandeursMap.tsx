@@ -5,21 +5,32 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRgaMap, RgaMapLegend } from "@/features/rga-map";
 import type { CarteCommunes, ProprietesCommune } from "@/features/backoffice/administration/demandeurs/domain";
+import type { GeoContourDepartement } from "@/shared/adapters/geo";
 import {
   COUCHES,
   COUCHES_DEMANDEURS,
+  COUCHES_DEPARTEMENT,
   COUCHES_MASQUEES,
   OPTIONS_SOURCE,
   SOURCE_DEMANDEURS,
+  SOURCE_DEPARTEMENT,
 } from "./carte-demandeurs.style";
 
 interface CarteDemandeursMapProps {
   carte: CarteCommunes;
+  /** Contour du département filtré, `null` sans filtre ou tant qu'il n'est pas chargé. */
+  contour: GeoContourDepartement | null;
+}
+
+const AUCUNE_FORME = { type: "FeatureCollection" as const, features: [] };
+
+function sommetsDuContour(contour: GeoContourDepartement): [number, number][] {
+  return contour.type === "Polygon" ? contour.coordinates.flat() : contour.coordinates.flat(2);
 }
 
 const COUCHES_CLIQUABLES = [COUCHES_DEMANDEURS.groupes, COUCHES_DEMANDEURS.communes];
 
-export function CarteDemandeursMap({ carte }: CarteDemandeursMapProps) {
+export function CarteDemandeursMap({ carte, contour }: CarteDemandeursMapProps) {
   const { mapRef, map, isReady, webglIndisponible } = useRgaMap();
 
   // Couches posées une fois la carte prête ; elles disparaissent avec elle.
@@ -30,7 +41,10 @@ export function CarteDemandeursMap({ carte }: CarteDemandeursMapProps) {
       if (map.getLayer(couche)) map.setLayoutProperty(couche, "visibility", "none");
     }
     if (!map.getSource(SOURCE_DEMANDEURS)) {
-      map.addSource(SOURCE_DEMANDEURS, { ...OPTIONS_SOURCE, data: { type: "FeatureCollection", features: [] } });
+      // Le contour d'abord : les points des demandeurs restent dessus.
+      map.addSource(SOURCE_DEPARTEMENT, { type: "geojson", data: AUCUNE_FORME });
+      COUCHES_DEPARTEMENT.forEach((couche) => map.addLayer(couche));
+      map.addSource(SOURCE_DEMANDEURS, { ...OPTIONS_SOURCE, data: AUCUNE_FORME });
       COUCHES.forEach((couche) => map.addLayer(couche));
     }
 
@@ -72,16 +86,20 @@ export function CarteDemandeursMap({ carte }: CarteDemandeursMapProps) {
     };
   }, [map, isReady]);
 
-  // Nouvelles données : on les pose et on cadre la carte dessus.
+  // Nouvelles données : on les pose et on cadre la carte sur le département filtré, sinon sur les points.
   useEffect(() => {
     if (!map || !isReady) return;
     map.getSource<maplibregl.GeoJSONSource>(SOURCE_DEMANDEURS)?.setData(carte);
+    map
+      .getSource<maplibregl.GeoJSONSource>(SOURCE_DEPARTEMENT)
+      ?.setData(contour ? { type: "Feature", geometry: contour, properties: {} } : AUCUNE_FORME);
 
-    if (carte.features.length === 0) return;
+    const sommets = contour ? sommetsDuContour(contour) : carte.features.map((f) => f.geometry.coordinates);
+    if (sommets.length === 0) return;
     const bornes = new maplibregl.LngLatBounds();
-    carte.features.forEach((f) => bornes.extend(f.geometry.coordinates));
-    map.fitBounds(bornes, { padding: 60, maxZoom: 10, duration: 500 });
-  }, [map, isReady, carte]);
+    sommets.forEach((sommet) => bornes.extend(sommet));
+    map.fitBounds(bornes, { padding: 40, maxZoom: 10, duration: 500 });
+  }, [map, isReady, carte, contour]);
 
   if (webglIndisponible) {
     return (

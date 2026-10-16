@@ -9,7 +9,11 @@ import {
   construireCarteCommunes,
   type CentresCommunes,
 } from "@/features/backoffice/administration/demandeurs/domain";
-import { getCentresCommunesAction } from "@/features/backoffice/administration/demandeurs/actions";
+import {
+  getCentresCommunesAction,
+  getContourDepartementAction,
+} from "@/features/backoffice/administration/demandeurs/actions";
+import type { GeoContourDepartement } from "@/shared/adapters/geo";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { Step } from "@/shared/domain/value-objects/step.enum";
 import { filterUsersByDepartement } from "../filters/departements/departementFilter.utils";
@@ -36,6 +40,7 @@ export function CarteDemandeursTab({ users, periodeId, codeDepartement, etape }:
   const [departementsEnEchec, setDepartementsEnEchec] = useState<string[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const codesDemandes = useRef(new Set<string>());
+  const [contours, setContours] = useState<Record<string, GeoContourDepartement | null>>({});
 
   // Un dossier archivé reste sur sa dernière étape : il ferait passer un territoire pour actif.
   const communes = useMemo(() => {
@@ -65,6 +70,21 @@ export function CarteDemandeursTab({ users, periodeId, codeDepartement, etape }:
       setCentres((precedents) => ({ ...precedents, ...resultat.data.centres }));
     });
   }, [cleNouvelles]);
+
+  // Un contour indisponible ne bloque rien : la carte s'affiche, sans tracé.
+  useEffect(() => {
+    if (!codeDepartement || codeDepartement in contours) return;
+    let annule = false;
+    getContourDepartementAction(codeDepartement).then((resultat) => {
+      if (annule || !resultat.success) return;
+      setContours((precedents) => ({ ...precedents, [codeDepartement]: resultat.data }));
+    });
+    return () => {
+      annule = true;
+    };
+  }, [codeDepartement, contours]);
+
+  const contour = codeDepartement ? (contours[codeDepartement] ?? null) : null;
 
   const carte = useMemo(() => construireCarteCommunes(communes, centres), [communes, centres]);
   const communesPlacees = useMemo(() => communes.filter((c) => c.code in centres), [communes, centres]);
@@ -98,7 +118,7 @@ export function CarteDemandeursTab({ users, periodeId, codeDepartement, etape }:
       <div className="fr-grid-row fr-grid-row--gutters">
         <div className="fr-col-12 fr-col-lg-8">
           <div className="bg-(--background-default-grey) fr-p-2w">
-            <CarteDemandeursMap carte={carte} />
+            <CarteDemandeursMap carte={carte} contour={contour} />
           </div>
         </div>
         <div className="fr-col-12 fr-col-lg-4">

@@ -45,3 +45,10 @@ export interface GeoCentreCommune {
   lon: number;
   lat: number;
 }
+
+/**
+ * Contour d'un département, en coordonnées longitude / latitude
+ */
+export type GeoContourDepartement =
+  | { type: "Polygon"; coordinates: [number, number][][] }
+  | { type: "MultiPolygon"; coordinates: [number, number][][][] };

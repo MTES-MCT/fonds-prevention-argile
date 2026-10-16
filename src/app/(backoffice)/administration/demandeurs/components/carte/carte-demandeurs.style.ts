@@ -2,6 +2,7 @@ import type * as maplibregl from "maplibre-gl";
 import { LAYER_IDS } from "@/features/rga-map/domain/config";
 
 export const SOURCE_DEMANDEURS = "demandeurs-communes";
+export const SOURCE_DEPARTEMENT = "departement-filtre";
 
 export const COUCHES_DEMANDEURS = {
   groupes: "demandeurs-groupes",
@@ -39,6 +40,24 @@ export const OPTIONS_SOURCE: Omit<maplibregl.GeoJSONSourceSpecification, "data">
   clusterMaxZoom: 11,
   clusterProperties: { demandeurs: ["+", ["get", "demandeurs"]] },
 };
+
+// Liseré blanc sous le trait : il le détache des zones d'aléa, qui ont des teintes voisines.
+export const COUCHES_DEPARTEMENT: maplibregl.LayerSpecification[] = [
+  {
+    id: "departement-filtre-lisere",
+    type: "line",
+    source: SOURCE_DEPARTEMENT,
+    layout: { "line-join": "round" },
+    paint: { "line-color": TEXTE_SUR_BLEU, "line-width": 7, "line-opacity": 0.9 },
+  },
+  {
+    id: "departement-filtre-trait",
+    type: "line",
+    source: SOURCE_DEPARTEMENT,
+    layout: { "line-join": "round" },
+    paint: { "line-color": BLEU_FRANCE, "line-width": 3 },
+  },
+];
 
 export const COUCHES: maplibregl.LayerSpecification[] = [
   {
