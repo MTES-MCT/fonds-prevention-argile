@@ -15,6 +15,7 @@ import {
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { getClientEnv } from "@/shared/config/env.config";
 import { fetchMatomoEventsByDepartment } from "../adapters/matomo-api.adapter";
+import { ordonnerDepartementsDisponibles } from "../domain/departements-disponibles";
 import type {
   StatistiquesDepartement,
   DepartementDisponible,
@@ -41,10 +42,7 @@ const STEPS_ORDER: Step[] = [Step.CHOIX_AMO, Step.ELIGIBILITE, Step.DIAGNOSTIC, 
  * fait sa propre simulation.
  */
 function hasAnySimulationData() {
-  return or(
-    isNotNull(parcoursPrevention.rgaSimulationData),
-    isNotNull(parcoursPrevention.rgaSimulationDataAgent)
-  );
+  return or(isNotNull(parcoursPrevention.rgaSimulationData), isNotNull(parcoursPrevention.rgaSimulationDataAgent));
 }
 
 function whereDepartement(codeDept: string) {
@@ -59,8 +57,7 @@ function whereDepartement(codeDept: string) {
 }
 
 /**
- * Récupère la liste des départements ayant des parcours avec données de simulation.
- * Trié par nombre de parcours décroissant.
+ * Récupère la liste des départements ayant des parcours, ceux du fonds en tête.
  */
 export async function getAvailableDepartements(): Promise<DepartementDisponible[]> {
   const parcours = await db
@@ -83,13 +80,7 @@ export async function getAvailableDepartements(): Promise<DepartementDisponible[
     deptMap.set(codeDeptNormalized, (deptMap.get(codeDeptNormalized) ?? 0) + 1);
   }
 
-  return Array.from(deptMap.entries())
-    .map(([code, nombreParcours]) => ({
-      code,
-      nom: getDepartementName(code),
-      nombreParcours,
-    }))
-    .sort((a, b) => b.nombreParcours - a.nombreParcours);
+  return ordonnerDepartementsDisponibles(deptMap);
 }
 
 /**
@@ -150,13 +141,7 @@ async function getDossiersParEtape(codeDept: string): Promise<DossierParEtape[]>
       const result = await db
         .select({ count: count() })
         .from(parcoursPrevention)
-        .where(
-          and(
-            eq(parcoursPrevention.currentStep, step),
-            hasAnySimulationData(),
-            whereDepartement(codeDept)
-          )
-        );
+        .where(and(eq(parcoursPrevention.currentStep, step), hasAnySimulationData(), whereDepartement(codeDept)));
       return { etape: step, label: STEP_LABELS[step], count: result[0]?.count ?? 0 };
     })
   );
@@ -243,12 +228,6 @@ async function getNombreComptesCreés(codeDept: string): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(parcoursPrevention)
-    .where(
-      and(
-        isNotNull(parcoursPrevention.userId),
-        hasAnySimulationData(),
-        whereDepartement(codeDept)
-      )
-    );
+    .where(and(isNotNull(parcoursPrevention.userId), hasAnySimulationData(), whereDepartement(codeDept)));
   return result[0]?.count ?? 0;
 }

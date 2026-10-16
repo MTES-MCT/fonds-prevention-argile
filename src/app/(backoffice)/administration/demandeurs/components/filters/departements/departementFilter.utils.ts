@@ -1,5 +1,6 @@
 import { UserWithParcoursDetails } from "@/features/backoffice";
 import { normalizeCodeDepartement } from "@/shared/constants/departements.constants";
+import { comparerDepartementsFondsEnTete } from "@/shared/constants/rga.constants";
 
 /**
  * Constante représentant l'absence de département
@@ -57,7 +58,7 @@ export function extractDepartement(user: UserWithParcoursDetails): string | null
 }
 
 /**
- * Extrait tous les départements uniques d'une liste d'utilisateurs
+ * Extrait tous les départements uniques d'une liste d'utilisateurs, ceux du fonds en tête
  */
 export function extractUniqueDepartements(users: UserWithParcoursDetails[]): string[] {
   return Array.from(
@@ -69,13 +70,7 @@ export function extractUniqueDepartements(users: UserWithParcoursDetails[]): str
         })
         .filter((dept): dept is string => dept !== null && dept !== "")
     )
-  ).sort((a, b) => {
-    // Tri numérique intelligent
-    const numA = parseInt(a, 10);
-    const numB = parseInt(b, 10);
-    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-    return a.localeCompare(b);
-  });
+  ).sort(comparerDepartementsFondsEnTete);
 }
 
 /**
