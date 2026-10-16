@@ -3,5 +3,11 @@
  * Fournit les informations territoriales (EPCI, département, région)
  */
 
-export { fetchCommuneByCode, getEpciByCommune, getEpciDataByCommune } from "./geo.adapter";
-export type { GeoApiCommuneResponse, GeoEpciData } from "./geo.types";
+export {
+  fetchCommuneByCode,
+  fetchCentresCommunesDepartement,
+  fetchContoursDepartements,
+  getEpciByCommune,
+  getEpciDataByCommune,
+} from "./geo.adapter";
+export type { GeoApiCommuneResponse, GeoCentreCommune, GeoContourDepartement, GeoEpciData } from "./geo.types";

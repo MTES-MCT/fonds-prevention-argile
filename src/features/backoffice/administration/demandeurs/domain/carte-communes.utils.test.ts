@@ -1,0 +1,76 @@
+import { describe, expect, it } from "vitest";
+import type { UserWithParcoursDetails } from "@/features/backoffice";
+import {
+  codeDepartementDeCommune,
+  compterDemandeursParCommune,
+  construireCarteCommunes,
+  normaliserCodeCommune,
+} from "./carte-communes.utils";
+
+function demandeur(commune: unknown, communeNom = "Montluçon"): UserWithParcoursDetails {
+  return {
+    rgaSimulation: commune === undefined ? null : { logement: { commune, commune_nom: communeNom } },
+  } as unknown as UserWithParcoursDetails;
+}
+
+describe("normaliserCodeCommune", () => {
+  it("rend le zéro de tête perdu par un code stocké en nombre", () => {
+    expect(normaliserCodeCommune(3185)).toBe("03185");
+  });
+
+  it("accepte la Corse et les outre-mer", () => {
+    expect(normaliserCodeCommune("2a004")).toBe("2A004");
+    expect(normaliserCodeCommune("97411")).toBe("97411");
+  });
+
+  it("refuse ce qui n'est pas un code INSEE", () => {
+    expect(normaliserCodeCommune("")).toBeNull();
+    expect(normaliserCodeCommune("Montluçon")).toBeNull();
+    expect(normaliserCodeCommune(undefined)).toBeNull();
+  });
+});
+
+describe("codeDepartementDeCommune", () => {
+  it("lit trois caractères outre-mer, deux ailleurs", () => {
+    expect(codeDepartementDeCommune("97411")).toBe("974");
+    expect(codeDepartementDeCommune("2B033")).toBe("2B");
+    expect(codeDepartementDeCommune("03185")).toBe("03");
+  });
+});
+
+describe("compterDemandeursParCommune", () => {
+  it("regroupe par commune, de la plus fournie à la moins fournie, sans les demandeurs non localisés", () => {
+    const comptes = compterDemandeursParCommune([
+      demandeur("03185"),
+      demandeur(3185),
+      demandeur("03190", "Moulins"),
+      demandeur(undefined),
+      demandeur(""),
+    ]);
+
+    expect(comptes).toEqual([
+      { code: "03185", nom: "Montluçon", demandeurs: 2 },
+      { code: "03190", nom: "Moulins", demandeurs: 1 },
+    ]);
+  });
+});
+
+describe("construireCarteCommunes", () => {
+  it("pose chaque commune sur son centre et écarte celles dont le centre est inconnu", () => {
+    const carte = construireCarteCommunes(
+      [
+        { code: "03185", nom: "Montluçon", demandeurs: 2 },
+        { code: "99999", nom: "Inconnue", demandeurs: 4 },
+      ],
+      { "03185": [2.6, 46.34] }
+    );
+
+    expect(carte.features).toEqual([
+      {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [2.6, 46.34] },
+        properties: { code: "03185", nom: "Montluçon", demandeurs: 2 },
+      },
+    ]);
+  });
+});
