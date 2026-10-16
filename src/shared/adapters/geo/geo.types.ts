@@ -36,3 +36,12 @@ export interface GeoEpciData {
   /** Code SIREN de l'EPCI */
   codeEpci: string;
 }
+
+/**
+ * Centre géographique d'une commune (longitude, latitude)
+ */
+export interface GeoCentreCommune {
+  code: string;
+  lon: number;
+  lat: number;
+}

@@ -5,7 +5,7 @@
  * Documentation : https://geo.api.gouv.fr/decoupage-administratif
  */
 
-import type { GeoApiCommuneResponse, GeoEpciData } from "./geo.types";
+import type { GeoApiCommuneResponse, GeoCentreCommune, GeoEpciData } from "./geo.types";
 
 /**
  * URL de base de l'API Geo
@@ -79,4 +79,31 @@ export async function getEpciDataByCommune(codeInsee: string): Promise<GeoEpciDa
   }
 
   return { codeEpci };
+}
+
+interface GeoApiCentreResponse {
+  code: string;
+  centre?: { type: "Point"; coordinates: [number, number] };
+}
+
+/**
+ * Centres de toutes les communes d'un département, arrondissements de Paris, Lyon et Marseille compris
+ *
+ * @param codeDepartement - Code officiel du département (ex: "03", "2A", "974")
+ * @throws Si l'API répond en erreur : l'appelant ne doit pas mettre l'échec en cache
+ */
+export async function fetchCentresCommunesDepartement(codeDepartement: string): Promise<GeoCentreCommune[]> {
+  // La BAN renvoie le code de l'arrondissement, que l'API Geo omet par défaut (et toujours sur /departements/…).
+  const url = `${GEO_API_BASE_URL}/communes?codeDepartement=${encodeURIComponent(codeDepartement)}&fields=code,centre&type=commune-actuelle,arrondissement-municipal`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Erreur API Geo: ${response.status} ${response.statusText}`);
+  }
+
+  const communes = (await response.json()) as GeoApiCentreResponse[];
+  return communes.flatMap((c) =>
+    c.centre ? [{ code: c.code, lon: c.centre.coordinates[0], lat: c.centre.coordinates[1] }] : []
+  );
 }
