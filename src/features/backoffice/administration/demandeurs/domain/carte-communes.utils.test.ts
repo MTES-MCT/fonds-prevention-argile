@@ -5,6 +5,7 @@ import {
   compterDemandeursParCommune,
   construireCarteCommunes,
   normaliserCodeCommune,
+  repartirParDepartement,
 } from "./carte-communes.utils";
 
 function demandeur(commune: unknown, communeNom = "Montluçon"): UserWithParcoursDetails {
@@ -72,5 +73,31 @@ describe("construireCarteCommunes", () => {
         properties: { code: "03185", nom: "Montluçon", demandeurs: 2 },
       },
     ]);
+  });
+});
+
+describe("repartirParDepartement", () => {
+  it("sépare les communes de deux départements voisins, Corse et outre-mer compris", () => {
+    const carte = construireCarteCommunes(
+      [
+        { code: "24322", nom: "Périgueux", demandeurs: 3 },
+        { code: "47001", nom: "Agen", demandeurs: 2 },
+        { code: "24037", nom: "Bergerac", demandeurs: 1 },
+        { code: "2A004", nom: "Ajaccio", demandeurs: 1 },
+        { code: "97411", nom: "Saint-Denis", demandeurs: 1 },
+      ],
+      {
+        "24322": [0.72, 45.18],
+        "47001": [0.62, 44.2],
+        "24037": [0.48, 44.85],
+        "2A004": [8.74, 41.92],
+        "97411": [55.45, -20.88],
+      }
+    );
+
+    const parDepartement = repartirParDepartement(carte);
+
+    expect([...parDepartement.keys()]).toEqual(["24", "47", "2A", "974"]);
+    expect(parDepartement.get("24")?.features.map((f) => f.properties.nom)).toEqual(["Périgueux", "Bergerac"]);
   });
 });

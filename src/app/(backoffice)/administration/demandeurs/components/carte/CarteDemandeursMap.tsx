@@ -1,20 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRgaMap, RgaMapLegend } from "@/features/rga-map";
 import type { CarteCommunes, ProprietesCommune } from "@/features/backoffice/administration/demandeurs/domain";
 import type { GeoContourDepartement } from "@/shared/adapters/geo";
-import {
-  COUCHES,
-  COUCHES_DEMANDEURS,
-  COUCHES_DEPARTEMENT,
-  COUCHES_MASQUEES,
-  OPTIONS_SOURCE,
-  SOURCE_DEMANDEURS,
-  SOURCE_DEPARTEMENT,
-} from "./carte-demandeurs.style";
+import { COUCHES_DEPARTEMENT, COUCHES_MASQUEES, SOURCE_DEPARTEMENT } from "./carte-demandeurs.style";
+import { couchesCliquables, synchroniserSources } from "./sources-departements";
 
 interface CarteDemandeursMapProps {
   carte: CarteCommunes;
@@ -28,68 +21,66 @@ function sommetsDuContour(contour: GeoContourDepartement): [number, number][] {
   return contour.type === "Polygon" ? contour.coordinates.flat() : contour.coordinates.flat(2);
 }
 
-const COUCHES_CLIQUABLES = [COUCHES_DEMANDEURS.groupes, COUCHES_DEMANDEURS.communes];
-
 export function CarteDemandeursMap({ carte, contour }: CarteDemandeursMapProps) {
   const { mapRef, map, isReady, webglIndisponible } = useRgaMap();
+  // Sources posées sur la carte en cours : elles disparaissent avec elle.
+  const sourcesActives = useRef(new Set<string>());
 
-  // Couches posées une fois la carte prête ; elles disparaissent avec elle.
   useEffect(() => {
     if (!map || !isReady) return;
+    const actives = sourcesActives.current;
 
     for (const couche of COUCHES_MASQUEES) {
       if (map.getLayer(couche)) map.setLayoutProperty(couche, "visibility", "none");
     }
-    if (!map.getSource(SOURCE_DEMANDEURS)) {
-      // Le contour d'abord : les points des demandeurs restent dessus.
+    // Le contour d'abord : les points des demandeurs restent dessus.
+    if (!map.getSource(SOURCE_DEPARTEMENT)) {
       map.addSource(SOURCE_DEPARTEMENT, { type: "geojson", data: AUCUNE_FORME });
       COUCHES_DEPARTEMENT.forEach((couche) => map.addLayer(couche));
-      map.addSource(SOURCE_DEMANDEURS, { ...OPTIONS_SOURCE, data: AUCUNE_FORME });
-      COUCHES.forEach((couche) => map.addLayer(couche));
     }
 
-    const zoomerSurGroupe = async (e: maplibregl.MapLayerMouseEvent) => {
-      const groupe = e.features?.[0];
-      if (!groupe || groupe.geometry.type !== "Point") return;
-      const source = map.getSource<maplibregl.GeoJSONSource>(SOURCE_DEMANDEURS);
-      const zoom = await source?.getClusterExpansionZoom(groupe.properties.cluster_id as number);
-      if (zoom !== undefined) map.easeTo({ center: groupe.geometry.coordinates as [number, number], zoom });
-    };
+    // Un seul gestionnaire pour toutes les sources : la liste des couches change avec les filtres.
+    const auClic = async (e: maplibregl.MapMouseEvent) => {
+      const couches = couchesCliquables(actives);
+      if (couches.length === 0) return;
+      const element = map.queryRenderedFeatures(e.point, { layers: couches })[0];
+      if (!element || element.geometry.type !== "Point") return;
+      const position = element.geometry.coordinates as [number, number];
 
-    const afficherCommune = (e: maplibregl.MapLayerMouseEvent) => {
-      const commune = e.features?.[0];
-      if (!commune || commune.geometry.type !== "Point") return;
-      const { nom, demandeurs } = commune.properties as ProprietesCommune;
+      if (element.properties.cluster_id !== undefined) {
+        const source = map.getSource<maplibregl.GeoJSONSource>(element.source);
+        const zoom = await source?.getClusterExpansionZoom(element.properties.cluster_id as number);
+        if (zoom !== undefined) map.easeTo({ center: position, zoom });
+        return;
+      }
+
+      const { nom, demandeurs } = element.properties as ProprietesCommune;
       new maplibregl.Popup({ closeButton: false })
-        .setLngLat(commune.geometry.coordinates as [number, number])
+        .setLngLat(position)
         .setText(`${nom} : ${demandeurs} demandeur${demandeurs > 1 ? "s" : ""}`)
         .addTo(map);
     };
 
-    const curseurMain = () => (map.getCanvas().style.cursor = "pointer");
-    const curseurDefaut = () => (map.getCanvas().style.cursor = "");
+    const auSurvol = (e: maplibregl.MapMouseEvent) => {
+      const couches = couchesCliquables(actives);
+      const survole = couches.length > 0 && map.queryRenderedFeatures(e.point, { layers: couches }).length > 0;
+      map.getCanvas().style.cursor = survole ? "pointer" : "";
+    };
 
-    map.on("click", COUCHES_DEMANDEURS.groupes, zoomerSurGroupe);
-    map.on("click", COUCHES_DEMANDEURS.communes, afficherCommune);
-    for (const couche of COUCHES_CLIQUABLES) {
-      map.on("mouseenter", couche, curseurMain);
-      map.on("mouseleave", couche, curseurDefaut);
-    }
+    map.on("click", auClic);
+    map.on("mousemove", auSurvol);
 
     return () => {
-      map.off("click", COUCHES_DEMANDEURS.groupes, zoomerSurGroupe);
-      map.off("click", COUCHES_DEMANDEURS.communes, afficherCommune);
-      for (const couche of COUCHES_CLIQUABLES) {
-        map.off("mouseenter", couche, curseurMain);
-        map.off("mouseleave", couche, curseurDefaut);
-      }
+      map.off("click", auClic);
+      map.off("mousemove", auSurvol);
+      actives.clear();
     };
   }, [map, isReady]);
 
   // Nouvelles données : on les pose et on cadre la carte sur le département filtré, sinon sur les points.
   useEffect(() => {
     if (!map || !isReady) return;
-    map.getSource<maplibregl.GeoJSONSource>(SOURCE_DEMANDEURS)?.setData(carte);
+    synchroniserSources(map, carte, sourcesActives.current);
     map
       .getSource<maplibregl.GeoJSONSource>(SOURCE_DEPARTEMENT)
       ?.setData(contour ? { type: "Feature", geometry: contour, properties: {} } : AUCUNE_FORME);
