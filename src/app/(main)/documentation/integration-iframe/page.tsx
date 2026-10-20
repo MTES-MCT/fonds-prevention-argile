@@ -41,6 +41,13 @@ iframe.src =
   "https://fonds-prevention-argile.beta.gouv.fr/embed-simulateur#adresse=" +
   encodeURIComponent(adresse);`;
 
+  const iframeCodeVulnerabilite = `<iframe
+  src="https://fonds-prevention-argile.beta.gouv.fr/embed-vulnerabilite-rga"
+  title="Simulateur de vulnérabilité au retrait-gonflement des argiles"
+  style="width: 100%; height: 800px; border: none;"
+  referrerpolicy="no-referrer-when-downgrade"
+></iframe>`;
+
   return (
     <div className="fr-container fr-py-6w">
       {/* Breadcrumb */}
@@ -139,6 +146,34 @@ iframe.src =
           <li>
             À la fin de la simulation, une nouvelle fenêtre s'ouvre automatiquement vers la page de connexion
             (comportement normal pour les iframes)
+          </li>
+        </ul>
+      </div>
+
+      {/* Simulateur de vulnérabilité */}
+      <h2 className="fr-mt-8w">Simulateur de vulnérabilité</h2>
+      <p>
+        Un utilisateur non éligible se voit proposer, dans le même cadre, le simulateur de vulnérabilité : il identifie
+        les points faibles de son logement et les gestes pour réduire les risques. À l&apos;inverse, le résultat de
+        vulnérabilité renvoie vers le simulateur d&apos;éligibilité quand le logement peut prétendre au fonds.
+        L&apos;adresse déjà saisie est reprise.
+      </p>
+      <p>Vous pouvez aussi intégrer directement le simulateur de vulnérabilité :</p>
+      <div className="fr-highlight">
+        <pre>
+          <code>{iframeCodeVulnerabilite}</code>
+        </pre>
+      </div>
+      <div className="fr-alert fr-alert--info fr-mt-4w">
+        <h3 className="fr-alert__title">Ce qu&apos;il faut savoir</h3>
+        <ul>
+          <li>
+            Le résultat de vulnérabilité est plus long que celui d&apos;éligibilité : avec une hauteur fixe, il défile à
+            l&apos;intérieur du cadre.
+          </li>
+          <li>
+            Pour ne pas proposer le simulateur de vulnérabilité, ajoutez <code>?vulnerabilite=0</code> à l&apos;URL de{" "}
+            <code>/embed-simulateur</code>.
           </li>
         </ul>
       </div>

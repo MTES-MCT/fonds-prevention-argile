@@ -97,7 +97,7 @@ Tous derrière la même bascule : hors des environnements actifs, aucun ne s'aff
 | Entrée                 | Où                                                                                                      | Condition d'affichage                                                                        |
 | ---------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État »                                | bascule active ; l'aperçu de résultat est illustratif, sans score                            |
-| Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton                                       | bascule active, site principal (pas l'iframe), maison, propriétaire                          |
+| Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton                                       | bascule active, maison, propriétaire ; en iframe, sauf `?vulnerabilite=0`                    |
 | « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top                                   | bascule active, à toutes les étapes du parcours                                              |
 | Dossier côté agent     | `VulnerabiliteDossier` sur les pages dossier, demande et prospect : « Faire le test avec le demandeur » | bascule active ; AMO, Aller-vers et hybride (ni super-admin, ni analyste, ni administrateur) |
 | Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base                                         | bascule active, test rattaché au compte, sinon renvoi vers le simulateur                     |
@@ -111,6 +111,12 @@ L'adresse choisie dans l'un s'ouvre dans l'autre, bâtiment présélectionné, v
 `sessionStorage` ([ADR-0048](../adr/0048-adresse-partagee-entre-simulateurs.md)). L'aléa est recalculé depuis la
 BDNB et non repris de l'éligibilité ; l'EPCI, absent côté vulnérabilité, est retrouvé à l'arrivée sur l'éligibilité.
 Depuis le compte, l'adresse de la simulation d'éligibilité préremplit le test.
+
+En iframe, les deux renvois restent dans l'iframe : `/embed-simulateur` ↔ `/embed-vulnerabilite-rga`
+(`urlRenvoiIframe`, `shared/domain/partners/renvoi-iframe.ts`). Les pages hors `/embed-*` répondent
+`X-Frame-Options: SAMEORIGIN` : un renvoi vers `/simulateur` affichait un cadre vide chez le partenaire.
+Le `?partner=` explicite suit l'usager ; le referrer, lui, survit à la navigation client. Un intégrateur
+qui ne veut pas du simulateur de vulnérabilité passe `?vulnerabilite=0` à `/embed-simulateur`.
 
 ---
 

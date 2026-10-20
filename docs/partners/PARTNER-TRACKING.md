@@ -217,6 +217,14 @@ Si le besoin émerge, l'ajout est straightforward (~30 min) :
 - **Funnels Matomo non segmentables** : limitation de l'API Matomo, hors de notre contrôle. Workaround : utiliser les events `SIMULATEUR_STEP_*` qui sont segmentables.
 - **Cookie tiers en cas d'iframe sans navigation** : si un user ne clique jamais "Continuer" (reste dans l'iframe), aucun cookie n'est posé sur notre domaine — ce qui est conforme aux attentes (pas de compte créé = rien à attribuer).
 
+## Les deux simulateurs dans la même iframe
+
+`/embed-simulateur` propose le simulateur de vulnérabilité à l'écran « non éligible », et le résultat
+de vulnérabilité renvoie vers l'éligibilité, **sans quitter l'iframe** (`/embed-simulateur` ↔
+`/embed-vulnerabilite-rga`, `shared/domain/partners/renvoi-iframe.ts`). Le `?partner=` est recopié
+dans le lien ; à défaut, `document.referrer` reste celui du partenaire, la navigation étant côté
+client. L'adresse suit par le store partagé (ADR-0048). `?vulnerabilite=0` retire la proposition.
+
 ## Adresse transmise par le partenaire
 
 Le partenaire peut préremplir l'adresse du logement avec `#adresse=<texte encodé>` (et `&rnb=` en
