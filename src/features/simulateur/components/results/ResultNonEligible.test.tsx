@@ -40,9 +40,22 @@ describe("ResultNonEligible : proposition du simulateur de vulnérabilité", () 
     expect(screen.getByText("Vous n'êtes pas éligible")).toBeInTheDocument();
   });
 
-  it("ne le propose pas dans l'iframe partenaire", () => {
+  it("reste dans l'iframe partenaire", () => {
     render(
-      <SimulateurProvider proposerVulnerabilite={false}>
+      <SimulateurProvider urlVulnerabilite="/embed-vulnerabilite-rga?partner=maif">
+        <ResultNonEligible {...props} />
+      </SimulateurProvider>
+    );
+
+    const lien = screen.getByRole("link", { name: CTA });
+    expect(lien).toHaveAttribute("href", "/embed-vulnerabilite-rga?partner=maif");
+    fireEvent.click(lien);
+    expect(trackEvent).toHaveBeenCalledWith("vulnerabilite_cta_non_eligible");
+  });
+
+  it("ne le propose pas quand l'intégrateur l'a refusé", () => {
+    render(
+      <SimulateurProvider urlVulnerabilite={null}>
         <ResultNonEligible {...props} />
       </SimulateurProvider>
     );

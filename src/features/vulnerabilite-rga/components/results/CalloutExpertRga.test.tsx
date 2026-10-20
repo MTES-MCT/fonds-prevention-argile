@@ -26,6 +26,19 @@ describe("CalloutExpertRga : renvoi vers le simulateur d'éligibilité", () => {
     expect(trackEvent).toHaveBeenCalledWith("vulnerabilite_cta_eligibilite");
   });
 
+  it("reste dans l'iframe partenaire", () => {
+    render(
+      <VulnerabiliteProvider urlEligibilite="/embed-simulateur?partner=maif">
+        <CalloutExpertRga eligibleFonds />
+      </VulnerabiliteProvider>
+    );
+
+    const lien = screen.getByRole("link", { name: CTA });
+    expect(lien).toHaveAttribute("href", "/embed-simulateur?partner=maif");
+    fireEvent.click(lien);
+    expect(trackEvent).toHaveBeenCalledWith("vulnerabilite_cta_eligibilite");
+  });
+
   it("ne trace pas le clic d'un agent", () => {
     render(
       <VulnerabiliteProvider agent={agent}>

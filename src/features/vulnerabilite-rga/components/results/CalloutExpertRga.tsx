@@ -18,7 +18,7 @@ interface CalloutExpertRgaProps {
  */
 export function CalloutExpertRga({ eligibleFonds }: CalloutExpertRgaProps) {
   const { trackEvent } = useMatomo();
-  const { agent } = useVulnerabiliteContext();
+  const { agent, urlEligibilite = "/simulateur" } = useVulnerabiliteContext();
 
   return (
     <div className="fr-callout fr-icon-info-line fr-callout--blue-ecume fr-my-4w">
@@ -26,7 +26,7 @@ export function CalloutExpertRga({ eligibleFonds }: CalloutExpertRgaProps) {
       <p className="fr-callout__text whitespace-pre-line">{getCalloutExpertTexte(eligibleFonds)}</p>
       {eligibleFonds && (
         <Link
-          href="/simulateur"
+          href={urlEligibilite}
           className="fr-btn fr-btn--secondary fr-mt-2w"
           // Pas de trace pour l'agent : il n'est pas le visiteur du simulateur.
           onClick={() => !agent && trackEvent(MATOMO_EVENTS.VULNERABILITE_CTA_ELIGIBILITE)}>

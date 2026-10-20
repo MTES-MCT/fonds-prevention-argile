@@ -25,8 +25,9 @@ interface ResultNonEligibleProps {
 export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligibleProps) {
   const { isAuthenticated } = useAuth();
   const { trackEvent } = useMatomo();
-  const { proposerVulnerabilite = true } = useSimulateurContext();
-  const proposeVulnerabilite = proposerVulnerabilite && isVulnerabiliteRgaActive() && peutProposerVulnerabilite(checks);
+  const { urlVulnerabilite = VULNERABILITE_RGA_URL } = useSimulateurContext();
+  const proposeVulnerabilite =
+    urlVulnerabilite !== null && isVulnerabiliteRgaActive() && peutProposerVulnerabilite(checks);
 
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
@@ -47,7 +48,7 @@ export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligib
                       vous donne des pistes pour réduire les risques liés au retrait-gonflement des argiles.
                     </p>
                     <Link
-                      href={VULNERABILITE_RGA_URL}
+                      href={urlVulnerabilite ?? VULNERABILITE_RGA_URL}
                       className="fr-btn fr-mt-2w"
                       onClick={() => trackEvent(MATOMO_EVENTS.VULNERABILITE_CTA_NON_ELIGIBLE)}>
                       Tester ma vulnérabilité (5 min)

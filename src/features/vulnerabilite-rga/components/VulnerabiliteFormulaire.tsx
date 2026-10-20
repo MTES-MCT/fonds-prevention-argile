@@ -38,9 +38,12 @@ import { Alert } from "@/shared/components";
  * (Matomo) et enregistré de façon anonyme (best-effort) pour les stats d'usage,
  * cf. `/administration/vulnerabilite`.
  */
-export function VulnerabiliteFormulaire({ agent }: { agent?: ContexteAgentVulnerabilite } = {}) {
+export function VulnerabiliteFormulaire({
+  agent,
+  urlEligibilite,
+}: { agent?: ContexteAgentVulnerabilite; urlEligibilite?: string } = {}) {
   return (
-    <VulnerabiliteProvider agent={agent}>
+    <VulnerabiliteProvider agent={agent} urlEligibilite={urlEligibilite}>
       <FormulaireInterne agent={agent} />
     </VulnerabiliteProvider>
   );
