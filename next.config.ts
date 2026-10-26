@@ -8,13 +8,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Autoriser l'iframe uniquement sur les routes /embed/*
-        source: "/embed/:path*",
+        // Autoriser l'iframe uniquement sur les routes /embed-* (ALLOWALL n'est pas une valeur valide de X-Frame-Options)
+        source: "/:route(embed-[^/]+)",
         headers: [
-          {
-            key: "X-Frame-Options",
-            value: "ALLOWALL",
-          },
           {
             key: "Content-Security-Policy",
             value: "frame-ancestors *",

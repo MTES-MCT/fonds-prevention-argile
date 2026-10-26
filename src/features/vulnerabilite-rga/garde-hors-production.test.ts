@@ -22,6 +22,8 @@ const EXCEPTIONS: Record<string, string> = {
   "src/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-routes.ts": "définition de l'URL, aucun rendu",
   "src/features/vulnerabilite-rga/components/results/LancerTestVulnerabiliteButton.tsx":
     "bouton feuille, monté seulement par VulnerabiliteMaListe et la page du compte, qui portent la garde",
+  "src/shared/domain/partners/renvoi-iframe.ts": "définition de l'URL de l'iframe, aucun rendu",
+  "src/app/(embed)/embed-simulateur/page.tsx": "ne fait que transmettre l'URL à ResultNonEligible, qui porte la garde",
 };
 
 // Les parents se contentent de monter ces composants et actions : c'est à eux de porter la garde.

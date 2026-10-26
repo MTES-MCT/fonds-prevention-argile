@@ -16,12 +16,18 @@ export interface ContexteAgentVulnerabilite {
 
 interface VulnerabiliteContextValue {
   agent?: ContexteAgentVulnerabilite;
+  /** Simulateur d'éligibilité vers lequel renvoie le résultat. Défaut : la page publique. */
+  urlEligibilite?: string;
 }
 
 const VulnerabiliteContext = createContext<VulnerabiliteContextValue>({});
 
-export function VulnerabiliteProvider({ agent, children }: VulnerabiliteContextValue & { children: ReactNode }) {
-  return <VulnerabiliteContext.Provider value={{ agent }}>{children}</VulnerabiliteContext.Provider>;
+export function VulnerabiliteProvider({
+  agent,
+  urlEligibilite,
+  children,
+}: VulnerabiliteContextValue & { children: ReactNode }) {
+  return <VulnerabiliteContext.Provider value={{ agent, urlEligibilite }}>{children}</VulnerabiliteContext.Provider>;
 }
 
 export function useVulnerabiliteContext(): VulnerabiliteContextValue {
