@@ -1,5 +1,6 @@
 import type { StatAvecVariation, CommuneSimulationsStats } from "./tableau-de-bord.types";
 import type { TrancheRevenuRga } from "@/features/simulateur/domain/types/rga-revenus.types";
+import type { PeriodeConstruction } from "../periode-construction";
 
 export interface EligibiliteTopDepartement {
   codeDepartement: string;
@@ -16,6 +17,9 @@ export interface EligibiliteStats {
   /** Indemnisation antérieure (sur simulations éligibles uniquement) */
   dejaIndemnisees: StatAvecVariation;
   nonIndemnisees: StatAvecVariation;
+
+  /** Période de construction de la maison (sur simulations éligibles uniquement) */
+  periodesConstruction: Record<PeriodeConstruction, StatAvecVariation>;
 
   /** Répartition par tranche de revenus (sur toutes les simulations) */
   tranchesRevenus: Record<TrancheRevenuRga, StatAvecVariation>;

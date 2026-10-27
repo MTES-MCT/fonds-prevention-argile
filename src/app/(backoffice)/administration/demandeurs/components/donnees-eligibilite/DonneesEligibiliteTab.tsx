@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { MicroFissuresSection } from "./MicroFissuresSection";
 import { IndemnisationSection } from "./IndemnisationSection";
+import { PeriodeConstructionSection } from "./PeriodeConstructionSection";
 import { TranchesRevenusSection } from "./TranchesRevenusSection";
 import { TopDepartementsTable } from "./TopDepartementsTable";
 import { TopCommunesTable } from "./TopCommunesTable";
@@ -71,6 +72,7 @@ export function DonneesEligibiliteTab({ users, periodeId, codeDepartement }: Don
       <h2 className="fr-h4 fr-mb-4w">Données des {filteredUsers.length.toLocaleString("fr-FR")} demandeurs</h2>
 
       <MicroFissuresSection stats={stats} loading={loading} />
+      <PeriodeConstructionSection stats={stats} loading={loading} />
       <IndemnisationSection stats={stats} loading={loading} />
       <TranchesRevenusSection stats={stats} loading={loading} />
 
