@@ -53,6 +53,7 @@ import {
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
 import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
 import { appartientAuxMotifs, libelleMotifArchivage, repartirParMotif } from "../domain/motif-archivage";
+import { PERIODES_CONSTRUCTION, periodeConstruction, type PeriodeConstruction } from "../domain/periode-construction";
 import {
   decouperPeriodeMatomo,
   formaterDateMatomo,
@@ -1450,6 +1451,7 @@ interface EligibiliteCounts {
   sansMicroFissures: number;
   dejaIndemnisees: number;
   nonIndemnisees: number;
+  periodesConstruction: Record<PeriodeConstruction, number>;
   tranches: Record<TrancheRevenuRga, number>;
 }
 
@@ -1460,6 +1462,12 @@ function createEmptyEligibiliteCounts(): EligibiliteCounts {
     sansMicroFissures: 0,
     dejaIndemnisees: 0,
     nonIndemnisees: 0,
+    periodesConstruction: {
+      avant_1948: 0,
+      "1948_1974": 0,
+      "1975_1989": 0,
+      depuis_1990: 0,
+    },
     tranches: {
       "très modeste": 0,
       modeste: 0,
@@ -1471,7 +1479,7 @@ function createEmptyEligibiliteCounts(): EligibiliteCounts {
 
 /**
  * Calcule les compteurs d'éligibilité en un seul passage sur les parcours.
- * Micro-fissures et indemnisation : sur simulations éligibles uniquement.
+ * Micro-fissures, indemnisation et période de construction : sur simulations éligibles uniquement.
  * Tranches de revenus : sur toutes les simulations.
  */
 function computeEligibiliteCounts(
@@ -1519,6 +1527,11 @@ function computeEligibiliteCounts(
       counts.dejaIndemnisees += 1;
     } else {
       counts.nonIndemnisees += 1;
+    }
+
+    const periode = periodeConstruction(simData?.logement?.annee_de_construction);
+    if (periode) {
+      counts.periodesConstruction[periode] += 1;
     }
   }
 
@@ -1605,6 +1618,16 @@ export async function getEligibiliteStats(
     };
   }
 
+  const periodesConstruction = {} as Record<PeriodeConstruction, { valeur: number; variation: number | null }>;
+  for (const periode of PERIODES_CONSTRUCTION) {
+    periodesConstruction[periode] = {
+      valeur: current.periodesConstruction[periode],
+      variation: prev
+        ? calculerVariation(current.periodesConstruction[periode], prev.periodesConstruction[periode])
+        : null,
+    };
+  }
+
   return {
     avecMicroFissures: {
       valeur: current.avecMicroFissures,
@@ -1626,6 +1649,7 @@ export async function getEligibiliteStats(
       valeur: current.nonIndemnisees,
       variation: prev ? calculerVariation(current.nonIndemnisees, prev.nonIndemnisees) : null,
     },
+    periodesConstruction,
     tranchesRevenus,
     topDepartements: top5Depts,
     topCommunes,
