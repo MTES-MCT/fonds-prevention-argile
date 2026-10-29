@@ -6,9 +6,14 @@ import {
   getVulnerabiliteStatsBdd,
   getVulnerabiliteTopDepartements,
   getVulnerabiliteFunnel,
+  getVulnerabiliteComptesStats,
 } from "../services/vulnerabilite-stats.service";
 import type { ActionResult } from "@/shared/types";
-import type { VulnerabiliteStatsBdd, VulnerabiliteTopDepartement } from "../domain/types/vulnerabilite-stats.types";
+import type {
+  VulnerabiliteComptesStats,
+  VulnerabiliteStatsBdd,
+  VulnerabiliteTopDepartement,
+} from "../domain/types/vulnerabilite-stats.types";
 import type { FunnelStatistiques } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 
@@ -69,6 +74,25 @@ export async function getVulnerabiliteFunnelAction(): Promise<ActionResult<Funne
     return { success: true, data: funnel };
   } catch (error) {
     console.error("Erreur lors de la recuperation du funnel vulnerabilite:", error);
+    return { success: false, error: "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Récupère le nombre de comptes ayant fait une simulation de vulnérabilité, rapporté à l'ensemble des comptes.
+ */
+export async function getVulnerabiliteComptesStatsAction(): Promise<ActionResult<VulnerabiliteComptesStats>> {
+  const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
+
+  if (!permissionCheck.hasAccess) {
+    return { success: false, error: "Permission insuffisante" };
+  }
+
+  try {
+    const stats = await getVulnerabiliteComptesStats();
+    return { success: true, data: stats };
+  } catch (error) {
+    console.error("Erreur lors de la recuperation des comptes avec simulation de vulnerabilite:", error);
     return { success: false, error: "Une erreur est survenue." };
   }
 }

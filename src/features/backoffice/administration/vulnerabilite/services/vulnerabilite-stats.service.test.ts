@@ -3,8 +3,9 @@ import {
   getVulnerabiliteStatsBdd,
   getVulnerabiliteTopDepartements,
   getVulnerabiliteFunnel,
+  getVulnerabiliteComptesStats,
 } from "./vulnerabilite-stats.service";
-import { vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
+import { parcoursRepo, vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
 import {
   fetchMatomoCountByDimension,
   fetchMatomoFunnel,
@@ -15,6 +16,7 @@ import type { MatomoFunnelFlowTableResponse } from "@/features/backoffice/admini
 
 vi.mock("@/shared/database/repositories", () => ({
   vulnerabiliteSimulationsRepo: { findSince: vi.fn() },
+  parcoursRepo: { count: vi.fn(), countWithVulnerabiliteSimulation: vi.fn() },
 }));
 
 vi.mock("@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter", () => ({
@@ -233,5 +235,21 @@ describe("getVulnerabiliteFunnel", () => {
     const result = await getVulnerabiliteFunnel();
 
     expect(result).toBeNull();
+  });
+});
+
+describe("getVulnerabiliteComptesStats", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("rapporte les comptes rattachés à une simulation à l'ensemble des comptes", async () => {
+    vi.mocked(parcoursRepo.count).mockResolvedValue(340);
+    vi.mocked(parcoursRepo.countWithVulnerabiliteSimulation).mockResolvedValue(12);
+
+    const result = await getVulnerabiliteComptesStats();
+
+    expect(parcoursRepo.count).toHaveBeenCalledWith();
+    expect(result).toEqual({ totalComptes: 340, comptesAvecSimulation: 12 });
   });
 });

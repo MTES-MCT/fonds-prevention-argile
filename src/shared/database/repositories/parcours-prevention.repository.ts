@@ -1,4 +1,4 @@
-import { eq, sql, SQL, desc, asc, and, isNull } from "drizzle-orm";
+import { eq, sql, SQL, desc, asc, and, isNull, isNotNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
@@ -360,6 +360,11 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
    */
   async countWithRGAData(): Promise<number> {
     return await this.count(sql`${parcoursPrevention.rgaSimulationData} IS NOT NULL`);
+  }
+
+  /** Parcours rattachés à au moins une simulation de vulnérabilité (demandeur ou agent). */
+  async countWithVulnerabiliteSimulation(): Promise<number> {
+    return await this.count(isNotNull(parcoursPrevention.vulnerabiliteSimulationId));
   }
 
   /**

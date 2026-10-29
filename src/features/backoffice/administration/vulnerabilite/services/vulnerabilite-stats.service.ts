@@ -1,4 +1,4 @@
-import { vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
+import { parcoursRepo, vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
 import type { VulnerabiliteSimulation } from "@/shared/database/schema/vulnerabilite-simulations";
 import {
   CATEGORIES_AFFICHAGE,
@@ -29,6 +29,7 @@ import type {
   CritereReponsesStats,
   ReponseDistribution,
   VulnerabilitePointsMoyens,
+  VulnerabiliteComptesStats,
   VulnerabiliteStatsBdd,
   VulnerabiliteTopDepartement,
 } from "../domain/types/vulnerabilite-stats.types";
@@ -112,6 +113,18 @@ export async function getVulnerabiliteStatsBdd(periodeId: PeriodeId): Promise<Vu
     reponses: computeReponsesStats(rows),
     pointsMoyens: computePointsMoyens(rows),
   };
+}
+
+/**
+ * Comptes rattachés à une simulation de vulnérabilité, via le pointeur du parcours (ADR-0032) :
+ * la table `vulnerabilite_simulations` étant anonyme, c'est la seule façon de les compter.
+ */
+export async function getVulnerabiliteComptesStats(): Promise<VulnerabiliteComptesStats> {
+  const [totalComptes, comptesAvecSimulation] = await Promise.all([
+    parcoursRepo.count(),
+    parcoursRepo.countWithVulnerabiliteSimulation(),
+  ]);
+  return { totalComptes, comptesAvecSimulation };
 }
 
 /**
