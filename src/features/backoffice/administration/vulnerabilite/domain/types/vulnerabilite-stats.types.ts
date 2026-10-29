@@ -31,3 +31,9 @@ export interface VulnerabiliteTopDepartement {
   nomDepartement: string;
   simulations: number;
 }
+
+/** Cohorte des comptes créés sur la période. */
+export interface VulnerabiliteComptesStats {
+  totalComptes: number;
+  comptesAvecSimulation: number;
+}

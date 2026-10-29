@@ -3,8 +3,9 @@ import {
   getVulnerabiliteStatsBdd,
   getVulnerabiliteTopDepartements,
   getVulnerabiliteFunnel,
+  getVulnerabiliteComptesStats,
 } from "./vulnerabilite-stats.service";
-import { vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
+import { parcoursRepo, vulnerabiliteSimulationsRepo } from "@/shared/database/repositories";
 import {
   fetchMatomoCountByDimension,
   fetchMatomoFunnel,
@@ -15,6 +16,7 @@ import type { MatomoFunnelFlowTableResponse } from "@/features/backoffice/admini
 
 vi.mock("@/shared/database/repositories", () => ({
   vulnerabiliteSimulationsRepo: { findSince: vi.fn() },
+  parcoursRepo: { countCreesAvecSimulationVulnerabilite: vi.fn() },
 }));
 
 vi.mock("@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter", () => ({
@@ -233,5 +235,31 @@ describe("getVulnerabiliteFunnel", () => {
     const result = await getVulnerabiliteFunnel();
 
     expect(result).toBeNull();
+  });
+});
+
+describe("getVulnerabiliteComptesStats", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("borne la cohorte des comptes à la date de début de la période", async () => {
+    vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mockResolvedValue({ total: 340, avecSimulation: 12 });
+    const avant = Date.now();
+
+    const result = await getVulnerabiliteComptesStats("30j");
+
+    const debut = vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mock.calls[0][0];
+    const jours = (avant - debut.getTime()) / (24 * 60 * 60 * 1000);
+    expect(Math.round(jours)).toBe(30);
+    expect(result).toEqual({ totalComptes: 340, comptesAvecSimulation: 12 });
+  });
+
+  it("prend tous les comptes sur la période « depuis le début »", async () => {
+    vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mockResolvedValue({ total: 0, avecSimulation: 0 });
+
+    await getVulnerabiliteComptesStats("tout");
+
+    expect(vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mock.calls[0][0]).toEqual(new Date(0));
   });
 });

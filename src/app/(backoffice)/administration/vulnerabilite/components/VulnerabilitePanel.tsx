@@ -10,6 +10,7 @@ import {
   getVulnerabiliteStatsAction,
   getVulnerabiliteTopDepartementsAction,
   getVulnerabiliteFunnelAction,
+  getVulnerabiliteComptesStatsAction,
 } from "@/features/backoffice/administration/vulnerabilite/actions/vulnerabilite-stats.actions";
 import {
   PERIODES,
@@ -18,6 +19,7 @@ import {
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type {
   CritereReponsesStats,
+  VulnerabiliteComptesStats,
   VulnerabilitePointsMoyens,
   VulnerabiliteTopDepartement,
 } from "@/features/backoffice/administration/vulnerabilite/domain/types/vulnerabilite-stats.types";
@@ -28,6 +30,12 @@ import {
 } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
 
 const AUTRES_CATEGORIES: CategorieAffichee[] = ["vigilance", "a_verifier", "bonne_pratique"];
+
+function libelleComptes(comptes: VulnerabiliteComptesStats | null): string {
+  if (!comptes || comptes.totalComptes === 0) return "Comptes créés ayant fait une simulation";
+  const part = Math.round((comptes.comptesAvecSimulation / comptes.totalComptes) * 1000) / 10;
+  return `Comptes créés ayant fait une simulation (${part.toLocaleString("fr-FR")} % des ${comptes.totalComptes.toLocaleString("fr-FR")} comptes créés)`;
+}
 
 function formaterMoyenne(valeur: number | null | undefined): string {
   return valeur === null || valeur === undefined ? "—" : valeur.toLocaleString("fr-FR");
@@ -49,6 +57,9 @@ export default function VulnerabilitePanel() {
 
   const [topDepartements, setTopDepartements] = useState<VulnerabiliteTopDepartement[] | null>(null);
   const [topDeptsLoading, setTopDeptsLoading] = useState(true);
+
+  const [comptes, setComptes] = useState<VulnerabiliteComptesStats | null>(null);
+  const [comptesLoading, setComptesLoading] = useState(true);
 
   const [funnel, setFunnel] = useState<FunnelStatistiques | null>(null);
   const [funnelLoading, setFunnelLoading] = useState(true);
@@ -86,6 +97,24 @@ export default function VulnerabilitePanel() {
       if (!cancelled) {
         if (result.success) setTopDepartements(result.data);
         setTopDeptsLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [periodeId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setComptesLoading(true);
+
+    async function load() {
+      const result = await getVulnerabiliteComptesStatsAction(periodeId);
+      if (!cancelled) {
+        if (result.success) setComptes(result.data);
+        setComptesLoading(false);
       }
     }
 
@@ -170,6 +199,14 @@ export default function VulnerabilitePanel() {
               variation={null}
               loading={statsLoading}
               tooltip="Nombre moyen de réponses classées « Point critique » par simulation terminée sur la période, selon la grille de catégorisation en vigueur"
+              className="fr-col-12 fr-col-md-6 fr-col-lg-3"
+            />
+            <DashboardStatCard
+              value={comptes === null ? "…" : comptes.comptesAvecSimulation.toLocaleString("fr-FR")}
+              label={libelleComptes(comptes)}
+              variation={null}
+              loading={comptesLoading}
+              tooltip="Parmi les comptes créés sur la période, ceux rattachés à une simulation de vulnérabilité, faite par le demandeur ou par un agent avec lui, à n'importe quelle date"
               className="fr-col-12 fr-col-md-6 fr-col-lg-3"
             />
           </div>
