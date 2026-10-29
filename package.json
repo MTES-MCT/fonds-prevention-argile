@@ -82,7 +82,7 @@
     "jose": "~6.2.12",
     "maplibre-gl": "6.11.2",
     "next": "15.5.24",
-    "nodemailer": "10.0.10",
+    "nodemailer": "10.1.4",
     "pmtiles": "4.5.0",
     "postgres": "3.4.9",
     "prettier": "3.9.9",
