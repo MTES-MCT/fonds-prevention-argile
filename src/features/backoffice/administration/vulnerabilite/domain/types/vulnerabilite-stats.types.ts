@@ -32,7 +32,7 @@ export interface VulnerabiliteTopDepartement {
   simulations: number;
 }
 
-/** Stock depuis le lancement, indépendant du filtre période. */
+/** Cohorte des comptes créés sur la période. */
 export interface VulnerabiliteComptesStats {
   totalComptes: number;
   comptesAvecSimulation: number;

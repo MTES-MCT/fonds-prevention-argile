@@ -79,9 +79,11 @@ export async function getVulnerabiliteFunnelAction(): Promise<ActionResult<Funne
 }
 
 /**
- * Récupère le nombre de comptes ayant fait une simulation de vulnérabilité, rapporté à l'ensemble des comptes.
+ * Récupère, parmi les comptes créés sur la période, ceux ayant fait une simulation de vulnérabilité.
  */
-export async function getVulnerabiliteComptesStatsAction(): Promise<ActionResult<VulnerabiliteComptesStats>> {
+export async function getVulnerabiliteComptesStatsAction(
+  periodeId: PeriodeId
+): Promise<ActionResult<VulnerabiliteComptesStats>> {
   const permissionCheck = await checkBackofficePermission(BackofficePermission.STATS_READ);
 
   if (!permissionCheck.hasAccess) {
@@ -89,7 +91,7 @@ export async function getVulnerabiliteComptesStatsAction(): Promise<ActionResult
   }
 
   try {
-    const stats = await getVulnerabiliteComptesStats();
+    const stats = await getVulnerabiliteComptesStats(periodeId);
     return { success: true, data: stats };
   } catch (error) {
     console.error("Erreur lors de la recuperation des comptes avec simulation de vulnerabilite:", error);

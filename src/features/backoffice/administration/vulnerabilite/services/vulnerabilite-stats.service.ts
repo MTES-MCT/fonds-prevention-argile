@@ -116,15 +116,13 @@ export async function getVulnerabiliteStatsBdd(periodeId: PeriodeId): Promise<Vu
 }
 
 /**
- * Comptes rattachés à une simulation de vulnérabilité, via le pointeur du parcours (ADR-0032) :
- * la table `vulnerabilite_simulations` étant anonyme, c'est la seule façon de les compter.
+ * Comptes créés sur la période rattachés à une simulation de vulnérabilité, via le pointeur du
+ * parcours (ADR-0032) : la table `vulnerabilite_simulations` étant anonyme, c'est la seule source.
  */
-export async function getVulnerabiliteComptesStats(): Promise<VulnerabiliteComptesStats> {
-  const [totalComptes, comptesAvecSimulation] = await Promise.all([
-    parcoursRepo.count(),
-    parcoursRepo.countWithVulnerabiliteSimulation(),
-  ]);
-  return { totalComptes, comptesAvecSimulation };
+export async function getVulnerabiliteComptesStats(periodeId: PeriodeId): Promise<VulnerabiliteComptesStats> {
+  const { debut } = getDateRange(periodeId);
+  const { total, avecSimulation } = await parcoursRepo.countCreesAvecSimulationVulnerabilite(debut);
+  return { totalComptes: total, comptesAvecSimulation: avecSimulation };
 }
 
 /**

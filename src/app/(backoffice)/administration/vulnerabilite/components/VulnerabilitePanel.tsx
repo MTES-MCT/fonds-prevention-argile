@@ -32,9 +32,9 @@ import {
 const AUTRES_CATEGORIES: CategorieAffichee[] = ["vigilance", "a_verifier", "bonne_pratique"];
 
 function libelleComptes(comptes: VulnerabiliteComptesStats | null): string {
-  if (!comptes || comptes.totalComptes === 0) return "Comptes ayant fait une simulation";
+  if (!comptes || comptes.totalComptes === 0) return "Comptes créés ayant fait une simulation";
   const part = Math.round((comptes.comptesAvecSimulation / comptes.totalComptes) * 1000) / 10;
-  return `Comptes ayant fait une simulation (${part.toLocaleString("fr-FR")} % des ${comptes.totalComptes.toLocaleString("fr-FR")} comptes)`;
+  return `Comptes créés ayant fait une simulation (${part.toLocaleString("fr-FR")} % des ${comptes.totalComptes.toLocaleString("fr-FR")} comptes créés)`;
 }
 
 function formaterMoyenne(valeur: number | null | undefined): string {
@@ -106,12 +106,12 @@ export default function VulnerabilitePanel() {
     };
   }, [periodeId]);
 
-  // Stock depuis le lancement : pas de dependance a periodeId.
   useEffect(() => {
     let cancelled = false;
+    setComptesLoading(true);
 
     async function load() {
-      const result = await getVulnerabiliteComptesStatsAction();
+      const result = await getVulnerabiliteComptesStatsAction(periodeId);
       if (!cancelled) {
         if (result.success) setComptes(result.data);
         setComptesLoading(false);
@@ -122,7 +122,7 @@ export default function VulnerabilitePanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [periodeId]);
 
   // Fixé sur les 7 derniers jours cote service (limite API Matomo Funnels) : pas de dependance a periodeId.
   useEffect(() => {
@@ -206,7 +206,7 @@ export default function VulnerabilitePanel() {
               label={libelleComptes(comptes)}
               variation={null}
               loading={comptesLoading}
-              tooltip="Comptes du parcours rattachés à une simulation de vulnérabilité, faite par le demandeur ou par un agent avec lui. Depuis le lancement, indépendamment de la période choisie"
+              tooltip="Parmi les comptes créés sur la période, ceux rattachés à une simulation de vulnérabilité, faite par le demandeur ou par un agent avec lui, à n'importe quelle date"
               className="fr-col-12 fr-col-md-6 fr-col-lg-3"
             />
           </div>

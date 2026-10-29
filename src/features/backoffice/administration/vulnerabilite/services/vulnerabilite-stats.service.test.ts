@@ -16,7 +16,7 @@ import type { MatomoFunnelFlowTableResponse } from "@/features/backoffice/admini
 
 vi.mock("@/shared/database/repositories", () => ({
   vulnerabiliteSimulationsRepo: { findSince: vi.fn() },
-  parcoursRepo: { count: vi.fn(), countWithVulnerabiliteSimulation: vi.fn() },
+  parcoursRepo: { countCreesAvecSimulationVulnerabilite: vi.fn() },
 }));
 
 vi.mock("@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter", () => ({
@@ -243,13 +243,23 @@ describe("getVulnerabiliteComptesStats", () => {
     vi.clearAllMocks();
   });
 
-  it("rapporte les comptes rattachés à une simulation à l'ensemble des comptes", async () => {
-    vi.mocked(parcoursRepo.count).mockResolvedValue(340);
-    vi.mocked(parcoursRepo.countWithVulnerabiliteSimulation).mockResolvedValue(12);
+  it("borne la cohorte des comptes à la date de début de la période", async () => {
+    vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mockResolvedValue({ total: 340, avecSimulation: 12 });
+    const avant = Date.now();
 
-    const result = await getVulnerabiliteComptesStats();
+    const result = await getVulnerabiliteComptesStats("30j");
 
-    expect(parcoursRepo.count).toHaveBeenCalledWith();
+    const debut = vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mock.calls[0][0];
+    const jours = (avant - debut.getTime()) / (24 * 60 * 60 * 1000);
+    expect(Math.round(jours)).toBe(30);
     expect(result).toEqual({ totalComptes: 340, comptesAvecSimulation: 12 });
+  });
+
+  it("prend tous les comptes sur la période « depuis le début »", async () => {
+    vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mockResolvedValue({ total: 0, avecSimulation: 0 });
+
+    await getVulnerabiliteComptesStats("tout");
+
+    expect(vi.mocked(parcoursRepo.countCreesAvecSimulationVulnerabilite).mock.calls[0][0]).toEqual(new Date(0));
   });
 });
