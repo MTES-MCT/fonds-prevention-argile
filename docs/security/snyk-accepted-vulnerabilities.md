@@ -1,7 +1,7 @@
 # Vulnérabilités Snyk — Acceptées
 
 Date d'audit initial : mars 2026 (Snyk)
-Dernier refresh : octobre 2026 (`pnpm audit`, voir section dédiée)
+Dernier refresh : novembre 2026 (`pnpm audit`, voir section dédiée)
 Auditeur : Samir + Claude
 
 > **Ce document est chronologique : seule la dernière section « Refresh » fait foi.** Les
@@ -9,12 +9,12 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (octobre 2026) — trois vulnérabilités acceptées** : `uuid` <11.1.1
-> (Moderate, runtime, transitif via `exceljs`), `source-map-js` <1.2.2 (High, build, transitif via
-> le `postcss` de `next`, correctif à embarquer dès le 2026-10-07 à 14 h UTC) et `braces` <=3.0.3 (High,
-> devDep, transitif via `eslint-config-next`, aucun correctif publié). Tout le reste est corrigé à
-> la source. Voir
-> [Refresh — octobre 2026 (tableau des simulations par département)](#refresh--octobre-2026-branche-feattableau-simulations-departement).
+> **État courant (novembre 2026) — trois vulnérabilités acceptées** : `uuid` <11.1.1 (Moderate,
+> runtime, transitif via `exceljs`), `minimatch` <11.0.1 (Moderate, transitif via `exceljs` et
+> l'outillage, correctif sorti le 2026-10-27 et bloqué par `minimumReleaseAge` jusqu'au 2026-11-03) et
+> `deepmerge` 4.2–4.3.1 (Low, transitif via `@react-email/render`, aucun correctif publié). Tout le reste
+> est corrigé à la source. Voir
+> [Refresh — novembre 2026 (correctif critique `next`)](#refresh--novembre-2026-branche-chorebump-deps-securite-nov).
 
 ## Décision
 
@@ -485,6 +485,40 @@ nouvelles, déjà présentes sur `main`.
 - **`jose` 6.2.12** (runtime) : vérification JWT / JWKS, maintenue par l'auteur de
   `node-oidc-provider`, **sans aucune dépendance transitive**, aucune vulnérabilité connue.
   Préférée à une implémentation maison de la vérification RS256 / JWKS.
+
+## Refresh — novembre 2026 (branche `chore/bump-deps-securite-nov`)
+
+Déclenché par une vulnérabilité **critique** de `next` publiée en octobre. `pnpm audit --prod` passait de
+3 à 14 vulnérabilités (1 critical, 3 high), `pnpm audit` de 3 à 30 ; les deux tombent à **3**.
+Vérification : `pnpm validate` (3 437 tests), `pnpm build` en Next 15.5.28, un envoi réel vers Mailhog.
+
+### Corrigées à la source
+
+| Paquet                     | Avant     | Après     | Avis éliminés                                                                                  |
+| -------------------------- | --------- | --------- | ---------------------------------------------------------------------------------------------- |
+| `next` (direct)            | `15.5.24` | `15.5.28` | **1 Critical** (`GHSA-2464-fhr4-w9xw`), 1 High (`GHSA-p3m5-59mp-jv5r`), 2 Moderate (cache SSG) |
+| `zod` (direct)             | `4.6.5`   | `4.6.6`   | 1 High (`GHSA-mrhx-c7xc-m3w5`)                                                                 |
+| `source-map-js` (override) | —         | `^1.2.2`  | 1 High (`GHSA-68fv-2mgg-jv7q`), transitif via le `postcss` de `next`                           |
+| `nodemailer` (direct)      | `10.0.10` | `10.1.4`  | 5 Moderate                                                                                     |
+| `vite` (devDep + override) | `7.3.6`   | `7.3.7`   | 1 High, 3 Moderate, 1 Low — devDep                                                             |
+| `vitest`, `@vitest/ui`     | `5.0.0`   | `5.0.5`   | 3 Moderate (`@vitest/ui`, `@vitest/mocker`) — devDep                                           |
+| `undici` (override)        | `^7.29.1` | `^7.30.1` | 4 High, 4 Moderate — devDep, via `jsdom`                                                       |
+
+`next` reste unique dans l'arbre, `@socialgouv/matomo-next` compris. `braces` 3.0.3, accepté en octobre,
+n'est plus remonté par l'audit (avis retiré ou requalifié) : version inchangée.
+
+> **`nodemailer` et Mailhog.** Un nom d'expéditeur accentué et un domaine long font replier
+> l'en-tête `Message-ID` sur deux lignes, ce que la RFC 5322 autorise ; Mailhog le colle alors au
+> sujet et génère son propre `Message-ID`. Comportement identique en 10.0.10 et 10.1.4 (vérifié côte à
+> côte) : pas une régression, et sans effet en staging ou en production, qui envoient par l'API Brevo.
+
+### Reste accepté (`pnpm audit`, 3 vulnérabilités)
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin                                              | Justification                                                                                                                                                                                                                                                                              |
+| --------------------- | -------- | ------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid`                                    | Inchangé : exceljs appelle `uuidv4()` sans buffer, faille non atteignable                                                                                                                                                                                                                  |
+| `minimatch` <11.0.1   | Moderate | runtime | `exceljs > archiver > … > glob > minimatch`, eslint | `GHSA-g3hv-75wg-m249`, DoS par amplification de motifs : aucun motif ne vient d'une entrée externe. Seul correctif : la 11.0.1 (2026-10-27), bloquée jusqu'au 2026-11-03, et deux majors au-dessus de l'override `^9.0.7` : à tester avant de l'appliquer à eslint, exceljs et drizzle-kit |
+| `deepmerge` 4.2–4.3.1 | Low      | runtime | `@react-email/render > html-to-text > deepmerge`    | `GHSA-gcqx-w48m-w2h4`, pollution de prototype : n'y passent que nos propres options de rendu d'email. Aucun correctif publié                                                                                                                                                               |
 
 ## Prochaine revue
 

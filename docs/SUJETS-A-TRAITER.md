@@ -10,21 +10,6 @@ chaque entrée renvoie.
 
 ---
 
-## Dépendances
-
-### Monter `next` en 15.5.27 et poser l'override `source-map-js`
-
-- **Constat** : `pnpm audit --prod` relève deux Moderate `next` <15.5.27 (cache SSG / ISR
-  empoisonnable) et la High `source-map-js` <1.2.2, acceptée jusqu'à ce que son correctif sorte de
-  la fenêtre `minimumReleaseAge`. Écartés de la PR de double authentification (#393), qui n'y touche pas.
-- **Préalable** : aucun, les deux correctifs sont installables depuis le 2026-10-07. Vérifier qu'une
-  PR Dependabot ne les porte pas déjà.
-- **À faire** : `next` 15.5.27, override `source-map-js: ^1.2.2`, checksum du lockfile dans
-  `.talismanrc`, `pnpm build`, puis retirer les deux lignes du suivi des vulnérabilités.
-- **Référence** : [suivi des vulnérabilités](security/snyk-accepted-vulnerabilities.md).
-
----
-
 ## Synchronisation DN
 
 ### Rattraper les dossiers classés sans suite des parcours archivés ou complétés
@@ -193,14 +178,6 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 ---
 
 ## Sécurité et dépendances
-
-### Vulnérabilité High `source-map-js` (`pnpm audit --prod`)
-
-- **Constat** : `source-map-js` <1.2.2 (GHSA-68fv-2mgg-jv7q, DoS), transitif via
-  `@socialgouv/matomo-next > next > postcss`, apparu après le refresh d'octobre 2026. Tracé comme
-  accepté par la PR #394 : le correctif n'est installable qu'à partir du 7 octobre à 14 h 08 UTC (`minimumReleaseAge`).
-- **À faire** : override `source-map-js: ^1.2.2`, checksum `.talismanrc`, section « Refresh » de
-  [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md).
 
 ### Migration Next 16, ESLint 10, `@vitejs/plugin-react` 6, remplacement de `@react-email/components`
 
