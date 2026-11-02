@@ -198,7 +198,8 @@ export class UserRepository extends BaseRepository<User> {
    * Crée ou met à jour un utilisateur depuis FranceConnect.
    *
    * Ordre de résolution :
-   * 1. Si `claimToken` fourni et valide → rattache le stub correspondant.
+   * 1. Si `claimToken` fourni et valide → rattache le stub correspondant, sauf si ce fcId a déjà
+   *    un compte : jeton invalidé, `invitationNonRattachee` porte l'id du stub, on passe au 2.
    * 2. Sinon, user existant avec ce `fcId` → mise à jour.
    * 3. Sinon, stub unique avec le même email → rattachement par email.
    * 4. Sinon, création d'un nouvel utilisateur.
@@ -216,14 +217,20 @@ export class UserRepository extends BaseRepository<User> {
   async upsertFromFranceConnect(
     userInfo: FranceConnectUserInfo,
     options?: { partnerSource?: string | null; claimToken?: string }
-  ): Promise<{ user: User; isNewAccount: boolean }> {
+  ): Promise<{ user: User; isNewAccount: boolean; invitationNonRattachee?: string }> {
     const fcId = userInfo.sub;
+    let invitationNonRattachee: string | undefined;
 
     // 1. Rattachement explicite via claim token
     if (options?.claimToken) {
       const stub = await this.findByClaimToken(options.claimToken);
-      if (stub) {
+      // fc_id est unique : un demandeur qui a déjà un compte ne peut pas réclamer un second dossier.
+      if (stub && !(await this.findByFcId(fcId))) {
         return { user: await this.claimStub(stub.id, userInfo), isNewAccount: true };
+      }
+      if (stub) {
+        await this.update(stub.id, { claimToken: null, claimTokenExpiresAt: null });
+        invitationNonRattachee = stub.id;
       }
       // Token invalide/expiré : on continue avec le flux normal.
     }
@@ -250,7 +257,7 @@ export class UserRepository extends BaseRepository<User> {
         throw new Error("Failed to update user last login");
       }
 
-      return { user: updated, isNewAccount: false };
+      return { user: updated, isNewAccount: false, invitationNonRattachee };
     }
 
     // 3. Fallback : stub unique avec le même email

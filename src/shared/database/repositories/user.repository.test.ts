@@ -53,15 +53,35 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
   it("prioritaire : claim token valide → claimStub, isNewAccount=true", async () => {
     const claimStub = vi.spyOn(repo, "claimStub").mockResolvedValue({ ...stubUser, fcId: "fc-sub-abc" });
     const findByClaimToken = vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
-    const findByFcId = vi.spyOn(repo, "findByFcId");
+    const findByFcId = vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
 
     const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
 
     expect(findByClaimToken).toHaveBeenCalledWith("token-valid");
+    expect(findByFcId).toHaveBeenCalledWith("fc-sub-abc");
     expect(claimStub).toHaveBeenCalledWith(stubUser.id, fcInfo);
-    expect(findByFcId).not.toHaveBeenCalled();
     expect(result.user.fcId).toBe("fc-sub-abc");
     expect(result.isNewAccount).toBe(true);
+    expect(result.invitationNonRattachee).toBeUndefined();
+  });
+
+  it("claim token valide mais compte FC déjà existant → connexion au compte, stub signalé et jeton invalidé", async () => {
+    vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
+    vi.spyOn(repo, "findByFcId").mockResolvedValue(existingFcUser);
+    const claimStub = vi.spyOn(repo, "claimStub");
+    const update = vi
+      .spyOn(repo, "update")
+      .mockImplementation(async (id) =>
+        id === existingFcUser.id ? existingFcUser : { ...stubUser, claimToken: null, claimTokenExpiresAt: null }
+      );
+
+    const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
+
+    expect(claimStub).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith(stubUser.id, { claimToken: null, claimTokenExpiresAt: null });
+    expect(result.user.id).toBe(existingFcUser.id);
+    expect(result.isNewAccount).toBe(false);
+    expect(result.invitationNonRattachee).toBe(stubUser.id);
   });
 
   it("claim token invalide → fallback sur findByFcId, isNewAccount=false", async () => {
