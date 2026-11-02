@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { normalizeCodeDepartement, toOfficialCodeDepartement, getDepartementName } from "./departements.constants";
+import {
+  normalizeCodeDepartement,
+  toOfficialCodeDepartement,
+  getDepartementName,
+  variantesCodeDepartement,
+} from "./departements.constants";
 
 describe("normalizeCodeDepartement", () => {
   it("doit convertir un number en string sans zéro initial", () => {
@@ -98,5 +103,19 @@ describe("getDepartementName", () => {
   it("doit résoudre les codes DOM-TOM", () => {
     expect(getDepartementName("971")).toBe("Guadeloupe");
     expect(getDepartementName("976")).toBe("Mayotte");
+  });
+});
+
+describe("variantesCodeDepartement", () => {
+  it("donne les deux écritures d'un département à un chiffre, d'où qu'on parte", () => {
+    expect(variantesCodeDepartement("03")).toEqual(["03", "3"]);
+    expect(variantesCodeDepartement("3")).toEqual(["03", "3"]);
+    expect(variantesCodeDepartement(3)).toEqual(["03", "3"]);
+  });
+
+  it("ne donne qu'une écriture quand il n'y en a qu'une", () => {
+    expect(variantesCodeDepartement("36")).toEqual(["36"]);
+    expect(variantesCodeDepartement("2A")).toEqual(["2A"]);
+    expect(variantesCodeDepartement("971")).toEqual(["971"]);
   });
 });
