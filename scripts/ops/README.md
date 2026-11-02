@@ -178,8 +178,8 @@ pnpm fix:epci                   # mode par défaut (dry-run d'abord, à confirme
 
 ### normaliser-codes-geo
 
-Les simulations de 2025 stockent les codes géographiques en nombres (`code_departement: 3`,
-`commune: 3023`). Comparé en chaîne, `3` ne retrouve pas `03` : le dossier sortait du
+Les simulations de novembre 2025 à janvier 2026 stockent les codes géographiques en nombres
+(`code_departement: 3`, `commune: 3023` ; 104 en production le 2026-11-02, aucune depuis). Comparé en chaîne, `3` ne retrouve pas `03` : le dossier sortait du
 listing, du détail et des stats des agents des départements 01 à 09. `matchesTerritoire`
 normalise désormais à la lecture ; le script corrige les données pour les autres lecteurs.
 Traite la simulation du demandeur, celle de l'agent et son baseline, sans toucher

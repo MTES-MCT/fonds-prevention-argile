@@ -383,7 +383,8 @@ plus, l'AMO a recréé le dossier et le demandeur s'est retrouvé avec deux comp
 ré-ouverture et périmètre statistique de l'analyste échouaient ensemble. **Correctif** : les deux
 côtés sont comparés au format officiel (`toOfficialCodeDepartement`), et `pnpm fix:codes-geo`
 remet les données existantes au format. Aucun élargissement : un dossier n'entre que dans le
-territoire auquel il appartenait déjà.
+territoire auquel il appartenait déjà. Mesuré en production le 2 novembre 2026 : 11 dossiers actifs
+concernés (6 dans le 03, 5 dans le 04), issus de simulations faites entre novembre 2025 et janvier 2026.
 
 ### Bug corrigé (juin 2026) — 404 sur les dossiers sans AMO
 

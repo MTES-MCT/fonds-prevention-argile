@@ -17,6 +17,11 @@ Soliha lui a donc recréé un dossier en juillet, avec un autre email. Le demand
 sur son compte, qui lui annonçait toujours son inéligibilité, pendant que Soliha suivait l'autre
 dossier. La même requête a relevé 8 autres paires invitation / compte FranceConnect au même email.
 
+Mesuré le même jour : 104 simulations stockent leurs codes en nombres, toutes faites entre novembre 2025 et
+janvier 2026 (aucune depuis). Onze dossiers actifs en sortaient, 6 dans l'Allier et 5 dans les
+Alpes-de-Haute-Provence, dont 2 demandes encore en attente d'une réponse de Soliha 03 : la page qui les liste
+par entreprise n'est reliée à aucun menu, et la liste « Dossiers » les cachait.
+
 Quand le demandeur cliquait l'invitation, le rattachement violait l'unicité de `fc_id` : il lisait
 « Erreur lors de l'échange de token », et l'erreur Drizzle, journalisée telle quelle, emportait
 son `sub`, son email et son nom dans les logs.
