@@ -16,6 +16,7 @@ import { evaluateSimulation } from "@/features/simulateur/domain/services/eligib
 import { aUneAmoValidee } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
+import { resumerErreur } from "@/shared/utils/erreur.utils";
 import { ACTION_TYPE_INVITATION_NON_RATTACHEE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 /**
@@ -177,13 +178,6 @@ async function signalerInvitationNonRattachee(stubUserId: string, userInfo: Fran
   } catch (error) {
     console.error("[FranceConnect] trace de l'invitation non rattachée impossible :", resumerErreur(error));
   }
-}
-
-/** Nom et code SQL seulement : le message d'une requête Drizzle en échec contient ses paramètres. */
-function resumerErreur(error: unknown): string {
-  if (!(error instanceof Error)) return "erreur inconnue";
-  const code = (error.cause as { code?: unknown } | undefined)?.code;
-  return typeof code === "string" ? `${error.name} (${code})` : error.name;
 }
 
 /**
