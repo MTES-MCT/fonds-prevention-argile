@@ -64,8 +64,11 @@ export function StepContact() {
 
   // Une vérification en échec laisse passer : l'enregistrement final refait le contrôle.
   const handleNext = () => {
+    const emailVerifie = emailInput;
     startTransition(async () => {
-      const verification = await verifierEmailDemandeurAction(emailInput);
+      const verification = await verifierEmailDemandeurAction(emailVerifie);
+      // L'agent a pu corriger l'email pendant la vérification : cette réponse ne le concerne plus.
+      if (useCreationDossierStore.getState().demandeur.email.trim() !== emailVerifie) return;
       if (verification.success && verification.data) {
         setDoublon(verification.data);
         return;
