@@ -29,7 +29,8 @@ describe("StepContact — demandeur déjà connu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Suivant" }));
 
     expect(await screen.findByText("Ce demandeur est déjà connu")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
+    // La transition peut finir après l'alerte : le bouton affiche « Chargement... » jusque-là.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled());
     expect(push).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText(/Adresse email/), { target: { value: "neuf@example.org" } });
