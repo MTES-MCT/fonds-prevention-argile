@@ -24,6 +24,27 @@ l'Aller-vers concerné, puis `pnpm fix:fusionner-invite` (la fusion refuse un do
 une qualification ou un formulaire DN, à traiter à la main). Le contact Brevo d'un stub supprimé
 n'est pas effacé : à décider si on le purge.
 
+### Revue de la PR doublons : points écartés et questions métier
+
+Relevés par la revue du 2 novembre 2026, laissés hors de la PR :
+
+- **Vérification et création non atomiques** : deux agents qui créent le même demandeur à la même
+  seconde passent tous deux le contrôle d'email. Écarté : fenêtre de quelques millisecondes, aucune
+  contrainte d'unicité possible sur l'email (adresses partagées), et le doublon éventuel est désormais
+  signalé au rattachement puis réparable par `fix:fusionner-invite`. À reprendre si des doublons
+  réapparaissent malgré la garde.
+- **Index pour la détection** : `LOWER(email)` et l'adresse JSONB sont parcourus sans index, à chaque
+  création par un agent seulement, sur quelques milliers de lignes. À mesurer (`EXPLAIN ANALYZE` sur
+  une copie) si la volumétrie change d'ordre de grandeur.
+- **Questions métier** : faut-il une dérogation quand deux demandeurs partagent un email (le message
+  affirme « ce demandeur a déjà un compte ») ? Accepte-t-on que la réponse distingue compte et
+  invitation, et confirme un logement connu, hors du périmètre de l'agent ? La simulation de l'agent
+  copiée par la fusion doit-elle fermer l'édition du demandeur comme une correction ? Faut-il tracer
+  la fusion dans l'historique (aujourd'hui, les actions déplacées gardent leur libellé d'origine, sans
+  mention du rapprochement) ? Que faire du contact Brevo du stub supprimé ?
+
+**Préalable** : arbitrage produit sur les questions métier ; mesure de volumétrie pour les index.
+
 ---
 
 ## Synchronisation DN
