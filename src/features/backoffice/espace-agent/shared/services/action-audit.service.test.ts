@@ -96,6 +96,27 @@ describe("logSystemAction", () => {
     ).resolves.toBe(false);
   });
 
+  it("ne journalise pas les paramètres d'une requête en échec", async () => {
+    const erreur = new Error('Failed query: insert into "parcours_actions"\nparams: Alice Dupont,alice@example.com', {
+      cause: Object.assign(new Error("duplicate key"), { code: "23505" }),
+    });
+    erreur.name = "DrizzleQueryError";
+    vi.mocked(parcoursActionsRepo.create).mockRejectedValueOnce(erreur);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await logSystemAction({
+      parcoursId: PARCOURS_ID,
+      author: { demandeur: { nom: "Alice Dupont" } },
+      actionType: "invitation_non_rattachee",
+    });
+
+    const journal = JSON.stringify(consoleError.mock.calls);
+    expect(journal).toContain("DrizzleQueryError (23505)");
+    expect(journal).not.toContain("Alice");
+    expect(journal).not.toContain("alice@example.com");
+    consoleError.mockRestore();
+  });
+
   it("n'écrit rien si l'agent référencé est introuvable", async () => {
     vi.mocked(agentsRepo.findById).mockResolvedValue(null);
 

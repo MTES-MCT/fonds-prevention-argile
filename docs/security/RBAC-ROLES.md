@@ -372,6 +372,20 @@ territoire suivant un permalien est donc redirigé puis refusé, exactement comm
 tapé l'URL du dossier. Seul effet de bord assumé : un agent authentifié peut distinguer
 « cet uuid est un parcours » (redirection) de « uuid inconnu » (404).
 
+### Bug corrigé (novembre 2026) — dossiers invisibles dans les départements 01 à 09
+
+**Symptôme** : un dossier suivi par Soliha 03 avait disparu de sa liste et répondait « pas dans
+votre territoire » au détail, alors que le tableau la désignait comme responsable. Ne le retrouvant
+plus, l'AMO a recréé le dossier et le demandeur s'est retrouvé avec deux comptes (ADR-0050).
+
+**Cause** : les simulations de 2025 stockent le département en nombre (`3`), et
+`matchesTerritoire` comparait `String(3)` à « 03 ». Le prédicat étant partagé, listing, détail,
+ré-ouverture et périmètre statistique de l'analyste échouaient ensemble. **Correctif** : les deux
+côtés sont comparés au format officiel (`toOfficialCodeDepartement`), et `pnpm fix:codes-geo`
+remet les données existantes au format. Aucun élargissement : un dossier n'entre que dans le
+territoire auquel il appartenait déjà. Mesuré en production le 2 novembre 2026 : 11 dossiers actifs
+concernés (6 dans le 03, 5 dans le 04), issus de simulations faites entre novembre 2025 et janvier 2026.
+
 ### Bug corrigé (juin 2026) — 404 sur les dossiers sans AMO
 
 **Symptôme** : des dossiers « en attente d'AV » / « en formulaire d'éligibilité »
@@ -401,6 +415,14 @@ national (`scope.isNational`) court-circuite ce contrôle et n'était donc pas
 concerné par cette cause secondaire.
 
 ---
+
+### Demandeur déjà connu à la création d'un dossier (ADR-0050)
+
+`verifierEmailDemandeurAction` et `createDossierAllerVersAction` refusent un email qui a déjà un
+compte ou une invitation, et alertent sur un logement déjà connu. Mêmes gardes que la création
+(`refusAccesEspaceAgent`, `DOSSIERS_CREATE`). **Aucun élargissement** : le lien vers le dossier
+existant n'est donné que s'il passe `verifyProspectTerritoryAccess`. Effet de bord assumé : un agent
+apprend qu'un email a déjà un compte, même hors de son périmètre, sans rien voir du dossier.
 
 ## 6.1 Ré-ouverture d'une demande refusée (garde élargie)
 

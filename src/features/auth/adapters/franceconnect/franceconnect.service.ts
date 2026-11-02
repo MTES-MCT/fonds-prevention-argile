@@ -15,6 +15,9 @@ import { isSimulationComplete } from "@/features/simulateur/domain/rules/navigat
 import { evaluateSimulation } from "@/features/simulateur/domain/services/eligibilite-archivage.service";
 import { aUneAmoValidee } from "@/features/parcours/amo/services/ouverture-eligibilite.service";
 import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.utils";
+import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
+import { resumerErreur } from "@/shared/utils/erreur.utils";
+import { ACTION_TYPE_INVITATION_NON_RATTACHEE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 
 /**
  * Génère l'URL d'autorisation FranceConnect
@@ -158,6 +161,25 @@ export async function lierSimulationVulnerabiliteAnonyme(parcoursId: string): Pr
   }
 }
 
+// Visible de l'agent dans l'historique du dossier invité : c'est lui qui a recréé le dossier.
+async function signalerInvitationNonRattachee(stubUserId: string, userInfo: FranceConnectUserInfo): Promise<void> {
+  console.warn(`[FranceConnect] invitation non rattachée : compte déjà existant (stub ${stubUserId})`);
+  try {
+    const parcours = await parcoursRepo.findByUserId(stubUserId);
+    if (!parcours) return;
+    const nom = [userInfo.given_name, userInfo.family_name].filter(Boolean).join(" ");
+    await logSystemAction({
+      parcoursId: parcours.id,
+      author: { demandeur: { nom } },
+      actionType: ACTION_TYPE_INVITATION_NON_RATTACHEE,
+      message:
+        "Le demandeur a ouvert cette invitation avec un compte FranceConnect qui a déjà son dossier : il y a été connecté, et ce dossier-ci ne lui est pas rattaché. Contactez l'équipe du Fonds Prévention Argile pour regrouper les deux dossiers.",
+    });
+  } catch (error) {
+    console.error("[FranceConnect] trace de l'invitation non rattachée impossible :", resumerErreur(error));
+  }
+}
+
 /**
  * Crée une session FranceConnect
  */
@@ -252,10 +274,11 @@ export async function handleFranceConnectCallback(
     // - claimToken : si présent, rattache le user stub pré-créé par un agent AV au compte FC.
     // - isNewAccount : vrai à la 1ère création OU au 1er rattachement d'un stub pré-créé par un
     //   agent (jamais vrai pour un retour sur un compte déjà actif) — déclencheur `demandeur_cree`.
-    const { user, isNewAccount } = await userRepo.upsertFromFranceConnect(userInfo, {
+    const { user, isNewAccount, invitationNonRattachee } = await userRepo.upsertFromFranceConnect(userInfo, {
       partnerSource: options?.partnerSource ?? null,
       claimToken,
     });
+    if (invitationNonRattachee) await signalerInvitationNonRattachee(invitationNonRattachee, userInfo);
 
     // 6. Initialiser le parcours (idempotent, insert atomique onConflictDoNothing — fiable
     //    même sur deux callbacks concurrents).
@@ -324,7 +347,7 @@ export async function handleFranceConnectCallback(
 
     return { success: true };
   } catch (error) {
-    console.error("Erreur callback FranceConnect:", error);
+    console.error("Erreur callback FranceConnect:", resumerErreur(error));
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",

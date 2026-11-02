@@ -1,6 +1,7 @@
 import { parcoursActionsRepo, agentsRepo } from "@/shared/database/repositories";
 import type { Agent } from "@/shared/database/schema/agents";
 import { buildAuthorSnapshot, type AuthorSnapshot } from "./author-snapshot";
+import { resumerErreur } from "@/shared/utils/erreur.utils";
 
 /**
  * Auteur d'une action système : un agent (objet déjà chargé ou simple id, résolu ici)
@@ -63,7 +64,7 @@ export async function logSystemAction({
 
     return true;
   } catch (error) {
-    console.error(`[logSystemAction] audit best-effort échoué (${actionType}):`, error);
+    console.error(`[logSystemAction] audit best-effort échoué (${actionType}):`, resumerErreur(error));
     return false;
   }
 }

@@ -9,3 +9,4 @@ export * from "./departements.utils";
 export * from "./phone.utils";
 export * from "./uuid.utils";
 export * from "./liste.utils";
+export * from "./erreur.utils";

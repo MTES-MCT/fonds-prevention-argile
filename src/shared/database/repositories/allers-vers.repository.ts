@@ -1,8 +1,9 @@
-import { eq, notExists, SQL, sql } from "drizzle-orm";
+import { eq, inArray, notExists, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
 import { agents, allersVers, allersVersDepartements, allersVersEpci } from "../schema";
 import type { NewAllersVers } from "../schema/allers-vers";
 import { BaseRepository } from "./base.repository";
+import { variantesCodeDepartement } from "@/shared/constants/departements.constants";
 
 export type AllersVersWithRelations = {
   id: string;
@@ -258,7 +259,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
       })
       .from(allersVers)
       .innerJoin(allersVersDepartements, eq(allersVers.id, allersVersDepartements.allersVersId))
-      .where(eq(allersVersDepartements.codeDepartement, codeDepartement))
+      .where(inArray(allersVersDepartements.codeDepartement, variantesCodeDepartement(codeDepartement)))
       .orderBy(allersVers.nom);
   }
 

@@ -5,6 +5,7 @@ import { BaseRepository } from "./base.repository";
 import type { User, NewUser } from "../schema/users";
 import { FranceConnectUserInfo } from "@/features/auth";
 import { SourceAcquisition } from "@/shared/domain/value-objects";
+import { estViolationUnicite, resumerErreur } from "@/shared/utils/erreur.utils";
 
 export class UserRepository extends BaseRepository<User> {
   /**
@@ -167,38 +168,41 @@ export class UserRepository extends BaseRepository<User> {
 
   /**
    * Rattache un user stub à un compte FranceConnect.
-   * Met le fcId + date de claim, invalide le token.
+   * Met le fcId + date de claim, invalide le token. `null` si le stub n'est plus libre ou ce fcId déjà pris.
    */
-  async claimStub(userId: string, userInfo: FranceConnectUserInfo): Promise<User> {
-    const result = await db
-      .update(users)
-      .set({
-        fcId: userInfo.sub,
-        // L'email FC est autoritaire si fourni ; sinon on garde celui saisi par l'AV.
-        email: userInfo.email || sql`${users.email}`,
-        nom: userInfo.preferred_username || userInfo.family_name || sql`${users.nom}`,
-        nomFamille: userInfo.family_name || sql`${users.nomFamille}`,
-        prenom: userInfo.given_name || sql`${users.prenom}`,
-        claimedAt: new Date(),
-        claimToken: null,
-        claimTokenExpiresAt: null,
-        lastLogin: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning();
-
-    if (!result[0]) {
-      throw new Error("Failed to claim user stub");
+  async claimStub(userId: string, userInfo: FranceConnectUserInfo): Promise<User | null> {
+    try {
+      const result = await db
+        .update(users)
+        .set({
+          fcId: userInfo.sub,
+          // L'email FC est autoritaire si fourni ; sinon on garde celui saisi par l'AV.
+          email: userInfo.email || sql`${users.email}`,
+          nom: userInfo.preferred_username || userInfo.family_name || sql`${users.nom}`,
+          nomFamille: userInfo.family_name || sql`${users.nomFamille}`,
+          prenom: userInfo.given_name || sql`${users.prenom}`,
+          claimedAt: new Date(),
+          claimToken: null,
+          claimTokenExpiresAt: null,
+          lastLogin: new Date(),
+        })
+        // Conditionnel : un callback concurrent a pu réclamer ce stub entre la lecture et l'écriture.
+        .where(and(eq(users.id, userId), isNull(users.fcId), isNull(users.claimedAt)))
+        .returning();
+      return result[0] ?? null;
+    } catch (error) {
+      // Ce fc_id vient d'être pris par un autre compte : le demandeur sera reconnecté à celui-ci.
+      if (estViolationUnicite(error)) return null;
+      throw error;
     }
-
-    return result[0];
   }
 
   /**
    * Crée ou met à jour un utilisateur depuis FranceConnect.
    *
    * Ordre de résolution :
-   * 1. Si `claimToken` fourni et valide → rattache le stub correspondant.
+   * 1. Si `claimToken` fourni et valide → rattache le stub correspondant, sauf si ce fcId a déjà
+   *    un compte : jeton invalidé, `invitationNonRattachee` porte l'id du stub, on passe au 2.
    * 2. Sinon, user existant avec ce `fcId` → mise à jour.
    * 3. Sinon, stub unique avec le même email → rattachement par email.
    * 4. Sinon, création d'un nouvel utilisateur.
@@ -216,14 +220,19 @@ export class UserRepository extends BaseRepository<User> {
   async upsertFromFranceConnect(
     userInfo: FranceConnectUserInfo,
     options?: { partnerSource?: string | null; claimToken?: string }
-  ): Promise<{ user: User; isNewAccount: boolean }> {
+  ): Promise<{ user: User; isNewAccount: boolean; invitationNonRattachee?: string }> {
     const fcId = userInfo.sub;
+    let invitationNonRattachee: string | undefined;
 
     // 1. Rattachement explicite via claim token
     if (options?.claimToken) {
       const stub = await this.findByClaimToken(options.claimToken);
       if (stub) {
-        return { user: await this.claimStub(stub.id, userInfo), isNewAccount: true };
+        // fc_id est unique : un demandeur qui a déjà un compte ne peut pas réclamer un second dossier.
+        const reclame = (await this.findByFcId(fcId)) ? null : await this.claimStub(stub.id, userInfo);
+        if (reclame) return { user: reclame, isNewAccount: true };
+        await this.invaliderClaimToken(stub.id);
+        invitationNonRattachee = stub.id;
       }
       // Token invalide/expiré : on continue avec le flux normal.
     }
@@ -250,28 +259,52 @@ export class UserRepository extends BaseRepository<User> {
         throw new Error("Failed to update user last login");
       }
 
-      return { user: updated, isNewAccount: false };
+      // Double clic sur le lien : le stub a été rattaché par l'autre callback, ce n'est pas un conflit.
+      const conflit = invitationNonRattachee !== existingUser.id ? invitationNonRattachee : undefined;
+      return { user: updated, isNewAccount: false, invitationNonRattachee: conflit };
     }
 
     // 3. Fallback : stub unique avec le même email
     if (userInfo.email) {
       const stubByEmail = await this.findByEmailWithoutFcId(userInfo.email);
-      if (stubByEmail) {
-        return { user: await this.claimStub(stubByEmail.id, userInfo), isNewAccount: true };
-      }
+      const reclame = stubByEmail ? await this.claimStub(stubByEmail.id, userInfo) : null;
+      if (reclame) return { user: reclame, isNewAccount: true };
     }
 
     // 4. Nouvel utilisateur (avec partnerSource persisté à la création)
-    const created = await this.create({
-      fcId,
-      email: userInfo.email,
-      nom: userInfo.preferred_username || userInfo.family_name,
-      nomFamille: userInfo.family_name,
-      prenom: userInfo.given_name,
-      lastLogin: new Date(),
-      partnerSource: options?.partnerSource ?? null,
-    });
-    return { user: created, isNewAccount: true };
+    return this.creerDepuisFranceConnect(userInfo, options?.partnerSource ?? null);
+  }
+
+  // Un callback concurrent du même demandeur a pu créer ou rattacher son compte entre-temps.
+  private async creerDepuisFranceConnect(
+    userInfo: FranceConnectUserInfo,
+    partnerSource: string | null
+  ): Promise<{ user: User; isNewAccount: boolean }> {
+    try {
+      const created = await this.create({
+        fcId: userInfo.sub,
+        email: userInfo.email,
+        nom: userInfo.preferred_username || userInfo.family_name,
+        nomFamille: userInfo.family_name,
+        prenom: userInfo.given_name,
+        lastLogin: new Date(),
+        partnerSource,
+      });
+      return { user: created, isNewAccount: true };
+    } catch (error) {
+      const existant = estViolationUnicite(error) ? await this.findByFcId(userInfo.sub) : null;
+      if (!existant) throw error;
+      return { user: existant, isNewAccount: false };
+    }
+  }
+
+  // Best-effort : un jeton resté valide ne fait que rejouer le conflit au prochain clic.
+  private async invaliderClaimToken(userId: string): Promise<void> {
+    try {
+      await this.update(userId, { claimToken: null, claimTokenExpiresAt: null });
+    } catch (error) {
+      console.warn(`[upsertFromFranceConnect] jeton du stub ${userId} non invalidé :`, resumerErreur(error));
+    }
   }
 
   /**

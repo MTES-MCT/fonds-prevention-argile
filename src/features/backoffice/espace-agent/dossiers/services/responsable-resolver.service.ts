@@ -4,6 +4,7 @@ import { parcoursAmoValidations } from "@/shared/database/schema";
 import { getResponsableDossier, type Responsable } from "@/features/parcours/core/domain/services/responsable.service";
 import { getDossierEtat, type DossierEtat } from "@/features/parcours/core/domain/services/dossier-etat.service";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import type { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import type { Status } from "@/shared/domain/value-objects/status.enum";
 import type { DSStatus } from "@/shared/domain/value-objects/ds-status.enum";
@@ -92,7 +93,7 @@ export async function resolveResponsableForParcours(parcoursId: string): Promise
     .limit(1);
 
   const logement = getDemandeurFirstLogement(parcours);
-  const codeDepartement = logement?.code_departement ? String(logement.code_departement) : null;
+  const codeDepartement = logement?.code_departement ? toOfficialCodeDepartement(logement.code_departement) : null;
   const codeEpci = logement?.epci ? String(logement.epci) : null;
 
   const map = await resolveResponsables([

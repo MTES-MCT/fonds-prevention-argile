@@ -53,15 +53,35 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
   it("prioritaire : claim token valide → claimStub, isNewAccount=true", async () => {
     const claimStub = vi.spyOn(repo, "claimStub").mockResolvedValue({ ...stubUser, fcId: "fc-sub-abc" });
     const findByClaimToken = vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
-    const findByFcId = vi.spyOn(repo, "findByFcId");
+    const findByFcId = vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
 
     const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
 
     expect(findByClaimToken).toHaveBeenCalledWith("token-valid");
+    expect(findByFcId).toHaveBeenCalledWith("fc-sub-abc");
     expect(claimStub).toHaveBeenCalledWith(stubUser.id, fcInfo);
-    expect(findByFcId).not.toHaveBeenCalled();
     expect(result.user.fcId).toBe("fc-sub-abc");
     expect(result.isNewAccount).toBe(true);
+    expect(result.invitationNonRattachee).toBeUndefined();
+  });
+
+  it("claim token valide mais compte FC déjà existant → connexion au compte, stub signalé et jeton invalidé", async () => {
+    vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
+    vi.spyOn(repo, "findByFcId").mockResolvedValue(existingFcUser);
+    const claimStub = vi.spyOn(repo, "claimStub");
+    const update = vi
+      .spyOn(repo, "update")
+      .mockImplementation(async (id) =>
+        id === existingFcUser.id ? existingFcUser : { ...stubUser, claimToken: null, claimTokenExpiresAt: null }
+      );
+
+    const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
+
+    expect(claimStub).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith(stubUser.id, { claimToken: null, claimTokenExpiresAt: null });
+    expect(result.user.id).toBe(existingFcUser.id);
+    expect(result.isNewAccount).toBe(false);
+    expect(result.invitationNonRattachee).toBe(stubUser.id);
   });
 
   it("claim token invalide → fallback sur findByFcId, isNewAccount=false", async () => {
@@ -75,6 +95,72 @@ describe("UserRepository.upsertFromFranceConnect — rattachement", () => {
     expect(update).toHaveBeenCalled();
     expect(result.user.id).toBe(existingFcUser.id);
     expect(result.isNewAccount).toBe(false);
+  });
+
+  describe("connexions simultanées", () => {
+    const violationUnicite = () => {
+      const erreur = new Error("Failed query", { cause: Object.assign(new Error("duplicate key"), { code: "23505" }) });
+      erreur.name = "DrizzleQueryError";
+      return erreur;
+    };
+
+    it("double clic : le stub rattaché par l'autre callback n'est pas signalé comme conflit", async () => {
+      const stubRattache = { ...stubUser, fcId: "fc-sub-abc", claimToken: null };
+      vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
+      vi.spyOn(repo, "findByFcId").mockResolvedValueOnce(null).mockResolvedValue(stubRattache);
+      vi.spyOn(repo, "claimStub").mockResolvedValue(null);
+      vi.spyOn(repo, "update").mockResolvedValue(stubRattache);
+
+      const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
+
+      expect(result.user.id).toBe(stubUser.id);
+      expect(result.isNewAccount).toBe(false);
+      expect(result.invitationNonRattachee).toBeUndefined();
+    });
+
+    it("un autre stub rattaché entre-temps à ce fcId : conflit signalé", async () => {
+      vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
+      vi.spyOn(repo, "findByFcId").mockResolvedValueOnce(null).mockResolvedValue(existingFcUser);
+      vi.spyOn(repo, "claimStub").mockResolvedValue(null);
+      vi.spyOn(repo, "update").mockResolvedValue(existingFcUser);
+
+      const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
+
+      expect(result.user.id).toBe(existingFcUser.id);
+      expect(result.invitationNonRattachee).toBe(stubUser.id);
+    });
+
+    it("l'invalidation du jeton en échec n'empêche pas la connexion", async () => {
+      vi.spyOn(repo, "findByClaimToken").mockResolvedValue(stubUser);
+      vi.spyOn(repo, "findByFcId").mockResolvedValue(existingFcUser);
+      vi.spyOn(repo, "update").mockRejectedValueOnce(new Error("db down")).mockResolvedValue(existingFcUser);
+      const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const result = await repo.upsertFromFranceConnect(fcInfo, { claimToken: "token-valid" });
+
+      expect(result.user.id).toBe(existingFcUser.id);
+      expect(result.invitationNonRattachee).toBe(stubUser.id);
+      consoleWarn.mockRestore();
+    });
+
+    it("création en conflit d'unicité : reconnecte au compte créé par l'autre callback", async () => {
+      vi.spyOn(repo, "findByFcId").mockResolvedValueOnce(null).mockResolvedValue(existingFcUser);
+      vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
+      vi.spyOn(repo, "create").mockRejectedValue(violationUnicite());
+
+      const result = await repo.upsertFromFranceConnect(fcInfo);
+
+      expect(result.user.id).toBe(existingFcUser.id);
+      expect(result.isNewAccount).toBe(false);
+    });
+
+    it("une autre erreur de création remonte telle quelle", async () => {
+      vi.spyOn(repo, "findByFcId").mockResolvedValue(null);
+      vi.spyOn(repo, "findByEmailWithoutFcId").mockResolvedValue(null);
+      vi.spyOn(repo, "create").mockRejectedValue(new Error("db down"));
+
+      await expect(repo.upsertFromFranceConnect(fcInfo)).rejects.toThrow("db down");
+    });
   });
 
   it("sans token, fcId connu → update du user existant, isNewAccount=false", async () => {

@@ -9,6 +9,8 @@ import { EligibilityService } from "@/features/simulateur/domain/services/eligib
 import { SimulateurStep } from "@/features/simulateur/domain/value-objects/simulateur-step.enum";
 import { useCreationDossierStore } from "../stores/creation-dossier.store";
 import { createDossierAllerVersAction } from "../actions/create-dossier-aller-vers.action";
+import { AlerteDoublon } from "./AlerteDoublon";
+import type { DoublonDemandeur } from "../domain/doublon";
 
 interface ResultInvitationProps {
   checks: EligibilityChecks;
@@ -39,6 +41,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
   const resetWizard = useCreationDossierStore((s) => s.reset);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [doublon, setDoublon] = useState<DoublonDemandeur | null>(null);
 
   // Si le state wizard a été perdu (rafraîchissement, navigation directe),
   // on ne peut plus créer le dossier → retour au début du wizard.
@@ -53,8 +56,9 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
     : "Faire une simulation d’éligibilité et créer le dossier";
   const primaryLabel = isEligible ? "Envoyer et enregistrer le dossier" : "Enregistrer le dossier et quitter";
 
-  const handleSaveAndExit = () => {
+  const handleSaveAndExit = (confirmerDoublonAdresse = false) => {
     setError(null);
+    setDoublon(null);
     startTransition(async () => {
       // Un early exit laisse la simulation incomplète : on enregistre ce qui a
       // été renseigné plutôt que de bloquer la création du dossier.
@@ -78,10 +82,12 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
         // Cas éligible : envoi auto du mail d'invitation. Sinon : pas d'envoi.
         sendEmail: isEligible,
         intent,
+        confirmerDoublonAdresse,
       });
 
       if (!result.success) {
-        setError(result.error);
+        if ("doublon" in result) setDoublon(result.doublon);
+        else setError(result.error);
         return;
       }
 
@@ -143,7 +149,12 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
       </ul>
 
       <div className="flex justify-end fr-mt-2w">
-        <button type="button" className="fr-btn" onClick={handleSaveAndExit} disabled={isPending} title={titleText}>
+        <button
+          type="button"
+          className="fr-btn"
+          onClick={() => handleSaveAndExit()}
+          disabled={isPending}
+          title={titleText}>
           {isPending ? "Enregistrement..." : primaryLabel}
         </button>
       </div>
@@ -153,6 +164,8 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
           <p>{error}</p>
         </div>
       )}
+
+      {doublon && <AlerteDoublon doublon={doublon} onConfirmer={() => handleSaveAndExit(true)} isLoading={isPending} />}
 
       <div className="fr-mt-4w fr-mb-2w" />
 

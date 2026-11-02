@@ -10,6 +10,7 @@ import type { ParcoursPrevention, NewParcoursPrevention } from "../schema/parcou
 import { getNextStep, Status, Step } from "@/features/parcours/core";
 import { PartialRGASimulationData, RGASimulationData } from "@/shared/domain/types";
 import { getDemandeurFirstSimulation } from "@/shared/domain/utils/rga-simulation.utils";
+import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 
@@ -570,9 +571,11 @@ export function matchesTerritoire(
     return true;
   }
 
-  // Conversion en string : JSONB peut retourner un number (ex: 59 au lieu de "59")
+  // Les simulations de 2025 stockent un nombre : 3 doit retrouver « 03 », pas « 3 ».
   const matchDept =
-    departements.length > 0 && !!logement.code_departement && departements.includes(String(logement.code_departement));
+    departements.length > 0 &&
+    !!logement.code_departement &&
+    departements.map(toOfficialCodeDepartement).includes(toOfficialCodeDepartement(logement.code_departement));
   const matchEpci = epcis.length > 0 && !!logement.epci && epcis.includes(String(logement.epci));
 
   return matchDept || matchEpci;

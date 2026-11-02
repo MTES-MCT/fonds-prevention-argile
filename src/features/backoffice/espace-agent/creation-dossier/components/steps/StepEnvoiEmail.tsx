@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { NavigationButtons } from "@/features/simulateur/components/shared/NavigationButtons";
 import { useCreationDossierStore } from "../../stores/creation-dossier.store";
 import { createDossierAllerVersAction } from "../../actions/create-dossier-aller-vers.action";
+import { AlerteDoublon } from "../AlerteDoublon";
+import type { DoublonDemandeur } from "../../domain/doublon";
 
 export function StepEnvoiEmail() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [doublon, setDoublon] = useState<DoublonDemandeur | null>(null);
 
   const sendEmail = useCreationDossierStore((s) => s.sendEmail);
   const setSendEmail = useCreationDossierStore((s) => s.setSendEmail);
@@ -18,8 +21,9 @@ export function StepEnvoiEmail() {
   const reset = useCreationDossierStore((s) => s.reset);
   const previous = useCreationDossierStore((s) => s.previous);
 
-  const handleSubmit = () => {
+  const handleSubmit = (confirmerDoublonAdresse = false) => {
     setError(null);
+    setDoublon(null);
     startTransition(async () => {
       const result = await createDossierAllerVersAction({
         demandeur: {
@@ -34,10 +38,12 @@ export function StepEnvoiEmail() {
         adresseBienDetails: demandeur.adresseBienDetails ?? undefined,
         sendEmail,
         intent,
+        confirmerDoublonAdresse,
       });
 
       if (!result.success) {
-        setError(result.error);
+        if ("doublon" in result) setDoublon(result.doublon);
+        else setError(result.error);
         return;
       }
 
@@ -94,10 +100,12 @@ export function StepEnvoiEmail() {
         </div>
       )}
 
+      {doublon && <AlerteDoublon doublon={doublon} onConfirmer={() => handleSubmit(true)} isLoading={isPending} />}
+
       <NavigationButtons
         canGoBack
         onPrevious={previous}
-        onNext={handleSubmit}
+        onNext={() => handleSubmit()}
         nextLabel={sendEmail ? "Envoyer et enregistrer le dossier" : "Enregistrer le dossier"}
         isLoading={isPending}
       />

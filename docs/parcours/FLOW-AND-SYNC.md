@@ -251,6 +251,11 @@ depuis `choix_amo`) : c'est `validateInvitation` qui route, au claim, selon la v
 | `sans_amo`           | `eligibilite / todo` — autonomie déjà actée    |
 | refus (les deux)     | `choix_amo / todo` — le statut bloque la suite |
 
+> **Le claim n'a lieu que si le demandeur n'a pas déjà de compte** (ADR-0050). `fc_id` étant
+> unique, une invitation ouverte avec un compte FranceConnect existant connecte le demandeur à ce
+> compte : le dossier invité reste à `invitation`, son jeton est invalidé et l'action
+> `invitation_non_rattachee` l'y signale. Regrouper les deux passe par `pnpm fix:fusionner-invite`.
+
 > **Pourquoi ce verrou compte** : la promotion de `rgaSimulationDataAgent` vers
 > `rgaSimulationData` au login FranceConnect vit **dans** `if (currentStep === INVITATION)`
 > (`franceconnect.service.ts`), et la migration ultérieure ne la rattrape pas (elle retourne

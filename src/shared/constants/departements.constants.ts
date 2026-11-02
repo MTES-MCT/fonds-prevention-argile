@@ -136,6 +136,11 @@ export function toOfficialCodeDepartement(code: string | number): string {
   return normalized.padStart(2, "0");
 }
 
+/** Les deux écritures d'un même département (« 03 » et « 3 ») : les couvertures en base mélangent les deux. */
+export function variantesCodeDepartement(code: string | number): string[] {
+  return [...new Set([toOfficialCodeDepartement(code), normalizeCodeDepartement(code)])];
+}
+
 /**
  * Récupère le nom complet d'un département.
  * Normalise le code en entrée pour gérer les variantes ("03" → "3").

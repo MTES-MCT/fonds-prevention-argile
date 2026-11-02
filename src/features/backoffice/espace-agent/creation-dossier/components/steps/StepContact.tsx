@@ -1,11 +1,15 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { NavigationButtons } from "@/features/simulateur/components/shared/NavigationButtons";
 import { mapBanFeatureToAddressData, type BanFeature } from "@/shared/adapters/ban";
 import { getEpciByCommune } from "@/shared/adapters/geo";
 import { useCreationDossierStore } from "../../stores/creation-dossier.store";
 import { AddressAutocompleteInput } from "../AddressAutocompleteInput";
+import { AlerteDoublon } from "../AlerteDoublon";
+import { verifierEmailDemandeurAction } from "../../actions/verifier-doublon-demandeur.action";
+import type { DoublonDemandeur } from "../../domain/doublon";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
@@ -28,6 +32,8 @@ export function StepContact() {
   const update = useCreationDossierStore((s) => s.updateDemandeur);
   const next = useCreationDossierStore((s) => s.next);
   const previous = useCreationDossierStore((s) => s.previous);
+  const [doublon, setDoublon] = useState<DoublonDemandeur | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const telephoneInput = demandeur.telephone.trim();
   const emailInput = demandeur.email.trim();
@@ -48,12 +54,27 @@ export function StepContact() {
   // dans ResultInvitation (avec demandeur + simulation complète en un seul appel).
   // On propage `?intent=…` dans l'URL pour que la page simulation soit robuste
   // au refresh (et que le router.back() ramène ici avec l'intent intact).
-  const handleNext = () => {
+  const continuer = () => {
     if (!wantsSimulation) {
       next();
       return;
     }
     router.push(`/espace-agent/dossiers/nouveau/simulation?intent=${intent}`);
+  };
+
+  // Une vérification en échec laisse passer : l'enregistrement final refait le contrôle.
+  const handleNext = () => {
+    const emailVerifie = emailInput;
+    startTransition(async () => {
+      const verification = await verifierEmailDemandeurAction(emailVerifie);
+      // L'agent a pu corriger l'email pendant la vérification : cette réponse ne le concerne plus.
+      if (useCreationDossierStore.getState().demandeur.email.trim() !== emailVerifie) return;
+      if (verification.success && verification.data) {
+        setDoublon(verification.data);
+        return;
+      }
+      continuer();
+    });
   };
 
   return (
@@ -131,7 +152,10 @@ export function StepContact() {
           value={demandeur.email}
           aria-invalid={emailInvalid || undefined}
           aria-describedby={emailInvalid ? "demandeur-email-error" : undefined}
-          onChange={(e) => update({ email: e.target.value })}
+          onChange={(e) => {
+            setDoublon(null);
+            update({ email: e.target.value });
+          }}
         />
         {emailInvalid && (
           <p id="demandeur-email-error" className="fr-error-text">
@@ -140,7 +164,15 @@ export function StepContact() {
         )}
       </div>
 
-      <NavigationButtons canGoBack onPrevious={previous} onNext={handleNext} isNextDisabled={!canGoNext} />
+      {doublon && <AlerteDoublon doublon={doublon} />}
+
+      <NavigationButtons
+        canGoBack
+        onPrevious={previous}
+        onNext={handleNext}
+        isNextDisabled={!canGoNext || doublon !== null}
+        isLoading={isPending}
+      />
     </>
   );
 }
