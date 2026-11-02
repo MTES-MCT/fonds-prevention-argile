@@ -141,14 +141,23 @@ branche.
 #### Structure : un bloc autonome par parcours
 
 Chaque parcours testé est un bloc qu'on peut dérouler seul, sans lire les autres (pour se
-les répartir à plusieurs) : titre + objectif, **données**, étapes, cas limites, remise à
-zéro. La **non-régression** forme le dernier bloc, à part : elle ne se rattache à aucun
+les répartir à plusieurs) : titre + objectif, **données**, **à saisir**, étapes, cas limites,
+remise à zéro. Les commandes à lancer avant tout parcours forment un bloc **Préparation** en
+tête. La **non-régression** forme le dernier bloc, à part : elle ne se rattache à aucun
 scénario métier.
 
-```markdown
+````markdown
 # Tests manuels — <titre de la fonctionnalité>
 
 **Environnement** : local — `pnpm db:start`, `pnpm start:dev`, Mailhog sur http://localhost:8025
+
+**Préparation** : une fois, avant le premier parcours.
+
+```bash
+<commande prête à copier>
+```
+
+→ <ce qu'il faut lire dans la sortie, et où ça sert>
 
 ---
 
@@ -157,30 +166,47 @@ scénario métier.
 **Persona** : <demandeur (FranceConnect) | agent AMO | agent Aller-vers | super-administrateur>
 **Objectif** : <ce qu'on cherche à prouver, une phrase>
 
-**Données**
+**Données** (ce qui existe déjà)
 
 - Compte FranceConnect : login `<login>` / `123` — libre en base, à consommer
 - Compte agent (ProConnect) : `<email>` / `<mot de passe>` — <rôle, structure, territoire>
 - Dossier concerné : http://localhost:3000/espace-agent/dossiers/<id> — <libellé du cas>
-- Adresse à saisir : <adresse complète, avec le département visé>
+
+**À saisir** (ce que le parcours crée)
+
+Dossier A — <à garder pour les parcours 2 à 4 | jetable> — depuis <URL complète de départ>
+
+| Écran                    | Saisie                                                |
+| ------------------------ | ----------------------------------------------------- |
+| <titre exact de l'écran> | « <libellé exact du choix> »                          |
+| <titre exact de l'écran> | <Champ> `<valeur>`, <champ facultatif> vide           |
+| <écran avec suggestions> | Taper `<début>` puis cliquer la suggestion <laquelle> |
+
+→ <résultat attendu une fois l'objet créé>
+
+Refusés, rien n'est créé :
+
+| Valeur saisie | Attendu              |
+| ------------- | -------------------- |
+| `<valeur>`    | <blocage ou message> |
 
 **Étapes**
 
-- [ ] <action> → <résultat attendu>
+- [ ] Créer le dossier A → <résultat attendu>
 - [ ] <action> → <résultat attendu>
 
 **Cas limites**
 
 - [ ] <action> → <résultat attendu>
 
-**Remise à zéro** : `pnpm fix:purge-comptes-test-fc --email=<email> --apply`
+**Remise à zéro** : `pnpm fix:purge-comptes-test-fc --email=<email> --apply` — <après le parcours N si un objet sert plus loin>
 
 ---
 
 ## Parcours N — Non-régression
 
 - [ ] <action> → <résultat attendu>
-```
+````
 
 Règles d'écriture :
 
@@ -211,8 +237,8 @@ Règles d'écriture :
 
 C'est le cœur du format. Une étape du type « ouvrir un prospect non qualifié de ton
 territoire » coûte plus de temps à instancier qu'à dérouler : le bloc « Données » doit donner
-le compte, le mot de passe, l'URL du dossier et l'adresse à saisir, pour que les étapes n'aient
-plus rien à résoudre.
+le compte, le mot de passe et l'URL du dossier, et le bloc « À saisir » ce qui se tape, pour que
+les étapes n'aient plus rien à résoudre.
 
 **Comptes FranceConnect (demandeur).** Les citoyens mockés de l'IdP FC « low » (staging et
 local) sont listés dans
@@ -261,6 +287,37 @@ Les cas se consomment (un prospect qualifié n'est plus « à qualifier », un c
 existe désormais en base) : relancer les deux scripts à chaque session de test. Ajouter un
 scénario dans `scripts/ops/qa/scenarios.ts` quand la PR introduit un flux dont la précondition
 n'existe pas encore.
+
+#### Le bloc « À saisir » : chaque écran, chaque valeur
+
+« Données » dit ce qui existe déjà ; « À saisir » dit ce que le testeur tape et choisit pour
+créer ce dont le parcours a besoin. Une étape « créer un dossier sans simulation » laisse
+deviner l'écran, le choix et la valeur de chaque champ : c'est là que la session se perd.
+
+- **Un tableau `Écran | Saisie` par objet créé**, l'URL de départ au-dessus, le résultat
+  attendu en dessous. Titre d'écran et libellé des choix **copiés du composant**, pas de
+  mémoire ; valeurs exactes entre backticks ; un champ facultatif est écrit « vide ».
+- **Nommer l'objet** (dossier A, dossier B) et dire s'il est **à garder** pour un parcours
+  suivant ou jetable. Les étapes y renvoient par son nom sans redire les valeurs, et la remise à
+  zéro attend le dernier parcours qui s'en sert (« ne pas relancer le seed avant le parcours 4 »).
+- **Une valeur contrainte se justifie en une phrase** : nom calqué sur l'identité
+  FranceConnect du parcours suivant, adresse choisie pour son EPCI. Sans elle, le testeur la
+  simplifie et casse la suite.
+- **Champ à suggestions** : « taper `94 Rue de Notz` puis cliquer la suggestion de
+  Châteauroux (36000) ». Une saisie libre sans clic n'enregistre pas les mêmes données.
+- **Saisies refusées** (cas limites qui ne créent rien) : tableau `Valeur saisie | Attendu`,
+  annoncé par « rien n'est créé ». Quand elles s'enchaînent en corrigeant le champ sur place,
+  le dire : un passage dans le formulaire au lieu de trois.
+
+#### Le bloc « Préparation » : la commande, puis ce qu'on lit
+
+Toute commande à lancer avant les parcours (déploiement de branche, seed, script de données,
+dry-run) y figure, **une par bloc `bash`**, prête à copier pour l'environnement visé (one-off
+Scalingo avec `--app` et `--region` pour staging). Sous chaque commande, une ligne `→` dit ce
+qu'il faut lire dans la sortie et où ça sert (« la première ligne donne l'email du parcours
+1 »). Sur staging, l'utilisateur colle les sorties et Claude reporte les valeurs dans les blocs
+« Données » et « À saisir » avant de livrer les parcours. Une commande qui **est** l'objet du
+test, comme un script ops livré par la branche, reste une étape de parcours.
 
 #### Remettre staging à plat avant une session de test
 
