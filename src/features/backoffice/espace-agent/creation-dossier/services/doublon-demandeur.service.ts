@@ -1,9 +1,11 @@
 import { desc, eq, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/shared/database/client";
-import { parcoursPrevention, users } from "@/shared/database/schema";
+import { parcoursAmoValidations, parcoursPrevention, users } from "@/shared/database/schema";
 import { verifyProspectTerritoryAccess } from "@/features/auth/permissions/services/agent-scope.service";
 import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
 import { resolveEspaceAgentPath } from "@/features/backoffice/espace-agent/dossiers/services/admin-url-resolver.service";
+import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
+import { UserRole } from "@/shared/domain/value-objects";
 import { presenterDoublon, type DoublonDemandeur, type MotifDoublon } from "../domain/doublon";
 
 export interface CritereDoublon {
@@ -65,7 +67,21 @@ export async function presenterDoublonPourAgent(
   agent: AgentScopeInput
 ): Promise<DoublonDemandeur> {
   if (!doublon.parcoursId) return presenterDoublon(doublon.motif, null);
-  const refus = await verifyProspectTerritoryAccess(doublon.parcoursId, agent);
-  const lien = refus ? null : await resolveEspaceAgentPath(doublon.parcoursId);
+  if (await verifyProspectTerritoryAccess(doublon.parcoursId, agent)) return presenterDoublon(doublon.motif, null);
+  const lien = await resolveEspaceAgentPath(doublon.parcoursId);
+  if (lien?.startsWith(ROUTES.backoffice.espaceAgent.demande(""))) {
+    return presenterDoublon(doublon.motif, (await estDestinataireDeLaDemande(doublon.parcoursId, agent)) ? lien : null);
+  }
   return presenterDoublon(doublon.motif, lien);
+}
+
+// La page d'une demande en attente n'est ouverte qu'à l'AMO sollicitée, pas à tout le territoire.
+async function estDestinataireDeLaDemande(parcoursId: string, agent: AgentScopeInput): Promise<boolean> {
+  if (agent.role !== UserRole.AMO && agent.role !== UserRole.AMO_ET_ALLERS_VERS) return false;
+  const [validation] = await db
+    .select({ entrepriseAmoId: parcoursAmoValidations.entrepriseAmoId })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
+    .limit(1);
+  return !!agent.entrepriseAmoId && validation?.entrepriseAmoId === agent.entrepriseAmoId;
 }
