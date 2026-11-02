@@ -10,7 +10,9 @@ function codeOfficiel(valeur: unknown, longueur: number): unknown {
 }
 
 const NORMALISATIONS: Record<string, (valeur: unknown) => unknown> = {
-  code_departement: (v) => (typeof v === "number" || typeof v === "string" ? toOfficialCodeDepartement(v) : v),
+  // Une chaîne vide reste vide : toOfficialCodeDepartement en ferait un faux département « 00 ».
+  code_departement: (v) =>
+    typeof v === "number" || (typeof v === "string" && v.trim() !== "") ? toOfficialCodeDepartement(v) : v,
   commune: (v) => codeOfficiel(v, 5),
   code_region: (v) => codeOfficiel(v, 2),
   epci: (v) => (typeof v === "number" ? String(v) : v),

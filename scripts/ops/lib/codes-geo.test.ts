@@ -34,6 +34,11 @@ describe("normaliserCodesGeo", () => {
     expect(normaliserCodesGeo(corse)).toEqual({ simulation: corse, changements: [] });
   });
 
+  it("laisse vides les codes vides, sans inventer de département « 00 »", () => {
+    const vide = { logement: { code_departement: "", commune: "", epci: "" } };
+    expect(normaliserCodesGeo(vide)).toEqual({ simulation: vide, changements: [] });
+  });
+
   it("n'ajoute aucun champ absent de la simulation", () => {
     const { simulation, changements } = normaliserCodesGeo({ logement: { adresse: "1 rue X", code_departement: 59 } });
     expect(simulation.logement).toEqual({ adresse: "1 rue X", code_departement: "59" });

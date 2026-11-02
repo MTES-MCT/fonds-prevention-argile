@@ -187,7 +187,7 @@ Traite la simulation du demandeur, celle de l'agent et son baseline, sans touche
 
 ```bash
 pnpm fix:codes-geo                                # inventaire par champ et par département
-pnpm fix:codes-geo --apply                        # corrige tout, en une transaction
+pnpm fix:codes-geo --apply                        # relit sous verrou et corrige, en une transaction
 pnpm fix:codes-geo --parcours-id=<uuid> --apply   # un seul parcours
 ```
 
@@ -202,9 +202,14 @@ l'agent (si le compte n'en a pas) et le téléphone saisi (s'il en manque), puis
 stub. La validation AMO n'est pas touchée : l'AMO ré-ouvre ou accepte depuis l'espace agent.
 
 Refuse un stub déjà réclamé ou sorti de l'étape invitation, un compte sans FranceConnect, un
-dossier invité portant un formulaire DN ou une qualification, et deux adresses différentes
-(`--adresses-differentes` après vérification). Lancer `fix:codes-geo` avant, pour que la
-simulation recopiée en baseline soit déjà au format officiel.
+dossier invité portant un formulaire DN ou une qualification, deux adresses différentes
+(`--adresses-differentes` après vérification), et un compte cible qui a déjà un formulaire DN quand
+la simulation de l'agent devrait y être copiée : le préremplissage ne sait que créer, le formulaire
+divergerait. Si le compte n'a aucune simulation, celle de l'agent devient aussi la sienne (même règle
+qu'une correction d'agent, FLOW-AND-SYNC § 2.12). En `--apply`, les deux dossiers sont relus et
+verrouillés dans la transaction, et ces contrôles refaits : rien n'est écrit si l'état a changé
+depuis le dry-run. Lancer `fix:codes-geo` avant, pour que la simulation recopiée en baseline soit
+déjà au format officiel.
 
 ```bash
 pnpm fix:fusionner-invite --invite=<id> --compte=<id>    # dry-run ; id de parcours ou de validation (URL agent)
