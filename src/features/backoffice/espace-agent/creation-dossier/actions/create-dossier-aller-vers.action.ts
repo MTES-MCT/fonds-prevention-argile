@@ -10,6 +10,8 @@ import { assertNotSuperAdminReadOnly } from "@/features/backoffice/shared/action
 import type { ActionResult } from "@/shared/types";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
 import { createDossierByAgent } from "../services/creation-dossier.service";
+import { detecterDoublonDemandeur, presenterDoublonPourAgent } from "../services/doublon-demandeur.service";
+import { estDoublonBloquant, type DoublonDemandeur } from "../domain/doublon";
 import { getPostCreationRedirectUrl } from "./post-creation-redirect";
 import { refusAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
@@ -56,6 +58,8 @@ const createDossierSchema = z.object({
    * - `av` : entrée /prospects → pas de claim AMO, redirect /prospects.
    */
   intent: z.enum(["amo", "av"]).optional().default("amo"),
+  // L'agent a vu l'alerte « même logement » et confirme qu'il s'agit d'un autre demandeur.
+  confirmerDoublonAdresse: z.boolean().optional().default(false),
 });
 
 // Note : on utilise `z.input<>` plutôt que `z.infer<>` (= `z.output<>`) parce
@@ -73,7 +77,10 @@ type CreateDossierInput = z.input<typeof createDossierSchema>;
  */
 export async function createDossierAllerVersAction(
   input: CreateDossierInput
-): Promise<ActionResult<{ parcoursId: string; claimUrl: string; emailSent: boolean; redirectUrl: string }>> {
+): Promise<
+  | ActionResult<{ parcoursId: string; claimUrl: string; emailSent: boolean; redirectUrl: string }>
+  | { success: false; error: string; doublon: DoublonDemandeur }
+> {
   try {
     const refusEspaceAgent = await refusAccesEspaceAgent();
     if (refusEspaceAgent) return { success: false, error: refusEspaceAgent };
@@ -115,12 +122,30 @@ export async function createDossierAllerVersAction(
       };
     }
 
+    const simulation = parsed.data.rgaSimulationDataAgent as RGASimulationData | undefined;
+    const doublonTrouve = await detecterDoublonDemandeur({
+      email: parsed.data.demandeur.email,
+      adresse: {
+        clefBan: parsed.data.adresseBienDetails?.clefBan ?? simulation?.logement?.clef_ban,
+        label: parsed.data.adresseBien ?? simulation?.logement?.adresse,
+      },
+    });
+    if (doublonTrouve && (estDoublonBloquant(doublonTrouve.motif) || !parsed.data.confirmerDoublonAdresse)) {
+      const doublon = await presenterDoublonPourAgent(doublonTrouve, {
+        id: user.agentId,
+        role,
+        entrepriseAmoId: user.entrepriseAmoId ?? null,
+        allersVersId: user.allersVersId ?? null,
+      });
+      return { success: false, error: doublon.message, doublon };
+    }
+
     const result = await createDossierByAgent({
       agentId: user.agentId,
       demandeur: parsed.data.demandeur,
       adresseBien: parsed.data.adresseBien,
       adresseBienDetails: parsed.data.adresseBienDetails,
-      rgaSimulationDataAgent: parsed.data.rgaSimulationDataAgent as RGASimulationData | undefined,
+      rgaSimulationDataAgent: simulation,
       sendEmail: parsed.data.sendEmail,
       intent: parsed.data.intent,
     });
