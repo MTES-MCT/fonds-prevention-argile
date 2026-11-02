@@ -40,6 +40,7 @@
     "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts",
     "seed:staging": "tsx scripts/seed/seed-staging.ts",
     "fix:epci": "tsx scripts/ops/fix/fix-missing-epci.ts",
+    "fix:codes-geo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/normaliser-codes-geo.ts",
     "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",

@@ -36,26 +36,27 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 
 ## Index
 
-| Script                                                           | Type      | Rôle                                                                                                                            | Lancement                                              |
-| ---------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant                                                    | `tsx scripts/ops/audit/audit-parcours-ds-integrity.ts` |
-| [`audit-dossiers-bloques.ts`](#audit-dossiers-bloques)           | read-only | Parcours bloqués sur le dossier de l'étape courante (en_construction/en_instruction), cross-check DS optionnel                  | `pnpm audit:dossiers-bloques`                          |
-| [`analyser-ecarts-dn.ts`](#analyser-ecarts-dn)                   | read-only | Explique, dossier par dossier, l'écart entre une démarche DN et les compteurs de `/stats` (déposés, validés)                    | `pnpm ds:analyser-ecarts`                              |
-| [`audit-epci-fallback.ts`](#audit-epci-fallback)                 | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api | `tsx scripts/ops/audit/audit-epci-fallback.ts`         |
-| [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                       | `tsx scripts/ops/fix/fix-double-progression-amo.ts`    |
-| [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                            | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
-| [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                            | `pnpm fix:epci`                                        |
-| [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                | `pnpm fix:reouvrir-demande`                            |
-| [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul             | `pnpm fix:detacher-amo`                                |
-| [`purge-comptes-test-fc.ts`](#purge-comptes-test-fc)             | **écrit** | Supprime (cascade) les comptes demandeurs de test FranceConnect du CSV mocké FC low — staging/local uniquement, refus en prod   | `pnpm fix:purge-comptes-test-fc`                       |
-| [`backfill-brevo-attributes.ts`](#backfill-brevo-attributes)     | **écrit** | Recalcule et pousse (upsert, sans rejouer les évènements) l'état complet des attributs Brevo pour tous les contacts             | `pnpm fix:backfill-brevo`                              |
-| [`backfill-actions-audit.ts`](#backfill-actions-audit)           | **écrit** | Rejoue dans `parcours_actions` les réponses Aller-vers et les archivages passés, à leur date d'origine                          | `pnpm fix:backfill-actions-audit`                      |
-| [`cas-de-test.ts`](#cas-de-test)                                 | read-only | Prépare une session de tests manuels : les cas visibles par un compte donné, par scénario, avec URLs directes                   | `pnpm qa:cas-de-test`                                  |
-| [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                 | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
-| [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                     | `pnpm ds:fetch-schema <numero>`                        |
-| [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                            | `pnpm ds:check-permissions`                            |
-| [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse la date d'expiration des tokens AMO expirés                                                                            | `psql -f scripts/ops/sql/extend-expired-tokens.sql`    |
-| [`cleanup-staging.sql`](#cleanup-staging)                        | **écrit** | Nettoyage destructif d'une BDD staging (TRUNCATE des tables transactionnelles)                                                  | `psql -f scripts/ops/sql/cleanup-staging.sql`          |
+| Script                                                           | Type      | Rôle                                                                                                                              | Lancement                                              |
+| ---------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [`audit-parcours-ds-integrity.ts`](#audit-parcours-ds-integrity) | read-only | Détecte les parcours dont l'état interne n'a pas de dossier DS correspondant                                                      | `tsx scripts/ops/audit/audit-parcours-ds-integrity.ts` |
+| [`audit-dossiers-bloques.ts`](#audit-dossiers-bloques)           | read-only | Parcours bloqués sur le dossier de l'étape courante (en_construction/en_instruction), cross-check DS optionnel                    | `pnpm audit:dossiers-bloques`                          |
+| [`analyser-ecarts-dn.ts`](#analyser-ecarts-dn)                   | read-only | Explique, dossier par dossier, l'écart entre une démarche DN et les compteurs de `/stats` (déposés, validés)                      | `pnpm ds:analyser-ecarts`                              |
+| [`audit-epci-fallback.ts`](#audit-epci-fallback)                 | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api   | `tsx scripts/ops/audit/audit-epci-fallback.ts`         |
+| [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                         | `tsx scripts/ops/fix/fix-double-progression-amo.ts`    |
+| [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                              | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
+| [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                              | `pnpm fix:epci`                                        |
+| [`normaliser-codes-geo.ts`](#normaliser-codes-geo)               | **écrit** | Remet au format officiel les codes géo stockés en nombres (département `3` → `03`), qui cachaient les dossiers 01 à 09 aux agents | `pnpm fix:codes-geo`                                   |
+| [`reouvrir-demande.ts`](#reouvrir-demande)                       | **écrit** | Ré-ouvre une demande refusée par l'AMO (changement d'avis) : statut refusé -> en_attente + token frais (+ email)                  | `pnpm fix:reouvrir-demande`                            |
+| [`detacher-amo.ts`](#detacher-amo)                               | **écrit** | Détache l'AMO d'un parcours (passage en « sans AMO ») : AMO choisi avant l'arrêté, le demandeur veut continuer seul               | `pnpm fix:detacher-amo`                                |
+| [`purge-comptes-test-fc.ts`](#purge-comptes-test-fc)             | **écrit** | Supprime (cascade) les comptes demandeurs de test FranceConnect du CSV mocké FC low — staging/local uniquement, refus en prod     | `pnpm fix:purge-comptes-test-fc`                       |
+| [`backfill-brevo-attributes.ts`](#backfill-brevo-attributes)     | **écrit** | Recalcule et pousse (upsert, sans rejouer les évènements) l'état complet des attributs Brevo pour tous les contacts               | `pnpm fix:backfill-brevo`                              |
+| [`backfill-actions-audit.ts`](#backfill-actions-audit)           | **écrit** | Rejoue dans `parcours_actions` les réponses Aller-vers et les archivages passés, à leur date d'origine                            | `pnpm fix:backfill-actions-audit`                      |
+| [`cas-de-test.ts`](#cas-de-test)                                 | read-only | Prépare une session de tests manuels : les cas visibles par un compte donné, par scénario, avec URLs directes                     | `pnpm qa:cas-de-test`                                  |
+| [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                   | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
+| [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                       | `pnpm ds:fetch-schema <numero>`                        |
+| [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                              | `pnpm ds:check-permissions`                            |
+| [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse la date d'expiration des tokens AMO expirés                                                                              | `psql -f scripts/ops/sql/extend-expired-tokens.sql`    |
+| [`cleanup-staging.sql`](#cleanup-staging)                        | **écrit** | Nettoyage destructif d'une BDD staging (TRUNCATE des tables transactionnelles)                                                    | `psql -f scripts/ops/sql/cleanup-staging.sql`          |
 
 ## Détails
 
@@ -172,6 +173,21 @@ Backfill du `logement.epci` sur ~10 parcours qui en sont dépourvus (problème h
 
 ```bash
 pnpm fix:epci                   # mode par défaut (dry-run d'abord, à confirmer)
+```
+
+### normaliser-codes-geo
+
+Les simulations de 2025 stockent les codes géographiques en nombres (`code_departement: 3`,
+`commune: 3023`). Comparé en chaîne, `3` ne retrouve pas `03` : le dossier sortait du
+listing, du détail et des stats des agents des départements 01 à 09. `matchesTerritoire`
+normalise désormais à la lecture ; le script corrige les données pour les autres lecteurs.
+Traite la simulation du demandeur, celle de l'agent et son baseline, sans toucher
+`updated_at`. Dry-run par défaut.
+
+```bash
+pnpm fix:codes-geo                                # inventaire par champ et par département
+pnpm fix:codes-geo --apply                        # corrige tout, en une transaction
+pnpm fix:codes-geo --parcours-id=<uuid> --apply   # un seul parcours
 ```
 
 ### reouvrir-demande
