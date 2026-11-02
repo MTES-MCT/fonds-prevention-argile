@@ -101,11 +101,26 @@ Pourquoi ces champs : la chaîne de lecture (filtrage territorial `matchesTerrit
 
 Pour permettre l'affichage des dossiers pré-créés dans la liste d'un AV, `matchesTerritoire()` fallback désormais sur `rgaSimulationDataAgent.logement` quand `rgaSimulationData` est null.
 
+## Demandeur déjà connu (ADR-0050)
+
+Un compte FranceConnect ne se rattache qu'à un seul dossier : en recréer un pour un demandeur déjà
+inscrit le coupe de tout ce que l'agent y fera. `detecterDoublonDemandeur` cherche donc, avant
+toute écriture :
+
+- **l'email** (email ou email de contact d'un compte, ou d'une invitation en attente) : création
+  **refusée**, contrôlée dès l'étape Coordonnées (`verifierEmailDemandeurAction`) puis à
+  l'enregistrement ;
+- **le logement** (clé BAN ou adresse normalisée, dans les deux simulations) : **alerte**, que
+  l'agent passe en confirmant qu'il s'agit d'un autre demandeur (`confirmerDoublonAdresse`).
+
+L'alerte donne le lien du dossier existant seulement s'il est dans le périmètre de l'agent. Un
+doublon déjà formé se répare avec `pnpm fix:fusionner-invite` (cf. `scripts/ops/README.md`).
+
 ## Rattachement au login FranceConnect
 
 Au callback FC, `upsertFromFranceConnect()` applique dans l'ordre :
 
-1. **Claim token** — si le cookie `FC_CLAIM_TOKEN` est présent et pointe vers un stub valide non expiré, on rattache : le `fcId` est posé, `claimed_at` = `now()`, `claim_token` = `null`.
+1. **Claim token** — si le cookie `FC_CLAIM_TOKEN` est présent et pointe vers un stub valide non expiré, on rattache : le `fcId` est posé, `claimed_at` = `now()`, `claim_token` = `null`. Si ce `fcId` a **déjà un compte**, le rattachement est impossible (unicité de `fc_id`) : le demandeur est connecté à son compte, le jeton du stub est invalidé et une action `invitation_non_rattachee` apparaît sur le dossier invité (ADR-0050).
 2. **fcId existant** — comportement historique : user FC reconnu, on met à jour email/nom/prénom/lastLogin.
 3. **Fallback email** — si un **unique** stub non réclamé a le même email (case-insensitive), on le rattache au compte FC. Si plusieurs stubs correspondent, on ne rattache pas (ambigu).
 4. **Création** — nouveau user FC normal.

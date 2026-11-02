@@ -10,6 +10,22 @@ chaque entrée renvoie.
 
 ---
 
+## Doublons de demandeur
+
+### Trier les 8 paires invitation / compte FranceConnect au même email
+
+Relevées le 2 novembre 2026 (section 10 de la requête de diagnostic d'ADR-0050) : chaque fois, un
+agent a invité un demandeur qui avait déjà un compte FranceConnect. Plusieurs sont mortes d'un côté
+(dossier archivé), trois invitations ont encore un jeton valide : désormais, un clic sur l'une d'elles
+connecte le demandeur à son compte et trace le conflit au lieu de planter.
+
+**Préalable** : relancer la requête après le déploiement, décider paire par paire avec l'AMO ou
+l'Aller-vers concerné, puis `pnpm fix:fusionner-invite` (la fusion refuse un dossier invité portant
+une qualification ou un formulaire DN, à traiter à la main). Le contact Brevo d'un stub supprimé
+n'est pas effacé : à décider si on le purge.
+
+---
+
 ## Synchronisation DN
 
 ### Rattraper les dossiers classés sans suite des parcours archivés ou complétés

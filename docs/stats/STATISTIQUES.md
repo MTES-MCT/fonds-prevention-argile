@@ -30,6 +30,9 @@ réellement (portée de la dimension département, effet d'un segment, durée d'
 - **Filtre département** : sur le serveur, un parcours compte seulement s'il a une simulation du demandeur (`rgaSimulationData`
   non nul), le département étant lu d'abord dans la simulation de l'agent. Dans les listes du navigateur (Demandeurs), il est
   lu d'abord dans la simulation du demandeur.
+- **Périmètre de l'analyste départemental** (Tableau de bord, Demandeurs) : le département est comparé au format officiel
+  (`matchesTerritoire`). Jusqu'en novembre 2026, une simulation de 2025 au département stocké en nombre (`3`) en sortait pour les
+  départements 01 à 09 : leurs chiffres augmentent d'autant à la correction (ADR-0050).
 - **Simulations Matomo** (libellé « Visites avec un résultat », ex-« Simulations terminées ») : comptées en visites (entonnoir, `/stats`, tops, tableau), ADR-0046. Les écrans de correction et le
   réaffichage d'un résultat émettent aussi des évènements ; leur effet sur ce compte en visites n'est pas quantifié (voir § 9). Les statistiques BDD ont leur propre
   unité (parcours, dossiers).
