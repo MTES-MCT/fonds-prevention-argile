@@ -9,6 +9,7 @@ import {
 } from "@/features/auth/permissions/services/responsable-permissions.service";
 import type { AgentScopeInput } from "@/features/auth/permissions/domain/types/agent-scope.types";
 import { getDemandeurFirstLogement } from "@/shared/domain/utils/rga-simulation.utils";
+import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { getEpciBySiren } from "@/features/seo/services/territoires.service";
 import { resolveResponsables, type ResolverDossier } from "./responsable-resolver.service";
 import type {
@@ -125,7 +126,7 @@ function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
     },
     logement: {
       commune: logement?.commune_nom ?? logement?.commune ?? null,
-      codeDepartement: logement?.code_departement ? String(logement.code_departement) : null,
+      codeDepartement: logement?.code_departement ? toOfficialCodeDepartement(logement.code_departement) : null,
       codeEpci: logement?.epci ? String(logement.epci) : null,
     },
     currentStep: row.currentStep,

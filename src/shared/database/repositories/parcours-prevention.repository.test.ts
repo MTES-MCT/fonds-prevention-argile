@@ -98,6 +98,21 @@ describe("matchesTerritoire", () => {
     it("exclut un parcours sans rgaSimulationData", () => {
       expect(matchesTerritoire(null, ["33"], [])).toBe(false);
     });
+
+    it("inclut un département à un chiffre stocké en nombre (simulations de 2025)", () => {
+      const data = makeRgaData({ code_departement: 3 as unknown as string });
+      expect(matchesTerritoire(data, ["03"], [])).toBe(true);
+    });
+
+    it("inclut un département à un chiffre stocké sans zéro initial", () => {
+      const data = makeRgaData({ code_departement: "3" });
+      expect(matchesTerritoire(data, ["03"], [])).toBe(true);
+    });
+
+    it("ne confond pas un département à un chiffre avec un autre", () => {
+      const data = makeRgaData({ code_departement: 3 as unknown as string });
+      expect(matchesTerritoire(data, ["30", "33"], [])).toBe(false);
+    });
   });
 
   describe("union EPCI ∪ département (scope élargi)", () => {
