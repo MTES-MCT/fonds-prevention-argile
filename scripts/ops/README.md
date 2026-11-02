@@ -198,7 +198,8 @@ le demandeur avait déjà un compte FranceConnect, le rattachement est impossibl
 par compte) : il continue de se connecter sur l'ancien, et le travail de l'agent reste sur un
 dossier que personne n'ouvrira. Le script garde le compte FranceConnect, le seul où le
 demandeur peut se connecter, y déplace les actions du dossier invité, y copie la simulation de
-l'agent (si le compte n'en a pas) et le téléphone saisi (s'il en manque), puis supprime le
+l'agent (si le compte n'en a pas, et seulement complète si le compte a déjà celle du demandeur :
+l'affichage lit l'agent d'abord) et le téléphone saisi (s'il en manque), puis supprime le
 stub. La validation AMO n'est pas touchée : l'AMO ré-ouvre ou accepte depuis l'espace agent.
 
 Refuse un stub déjà réclamé ou sorti de l'étape invitation, un compte sans FranceConnect, un

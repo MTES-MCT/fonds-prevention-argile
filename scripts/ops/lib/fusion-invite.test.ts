@@ -121,6 +121,16 @@ describe("planFusion", () => {
     expect(planFusion(etat(incomplete)).promouvoirSimulation).toBe(false);
   });
 
+  it("ne copie pas une simulation incomplète sur un compte qui a la sienne", () => {
+    const adresseSeule = { invite: { simulationAgent: simulation("12 Rue des Lilas 03000 Moulins", false) } };
+    expect(planFusion(etat(adresseSeule))).toEqual({ copierSimulation: false, promouvoirSimulation: false });
+  });
+
+  it("copie une simulation incomplète sur un compte qui n'en a aucune : elle porte l'adresse", () => {
+    const incomplete = { invite: { simulationAgent: simulation("x", false) }, compte: { simulationDemandeur: null } };
+    expect(planFusion(etat(incomplete))).toEqual({ copierSimulation: true, promouvoirSimulation: false });
+  });
+
   it("ne copie rien quand le compte a déjà une correction d'agent", () => {
     const corrige = { compte: { simulationAgent: simulation("12 Rue des Lilas 03000 Moulins") } };
     expect(planFusion(etat(corrige))).toEqual({ copierSimulation: false, promouvoirSimulation: false });

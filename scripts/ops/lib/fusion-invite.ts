@@ -33,9 +33,12 @@ const normaliserAdresse = (adresse: string | null | undefined) =>
   (adresse ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 
 export function planFusion(etat: EtatFusionInvite): PlanFusion {
-  const copierSimulation = !!etat.invite.simulationAgent && !etat.compte.simulationAgent;
-  const promouvoirSimulation =
-    copierSimulation && !etat.compte.simulationDemandeur && isSimulationComplete(etat.invite.simulationAgent!);
+  const simulation = etat.invite.simulationAgent;
+  const complete = !!simulation && isSimulationComplete(simulation);
+  // L'affichage lit l'agent d'abord : une adresse seule masquerait la simulation complète du demandeur.
+  const copierSimulation =
+    !!simulation && !etat.compte.simulationAgent && (complete || !etat.compte.simulationDemandeur);
+  const promouvoirSimulation = copierSimulation && !etat.compte.simulationDemandeur && complete;
   return { copierSimulation, promouvoirSimulation };
 }
 

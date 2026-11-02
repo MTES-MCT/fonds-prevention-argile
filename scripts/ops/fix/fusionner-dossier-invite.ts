@@ -157,7 +157,9 @@ async function main() {
   console.log("Plan :");
   console.log(`  - déplacer ${invite.nbActions} action(s) vers le compte FranceConnect`);
   if (!plan.copierSimulation) {
-    console.log("  - simulation de l'agent non copiée (absente du dossier invité, ou déjà présente sur le compte)");
+    console.log(
+      "  - simulation de l'agent non copiée (absente, incomplète face à celle du demandeur, ou déjà présente)"
+    );
   } else if (plan.promouvoirSimulation) {
     console.log("  - copier la simulation de l'agent, qui devient aussi celle du compte (il n'en avait aucune)");
   } else {

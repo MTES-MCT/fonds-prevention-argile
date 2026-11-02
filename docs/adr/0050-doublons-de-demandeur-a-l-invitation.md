@@ -42,7 +42,8 @@ son `sub`, son email et son nom dans les logs.
 - **Doublon déjà formé** : `pnpm fix:fusionner-invite` ramène sur le compte FranceConnect les
   actions et la simulation de l'agent, puis supprime le dossier invité. La décision AMO reste à
   l'AMO, qui ré-ouvre ou accepte depuis l'espace agent. La simulation copiée devient celle du compte s'il n'en a
-  aucune (même règle qu'une correction d'agent) ; la fusion est refusée si le compte porte déjà un
+  aucune (même règle qu'une correction d'agent) ; une simulation réduite à l'adresse n'est pas copiée
+  sur un compte qui a déjà la sienne, qu'elle masquerait à l'affichage ; la fusion est refusée si le compte porte déjà un
   formulaire DN que cette copie contredirait. Les contrôles sont refaits sous verrou au moment d'écrire.
 
 ## Options envisagées
