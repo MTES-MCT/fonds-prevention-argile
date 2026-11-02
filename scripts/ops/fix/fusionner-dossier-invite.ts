@@ -19,8 +19,8 @@
  * ou accepte depuis l'espace agent (audit, mails et changement d'étape habituels).
  *
  * Usage
- *   pnpm fix:fusionner-invite --invite=<parcoursId> --compte=<parcoursId>            # dry-run
- *   pnpm fix:fusionner-invite --invite=<parcoursId> --compte=<parcoursId> --apply
+ *   pnpm fix:fusionner-invite --invite=<id> --compte=<id>            # dry-run, id de parcours ou de validation
+ *   pnpm fix:fusionner-invite --invite=<id> --compte=<id> --apply
  *   ... --adresses-differentes   # seulement après vérification : les adresses ne concordent pas
  *
  * NB : action ops, sans entrée d'audit `parcours_actions` (comme `fix:detacher-amo`). La
@@ -51,7 +51,18 @@ const ADRESSES_DIFFERENTES = hasFlag("adresses-differentes");
 
 const line = () => console.log("-".repeat(90));
 
-async function chargerParcours(parcoursId: string) {
+// Les URL de l'espace agent portent un id de validation ou de parcours : on accepte les deux.
+async function resoudreParcoursId(id: string): Promise<string> {
+  const [validation] = await db
+    .select({ parcoursId: parcoursAmoValidations.parcoursId })
+    .from(parcoursAmoValidations)
+    .where(eq(parcoursAmoValidations.id, id))
+    .limit(1);
+  return validation?.parcoursId ?? id;
+}
+
+async function chargerParcours(id: string) {
+  const parcoursId = await resoudreParcoursId(id);
   const [row] = await db
     .select({ parcours: parcoursPrevention, user: users })
     .from(parcoursPrevention)
@@ -111,7 +122,7 @@ async function main() {
   line();
 
   if (!INVITE_ID || !COMPTE_ID) {
-    console.error("Usage : --invite=<parcoursId> --compte=<parcoursId> [--apply]");
+    console.error("Usage : --invite=<id> --compte=<id> [--apply] (id de parcours ou de validation)");
     process.exitCode = 1;
     return;
   }

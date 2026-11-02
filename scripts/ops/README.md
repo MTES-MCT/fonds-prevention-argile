@@ -207,8 +207,8 @@ dossier invité portant un formulaire DN ou une qualification, et deux adresses 
 simulation recopiée en baseline soit déjà au format officiel.
 
 ```bash
-pnpm fix:fusionner-invite --invite=<parcoursId> --compte=<parcoursId>           # dry-run
-pnpm fix:fusionner-invite --invite=<parcoursId> --compte=<parcoursId> --apply
+pnpm fix:fusionner-invite --invite=<id> --compte=<id>    # dry-run ; id de parcours ou de validation (URL agent)
+pnpm fix:fusionner-invite --invite=<id> --compte=<id> --apply
 ```
 
 ### reouvrir-demande
