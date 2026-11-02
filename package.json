@@ -41,6 +41,7 @@
     "seed:staging": "tsx scripts/seed/seed-staging.ts",
     "fix:epci": "tsx scripts/ops/fix/fix-missing-epci.ts",
     "fix:codes-geo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/normaliser-codes-geo.ts",
+    "fix:fusionner-invite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/fusionner-dossier-invite.ts",
     "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
