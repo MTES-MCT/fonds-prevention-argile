@@ -47,10 +47,12 @@ WHERE NOT EXISTS (SELECT 1 FROM structures s WHERE s.id = ea.structure_id);--> s
 INSERT INTO "structures" ("id", "nom")
 SELECT structure_id, nom FROM allers_vers av
 WHERE NOT EXISTS (SELECT 1 FROM structures s WHERE s.id = av.structure_id);--> statement-breakpoint
--- Seuls les rôles de structure en reçoivent une ; un agent sans rattachement reste sans structure, donc sans rôle.
+-- Seul le rattachement que lit le rôle compte, comme dans l'ancien code ; sans lui, ni structure ni rôle.
 UPDATE "agents" a SET "structure_id" = COALESCE(
-  (SELECT ea.structure_id FROM entreprises_amo ea WHERE ea.id = a.entreprise_amo_id),
-  (SELECT av.structure_id FROM allers_vers av WHERE av.id = a.allers_vers_id)
+  CASE WHEN a.role IN ('amo', 'amo_et_allers_vers')
+    THEN (SELECT ea.structure_id FROM entreprises_amo ea WHERE ea.id = a.entreprise_amo_id) END,
+  CASE WHEN a.role IN ('allers_vers', 'amo_et_allers_vers')
+    THEN (SELECT av.structure_id FROM allers_vers av WHERE av.id = a.allers_vers_id) END
 )
 WHERE a.role IN ('amo', 'allers_vers', 'amo_et_allers_vers');--> statement-breakpoint
 ALTER TABLE "allers_vers" ALTER COLUMN "structure_id" SET NOT NULL;--> statement-breakpoint
@@ -85,4 +87,35 @@ END $$ LANGUAGE plpgsql;--> statement-breakpoint
 CREATE TRIGGER "entreprises_amo_structure_par_defaut" BEFORE INSERT ON "entreprises_amo"
 FOR EACH ROW EXECUTE FUNCTION structure_par_defaut_amo();--> statement-breakpoint
 CREATE TRIGGER "allers_vers_structure_par_defaut" BEFORE INSERT ON "allers_vers"
-FOR EACH ROW EXECUTE FUNCTION structure_par_defaut_allers_vers();
+FOR EACH ROW EXECUTE FUNCTION structure_par_defaut_allers_vers();--> statement-breakpoint
+-- Transitoire (retiré à la PR 3) : l'ancien code rattache un agent par les colonnes héritées, sans connaître structure_id.
+CREATE FUNCTION "structure_agent_depuis_rattachements"() RETURNS trigger AS $$
+DECLARE
+  structure_amo uuid;
+  structure_av uuid;
+BEGIN
+  -- Le nouveau code écrit structure_id lui-même ; une mise à NULL par clé étrangère (ligne supprimée) n'y touche pas.
+  IF (TG_OP = 'INSERT' AND NEW.structure_id IS NOT NULL)
+    OR (TG_OP = 'UPDATE' AND NEW.structure_id IS DISTINCT FROM OLD.structure_id)
+    OR pg_trigger_depth() > 1 THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.role NOT IN ('amo', 'allers_vers', 'amo_et_allers_vers') THEN
+    NEW.structure_id := NULL;
+    RETURN NEW;
+  END IF;
+  IF NEW.role IN ('amo', 'amo_et_allers_vers') THEN
+    SELECT structure_id INTO structure_amo FROM entreprises_amo WHERE id = NEW.entreprise_amo_id;
+  END IF;
+  IF NEW.role IN ('allers_vers', 'amo_et_allers_vers') THEN
+    SELECT structure_id INTO structure_av FROM allers_vers WHERE id = NEW.allers_vers_id;
+  END IF;
+  IF structure_amo <> structure_av THEN
+    RAISE EXCEPTION 'Agent hybride : l''AMO et l''Aller-vers relèvent de deux structures différentes';
+  END IF;
+  NEW.structure_id := COALESCE(structure_amo, structure_av);
+  RETURN NEW;
+END $$ LANGUAGE plpgsql;--> statement-breakpoint
+CREATE TRIGGER "agents_structure_depuis_rattachements"
+BEFORE INSERT OR UPDATE OF "role", "entreprise_amo_id", "allers_vers_id" ON "agents"
+FOR EACH ROW EXECUTE FUNCTION structure_agent_depuis_rattachements();

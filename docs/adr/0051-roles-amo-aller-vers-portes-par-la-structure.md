@@ -89,10 +89,17 @@ Migration `0059`, additive et dans une seule transaction :
 1. Garde : une AMO ou un Aller-vers relié à deux partenaires par des agents hybrides lève une
    exception, rien n'est écrit et le déploiement échoue.
 2. Une structure par paire (nom de l'AMO), puis une par ligne restante.
-3. `agents.structure_id` déduit des anciens rattachements, pour les seuls rôles de structure.
+3. `agents.structure_id` déduit du rattachement que lit le rôle (`entreprise_amo_id` pour `amo`,
+   `allers_vers_id` pour `allers_vers`, les deux pour l'hybride), pour les seuls rôles de structure.
 4. Trigger transitoire `BEFORE INSERT` sur `entreprises_amo` et `allers_vers` : une ligne insérée
    sans structure (ancien code pendant le postdeploy, ou après un retour arrière) en reçoit une ;
-   un upsert garde celle de la ligne existante. Retiré avec les colonnes héritées.
+   un upsert garde celle de la ligne existante.
+5. Trigger transitoire sur `agents` (`INSERT`, et `UPDATE` de `role` ou des rattachements) : quand
+   l'écriture ne fixe pas `structure_id`, comme celles de l'ancien code, il le recalcule par la
+   règle du point 3. Un rôle plateforme n'a pas de structure, un hybride relié à deux structures
+   est refusé, et une mise à NULL par clé étrangère (ligne supprimée) laisse la structure en place.
+
+Les deux triggers sont retirés avec les colonnes héritées.
 
 Retour arrière : redéployer la version précédente suffit, rien n'étant supprimé ni mis à NULL.
 

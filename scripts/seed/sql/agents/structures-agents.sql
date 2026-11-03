@@ -12,8 +12,10 @@
 
 UPDATE agents a
 SET structure_id = COALESCE(
-  (SELECT ea.structure_id FROM entreprises_amo ea WHERE ea.id = a.entreprise_amo_id),
-  (SELECT av.structure_id FROM allers_vers av WHERE av.id = a.allers_vers_id)
+  CASE WHEN a.role IN ('amo', 'amo_et_allers_vers')
+    THEN (SELECT ea.structure_id FROM entreprises_amo ea WHERE ea.id = a.entreprise_amo_id) END,
+  CASE WHEN a.role IN ('allers_vers', 'amo_et_allers_vers')
+    THEN (SELECT av.structure_id FROM allers_vers av WHERE av.id = a.allers_vers_id) END
 )
 WHERE a.role IN ('amo', 'allers_vers', 'amo_et_allers_vers');
 

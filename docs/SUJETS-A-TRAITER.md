@@ -61,8 +61,8 @@ leurs agents. Un rattachement d'habilitation doit réaligner les colonnes hérit
 
 ### Nettoyage : trigger transitoire et colonnes héritées
 
-Le trigger `structure_par_defaut_*` et les colonnes `agents.role` / `entreprise_amo_id` /
-`allers_vers_id` ne servent qu'au retour arrière. À supprimer (avec les trois valeurs de rôle de
+Les triggers `structure_par_defaut_*` et `agents_structure_depuis_rattachements` et les colonnes
+`agents.role` / `entreprise_amo_id` / `allers_vers_id` ne servent qu'au retour arrière. À supprimer (avec les trois valeurs de rôle de
 structure de l'enum `agent_role`, procédé de la migration `0036`), puis poser la contrainte « rôle
 plateforme XOR structure ». Ce nettoyage rend le retour arrière impossible.
 

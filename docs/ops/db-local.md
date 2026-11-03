@@ -102,7 +102,8 @@ le rôle d'un agent vient de deux sources exclusives :
 | Membre d'une structure | les habilitations de la structure : sa ligne AMO, sa ligne Aller-vers    | obligatoire    |
 
 Les colonnes `role`, `entreprise_amo_id` et `allers_vers_id` d'un membre de structure ne sont
-plus lues (elles ne servent qu'au retour arrière) : inutile de les modifier en local.
+plus lues (elles ne servent qu'au retour arrière) : inutile de les modifier en local, et risqué
+(cinquième piège ci-dessous).
 
 Piocher d'abord la structure, avec les rôles qu'elle donne :
 
@@ -157,7 +158,7 @@ WHERE a.email = :'email';
 SQL
 ```
 
-Quatre pièges qui font perdre du temps :
+Cinq pièges qui font perdre du temps :
 
 - **Une structure sans habilitation, ou un rôle `amo` / `allers_vers` sans structure, ne donne
   aucun rôle** : le compte est refusé partout, comme un compte désactivé.
@@ -167,6 +168,9 @@ Quatre pièges qui font perdre du temps :
 - **Un `analyste` sans département est « national »** et n'a accès qu'aux statistiques, pas
   aux dossiers. Le mode départemental (« suivi DDT ») vient de la table `agent_permissions`
   (une ligne par `departement_code`), pas du rôle.
+- **Modifier `role`, `entreprise_amo_id` ou `allers_vers_id` sans `structure_id` recalcule la
+  structure** depuis ces colonnes (trigger transitoire de l'ADR-0051) : `role = 'amo'` sans
+  `entreprise_amo_id` retire la structure, donc le rôle. Changer de structure par `structure_id`.
 - **Se reconnecter après le changement.** Les gardes de page relisent le rôle en base
   (`getCurrentUser`, rôle dérivé de la structure), mais le `middleware` aiguille sur le cookie
   `SESSION_ROLE` : sans reconnexion, les redirections restent celles de l'ancien rôle.
