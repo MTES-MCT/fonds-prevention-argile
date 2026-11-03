@@ -1,17 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AgentRole, UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import { createMockJWTPayload, createMockAgentWithPermissions, createEnvConfigMock } from "@/shared/testing/mocks";
+import { createMockAuthUser, createMockAgentWithPermissions, createEnvConfigMock } from "@/shared/testing/mocks";
 
 // Mock des dépendances AVANT les imports
-vi.mock("@/features/auth/server", () => ({
-  getSession: vi.fn(),
-}));
-
-// Mock partiel : le module porte aussi les enums (Step...) que la chaîne de schémas Drizzle
-// charge en vrai depuis les services importés par les actions.
-vi.mock("@/shared/domain/value-objects", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/shared/domain/value-objects")>()),
-  isSuperAdminRole: vi.fn(),
+// Le rôle est relu en base par getCurrentUser : c'est lui qu'on simule, pas le JWT.
+vi.mock("@/features/auth/services/user.service", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("../services/agents-admin.service", () => ({
@@ -41,9 +35,14 @@ import {
 } from "./agents.actions";
 
 // Import des mocks
-import { getSession } from "@/features/auth/server";
-import { isSuperAdminRole } from "@/shared/domain/value-objects";
+import { getCurrentUser } from "@/features/auth/services/user.service";
 import * as agentsAdminService from "../services/agents-admin.service";
+
+function connecter(role: UserRole) {
+  const utilisateur = createMockAuthUser(role);
+  vi.mocked(getCurrentUser).mockResolvedValue(utilisateur);
+  return utilisateur;
+}
 
 describe("agents.actions", () => {
   beforeEach(() => {
@@ -56,9 +55,7 @@ describe("agents.actions", () => {
 
   describe("getAgentsAction", () => {
     it("devrait autoriser l'accès pour SUPER_ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const mockAgents = [
         createMockAgentWithPermissions({
@@ -87,9 +84,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser l'accès pour ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await getAgentsAction();
 
@@ -101,9 +96,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser l'accès pour ANALYSTE", async () => {
-      const mockSession = createMockJWTPayload(UserRole.ANALYSTE);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ANALYSTE);
 
       const result = await getAgentsAction();
 
@@ -112,7 +105,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser l'accès sans session", async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const result = await getAgentsAction();
 
@@ -121,9 +114,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait gérer les erreurs", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.getAllAgentsWithPermissions).mockRejectedValue(new Error("Database error"));
 
       const result = await getAgentsAction();
@@ -137,9 +128,7 @@ describe("agents.actions", () => {
 
   describe("getAgentByIdAction", () => {
     it("devrait autoriser l'accès pour SUPER_ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const mockAgent = createMockAgentWithPermissions();
       vi.mocked(agentsAdminService.getAgentWithPermissions).mockResolvedValue(mockAgent);
@@ -153,9 +142,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser l'accès pour ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await getAgentByIdAction("agent-123");
 
@@ -164,9 +151,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait retourner une erreur si l'agent n'existe pas", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.getAgentWithPermissions).mockResolvedValue(null);
 
       const result = await getAgentByIdAction("agent-inexistant");
@@ -188,9 +173,7 @@ describe("agents.actions", () => {
     };
 
     it("devrait autoriser la création pour SUPER_ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const mockCreatedAgent = createMockAgentWithPermissions();
       vi.mocked(agentsAdminService.createAgent).mockResolvedValue(mockCreatedAgent);
@@ -204,9 +187,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser la création pour ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await createAgentAction(validAgentData);
 
@@ -215,9 +196,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait valider l'email", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const result = await createAgentAction({
         ...validAgentData,
@@ -231,9 +210,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait valider le prénom", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const result = await createAgentAction({
         ...validAgentData,
@@ -247,9 +224,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait permettre la création d'un ANALYSTE", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const analysteAgent = createMockAgentWithPermissions({
         agent: {
@@ -268,9 +243,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait exiger une entreprise AMO pour le rôle AMO", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const result = await createAgentAction({
         ...validAgentData,
@@ -285,9 +258,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait autoriser la création d'un AMO avec entreprise", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const mockAmoAgent = createMockAgentWithPermissions({
         agent: {
@@ -321,9 +292,7 @@ describe("agents.actions", () => {
     };
 
     it("devrait autoriser la mise à jour pour SUPER_ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const mockUpdatedAgent = createMockAgentWithPermissions();
       vi.mocked(agentsAdminService.updateAgent).mockResolvedValue(mockUpdatedAgent);
@@ -337,9 +306,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser la mise à jour pour ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await updateAgentAction("agent-123", validUpdateData);
 
@@ -348,9 +315,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait valider l'email", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const result = await updateAgentAction("agent-123", {
         email: "invalid-email",
@@ -363,9 +328,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait retourner une erreur si l'agent n'existe pas", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.updateAgent).mockResolvedValue(null);
 
       const result = await updateAgentAction("agent-inexistant", validUpdateData);
@@ -377,9 +340,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait exiger une entreprise AMO lors du passage au rôle AMO", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const result = await updateAgentAction("agent-123", {
         role: UserRole.AMO as AgentRole,
@@ -395,9 +356,7 @@ describe("agents.actions", () => {
 
   describe("deleteAgentAction", () => {
     it("devrait autoriser la suppression pour SUPER_ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.deleteAgent).mockResolvedValue(true);
 
       const result = await deleteAgentAction("agent-123");
@@ -406,9 +365,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser la suppression pour ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await deleteAgentAction("agent-123");
 
@@ -417,9 +374,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait retourner une erreur si l'agent n'existe pas", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.deleteAgent).mockResolvedValue(false);
 
       const result = await deleteAgentAction("agent-inexistant");
@@ -431,9 +386,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait gérer les erreurs", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.deleteAgent).mockRejectedValue(new Error("Contrainte DB"));
 
       const result = await deleteAgentAction("agent-123");
@@ -443,9 +396,7 @@ describe("agents.actions", () => {
   });
   describe("desactiverAgentAction", () => {
     it("devrait autoriser la désactivation pour SUPER_ADMINISTRATEUR", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      const superAdmin = connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.desactiverAgent).mockResolvedValue({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         agent: {} as any,
@@ -461,14 +412,13 @@ describe("agents.actions", () => {
       }
       expect(agentsAdminService.desactiverAgent).toHaveBeenCalledWith(
         "agent-123",
-        mockSession.userId,
+        superAdmin.id,
         "A quitté ses fonctions"
       );
     });
 
     it("devrait refuser la désactivation pour ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await desactiverAgentAction("agent-123");
 
@@ -477,8 +427,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser la désactivation sans session", async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const result = await desactiverAgentAction("agent-123");
 
@@ -487,11 +436,9 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser qu'un super admin se désactive lui-même", async () => {
-      const mockSession = createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR);
-      vi.mocked(getSession).mockResolvedValue(mockSession);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      const superAdmin = connecter(UserRole.SUPER_ADMINISTRATEUR);
 
-      const result = await desactiverAgentAction(mockSession.userId);
+      const result = await desactiverAgentAction(superAdmin.id);
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -501,8 +448,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait remonter l'erreur du service", async () => {
-      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.desactiverAgent).mockRejectedValue(new Error("Cet agent est déjà désactivé"));
 
       const result = await desactiverAgentAction("agent-123");
@@ -516,8 +462,7 @@ describe("agents.actions", () => {
 
   describe("reactiverAgentAction", () => {
     it("devrait autoriser la réactivation pour SUPER_ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const result = await reactiverAgentAction("agent-123");
 
@@ -526,8 +471,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser la réactivation pour ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await reactiverAgentAction("agent-123");
 
@@ -546,8 +490,7 @@ describe("agents.actions", () => {
     };
 
     it("devrait retourner le comptage pour SUPER_ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.SUPER_ADMINISTRATEUR));
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
       vi.mocked(agentsAdminService.getAgentTraces).mockResolvedValue(traces);
 
       const result = await getAgentTracesAction("agent-123");
@@ -559,8 +502,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser le comptage pour ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue(createMockJWTPayload(UserRole.ADMINISTRATEUR));
-      vi.mocked(isSuperAdminRole).mockReturnValue(false);
+      connecter(UserRole.ADMINISTRATEUR);
 
       const result = await getAgentTracesAction("agent-123");
 
@@ -569,8 +511,7 @@ describe("agents.actions", () => {
     });
 
     it("devrait refuser le comptage sans session", async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
-      vi.mocked(isSuperAdminRole).mockReturnValue(true);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const result = await getAgentTracesAction("agent-123");
 

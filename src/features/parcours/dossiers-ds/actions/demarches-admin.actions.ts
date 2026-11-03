@@ -1,12 +1,11 @@
 "use server";
 
-import { getSession } from "@/features/auth/server";
+import { checkAdminAccess } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import type { DemarcheDetailed, DossiersConnection, Dossier, DossiersFilters } from "../adapters/graphql/types";
 import { graphqlClient } from "../adapters";
 import { getServerEnv } from "@/shared/config/env.config";
 import { Step } from "../../core";
-import { isAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 
 /**
  * Actions admin pour gérer les démarches DS
@@ -36,9 +35,9 @@ function getStepDemarcheId(step: Step): number {
  */
 export async function getDemarcheDetails(stepOrDemarcheNumber: Step | number): Promise<ActionResult<DemarcheDetailed>> {
   try {
-    const session = await getSession();
+    const acces = await checkAdminAccess();
 
-    if (!session?.userId || !isAdminRole(session.role)) {
+    if (!acces.hasAccess) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -76,9 +75,9 @@ export async function getDemarcheDetails(stepOrDemarcheNumber: Step | number): P
  */
 export async function getDemarcheSchema(stepOrDemarcheNumber: Step | number): Promise<ActionResult<DemarcheDetailed>> {
   try {
-    const session = await getSession();
+    const acces = await checkAdminAccess();
 
-    if (!session?.userId || !isAdminRole(session.role)) {
+    if (!acces.hasAccess) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -119,9 +118,9 @@ export async function getDossiers(
   filters?: DossiersFilters
 ): Promise<ActionResult<DossiersConnection>> {
   try {
-    const session = await getSession();
+    const acces = await checkAdminAccess();
 
-    if (!session?.userId || !isAdminRole(session.role)) {
+    if (!acces.hasAccess) {
       return {
         success: false,
         error: "Accès non autorisé",
@@ -158,9 +157,9 @@ export async function getDossiers(
  */
 export async function getDossierByNumber(dossierNumber: number): Promise<ActionResult<Dossier>> {
   try {
-    const session = await getSession();
+    const acces = await checkAdminAccess();
 
-    if (!session?.userId || !isAdminRole(session.role)) {
+    if (!acces.hasAccess) {
       return {
         success: false,
         error: "Accès non autorisé",

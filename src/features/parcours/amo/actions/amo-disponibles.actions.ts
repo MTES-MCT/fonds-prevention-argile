@@ -1,6 +1,6 @@
 "use server";
 
-import { getSession } from "@/features/auth/server";
+import { checkAdminAccess, getSession } from "@/features/auth/server";
 import type { ActionResult } from "@/shared/types";
 import type { Amo } from "../domain/entities";
 import { db, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database";
@@ -8,7 +8,6 @@ import { eq } from "drizzle-orm";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { territoireDuParcours } from "../domain/value-objects/couverture-amo";
 import { listerAmosDuTerritoire } from "../services/amo-couverture.service";
-import { isAdminRole } from "@/shared/domain/value-objects";
 
 /**
  * AMO proposées au demandeur connecté pour son territoire : celles du niveau le plus précis
@@ -43,9 +42,9 @@ export async function getAmosDisponibles(): Promise<ActionResult<Amo[]>> {
  */
 export async function getAllAmos(): Promise<ActionResult<Array<Amo & { communes: { codeInsee: string }[] }>>> {
   try {
-    const session = await getSession();
+    const acces = await checkAdminAccess();
 
-    if (!session || !isAdminRole(session.role)) {
+    if (!acces.hasAccess) {
       throw new Error("Accès réservé aux administrateurs");
     }
 

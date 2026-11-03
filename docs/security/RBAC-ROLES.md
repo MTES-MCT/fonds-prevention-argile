@@ -73,11 +73,23 @@ l'agent avait qualifié un prospect. Voir
 Deux points de coupure, et un seul suffit pour tout le back-office :
 
 - **`getCurrentUser`** (`auth/services/user.service.ts`) retourne `null` si
-  `agent.desactiveAt`. Toutes les gardes (`checkProConnectAccess`, `checkAgentAccess`,
-  `checkRoleAccess`, `checkBackofficePermission`) passent par `checkUserAccess` →
-  `getCurrentUser`, layouts, pages et Server Actions compris. Conséquence voulue : **une
-  session déjà ouverte tombe au rendu suivant**, sans attendre l'expiration du JWT ; le
-  layout espace-agent renvoie vers `/connexion/agent`.
+  `agent.desactiveAt`, ou si l'agent n'existe plus en base. Toutes les gardes
+  (`checkProConnectAccess`, `checkAgentAccess`, `checkRoleAccess`, `checkAdminAccess`,
+  `checkBackofficePermission`) passent par `checkUserAccess` → `getCurrentUser`, layouts,
+  pages et Server Actions compris, et le rôle qu'elles testent est **celui de la base**.
+  Conséquence voulue : **une session déjà ouverte tombe au rendu suivant**, sans attendre
+  l'expiration du JWT ; le layout espace-agent renvoie vers `/connexion/agent`. Un agent
+  rétrogradé perd de même ses droits à la requête suivante.
+
+> **Le rôle du JWT ne fait jamais foi** (novembre 2026). Il est figé à la connexion. La gestion
+> des agents (`agents.actions.ts`), les actions de démarches DN (`demarches-admin.actions.ts`)
+> et la liste des AMO de l'administration (`getAllAmos`) testaient `session.role` : un
+> super-admin désactivé ou rétrogradé y gardait la main jusqu'à 8 h, et `getCurrentUser`
+> reprenait ce même rôle quand l'agent avait disparu de la base. Elles passent désormais par
+> `checkRoleAccess` / `checkAdminAccess`, et un test méta refuse tout `session.role` dans un
+> fichier `"use server"`. Le JWT ne sert plus qu'aux redirections du middleware et au choix de
+> la durée de session.
+
 - **`authenticateFromProConnect`** (`agents.repository.ts`) refuse en tête de fonction, avant
   les branches `sub` et `email` : un agent désactivé est traité comme un agent inconnu
   (`return null`), **sans aucune écriture** — ni `lastLogin`, ni rafraîchissement ProConnect.

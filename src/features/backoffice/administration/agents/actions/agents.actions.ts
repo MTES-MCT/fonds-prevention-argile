@@ -1,7 +1,7 @@
 "use server";
 
-import { getSession } from "@/features/auth/server";
-import { isSuperAdminRole, UserRole } from "@/shared/domain/value-objects";
+import { checkRoleAccess } from "@/features/auth/server";
+import { UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
 import type { AgentRole } from "@/shared/domain/value-objects";
 import {
@@ -24,14 +24,20 @@ export interface DesactivationSummary {
   listesConservees: string[];
 }
 
+// Rôle relu en base : un super-admin désactivé ou rétrogradé perd l'accès sans attendre la fin de sa session.
+async function ensureSuperAdmin(): Promise<{ ok: true; agentId: string } | { ok: false }> {
+  const acces = await checkRoleAccess([UserRole.SUPER_ADMINISTRATEUR]);
+  return acces.hasAccess && acces.user ? { ok: true, agentId: acces.user.id } : { ok: false };
+}
+
 /**
  * Récupère tous les agents avec leurs permissions (super admin uniquement)
  */
 export async function getAgentsAction(): Promise<ActionResult<AgentWithPermissions[]>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -58,9 +64,9 @@ export async function getAgentsAction(): Promise<ActionResult<AgentWithPermissio
  */
 export async function getAgentByIdAction(agentId: string): Promise<ActionResult<AgentWithPermissions>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -102,9 +108,9 @@ export async function createAgentAction(data: {
   allersVersId?: string;
 }): Promise<ActionResult<AgentWithPermissions>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -188,9 +194,9 @@ export async function updateAgentAction(
   }
 ): Promise<ActionResult<AgentWithPermissions>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -269,9 +275,9 @@ export async function updateAgentAction(
  */
 export async function getAgentTracesAction(agentId: string): Promise<ActionResult<AgentTracesCount>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -297,9 +303,9 @@ export async function getAgentTracesAction(agentId: string): Promise<ActionResul
  */
 export async function getAgentListesDiffusionAction(agentId: string): Promise<ActionResult<ListeDiffusion[]>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -332,9 +338,9 @@ export async function desactiverAgentAction(
   raison?: string
 ): Promise<ActionResult<DesactivationSummary>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -342,14 +348,14 @@ export async function desactiverAgentAction(
     }
 
     // Se désactiver soi-même reviendrait à se verrouiller hors du backoffice.
-    if (session.userId === agentId) {
+    if (garde.agentId === agentId) {
       return {
         success: false,
         error: "Vous ne pouvez pas désactiver votre propre compte.",
       };
     }
 
-    const resultat = await desactiverAgent(agentId, session.userId, raison);
+    const resultat = await desactiverAgent(agentId, garde.agentId, raison);
 
     return {
       success: true,
@@ -372,9 +378,9 @@ export async function desactiverAgentAction(
  */
 export async function reactiverAgentAction(agentId: string): Promise<ActionResult<void>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",
@@ -401,9 +407,9 @@ export async function reactiverAgentAction(agentId: string): Promise<ActionResul
  */
 export async function deleteAgentAction(agentId: string): Promise<ActionResult<void>> {
   try {
-    const session = await getSession();
+    const garde = await ensureSuperAdmin();
 
-    if (!session?.userId || !isSuperAdminRole(session.role)) {
+    if (!garde.ok) {
       return {
         success: false,
         error: "Accès non autorisé. Réservé aux super administrateurs.",

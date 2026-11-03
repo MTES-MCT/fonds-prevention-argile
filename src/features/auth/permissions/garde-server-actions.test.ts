@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fonctionsExportees, listerFichiersServer } from "@/shared/testing/server-exports";
 
@@ -10,6 +11,7 @@ const GARDES_AUTORISATION = [
   "checkBackofficePermission",
   "checkAgentAccess",
   "checkRoleAccess",
+  "checkAdminAccess",
   "checkTabAccess",
   "ensureSuperAdmin",
   "isSuperAdminRole",
@@ -100,5 +102,18 @@ describe("Server actions — chaque endpoint porte une garde reconnue", () => {
     const parCle = new Map(actions.map((a) => [a.cle, a]));
     const perimees = Object.keys(ALLOWLIST).filter((cle) => !parCle.has(cle) || estGardee(parCle.get(cle)!));
     expect(perimees).toEqual([]);
+  });
+});
+
+// Le rôle du JWT est figé à la connexion : un agent désactivé ou rétrogradé le garderait jusqu'à l'expiration.
+describe("Server actions — aucune garde ne lit le rôle dans le JWT", () => {
+  it("aucun fichier « use server » ne lit session.role", () => {
+    const fautifs = listerFichiersServer(SRC).filter((chemin) =>
+      /\bsession\??\.role\b/.test(readFileSync(chemin, "utf8"))
+    );
+    expect(
+      fautifs.map((chemin) => relative(SRC, chemin)),
+      "passer par le rôle relu en base (checkRoleAccess, checkAdminAccess, getCurrentUser)"
+    ).toEqual([]);
   });
 });
