@@ -61,6 +61,15 @@ Helpers : `isAgentRole`, `isAdminRole`, `isSuperAdminRole`, `isValidRole`.
 Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
 `PARTICULIER`).
 
+> **Les rôles AMO et Aller-vers viennent de la structure (ADR-0051).** Un agent est soit un compte
+> **plateforme** (`SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`, rôle stocké sur l'agent),
+> soit **membre d'une structure** : il en hérite `AMO`, `ALLERS_VERS` ou `AMO_ET_ALLERS_VERS`
+> selon que la structure a une ligne `entreprises_amo`, une ligne `allers_vers`, ou les deux
+> (`resoudreRoleAgent`). Une structure sans habilitation, ou un rôle de structure stocké sans
+> structure, ne donne **aucun rôle** : `getCurrentUser` renvoie `null`, la connexion ProConnect est
+> refusée sans écriture. Les anciennes colonnes `role` / `entreprise_amo_id` / `allers_vers_id`
+> d'un membre de structure ne sont plus lues.
+
 ### 2.1 Agent désactivé — accès révoqué, historique conservé (ADR-0029)
 
 Un agent parti n'est plus supprimé mais **désactivé** : `agents.desactive_at` non nul
@@ -73,7 +82,8 @@ l'agent avait qualifié un prospect. Voir
 Deux points de coupure, et un seul suffit pour tout le back-office :
 
 - **`getCurrentUser`** (`auth/services/user.service.ts`) retourne `null` si
-  `agent.desactiveAt`, ou si l'agent n'existe plus en base. Toutes les gardes
+  `agent.desactiveAt`, si l'agent n'existe plus en base, ou s'il n'a plus de rôle (structure sans
+  habilitation, ADR-0051). Toutes les gardes
   (`checkProConnectAccess`, `checkAgentAccess`, `checkRoleAccess`, `checkAdminAccess`,
   `checkBackofficePermission`) passent par `checkUserAccess` → `getCurrentUser`, layouts,
   pages et Server Actions compris, et le rôle qu'elles testent est **celui de la base**.
@@ -305,6 +315,9 @@ données. Calculé dans
 | ALLERS_VERS         | non       | non                | oui               | ses départements / EPCI                         |
 | AMO_ET_ALLERS_VERS  | non       | oui                | oui               | union entreprise AMO + territoire AV            |
 | ANALYSTE            | non       | non                | non               | national (stats) si aucun dept, sinon ses depts |
+
+> « Son entreprise AMO » et « son territoire » sont la ligne AMO et la ligne Aller-vers **de sa
+> structure** (ADR-0051) : un agent ne choisit plus ses rattachements un à un.
 
 > La colonne « Périmètre » décrit le scope **dossiers**. Le scope **stats** est
 > distinct (ADR-0017) : national pour AMO / ALLERS_VERS / AMO_ET_ALLERS_VERS et
@@ -642,6 +655,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Config des routes / redirections            | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                        |
 | Aiguillage auth                             | `src/middleware.ts`                                                                                                                                      |
 | Double authentification ProConnect          | `auth/domain/value-objects/session-mfa.ts` (`estSessionConforme`) + `adapters/proconnect/proconnect-oidc.ts` + `session.service.ts` (`getSession`)       |
+| Rôle dérivé de la structure (ADR-0051)      | `shared/domain/value-objects/role-structure.ts` (`resoudreRoleAgent`) + `agents.repository.ts` (lecture résolue)                                         |
 | Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
 | Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
 | Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |

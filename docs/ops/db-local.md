@@ -93,26 +93,27 @@ la ligne `agents` rattachée à l'email du compte. Le schéma est
 rôles et leurs périmètres sont décrits dans
 [`docs/security/RBAC-ROLES.md`](../security/RBAC-ROLES.md).
 
-Les 6 valeurs de l'enum `agent_role` :
+Depuis la migration `0059` ([ADR-0051](../adr/0051-roles-amo-aller-vers-portes-par-la-structure.md)),
+le rôle d'un agent vient de deux sources exclusives :
 
-`super_administrateur`, `administrateur`, `amo`, `allers_vers`, `amo_et_allers_vers`, `analyste`
+| Compte                 | Ce qui fait le rôle                                                      | `structure_id` |
+| ---------------------- | ------------------------------------------------------------------------ | -------------- |
+| Plateforme             | la colonne `role` : `super_administrateur`, `administrateur`, `analyste` | `NULL`         |
+| Membre d'une structure | les habilitations de la structure : sa ligne AMO, sa ligne Aller-vers    | obligatoire    |
 
-Cohérence métier à respecter, sinon l'espace agent se bloque
-([`AmoGuard`](<../../src/app/(backoffice)/components/AmoGuard.tsx>)) :
+Les colonnes `role`, `entreprise_amo_id` et `allers_vers_id` d'un membre de structure ne sont
+plus lues (elles ne servent qu'au retour arrière) : inutile de les modifier en local.
 
-| Rôle visé            | `entreprise_amo_id` | `allers_vers_id` |
-| -------------------- | ------------------- | ---------------- |
-| `amo`                | obligatoire         | `NULL`           |
-| `allers_vers`        | `NULL`              | obligatoire      |
-| `amo_et_allers_vers` | obligatoire         | obligatoire      |
-| tous les autres      | `NULL`              | `NULL`           |
-
-Piocher d'abord les UUID nécessaires :
+Piocher d'abord la structure, avec les rôles qu'elle donne :
 
 ```bash
-docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -c "SELECT id, nom FROM entreprises_amo ORDER BY nom;" \
-  -c "SELECT id, nom FROM allers_vers ORDER BY nom;"
+docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile <<'SQL'
+SELECT s.id, s.nom, ea.nom AS amo, av.nom AS allers_vers
+FROM structures s
+LEFT JOIN entreprises_amo ea ON ea.structure_id = s.id
+LEFT JOIN allers_vers av ON av.structure_id = s.id
+ORDER BY s.nom;
+SQL
 ```
 
 Puis basculer le compte. La requête passe par l'**entrée standard** : `psql` n'interpole ses
@@ -122,34 +123,22 @@ donc brutes, sans guillemets :
 ```bash
 EMAIL="prenom.nom@beta.gouv.fr"
 
-# Super-administrateur (ou administrateur / analyste : mêmes FK à NULL)
+# Super-administrateur (ou administrateur / analyste)
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
   -v ON_ERROR_STOP=1 -v email="$EMAIL" <<'SQL'
-UPDATE agents SET role = 'super_administrateur', entreprise_amo_id = NULL, allers_vers_id = NULL
+UPDATE agents SET role = 'super_administrateur', structure_id = NULL
 WHERE email = :'email';
 SQL
 ```
 
 ```bash
 EMAIL="prenom.nom@beta.gouv.fr"
-AMO_ID="<uuid-entreprise-amo>"
+STRUCTURE_ID="<uuid-structure>"
 
-# AMO
+# Membre d'une structure : AMO, Aller-vers ou les deux, selon ses habilitations
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v amo_id="$AMO_ID" <<'SQL'
-UPDATE agents SET role = 'amo', entreprise_amo_id = :'amo_id', allers_vers_id = NULL
-WHERE email = :'email';
-SQL
-```
-
-```bash
-EMAIL="prenom.nom@beta.gouv.fr"
-AV_ID="<uuid-allers-vers>"
-
-# Aller-vers
-docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v av_id="$AV_ID" <<'SQL'
-UPDATE agents SET role = 'allers_vers', entreprise_amo_id = NULL, allers_vers_id = :'av_id'
+  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v structure_id="$STRUCTURE_ID" <<'SQL'
+UPDATE agents SET structure_id = :'structure_id'
 WHERE email = :'email';
 SQL
 ```
@@ -159,16 +148,19 @@ Vérification :
 ```bash
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
   -v email="$EMAIL" <<'SQL'
-SELECT a.email, a.role, e.nom AS amo, av.nom AS allers_vers, a.desactive_at
+SELECT a.email, a.role AS role_plateforme, s.nom AS structure, ea.nom AS amo, av.nom AS allers_vers, a.desactive_at
 FROM agents a
-LEFT JOIN entreprises_amo e ON e.id = a.entreprise_amo_id
-LEFT JOIN allers_vers av    ON av.id = a.allers_vers_id
+LEFT JOIN structures s       ON s.id = a.structure_id
+LEFT JOIN entreprises_amo ea ON ea.structure_id = a.structure_id
+LEFT JOIN allers_vers av     ON av.structure_id = a.structure_id
 WHERE a.email = :'email';
 SQL
 ```
 
-Trois pièges qui font perdre du temps :
+Quatre pièges qui font perdre du temps :
 
+- **Une structure sans habilitation, ou un rôle `amo` / `allers_vers` sans structure, ne donne
+  aucun rôle** : le compte est refusé partout, comme un compte désactivé.
 - **`desactive_at` non nul coupe tout accès**, quel que soit le rôle
   ([RBAC §2.1](../security/RBAC-ROLES.md)) : un compte désactivé donne un espace agent vide
   et une redirection vers `/connexion/agent`. Le remettre à `NULL` pour tester.
@@ -176,7 +168,7 @@ Trois pièges qui font perdre du temps :
   aux dossiers. Le mode départemental (« suivi DDT ») vient de la table `agent_permissions`
   (une ligne par `departement_code`), pas du rôle.
 - **Se reconnecter après le changement.** Les gardes de page relisent le rôle en base
-  (`getCurrentUser` utilise `agent.role`), mais le `middleware` aiguille sur le cookie
+  (`getCurrentUser`, rôle dérivé de la structure), mais le `middleware` aiguille sur le cookie
   `SESSION_ROLE` : sans reconnexion, les redirections restent celles de l'ancien rôle.
 
 > Ces requêtes sont à réserver au **local**. Sur un environnement déployé, changer un rôle

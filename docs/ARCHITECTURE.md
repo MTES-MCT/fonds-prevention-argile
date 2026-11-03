@@ -97,8 +97,10 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
                         ├──1:N── sync_run_entries ──N:1── sync_runs
                         └──N:1── vulnerabilite_simulations (pointeur nullable, cf. ADR-0032)
 
-agents ──N:1── entreprises_amo        entreprises_amo ──1:N── entreprises_amo_communes
-agents ──N:1── allers_vers            allers_vers ──1:N── allers_vers_departements
+agents ──N:1── structures             structures ──1:0..1── entreprises_amo (habilitation AMO)
+                                      structures ──1:0..1── allers_vers     (habilitation Aller-vers)
+                                      entreprises_amo ──1:N── entreprises_amo_communes
+                                      allers_vers ──1:N── allers_vers_departements
 agent_permissions ──N:1── agents      allers_vers ──1:N── allers_vers_epci
 
 catastrophes_naturelles   (référentiel CATNAT par commune INSEE)
@@ -111,7 +113,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Parcours          | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `dossiers_ds_tentatives`, `parcours_actions`                                                                                                    |
 | AMO               | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`                                                                                                                |
-| Agents            | `agents`, `agent_permissions`                                                                                                                                                                                     |
+| Agents            | `agents`, `agent_permissions`, `structures`                                                                                                                                                                       |
 | Allers-vers       | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                                                                                                                          |
 | Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                                                                                                                                  |
 | Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                                                                                                                   |
@@ -119,6 +121,12 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
 > distinctes : le citoyen et l'agent ne partagent pas la même identité.
+
+> Les rôles AMO et Aller-vers d'un agent viennent de **sa structure** : une ligne
+> `entreprises_amo` lui donne le rôle AMO, une ligne `allers_vers` le rôle Aller-vers, les deux
+> le rôle cumulé. Contacts et territoires restent sur chaque ligne. Les colonnes `role`,
+> `entreprise_amo_id` et `allers_vers_id` de `agents` ne servent plus qu'au retour arrière. Voir
+> [ADR-0051](adr/0051-roles-amo-aller-vers-portes-par-la-structure.md).
 
 > Un agent qui quitte ses fonctions est **désactivé** (`agents.desactive_at`), pas supprimé :
 > son nom doit survivre sur les actions, qualifications, archivages et dossiers créés qu'il a

@@ -47,6 +47,41 @@ Relevés par la revue du 2 novembre 2026, laissés hors de la PR :
 
 ---
 
+## Rôles portés par la structure (ADR-0051)
+
+### Page « Structures » de l'administration
+
+La PR 1 ne crée une structure qu'à l'import d'une AMO ou d'un Aller-vers, et le formulaire agent ne
+fait que choisir une structure existante. Il manque une page pour lister les structures et leurs
+rôles, les renommer, rattacher l'habilitation d'une autre structure (fusion) ou la détacher, et voir
+leurs agents. Un rattachement d'habilitation doit réaligner les colonnes héritées de ses agents
+(`resynchroniserColonnesHeritees`).
+
+**Préalable** : la PR 1 en production.
+
+### Nettoyage : trigger transitoire et colonnes héritées
+
+Le trigger `structure_par_defaut_*` et les colonnes `agents.role` / `entreprise_amo_id` /
+`allers_vers_id` ne servent qu'au retour arrière. À supprimer (avec les trois valeurs de rôle de
+structure de l'enum `agent_role`, procédé de la migration `0036`), puis poser la contrainte « rôle
+plateforme XOR structure ». Ce nettoyage rend le retour arrière impossible.
+
+**Préalable** : une release complète sans retour arrière après la PR 1.
+
+### Comportements conservés tels quels
+
+- Union des territoires d'un agent hybride face au responsable d'un dossier, et délégation
+  départementale de `canActAsResponsable` : inchangées, à réexaminer si une structure à deux rôles
+  le demande.
+- `avCumuleAmo` (règle départementale) reste distinct d'une structure à deux rôles, tant que la règle
+  métier n'est pas réarbitrée.
+- Fin d'activité AMO d'une structure sans perdre l'historique : impossible aujourd'hui comme demain,
+  les validations bloquant la suppression de la ligne AMO.
+
+**Préalable** : un besoin métier exprimé.
+
+---
+
 ## Synchronisation DN
 
 ### Rattraper les dossiers classés sans suite des parcours archivés ou complétés
