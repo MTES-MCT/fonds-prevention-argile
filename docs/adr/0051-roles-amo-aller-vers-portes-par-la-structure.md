@@ -106,6 +106,25 @@ Les deux triggers sont retirés avec les colonnes héritées.
 
 Retour arrière : redéployer la version précédente suffit, rien n'étant supprimé ni mis à NULL.
 
+## Page « Structures » (même PR)
+
+Livrée avec le changement de modèle : sans elle, une AMO et un Aller-vers importés séparément ne
+pourraient plus partager d'agents, alors que le formulaire agent le permettait avant.
+
+`/administration/structures`, réservée au super-administrateur (elle change les droits des agents) :
+
+- **Renommer** : nom administratif seul, sans effet sur les droits ni sur les noms affichés aux
+  demandeurs.
+- **Fusionner** une structure dans une autre : ses habilitations et ses agents la rejoignent, puis
+  elle disparaît. Refusé si les deux ont une habilitation du même type. Les deux structures sont
+  verrouillées dans l'ordre de leurs identifiants et les colonnes héritées réalignées. L'écran
+  nomme, avant confirmation, les agents qui gagnent un rôle.
+- **Détacher** une habilitation d'une structure qui a les deux : elle part dans une nouvelle
+  structure à son nom, sans agent ; les agents restent et perdent ce rôle.
+
+Pas d'historique de ces opérations, comme pour la gestion des agents : un log technique seulement.
+Un retour arrière les conserve, l'ancien code lisant les colonnes héritées réalignées.
+
 ## Liens
 
 - PR #439 : rôle relu en base, plus dans le JWT (prérequis)

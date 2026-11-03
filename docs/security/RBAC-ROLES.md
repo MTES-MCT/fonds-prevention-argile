@@ -69,6 +69,11 @@ Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
 > structure, ne donne **aucun rôle** : `getCurrentUser` renvoie `null`, la connexion ProConnect est
 > refusée sans écriture. Les anciennes colonnes `role` / `entreprise_amo_id` / `allers_vers_id`
 > d'un membre de structure ne sont plus lues.
+>
+> Les structures se gèrent sur `/administration/structures` (renommer, fusionner, détacher une
+> habilitation), réservée au `SUPER_ADMINISTRATEUR` : fusionner ou détacher change les droits de
+> tous les agents des structures touchées, à la requête suivante. Gardes : `ensureSuperAdmin`
+> (rôle relu en base) dans chaque action, validation Zod, verrou exclusif sur les structures.
 
 ### 2.1 Agent désactivé — accès révoqué, historique conservé (ADR-0029)
 
@@ -217,15 +222,15 @@ page / Server Actions.
 > par les stats **nationales** de la Rangée 1 (Tableau de bord / Acquisition / Demandeurs),
 > désormais ouvertes aux agents AMO / Allers-Vers.
 
-| Rôle                     | Rangée 1 — Pilotage                                                                                           | Rangée 2 — Dossiers |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------- |
-| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, AMO, Allers Vers, Notes, Activité, Synchros, Diagnostics DN | Dossiers            |
-| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                                    | —                   |
-| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                                      | —                   |
-| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
-| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
-| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
-| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                                      | Dossiers            |
+| Rôle                     | Rangée 1 — Pilotage                                                                                                       | Rangée 2 — Dossiers |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, Structures, AMO, Allers Vers, Notes, Activité, Synchros, Diagnostics DN | Dossiers            |
+| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers                                                                | —                   |
+| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                                                  | —                   |
+| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                                                  | Dossiers            |
+| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                                                  | Dossiers            |
+| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                                                  | Dossiers            |
+| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                                                  | Dossiers            |
 
 - `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE` /
   **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (ADR-0017). Le filtrage par onglet de
@@ -656,6 +661,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Aiguillage auth                             | `src/middleware.ts`                                                                                                                                      |
 | Double authentification ProConnect          | `auth/domain/value-objects/session-mfa.ts` (`estSessionConforme`) + `adapters/proconnect/proconnect-oidc.ts` + `session.service.ts` (`getSession`)       |
 | Rôle dérivé de la structure (ADR-0051)      | `shared/domain/value-objects/role-structure.ts` (`resoudreRoleAgent`) + `agents.repository.ts` (lecture résolue)                                         |
+| Gestion des structures (ADR-0051)           | `administration/structures/actions/structures.actions.ts` (`ensureSuperAdmin`) + `services/structures-admin.service.ts`                                  |
 | Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                               |
 | Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                        |
 | Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                             |

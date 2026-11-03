@@ -49,15 +49,13 @@ Relevés par la revue du 2 novembre 2026, laissés hors de la PR :
 
 ## Rôles portés par la structure (ADR-0051)
 
-### Page « Structures » de l'administration
+### Historique des opérations sur les structures
 
-La PR 1 ne crée une structure qu'à l'import d'une AMO ou d'un Aller-vers, et le formulaire agent ne
-fait que choisir une structure existante. Il manque une page pour lister les structures et leurs
-rôles, les renommer, rattacher l'habilitation d'une autre structure (fusion) ou la détacher, et voir
-leurs agents. Un rattachement d'habilitation doit réaligner les colonnes héritées de ses agents
-(`resynchroniserColonnesHeritees`).
+Fusionner ou détacher une habilitation change les droits d'agents, mais n'en laisse qu'un log
+technique (`[structures]`), comme la gestion des agents. À tracer en base si l'on doit pouvoir dire
+qui a donné quel rôle, et quand.
 
-**Préalable** : la PR 1 en production.
+**Préalable** : un besoin d'audit exprimé.
 
 ### Nettoyage : trigger transitoire et colonnes héritées
 

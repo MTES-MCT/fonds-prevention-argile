@@ -39,7 +39,7 @@ Sous-modules notables :
 - `parcours/dossiers-ds/` est la feature de référence pour la structure DDD-lite
   (`domain/`, `adapters/graphql` + `adapters/rest`, `services/`, `actions/`,
   `mappers/`, `utils/`).
-- `backoffice/administration/` (gestion AMO, agents, allers-vers, synchronisations,
+- `backoffice/administration/` (gestion AMO, agents, structures, allers-vers, synchronisations,
   stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté).
 - `seo/catnat/` (import et recherche catastrophes naturelles) et
   `seo/allers-vers/` (structures de sensibilisation et leurs territoires).
