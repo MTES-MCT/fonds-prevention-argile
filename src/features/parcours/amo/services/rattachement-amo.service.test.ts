@@ -35,11 +35,13 @@ function mockSelectOnce(rows: unknown[]) {
   } as any);
 }
 
-/** Chaîne `db.select().from().innerJoin().where().orderBy().limit()` (trace d'audit). */
+/** Chaîne `db.select().from().innerJoin().innerJoin().where().orderBy().limit()` (trace d'audit). */
 function mockSelectJoinOnce(rows: unknown[]) {
   vi.mocked(db.select).mockReturnValueOnce({
     from: () => ({
-      innerJoin: () => ({ where: () => ({ orderBy: () => ({ limit: () => Promise.resolve(rows) }) }) }),
+      innerJoin: () => ({
+        innerJoin: () => ({ where: () => ({ orderBy: () => ({ limit: () => Promise.resolve(rows) }) }) }),
+      }),
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);

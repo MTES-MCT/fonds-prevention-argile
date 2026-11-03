@@ -1,9 +1,9 @@
 "use server";
 
+import { z } from "zod";
 import { checkRoleAccess } from "@/features/auth/server";
-import { UserRole } from "@/shared/domain/value-objects";
+import { ROLES_PLATEFORME, UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
-import type { AgentRole } from "@/shared/domain/value-objects";
 import {
   getAllAgentsWithPermissions,
   getAgentWithPermissions,
@@ -14,8 +14,9 @@ import {
   reactiverAgent,
   getAgentTraces,
 } from "../services/agents-admin.service";
-import { AgentWithPermissions, UpdateAgentData } from "../domain/types";
+import { AgentWithPermissions } from "../domain/types";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
+import { structuresRepository } from "@/shared/database/repositories/structures.repository";
 import { findListesDiffusionAvecEmail, type ListeDiffusion } from "../services/listes-diffusion.service";
 
 /** Effet d'une désactivation sur les listes de diffusion, par nom de structure. */
@@ -95,18 +96,18 @@ export async function getAgentByIdAction(agentId: string): Promise<ActionResult<
   }
 }
 
+/** Structure proposée au rattachement d'un agent : ses habilitations font les rôles qu'il héritera. */
+export interface StructureOptionAgent {
+  id: string;
+  nom: string;
+  amo: string | null;
+  allersVers: string | null;
+}
+
 /**
- * Crée un nouvel agent (super admin uniquement)
+ * Liste les structures auxquelles rattacher un agent (super admin uniquement)
  */
-export async function createAgentAction(data: {
-  email: string;
-  givenName: string;
-  usualName?: string;
-  role: AgentRole;
-  departements?: string[];
-  entrepriseAmoId?: string;
-  allersVersId?: string;
-}): Promise<ActionResult<AgentWithPermissions>> {
+export async function getStructuresOptionsAction(): Promise<ActionResult<StructureOptionAgent[]>> {
   try {
     const garde = await ensureSuperAdmin();
 
@@ -117,53 +118,60 @@ export async function createAgentAction(data: {
       };
     }
 
-    // Validation basique
-    if (!data.email || !data.email.includes("@")) {
+    const structures = await structuresRepository.findAllAvecHabilitations();
+    return {
+      success: true,
+      data: structures.map((structure) => ({
+        id: structure.id,
+        nom: structure.nom,
+        amo: structure.entrepriseAmo?.nom ?? null,
+        allersVers: structure.allersVers?.nom ?? null,
+      })),
+    };
+  } catch (error) {
+    console.error("Erreur getStructuresOptionsAction:", error);
+    return {
+      success: false,
+      error: "Erreur lors du chargement des structures",
+    };
+  }
+}
+
+const compteSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("plateforme"), role: z.enum(ROLES_PLATEFORME) }),
+  z.object({ type: z.literal("structure"), structureId: z.string().uuid("Structure invalide") }),
+]);
+
+const agentSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Email invalide"),
+  givenName: z.string().trim().min(1, "Le prénom est requis"),
+  usualName: z.string().trim().optional(),
+  compte: compteSchema,
+  departements: z.array(z.string()).optional(),
+});
+
+const premiereErreur = (error: z.ZodError) => error.issues[0]?.message ?? "Données invalides";
+
+/**
+ * Crée un nouvel agent (super admin uniquement)
+ */
+export async function createAgentAction(input: unknown): Promise<ActionResult<AgentWithPermissions>> {
+  try {
+    const garde = await ensureSuperAdmin();
+
+    if (!garde.ok) {
       return {
         success: false,
-        error: "Email invalide",
+        error: "Accès non autorisé. Réservé aux super administrateurs.",
       };
     }
 
-    if (!data.givenName || data.givenName.trim().length === 0) {
-      return {
-        success: false,
-        error: "Le prénom est requis",
-      };
+    const parsed = agentSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: premiereErreur(parsed.error) };
     }
 
-    if (!data.role) {
-      return {
-        success: false,
-        error: "Le rôle est requis",
-      };
-    }
-
-    // Validation spécifique pour les rôles AMO et AMO_ET_ALLERS_VERS
-    if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && !data.entrepriseAmoId) {
-      return {
-        success: false,
-        error: "Une entreprise AMO doit être sélectionnée pour ce rôle",
-      };
-    }
-
-    // Validation spécifique pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS
-    if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && !data.allersVersId) {
-      return {
-        success: false,
-        error: "Un territoire Allers-Vers doit être sélectionné pour ce rôle",
-      };
-    }
-
-    const agent = await createAgent({
-      email: data.email.toLowerCase().trim(),
-      givenName: data.givenName.trim(),
-      usualName: data.usualName?.trim(),
-      role: data.role,
-      departements: data.departements,
-      entrepriseAmoId: data.entrepriseAmoId,
-      allersVersId: data.allersVersId,
-    });
+    const agent = await createAgent(parsed.data);
 
     return {
       success: true,
@@ -181,18 +189,7 @@ export async function createAgentAction(data: {
 /**
  * Met à jour un agent (super admin uniquement)
  */
-export async function updateAgentAction(
-  agentId: string,
-  data: {
-    email?: string;
-    givenName?: string;
-    usualName?: string;
-    role?: AgentRole;
-    departements?: string[];
-    entrepriseAmoId?: string | null;
-    allersVersId?: string | null;
-  }
-): Promise<ActionResult<AgentWithPermissions>> {
+export async function updateAgentAction(agentId: string, input: unknown): Promise<ActionResult<AgentWithPermissions>> {
   try {
     const garde = await ensureSuperAdmin();
 
@@ -203,51 +200,12 @@ export async function updateAgentAction(
       };
     }
 
-    // Validation basique
-    if (data.email && !data.email.includes("@")) {
-      return {
-        success: false,
-        error: "Email invalide",
-      };
+    const parsed = agentSchema.partial().safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: premiereErreur(parsed.error) };
     }
 
-    if (data.givenName !== undefined && data.givenName.trim().length === 0) {
-      return {
-        success: false,
-        error: "Le prénom ne peut pas être vide",
-      };
-    }
-
-    // Validation spécifique pour les rôles AMO et AMO_ET_ALLERS_VERS
-    if (data.role && [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) && data.entrepriseAmoId === null) {
-      return {
-        success: false,
-        error: "Une entreprise AMO doit être sélectionnée pour ce rôle",
-      };
-    }
-
-    // Validation spécifique pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS
-    if (
-      data.role &&
-      [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(data.role) &&
-      data.allersVersId === null
-    ) {
-      return {
-        success: false,
-        error: "Un territoire Allers-Vers doit être sélectionné pour ce rôle",
-      };
-    }
-
-    const updateData: UpdateAgentData = {};
-    if (data.email) updateData.email = data.email.toLowerCase().trim();
-    if (data.givenName) updateData.givenName = data.givenName.trim();
-    if (data.usualName !== undefined) updateData.usualName = data.usualName?.trim();
-    if (data.role) updateData.role = data.role;
-    if (data.departements !== undefined) updateData.departements = data.departements;
-    if (data.entrepriseAmoId !== undefined) updateData.entrepriseAmoId = data.entrepriseAmoId;
-    if (data.allersVersId !== undefined) updateData.allersVersId = data.allersVersId;
-
-    const agent = await updateAgent(agentId, updateData);
+    const agent = await updateAgent(agentId, parsed.data);
 
     if (!agent) {
       return {

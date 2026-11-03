@@ -48,7 +48,7 @@ import { getReglesAmo } from "@/features/parcours/amo/domain/value-objects/depar
 import epciData from "@/features/seo/data/generated/epci.json";
 
 import type { DossierItem } from "@/features/backoffice/espace-agent/dossiers/domain/types/dossiers-territoire.types";
-import type { Agent } from "@/shared/database/schema/agents";
+import { aUnRole, type Agent } from "@/shared/database/schema/agents";
 import {
   SCENARIOS,
   grouperDepartementsMultiAmo,
@@ -197,6 +197,12 @@ async function listerComptes() {
   console.log();
 
   for (const agent of agents) {
+    // Structure sans habilitation, ou rôle de structure sans structure : la connexion est refusée.
+    if (!aUnRole(agent)) {
+      console.log(`  ${agent.email}`);
+      console.log(`      sans rôle — COMPTE INEXPLOITABLE : aucune structure habilitée`);
+      continue;
+    }
     const input = {
       id: agent.id,
       role: agent.role,
@@ -276,6 +282,10 @@ async function listerCasDeTest(email: string) {
   const agent = await agentsRepo.findByEmail(email);
   if (!agent) {
     console.error(`Aucun agent avec l'email "${email}". Lancer --comptes pour voir la liste.`);
+    process.exit(1);
+  }
+  if (!aUnRole(agent)) {
+    console.error(`L'agent "${email}" n'a aucun rôle (structure sans habilitation, ou aucune structure).`);
     process.exit(1);
   }
 

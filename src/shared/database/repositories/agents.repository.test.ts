@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AgentsRepository } from "./agents.repository";
-import type { Agent } from "../schema/agents";
+import type { Agent, AgentLigne } from "../schema/agents";
 import { db } from "../client";
 import { UserRole } from "@/shared/domain/value-objects";
 
@@ -14,13 +14,51 @@ vi.mock("../client", () => ({
 function mockSelectChain(row: unknown) {
   const limit = vi.fn().mockResolvedValue(row ? [row] : []);
   const where = vi.fn().mockReturnValue({ limit });
-  const leftJoin2 = vi.fn().mockReturnValue({ where });
+  const leftJoin3 = vi.fn().mockReturnValue({ where });
+  const leftJoin2 = vi.fn().mockReturnValue({ leftJoin: leftJoin3 });
   const leftJoin1 = vi.fn().mockReturnValue({ leftJoin: leftJoin2 });
   const from = vi.fn().mockReturnValue({ leftJoin: leftJoin1 });
   return { from };
 }
 
-describe("AgentsRepository.findByIdWithStructure", () => {
+function ligneAgent(override: Partial<AgentLigne> = {}): AgentLigne {
+  return {
+    id: "a-1",
+    sub: "sub-1",
+    email: "jean.dupont@gouv.fr",
+    givenName: "Jean",
+    usualName: "Dupont",
+    uid: null,
+    siret: null,
+    phone: null,
+    organizationalUnit: null,
+    structureId: null,
+    legacyRole: UserRole.ADMINISTRATEUR,
+    legacyEntrepriseAmoId: null,
+    legacyAllersVersId: null,
+    desactiveAt: null,
+    desactivePar: null,
+    desactiveRaison: null,
+    lastLogin: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...override,
+  };
+}
+
+function ligneResolue(agent: AgentLigne, habilitations: { amo?: boolean; av?: boolean } = {}) {
+  return {
+    agent,
+    structureNom: agent.structureId ? "Soliha 54" : null,
+    amoId: habilitations.amo ? "amo-1" : null,
+    amoNom: habilitations.amo ? "Soliha 54" : null,
+    amoSiret: habilitations.amo ? "12345678901234" : null,
+    avId: habilitations.av ? "av-1" : null,
+    avNom: habilitations.av ? "Soliha Meurthe-et-Moselle" : null,
+  };
+}
+
+describe("AgentsRepository — rôle dérivé de la structure", () => {
   let repo: AgentsRepository;
 
   beforeEach(() => {
@@ -28,79 +66,68 @@ describe("AgentsRepository.findByIdWithStructure", () => {
     vi.clearAllMocks();
   });
 
-  it("retourne null si l'agent n'existe pas", async () => {
+  function mockLigne(ligne: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(db.select).mockReturnValue(mockSelectChain(null) as any);
-    expect(await repo.findByIdWithStructure("missing")).toBeNull();
+    vi.mocked(db.select).mockReturnValue(mockSelectChain(ligne) as any);
+  }
+
+  it("retourne null si l'agent n'existe pas", async () => {
+    mockLigne(null);
+    expect(await repo.findById("absent")).toBeNull();
   });
 
-  it("résout entrepriseAmo si l'agent est rattaché à une AMO", async () => {
-    vi.mocked(db.select).mockReturnValue(
-      mockSelectChain({
-        id: "a-1",
-        givenName: "Jean",
-        usualName: "Dupont",
-        role: UserRole.AMO,
-        amoId: "amo-1",
-        amoNom: "Soliha 36",
-        avId: null,
-        avNom: null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any
+  it("donne les deux rôles d'une structure qui a ses deux habilitations", async () => {
+    mockLigne(
+      ligneResolue(ligneAgent({ structureId: "s-1", legacyRole: UserRole.ALLERS_VERS }), { amo: true, av: true })
     );
 
-    const result = await repo.findByIdWithStructure("a-1");
+    const agent = await repo.findById("a-1");
 
-    expect(result).toEqual({
-      id: "a-1",
-      givenName: "Jean",
-      usualName: "Dupont",
-      role: UserRole.AMO,
-      entrepriseAmo: { id: "amo-1", nom: "Soliha 36" },
-      allersVers: null,
-    });
+    expect(agent?.role).toBe(UserRole.AMO_ET_ALLERS_VERS);
+    expect(agent?.entrepriseAmoId).toBe("amo-1");
+    expect(agent?.allersVersId).toBe("av-1");
   });
 
-  it("résout allersVers si l'agent est rattaché à un AV pur", async () => {
-    vi.mocked(db.select).mockReturnValue(
-      mockSelectChain({
-        id: "a-2",
-        givenName: "Élise",
-        usualName: null,
-        role: UserRole.ALLERS_VERS,
-        amoId: null,
-        amoNom: null,
-        avId: "av-1",
-        avNom: "Adil 36",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any
+  it("ignore les colonnes héritées quand la structure les contredit", async () => {
+    mockLigne(
+      ligneResolue(
+        ligneAgent({ structureId: "s-1", legacyRole: UserRole.AMO, legacyEntrepriseAmoId: "ancienne-amo" }),
+        { av: true }
+      )
     );
 
-    const result = await repo.findByIdWithStructure("a-2");
+    const agent = await repo.findById("a-1");
 
-    expect(result?.entrepriseAmo).toBeNull();
-    expect(result?.allersVers).toEqual({ id: "av-1", nom: "Adil 36" });
+    expect(agent?.role).toBe(UserRole.ALLERS_VERS);
+    expect(agent?.entrepriseAmoId).toBeNull();
   });
 
-  it("retourne les deux structures nulles si l'agent n'a aucun rattachement", async () => {
-    vi.mocked(db.select).mockReturnValue(
-      mockSelectChain({
-        id: "a-3",
-        givenName: "Sam",
-        usualName: "B.",
-        role: UserRole.SUPER_ADMINISTRATEUR,
-        amoId: null,
-        amoNom: null,
-        avId: null,
-        avNom: null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any
-    );
+  it("ne donne aucun rôle à un agent dont la structure n'a plus d'habilitation", async () => {
+    mockLigne(ligneResolue(ligneAgent({ structureId: "s-1", legacyRole: UserRole.AMO })));
 
-    const result = await repo.findByIdWithStructure("a-3");
+    expect((await repo.findById("a-1"))?.role).toBeNull();
+  });
 
-    expect(result?.entrepriseAmo).toBeNull();
-    expect(result?.allersVers).toBeNull();
+  it("ne donne aucun rôle à un rôle de structure sans structure", async () => {
+    mockLigne(ligneResolue(ligneAgent({ legacyRole: UserRole.AMO_ET_ALLERS_VERS })));
+
+    expect((await repo.findById("a-1"))?.role).toBeNull();
+  });
+
+  it("garde le rôle plateforme d'un agent sans structure", async () => {
+    mockLigne(ligneResolue(ligneAgent({ legacyRole: UserRole.ANALYSTE })));
+
+    expect((await repo.findById("a-1"))?.role).toBe(UserRole.ANALYSTE);
+  });
+
+  it("expose la structure et ses lignes pour l'affichage", async () => {
+    mockLigne(ligneResolue(ligneAgent({ structureId: "s-1" }), { amo: true }));
+
+    const agent = await repo.findByIdAvecStructure("a-1");
+
+    expect(agent?.structure).toEqual({ id: "s-1", nom: "Soliha 54" });
+    expect(agent?.entrepriseAmo).toEqual({ id: "amo-1", nom: "Soliha 54", siret: "12345678901234" });
+    expect(agent?.allersVers).toBeNull();
   });
 });
 
@@ -162,10 +189,12 @@ describe("AgentsRepository désactivation", () => {
   it("horodate la désactivation avec son auteur et sa raison", async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(db.update).mockReturnValue(mockUpdateChain([{ id: "a-1" }]) as any);
+    const relu = { id: "a-1" } as Agent;
+    vi.spyOn(repo, "findById").mockResolvedValue(relu);
 
     const result = await repo.desactiver("a-1", "super-admin-1", "A quitté ses fonctions");
 
-    expect(result).toEqual({ id: "a-1" });
+    expect(result).toBe(relu);
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         desactiveAt: expect.any(Date),
@@ -185,6 +214,7 @@ describe("AgentsRepository désactivation", () => {
   it("remet les trois colonnes à null à la réactivation", async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(db.update).mockReturnValue(mockUpdateChain([{ id: "a-1" }]) as any);
+    vi.spyOn(repo, "findById").mockResolvedValue({ id: "a-1" } as Agent);
 
     await repo.reactiver("a-1");
 
@@ -215,6 +245,7 @@ describe("AgentsRepository.authenticateFromProConnect", () => {
       siret: null,
       phone: null,
       organizationalUnit: null,
+      structureId: "s-1",
       role: UserRole.AMO,
       entrepriseAmoId: "amo-1",
       allersVersId: null,
@@ -251,13 +282,20 @@ describe("AgentsRepository.authenticateFromProConnect", () => {
     expect(db.update).not.toHaveBeenCalled();
   });
 
-  it("laisse passer un agent actif", async () => {
+  it("refuse un agent sans rôle (structure sans habilitation), sans écrire en base", async () => {
+    vi.spyOn(repo, "findBySub").mockResolvedValue(agentFixture({ role: null }));
+    vi.spyOn(repo, "findByEmail").mockResolvedValue(null);
+
+    expect(await repo.authenticateFromProConnect(proConnectData)).toBeNull();
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it("laisse passer un agent actif et le relit avec son rôle dérivé", async () => {
     const actif = agentFixture();
     vi.spyOn(repo, "findBySub").mockResolvedValue(actif);
+    vi.spyOn(repo, "findById").mockResolvedValue(actif);
     vi.mocked(db.update).mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([actif]) }),
-      }),
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 

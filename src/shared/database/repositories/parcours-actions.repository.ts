@@ -7,6 +7,7 @@ import { allersVers } from "../schema/allers-vers";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { users } from "../schema/users";
 import { BaseRepository } from "./base.repository";
+import { resoudreRoleAgent } from "@/shared/domain/value-objects/role-structure";
 import type { ParcoursAction, NewParcoursAction } from "../schema/parcours-actions";
 import type { ActionDetail, StructureType } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
 import type { CommentaireAdminDetail } from "@/features/backoffice/administration/commentaires/domain/types/commentaire-admin.types";
@@ -118,8 +119,8 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
       })
       .from(parcoursActions)
       .leftJoin(agents, eq(parcoursActions.agentId, agents.id))
-      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
-      .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
+      .leftJoin(entreprisesAmo, eq(entreprisesAmo.structureId, agents.structureId))
+      .leftJoin(allersVers, eq(allersVers.structureId, agents.structureId))
       .where(eq(parcoursActions.parcoursId, parcoursId))
       .orderBy(parcoursActions.createdAt); // Du plus ancien au plus récent
 
@@ -140,8 +141,8 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
       })
       .from(parcoursActions)
       .leftJoin(agents, eq(parcoursActions.agentId, agents.id))
-      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
-      .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
+      .leftJoin(entreprisesAmo, eq(entreprisesAmo.structureId, agents.structureId))
+      .leftJoin(allersVers, eq(allersVers.structureId, agents.structureId))
       .where(eq(parcoursActions.id, id))
       .limit(1);
 
@@ -297,7 +298,11 @@ export class ParcoursActionsRepository extends BaseRepository<ParcoursAction> {
           id: row.agent.id,
           givenName: row.agent.givenName,
           usualName: row.agent.usualName,
-          role: row.agent.role,
+          role: resoudreRoleAgent({
+            structureId: row.agent.structureId,
+            roleStocke: row.agent.legacyRole,
+            habilitations: { amo: row.entrepriseAmo !== null, allersVers: row.allersVers !== null },
+          }),
           structureType,
           structureName,
         },

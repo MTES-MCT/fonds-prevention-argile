@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { db } from "@/shared/database/client";
 import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database/schema";
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
+import { structuresRepository } from "@/shared/database/repositories/structures.repository";
 import { parseListe } from "@/shared/utils/liste.utils";
 import { decrireBilanPurge } from "../../shared/domain";
 import { eq } from "drizzle-orm";
@@ -196,38 +197,42 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
 
       const departementsFormatted = parseListe(row.departements).join(", ");
 
-      const existingAmo = await db
-        .select({ id: entreprisesAmo.id })
+      const [existingAmo] = await db
+        .select({ structureId: entreprisesAmo.structureId })
         .from(entreprisesAmo)
         .where(eq(entreprisesAmo.siret, siret))
         .limit(1);
 
-      const isUpdate = existingAmo.length > 0;
+      const isUpdate = existingAmo !== undefined;
 
-      const [entreprise] = await db
-        .insert(entreprisesAmo)
-        .values({
-          nom: row.nom.trim(),
-          siret,
-          departements: departementsFormatted,
-          emails: emailsList.join(";"),
-          telephone: formatTelephone(row.telephone),
-          adresse: String(row.adresse || "").trim(),
-          horaires: String(row.horaires || "").trim() || null,
-        })
-        .onConflictDoUpdate({
-          target: entreprisesAmo.siret,
-          set: {
+      const [entreprise] = await db.transaction(async (tx) =>
+        tx
+          .insert(entreprisesAmo)
+          .values({
             nom: row.nom.trim(),
+            siret,
             departements: departementsFormatted,
             emails: emailsList.join(";"),
             telephone: formatTelephone(row.telephone),
             adresse: String(row.adresse || "").trim(),
             horaires: String(row.horaires || "").trim() || null,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
+            // Une AMO existante garde sa structure, une nouvelle en reçoit une à son nom.
+            structureId: existingAmo?.structureId ?? (await structuresRepository.creer(row.nom.trim(), tx)),
+          })
+          .onConflictDoUpdate({
+            target: entreprisesAmo.siret,
+            set: {
+              nom: row.nom.trim(),
+              departements: departementsFormatted,
+              emails: emailsList.join(";"),
+              telephone: formatTelephone(row.telephone),
+              adresse: String(row.adresse || "").trim(),
+              horaires: String(row.horaires || "").trim() || null,
+              updatedAt: new Date(),
+            },
+          })
+          .returning()
+      );
 
       if (isUpdate) {
         entreprisesUpdated++;

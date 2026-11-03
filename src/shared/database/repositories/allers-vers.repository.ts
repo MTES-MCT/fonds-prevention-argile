@@ -3,7 +3,12 @@ import { db } from "../client";
 import { agents, allersVers, allersVersDepartements, allersVersEpci } from "../schema";
 import type { NewAllersVers } from "../schema/allers-vers";
 import { BaseRepository } from "./base.repository";
+import { structuresRepository } from "./structures.repository";
+import { agentsRepository } from "./agents.repository";
 import { variantesCodeDepartement } from "@/shared/constants/departements.constants";
+
+/** Structure Aller-vers telle que l'annuaire la montre, sans sa structure de rattachement. */
+export type AllersVersAnnuaire = Omit<typeof allersVers.$inferSelect, "structureId">;
 
 export type AllersVersWithRelations = {
   id: string;
@@ -91,17 +96,20 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
    * Crée un nouvel Allers Vers
    */
   async create(data: Partial<typeof allersVers.$inferSelect>): Promise<typeof allersVers.$inferSelect> {
-    const insertData: NewAllersVers = {
-      nom: data.nom!,
-      emails: data.emails!,
-      telephone: data.telephone || "",
-      adresse: data.adresse || "",
-      horaires: data.horaires ?? null,
-    };
+    return await db.transaction(async (tx) => {
+      const insertData: NewAllersVers = {
+        nom: data.nom!,
+        emails: data.emails!,
+        telephone: data.telephone || "",
+        adresse: data.adresse || "",
+        horaires: data.horaires ?? null,
+        // Une nouvelle structure Aller-vers est sa propre structure, sans rôle AMO.
+        structureId: await structuresRepository.creer(data.nom!, tx),
+      };
 
-    const [created] = await db.insert(allersVers).values(insertData).returning();
-
-    return created;
+      const [created] = await tx.insert(allersVers).values(insertData).returning();
+      return created;
+    });
   }
 
   /**
@@ -128,7 +136,16 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
    * Supprime un Allers Vers et toutes ses relations
    */
   async delete(id: string): Promise<boolean> {
-    return await this.transaction(async (tx) => {
+    const existant = await this.findById(id);
+    if (!existant) return false;
+    const structure = await structuresRepository.findAvecHabilitations(existant.structureId);
+    if (!structure?.entrepriseAmo && (await agentsRepository.compterParStructure(existant.structureId)) > 0) {
+      throw new Error(
+        "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer celle-ci"
+      );
+    }
+
+    return await db.transaction(async (tx) => {
       // Supprimer les relations départements
       await tx.delete(allersVersDepartements).where(eq(allersVersDepartements.allersVersId, id));
 
@@ -138,19 +155,22 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
       // Supprimer l'Allers Vers
       const result = await tx.delete(allersVers).where(eq(allersVers.id, id)).returning();
 
+      await agentsRepository.resynchroniserColonnesHeritees(existant.structureId, tx);
+      await structuresRepository.supprimerVides(tx);
       return result.length > 0;
     });
   }
 
   /**
-   * Supprime les structures qu'aucun agent ne référence (désactivés compris)
+   * Supprime les structures dont aucun agent ne relève (désactivés compris)
    */
   async supprimerNonRattaches(): Promise<{ supprimees: string[]; conservees: string[] }> {
     // Un seul DELETE : un agent rattaché entre-temps ne peut pas se retrouver orphelin.
     const supprimees = await db
       .delete(allersVers)
-      .where(notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.allersVersId, allersVers.id))))
+      .where(notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, allersVers.structureId))))
       .returning({ nom: allersVers.nom });
+    await structuresRepository.supprimerVides();
 
     const conservees = await db.select({ nom: allersVers.nom }).from(allersVers).orderBy(allersVers.nom);
 
@@ -247,7 +267,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
   /**
    * Récupère les Allers Vers qui couvrent un département
    */
-  async findByDepartement(codeDepartement: string): Promise<Array<typeof allersVers.$inferSelect>> {
+  async findByDepartement(codeDepartement: string): Promise<AllersVersAnnuaire[]> {
     return await db
       .selectDistinct({
         id: allersVers.id,
@@ -266,7 +286,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
   /**
    * Récupère les Allers Vers qui couvrent un EPCI
    */
-  async findByEpci(codeEpci: string): Promise<Array<typeof allersVers.$inferSelect>> {
+  async findByEpci(codeEpci: string): Promise<AllersVersAnnuaire[]> {
     return await db
       .selectDistinct({
         id: allersVers.id,
@@ -290,10 +310,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
    * 2. Sinon → retourne les AV du département
    * 3. Si aucun → retourne un tableau vide
    */
-  async findByEpciWithDepartementFallback(
-    codeDepartement: string,
-    codeEpci?: string
-  ): Promise<Array<typeof allersVers.$inferSelect>> {
+  async findByEpciWithDepartementFallback(codeDepartement: string, codeEpci?: string): Promise<AllersVersAnnuaire[]> {
     // 1. Si EPCI fourni, chercher d'abord par EPCI
     if (codeEpci) {
       const avParEpci = await this.findByEpci(codeEpci);

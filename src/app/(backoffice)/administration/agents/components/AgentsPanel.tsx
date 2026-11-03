@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import AgentsList from "./AgentsList";
 import AgentsEmailExport from "./AgentsEmailExport";
-import AgentFormModal, { type AgentFormData, type EntrepriseAmoOption, type AllersVersOption } from "./AgentFormModal";
+import AgentFormModal, { type AgentFormData, type StructureOption } from "./AgentFormModal";
 import AgentDeleteModal from "./AgentDeleteModal";
 import AgentDesactiverModal from "./AgentDesactiverModal";
 import {
@@ -12,6 +12,7 @@ import {
   deleteAgentAction,
   desactiverAgentAction,
   getAgentsAction,
+  getStructuresOptionsAction,
   getAgentTracesAction,
   getAgentListesDiffusionAction,
   reactiverAgentAction,
@@ -19,8 +20,6 @@ import {
 } from "@/features/backoffice";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import type { ListeDiffusion } from "@/features/backoffice/administration/agents/services/listes-diffusion.service";
-import { getEntreprisesAmoOptions } from "@/features/backoffice/administration/amo/actions";
-import { getAllersVersOptions } from "@/features/backoffice/administration/allers-vers/actions/allers-vers-admin.actions";
 import { UserRole } from "@/shared/domain/value-objects";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 
@@ -106,8 +105,7 @@ const ROLE_TABS: RoleTab[] = [
 
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<AgentWithPermissions[]>([]);
-  const [entreprisesAmo, setEntreprisesAmo] = useState<EntrepriseAmoOption[]>([]);
-  const [allersVersList, setAllersVersList] = useState<AllersVersOption[]>([]);
+  const [structures, setStructures] = useState<StructureOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("tous");
@@ -137,22 +135,18 @@ export default function AgentsPanel() {
       if (tab.roles.length === 0) {
         counts[tab.id] = agentsFiltres;
       } else {
-        counts[tab.id] = agentsFiltres.filter((a) => tab.roles.includes(a.agent.role));
+        counts[tab.id] = agentsFiltres.filter((a) => a.agent.role !== null && tab.roles.includes(a.agent.role));
       }
     }
     return counts;
   }, [agentsFiltres]);
 
-  // Charger les agents, les entreprises AMO et les territoires Allers-Vers
+  // Charger les agents et les structures auxquelles les rattacher
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    const [agentsResult, entreprisesResult, allersVersResult] = await Promise.all([
-      getAgentsAction(),
-      getEntreprisesAmoOptions(),
-      getAllersVersOptions(),
-    ]);
+    const [agentsResult, structuresResult] = await Promise.all([getAgentsAction(), getStructuresOptionsAction()]);
 
     if (agentsResult.success) {
       setAgents(agentsResult.data);
@@ -160,12 +154,8 @@ export default function AgentsPanel() {
       setError(agentsResult.error || "Erreur lors du chargement des agents");
     }
 
-    if (entreprisesResult.success) {
-      setEntreprisesAmo(entreprisesResult.data);
-    }
-
-    if (allersVersResult.success) {
-      setAllersVersList(allersVersResult.data);
+    if (structuresResult.success) {
+      setStructures(structuresResult.data);
     }
 
     setIsLoading(false);
@@ -275,20 +265,16 @@ export default function AgentsPanel() {
           email: data.email,
           givenName: data.givenName,
           usualName: data.usualName || undefined,
-          role: data.role,
+          compte: data.compte,
           departements: data.departements,
-          entrepriseAmoId: data.entrepriseAmoId,
-          allersVersId: data.allersVersId,
         });
       } else {
         result = await createAgentAction({
           email: data.email,
           givenName: data.givenName,
           usualName: data.usualName || undefined,
-          role: data.role,
+          compte: data.compte,
           departements: data.departements,
-          entrepriseAmoId: data.entrepriseAmoId,
-          allersVersId: data.allersVersId,
         });
       }
 
@@ -447,8 +433,7 @@ export default function AgentsPanel() {
         onSubmit={handleFormSubmit}
         agent={selectedAgent}
         isLoading={isSubmitting}
-        entreprisesAmo={entreprisesAmo}
-        allersVersList={allersVersList}
+        structures={structures}
       />
 
       <AgentDeleteModal

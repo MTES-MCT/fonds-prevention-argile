@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import {
   agents,
@@ -147,14 +147,14 @@ export async function resoudreAmoARattacher(
   parcours: ParcoursSimulationPair & { id: string }
 ): Promise<ResolutionRattachement> {
   const [trace] = await db
-    .select({ entrepriseAmoId: agents.entrepriseAmoId })
+    .select({ entrepriseAmoId: entreprisesAmo.id })
     .from(parcoursActions)
     .innerJoin(agents, eq(parcoursActions.agentId, agents.id))
+    .innerJoin(entreprisesAmo, eq(entreprisesAmo.structureId, agents.structureId))
     .where(
       and(
         eq(parcoursActions.parcoursId, parcours.id),
-        eq(parcoursActions.actionType, ACTION_TYPE_ACCOMPAGNEMENT_ARRETE),
-        isNotNull(agents.entrepriseAmoId)
+        eq(parcoursActions.actionType, ACTION_TYPE_ACCOMPAGNEMENT_ARRETE)
       )
     )
     .orderBy(desc(parcoursActions.createdAt))

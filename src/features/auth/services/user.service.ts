@@ -33,9 +33,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     // Note: session.userId contient l'ID de l'agent (UUID), pas le sub ProConnect
     const agent = await agentsRepo.findById(session.userId);
 
-    // Agent supprimé ou désactivé : sa session ouverte tombe ici, toutes les gardes backoffice
-    // passant par checkUserAccess -> getCurrentUser. Le rôle du JWT, figé à la connexion, ne sert jamais.
-    if (!agent || agent.desactiveAt) return null;
+    // Agent supprimé, désactivé ou sans rôle (structure sans habilitation) : sa session ouverte tombe ici,
+    // toutes les gardes backoffice passant par checkUserAccess -> getCurrentUser. Le rôle du JWT ne sert jamais.
+    if (!agent || agent.desactiveAt || !agent.role) return null;
 
     return {
       id: session.userId,

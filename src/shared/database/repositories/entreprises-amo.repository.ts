@@ -3,6 +3,8 @@ import { db } from "../client";
 import { agents, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci, parcoursAmoValidations } from "../schema";
 import type { NewEntrepriseAmo } from "../schema/entreprises-amo";
 import { BaseRepository } from "./base.repository";
+import { structuresRepository } from "./structures.repository";
+import { agentsRepository } from "./agents.repository";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
@@ -96,18 +98,21 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
    * Crée une nouvelle AMO
    */
   async create(data: Partial<Amo>): Promise<Amo> {
-    const insertData: NewEntrepriseAmo = {
-      nom: data.nom!,
-      siret: data.siret || "",
-      departements: data.departements!,
-      emails: data.emails!,
-      telephone: data.telephone || "",
-      adresse: data.adresse || "",
-    };
+    return await db.transaction(async (tx) => {
+      const insertData: NewEntrepriseAmo = {
+        nom: data.nom!,
+        siret: data.siret || "",
+        departements: data.departements!,
+        emails: data.emails!,
+        telephone: data.telephone || "",
+        adresse: data.adresse || "",
+        // Une nouvelle AMO est sa propre structure, sans rôle Aller-vers.
+        structureId: await structuresRepository.creer(data.nom!, tx),
+      };
 
-    const [created] = await db.insert(entreprisesAmo).values(insertData).returning();
-
-    return created;
+      const [created] = await tx.insert(entreprisesAmo).values(insertData).returning();
+      return created;
+    });
   }
 
   /**
@@ -133,7 +138,20 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
    * Supprime une AMO et toutes ses relations
    */
   async delete(id: string): Promise<boolean> {
-    return await this.transaction(async (tx) => {
+    const [existante] = await db
+      .select({ structureId: entreprisesAmo.structureId })
+      .from(entreprisesAmo)
+      .where(eq(entreprisesAmo.id, id))
+      .limit(1);
+    if (!existante) return false;
+    const structure = await structuresRepository.findAvecHabilitations(existante.structureId);
+    if (!structure?.allersVers && (await agentsRepository.compterParStructure(existante.structureId)) > 0) {
+      throw new Error(
+        "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer cette AMO"
+      );
+    }
+
+    return await db.transaction(async (tx) => {
       // Supprimer les relations communes
       await tx.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, id));
 
@@ -143,6 +161,8 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
       // Supprimer l'AMO
       const result = await tx.delete(entreprisesAmo).where(eq(entreprisesAmo.id, id)).returning();
 
+      await agentsRepository.resynchroniserColonnesHeritees(existante.structureId, tx);
+      await structuresRepository.supprimerVides(tx);
       return result.length > 0;
     });
   }
@@ -156,7 +176,9 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
       .delete(entreprisesAmo)
       .where(
         and(
-          notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.entrepriseAmoId, entreprisesAmo.id))),
+          notExists(
+            db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, entreprisesAmo.structureId))
+          ),
           notExists(
             db
               .select({ id: parcoursAmoValidations.id })
@@ -166,6 +188,7 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
         )
       )
       .returning({ nom: entreprisesAmo.nom });
+    await structuresRepository.supprimerVides();
 
     const conservees = await db.select({ nom: entreprisesAmo.nom }).from(entreprisesAmo).orderBy(entreprisesAmo.nom);
 

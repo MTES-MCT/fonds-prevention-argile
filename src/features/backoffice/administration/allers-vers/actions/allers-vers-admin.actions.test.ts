@@ -44,6 +44,7 @@ describe("allers-vers-admin.actions", () => {
       emails: ["contact@structure.fr", "info@structure.fr"],
       telephone: "0123456789",
       adresse: "1 rue de la Structure, 75001 Paris",
+      structureId: "structure-av-123",
       ...restOverride,
       horaires: horaires ?? null,
     };
