@@ -260,9 +260,8 @@ async function main() {
     if (supprimes.length !== 1) throw new FusionRefusee("le compte invité a changé pendant la fusion");
   });
 
-  const lien = compte.validation
-    ? `${getServerEnv().BASE_URL}/espace-agent/dossiers/${compte.validation.id}`
-    : `${getServerEnv().BASE_URL}/espace-agent/dossiers/${compte.parcours.id}`;
+  // Permalien du parcours : la page redirige vers dossier, demande ou prospect selon l'état (ADR-0025).
+  const lien = `${getServerEnv().BASE_URL}/espace-agent/dossiers/${compte.parcours.id}`;
   console.log();
   if (MODE === "suppression") {
     console.log("Dossier invité supprimé. Le compte FranceConnect n'a pas changé :");
