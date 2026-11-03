@@ -290,6 +290,14 @@ describe("AgentsRepository.authenticateFromProConnect", () => {
     expect(db.update).not.toHaveBeenCalled();
   });
 
+  it("refuse un agent sans rôle trouvé par email (première connexion), sans écrire en base", async () => {
+    vi.spyOn(repo, "findBySub").mockResolvedValue(null);
+    vi.spyOn(repo, "findByEmail").mockResolvedValue(agentFixture({ sub: "pending_1", role: null }));
+
+    expect(await repo.authenticateFromProConnect(proConnectData)).toBeNull();
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
   it("laisse passer un agent actif et le relit avec son rôle dérivé", async () => {
     const actif = agentFixture();
     vi.spyOn(repo, "findBySub").mockResolvedValue(actif);

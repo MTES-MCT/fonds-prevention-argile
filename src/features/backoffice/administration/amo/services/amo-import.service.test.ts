@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExcelJS from "exceljs";
 import { importAmosFromExcel } from "./amo-import.service";
 import { db } from "@/shared/database/client";
+import { structuresRepository } from "@/shared/database/repositories/structures.repository";
 import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci } from "@/shared/database/schema";
 import { entreprisesAmoRepository } from "@/shared/database/repositories/entreprises-amo.repository";
 
@@ -39,6 +40,7 @@ vi.mock("@/shared/database/repositories/entreprises-amo.repository", () => ({
 vi.mock("@/shared/database/repositories/structures.repository", () => ({
   structuresRepository: {
     creer: vi.fn().mockResolvedValue("structure-nouvelle"),
+    supprimer: vi.fn(),
   },
 }));
 
@@ -413,6 +415,25 @@ describe("amo-import.service", () => {
       await importAmosFromExcel(formData);
 
       expect(valuesMock.mock.calls[0][0]).toMatchObject({ structureId: structureAttendue });
+    });
+
+    it("supprime la structure créée quand un import simultané a déjà inséré la même AMO", async () => {
+      const formData = createMockFormData(createMockFile("test.xlsx", new ArrayBuffer(0)));
+      setupMockWorksheet([
+        { nom: "AMO Course", siret: "12345678901234", departements: "Indre 36", emails: "a@amo.fr" },
+      ]);
+      mockDbForInsert(false);
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoUpdate: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: "amo-1", structureId: "structure-de-l-autre-import" }]),
+          }),
+        }),
+      } as unknown as ReturnType<typeof db.insert>);
+
+      await importAmosFromExcel(formData);
+
+      expect(structuresRepository.supprimer).toHaveBeenCalledWith("structure-nouvelle", db);
     });
 
     it("devrait continuer l'import même si certaines lignes échouent", async () => {

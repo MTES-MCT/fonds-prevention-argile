@@ -26,6 +26,10 @@ export class StructuresRepository {
     return creee.id;
   }
 
+  async supprimer(structureId: string, executor: StructuresExecutor = db): Promise<void> {
+    await executor.delete(structures).where(eq(structures.id, structureId));
+  }
+
   /** Null si la structure n'existe pas. */
   async findAvecHabilitations(
     structureId: string,

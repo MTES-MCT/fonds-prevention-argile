@@ -205,8 +205,10 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
 
       const isUpdate = existingAmo !== undefined;
 
-      const [entreprise] = await db.transaction(async (tx) =>
-        tx
+      const [entreprise] = await db.transaction(async (tx) => {
+        // Une AMO existante garde sa structure, une nouvelle en reçoit une à son nom.
+        const structureCreee = existingAmo ? null : await structuresRepository.creer(row.nom.trim(), tx);
+        const lignes = await tx
           .insert(entreprisesAmo)
           .values({
             nom: row.nom.trim(),
@@ -216,8 +218,7 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
             telephone: formatTelephone(row.telephone),
             adresse: String(row.adresse || "").trim(),
             horaires: String(row.horaires || "").trim() || null,
-            // Une AMO existante garde sa structure, une nouvelle en reçoit une à son nom.
-            structureId: existingAmo?.structureId ?? (await structuresRepository.creer(row.nom.trim(), tx)),
+            structureId: existingAmo?.structureId ?? structureCreee!,
           })
           .onConflictDoUpdate({
             target: entreprisesAmo.siret,
@@ -231,8 +232,13 @@ export async function importAmosFromExcel(formData: FormData, clearExisting: boo
               updatedAt: new Date(),
             },
           })
-          .returning()
-      );
+          .returning();
+        // Import simultané du même SIRET : l'AMO a gardé la structure de l'autre, la nôtre ne sert à rien.
+        if (structureCreee && lignes[0]?.structureId !== structureCreee) {
+          await structuresRepository.supprimer(structureCreee, tx);
+        }
+        return lignes;
+      });
 
       if (isUpdate) {
         entreprisesUpdated++;
