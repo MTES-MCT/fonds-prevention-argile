@@ -15,9 +15,12 @@ vi.mock("./agents.repository", () => ({
 
 const ordre: string[] = [];
 
+// Structures lues pour la ligne : avant le verrou, puis après.
+let lectures: string[] = [];
+
 const tx = {
   select: vi.fn(() => ({
-    from: () => ({ where: () => ({ limit: () => Promise.resolve([{ structureId: "s-1" }]) }) }),
+    from: () => ({ where: () => ({ limit: () => Promise.resolve([{ structureId: lectures.shift() ?? "s-1" }]) }) }),
   })),
   delete: vi.fn(() => ({
     where: vi.fn(() => ({
@@ -44,6 +47,7 @@ describe("AllersVersRepository.delete — un agent ne perd jamais son seul rôle
   beforeEach(() => {
     vi.clearAllMocks();
     ordre.length = 0;
+    lectures = [];
     repo = new AllersVersRepository();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(db.transaction).mockImplementation(async (fn: any) => fn(tx));
@@ -57,6 +61,14 @@ describe("AllersVersRepository.delete — un agent ne perd jamais son seul rôle
     vi.mocked(agentsRepository.compterParStructure).mockResolvedValue(1);
 
     await expect(repo.delete("av-1")).rejects.toThrow("perdraient leur seul rôle");
+    expect(tx.delete).not.toHaveBeenCalled();
+  });
+
+  it("refuse quand une fusion ou un détachement a déplacé l'Aller-vers avant le verrou", async () => {
+    lectures = ["s-1", "s-2"];
+    vi.mocked(structuresRepository.findAvecHabilitations).mockResolvedValue(structureAvec(true));
+
+    await expect(repo.delete("av-1")).rejects.toThrow("vient de changer de structure");
     expect(tx.delete).not.toHaveBeenCalled();
   });
 

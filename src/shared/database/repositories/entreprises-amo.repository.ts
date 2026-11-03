@@ -154,6 +154,16 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
       if (!existante) return false;
       // Verrou exclusif : une autre suppression ou un rattachement d'agent sur la structure attend, puis voit l'état final.
       await structuresRepository.verrouiller(existante.structureId, "exclusif", tx);
+      const [relue] = await tx
+        .select({ structureId: entreprisesAmo.structureId })
+        .from(entreprisesAmo)
+        .where(eq(entreprisesAmo.id, id))
+        .limit(1);
+      if (!relue) return false;
+      // Une fusion ou un détachement l'a déplacée avant le verrou : la garde porterait sur la mauvaise structure.
+      if (relue.structureId !== existante.structureId) {
+        throw new Error("Cette AMO vient de changer de structure : recommencez la suppression");
+      }
       const structure = await structuresRepository.findAvecHabilitations(existante.structureId, tx);
       if (!structure?.allersVers && (await agentsRepository.compterParStructure(existante.structureId, tx)) > 0) {
         throw new Error(

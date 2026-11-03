@@ -145,6 +145,16 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
       if (!existant) return false;
       // Verrou exclusif : une autre suppression ou un rattachement d'agent sur la structure attend, puis voit l'état final.
       await structuresRepository.verrouiller(existant.structureId, "exclusif", tx);
+      const [relu] = await tx
+        .select({ structureId: allersVers.structureId })
+        .from(allersVers)
+        .where(eq(allersVers.id, id))
+        .limit(1);
+      if (!relu) return false;
+      // Une fusion ou un détachement l'a déplacé avant le verrou : la garde porterait sur la mauvaise structure.
+      if (relu.structureId !== existant.structureId) {
+        throw new Error("Cet Aller-vers vient de changer de structure : recommencez la suppression");
+      }
       const structure = await structuresRepository.findAvecHabilitations(existant.structureId, tx);
       if (!structure?.entrepriseAmo && (await agentsRepository.compterParStructure(existant.structureId, tx)) > 0) {
         throw new Error(
