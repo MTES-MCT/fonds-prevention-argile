@@ -45,6 +45,8 @@ son `sub`, son email et son nom dans les logs.
   aucune (même règle qu'une correction d'agent) ; une simulation réduite à l'adresse n'est pas copiée
   sur un compte qui a déjà la sienne, qu'elle masquerait à l'affichage ; la fusion est refusée si le compte porte déjà un
   formulaire DN que cette copie contredirait. Les contrôles sont refaits sous verrou au moment d'écrire.
+  Sur décision métier, `--avec-qualifications` reprend aussi les qualifications Aller-vers, et
+  `--supprimer-seulement` supprime le dossier invité sans rien reprendre (amendement du 3 novembre 2026).
 
 ## Options envisagées
 

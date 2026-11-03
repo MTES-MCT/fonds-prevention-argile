@@ -25,11 +25,15 @@ const simulation = (adresse: string, complete = true) =>
   }) as unknown as RGASimulationData;
 
 function etat(overrides: {
+  mode?: EtatFusionInvite["mode"];
+  avecQualifications?: boolean;
   invite?: Partial<EtatFusionInvite["invite"]>;
   compte?: Partial<EtatFusionInvite["compte"]>;
   adressesDifferentesAcceptees?: boolean;
 }): EtatFusionInvite {
   return {
+    mode: overrides.mode ?? "fusion",
+    avecQualifications: overrides.avecQualifications ?? false,
     invite: {
       parcoursId: "invite",
       fcId: null,
@@ -74,6 +78,21 @@ describe("motifsDeRefusFusion", () => {
     expect(motifsDeRefusFusion(etat({ invite: { nbQualifications: 2 } }))).toHaveLength(1);
   });
 
+  it("accepte une qualification quand elle est reprise ou supprimée", () => {
+    const qualifie = { invite: { nbQualifications: 1 } };
+    expect(motifsDeRefusFusion(etat({ ...qualifie, avecQualifications: true }))).toEqual([]);
+    expect(motifsDeRefusFusion(etat({ ...qualifie, mode: "suppression" }))).toEqual([]);
+  });
+
+  it("refuse toujours de supprimer un dossier invité qui porte un formulaire DN ou déjà réclamé", () => {
+    expect(motifsDeRefusFusion(etat({ mode: "suppression", invite: { nbDossiersDn: 1 } }))).toHaveLength(1);
+    expect(motifsDeRefusFusion(etat({ mode: "suppression", invite: { claimedAt: new Date() } }))).toHaveLength(1);
+  });
+
+  it("supprime sans regarder le formulaire DN du compte, puisque rien n'y est copié", () => {
+    expect(motifsDeRefusFusion(etat({ mode: "suppression", compte: { nbDossiersDn: 2 } }))).toEqual([]);
+  });
+
   it("refuse de copier la simulation sur un compte qui a déjà un formulaire DN", () => {
     expect(motifsDeRefusFusion(etat({ compte: { nbDossiersDn: 1 } }))).toEqual([
       "Le compte cible porte un formulaire DN : y copier la simulation de l'agent le ferait diverger.",
@@ -105,12 +124,30 @@ describe("motifsDeRefusFusion", () => {
 });
 
 describe("planFusion", () => {
-  it("copie la simulation de l'agent sans la promouvoir quand le compte a la sienne", () => {
-    expect(planFusion(etat({}))).toEqual({ copierSimulation: true, promouvoirSimulation: false });
+  it("déplace les actions et copie la simulation de l'agent sans la promouvoir quand le compte a la sienne", () => {
+    expect(planFusion(etat({}))).toEqual({
+      deplacerActions: true,
+      deplacerQualifications: false,
+      copierSimulation: true,
+      promouvoirSimulation: false,
+    });
+  });
+
+  it("déplace les qualifications seulement sur demande", () => {
+    expect(planFusion(etat({ avecQualifications: true })).deplacerQualifications).toBe(true);
+  });
+
+  it("ne reprend rien en mode suppression", () => {
+    expect(planFusion(etat({ mode: "suppression", avecQualifications: true }))).toEqual({
+      deplacerActions: false,
+      deplacerQualifications: false,
+      copierSimulation: false,
+      promouvoirSimulation: false,
+    });
   });
 
   it("promeut une simulation complète sur un compte qui n'en a aucune", () => {
-    expect(planFusion(etat({ compte: { simulationDemandeur: null } }))).toEqual({
+    expect(planFusion(etat({ compte: { simulationDemandeur: null } }))).toMatchObject({
       copierSimulation: true,
       promouvoirSimulation: true,
     });
@@ -123,16 +160,16 @@ describe("planFusion", () => {
 
   it("ne copie pas une simulation incomplète sur un compte qui a la sienne", () => {
     const adresseSeule = { invite: { simulationAgent: simulation("12 Rue des Lilas 03000 Moulins", false) } };
-    expect(planFusion(etat(adresseSeule))).toEqual({ copierSimulation: false, promouvoirSimulation: false });
+    expect(planFusion(etat(adresseSeule))).toMatchObject({ copierSimulation: false, promouvoirSimulation: false });
   });
 
   it("copie une simulation incomplète sur un compte qui n'en a aucune : elle porte l'adresse", () => {
     const incomplete = { invite: { simulationAgent: simulation("x", false) }, compte: { simulationDemandeur: null } };
-    expect(planFusion(etat(incomplete))).toEqual({ copierSimulation: true, promouvoirSimulation: false });
+    expect(planFusion(etat(incomplete))).toMatchObject({ copierSimulation: true, promouvoirSimulation: false });
   });
 
   it("ne copie rien quand le compte a déjà une correction d'agent", () => {
     const corrige = { compte: { simulationAgent: simulation("12 Rue des Lilas 03000 Moulins") } };
-    expect(planFusion(etat(corrige))).toEqual({ copierSimulation: false, promouvoirSimulation: false });
+    expect(planFusion(etat(corrige))).toMatchObject({ copierSimulation: false, promouvoirSimulation: false });
   });
 });

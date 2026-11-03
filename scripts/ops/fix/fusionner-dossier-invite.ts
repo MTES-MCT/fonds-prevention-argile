@@ -1,4 +1,4 @@
-// Fusionne un dossier invité jamais réclamé dans le compte FranceConnect du même demandeur (ADR-0050).
+// Fusionne un dossier invité jamais réclamé dans le compte FranceConnect du même demandeur, ou le supprime (ADR-0050).
 // Usage et garde-fous : scripts/ops/README.md § fusionner-dossier-invite. Dry-run par défaut.
 
 import "../lib/env";
@@ -17,12 +17,20 @@ import {
 import { getServerEnv } from "@/shared/config/env.config";
 import { resumerErreur } from "@/shared/utils/erreur.utils";
 import { getArg, hasFlag } from "../lib/args";
-import { motifsDeRefusFusion, planFusion, type EtatFusionInvite } from "../lib/fusion-invite";
+import {
+  motifsDeRefusFusion,
+  planFusion,
+  type EtatFusionInvite,
+  type ModeFusion,
+  type PlanFusion,
+} from "../lib/fusion-invite";
 
 const APPLY = hasFlag("apply");
 const INVITE_ID = getArg("invite");
 const COMPTE_ID = getArg("compte");
 const ADRESSES_DIFFERENTES = hasFlag("adresses-differentes");
+const AVEC_QUALIFICATIONS = hasFlag("avec-qualifications");
+const MODE: ModeFusion = hasFlag("supprimer-seulement") ? "suppression" : "fusion";
 
 type Executeur = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -81,6 +89,8 @@ type Dossier = NonNullable<Awaited<ReturnType<typeof chargerParcours>>>;
 
 function etatFusion(invite: Dossier, compte: Dossier): EtatFusionInvite {
   return {
+    mode: MODE,
+    avecQualifications: AVEC_QUALIFICATIONS,
     invite: {
       parcoursId: invite.parcours.id,
       fcId: invite.user.fcId,
@@ -116,15 +126,42 @@ function decrire(libelle: string, d: Dossier) {
   );
 }
 
+function afficherPlanFusion(invite: Dossier, compte: Dossier, plan: PlanFusion, reprendreTelephone: boolean) {
+  console.log(`  - déplacer ${invite.nbActions} action(s) vers le compte FranceConnect`);
+  if (plan.deplacerQualifications) {
+    console.log(`  - déplacer ${invite.nbQualifications} qualification(s) Aller-vers vers le compte FranceConnect`);
+  }
+  if (!plan.copierSimulation) {
+    console.log(
+      "  - simulation de l'agent non copiée (absente, incomplète face à celle du demandeur, ou déjà présente)"
+    );
+  } else if (plan.promouvoirSimulation) {
+    console.log("  - copier la simulation de l'agent, qui devient aussi celle du compte (il n'en avait aucune)");
+  } else {
+    console.log("  - copier la simulation de l'agent (baseline : simulation du demandeur)");
+  }
+  if (reprendreTelephone) console.log("  - reprendre le téléphone saisi par l'agent");
+  if (invite.user.email?.toLowerCase() !== compte.user.emailContact?.toLowerCase()) {
+    console.log("  - (non modifié) l'email saisi par l'agent diffère de l'email de contact du compte : à vérifier");
+  }
+  console.log("  - supprimer le compte invité, son parcours et sa validation");
+}
+
 class FusionRefusee extends Error {}
 
 async function main() {
   line();
-  console.log(`FUSION D'UN DOSSIER INVITÉ — ${APPLY ? "APPLY (écriture)" : "DRY-RUN (aucune écriture)"}`);
+  const titre = MODE === "fusion" ? "FUSION" : "SUPPRESSION";
+  console.log(`${titre} D'UN DOSSIER INVITÉ — ${APPLY ? "APPLY (écriture)" : "DRY-RUN (aucune écriture)"}`);
   line();
 
   if (!INVITE_ID || !COMPTE_ID) {
     console.error("Usage : --invite=<id> --compte=<id> [--apply] (id de parcours ou de validation)");
+    process.exitCode = 1;
+    return;
+  }
+  if (MODE === "suppression" && AVEC_QUALIFICATIONS) {
+    console.error("--supprimer-seulement ne reprend rien : il exclut --avec-qualifications.");
     process.exitCode = 1;
     return;
   }
@@ -145,31 +182,24 @@ async function main() {
 
   const motifs = motifsDeRefusFusion(etatFusion(invite, compte));
   if (motifs.length > 0) {
-    console.log("Fusion refusée :");
+    console.log(`${MODE === "fusion" ? "Fusion" : "Suppression"} refusée :`);
     for (const m of motifs) console.log(`  - ${m}`);
     process.exitCode = 1;
     return;
   }
 
   const plan = planFusion(etatFusion(invite, compte));
-  const reprendreTelephone = !!invite.user.telephone && !compte.user.telephone;
+  const reprendreTelephone = MODE === "fusion" && !!invite.user.telephone && !compte.user.telephone;
 
   console.log("Plan :");
-  console.log(`  - déplacer ${invite.nbActions} action(s) vers le compte FranceConnect`);
-  if (!plan.copierSimulation) {
+  if (MODE === "suppression") {
     console.log(
-      "  - simulation de l'agent non copiée (absente, incomplète face à celle du demandeur, ou déjà présente)"
+      `  - supprimer le dossier invité, ses ${invite.nbActions} action(s), ${invite.nbQualifications} qualification(s) et sa validation`
     );
-  } else if (plan.promouvoirSimulation) {
-    console.log("  - copier la simulation de l'agent, qui devient aussi celle du compte (il n'en avait aucune)");
+    console.log("  - rien n'est repris sur le compte FranceConnect : recopier d'abord ce qui doit rester");
   } else {
-    console.log("  - copier la simulation de l'agent (baseline : simulation du demandeur)");
+    afficherPlanFusion(invite, compte, plan, reprendreTelephone);
   }
-  if (reprendreTelephone) console.log("  - reprendre le téléphone saisi par l'agent");
-  if (invite.user.email?.toLowerCase() !== compte.user.emailContact?.toLowerCase()) {
-    console.log("  - (non modifié) l'email saisi par l'agent diffère de l'email de contact du compte : à vérifier");
-  }
-  console.log("  - supprimer le compte invité, son parcours et sa validation");
 
   if (!APPLY) {
     console.log();
@@ -185,13 +215,22 @@ async function main() {
     const etat = etatFusion(inviteVerrouille, compteVerrouille);
     const motifsActuels = motifsDeRefusFusion(etat);
     if (motifsActuels.length > 0) throw new FusionRefusee(motifsActuels.join(" "));
-    const { copierSimulation, promouvoirSimulation } = planFusion(etat);
+    const { deplacerActions, deplacerQualifications, copierSimulation, promouvoirSimulation } = planFusion(etat);
     const source = inviteVerrouille.parcours;
 
-    await tx
-      .update(parcoursActions)
-      .set({ parcoursId: compteVerrouille.parcours.id })
-      .where(eq(parcoursActions.parcoursId, source.id));
+    if (deplacerActions) {
+      await tx
+        .update(parcoursActions)
+        .set({ parcoursId: compteVerrouille.parcours.id })
+        .where(eq(parcoursActions.parcoursId, source.id));
+    }
+
+    if (deplacerQualifications) {
+      await tx
+        .update(prospectQualifications)
+        .set({ parcoursId: compteVerrouille.parcours.id })
+        .where(eq(prospectQualifications.parcoursId, source.id));
+    }
 
     if (copierSimulation) {
       await tx
@@ -207,7 +246,7 @@ async function main() {
         .where(eq(parcoursPrevention.id, compteVerrouille.parcours.id));
     }
 
-    if (inviteVerrouille.user.telephone && !compteVerrouille.user.telephone) {
+    if (MODE === "fusion" && inviteVerrouille.user.telephone && !compteVerrouille.user.telephone) {
       await tx
         .update(users)
         .set({ telephone: inviteVerrouille.user.telephone })
@@ -225,6 +264,11 @@ async function main() {
     ? `${getServerEnv().BASE_URL}/espace-agent/dossiers/${compte.validation.id}`
     : `${getServerEnv().BASE_URL}/espace-agent/dossiers/${compte.parcours.id}`;
   console.log();
+  if (MODE === "suppression") {
+    console.log("Dossier invité supprimé. Le compte FranceConnect n'a pas changé :");
+    console.log(`  ${lien}`);
+    return;
+  }
   console.log("Fusion faite. Suite côté AMO, depuis le dossier du compte FranceConnect :");
   console.log(`  ${lien}`);
   console.log("  « Ré-ouvrir la demande » si elle est refusée, puis accepter depuis l'écran de la demande.");
@@ -234,7 +278,7 @@ async function main() {
 main()
   .catch((error) => {
     const message =
-      error instanceof FusionRefusee ? `fusion refusée, rien n'est écrit : ${error.message}` : resumerErreur(error);
+      error instanceof FusionRefusee ? `refusé, rien n'est écrit : ${error.message}` : resumerErreur(error);
     console.error("Échec :", message);
     process.exitCode = 1;
   })
