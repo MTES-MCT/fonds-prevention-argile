@@ -92,3 +92,25 @@ SELECT
 FROM parcours_amo_validations pav
 INNER JOIN parcours_prevention pp ON pp.id = pav.parcours_id
 WHERE pav.id = '33333333-3333-4333-8333-333333333301';
+
+-- Agents hybrides : une AMO et un Aller-vers qu'ils relient formeront une même structure, la
+-- relation doit donc être 1:1. Même garde que la migration des structures, levée plus tôt.
+DO $$
+DECLARE
+  ambigues text;
+BEGIN
+  WITH paires AS (
+    SELECT DISTINCT entreprise_amo_id AS amo_id, allers_vers_id AS av_id
+    FROM agents
+    WHERE role = 'amo_et_allers_vers' AND entreprise_amo_id IS NOT NULL AND allers_vers_id IS NOT NULL
+  )
+  SELECT string_agg(nom, ', ') INTO ambigues FROM (
+    SELECT ea.nom FROM paires p JOIN entreprises_amo ea ON ea.id = p.amo_id GROUP BY ea.id, ea.nom HAVING count(*) > 1
+    UNION ALL
+    SELECT av.nom FROM paires p JOIN allers_vers av ON av.id = p.av_id GROUP BY av.id, av.nom HAVING count(*) > 1
+  ) s;
+
+  IF ambigues IS NOT NULL THEN
+    RAISE EXCEPTION 'Agents hybrides : structure reliée à plusieurs partenaires (%)', ambigues;
+  END IF;
+END $$;

@@ -64,6 +64,7 @@ const FAKE_PARCOURS_FILES = [
   "11-statistiques-demandes.sql",
   "12-donnees-eligibilite.sql",
   "13-amo-av-arrete-2026.sql",
+  "14-dossiers-amo-hybrides.sql",
 ];
 
 // ============================================================================
@@ -264,9 +265,9 @@ async function seedSuperAdmins(dryRun: boolean): Promise<void> {
   console.log(`  ✓ ${emails.length} super-admin(s) depuis SEED_AGENTS_SUPERADMINS`);
 }
 
-// Mêmes structures que la fixture `agent-hybride-1` : AMO Maison Tranquille + Aller-vers Adil 36.
-const HYBRIDE_ENTREPRISE_AMO_ID = "5833143c-9397-4a80-a7fc-3c5eb37c7a28";
-const HYBRIDE_ALLERS_VERS_ID = "17628a5e-6a45-4a3c-a72c-606332b42e4c";
+// Même paire que les fixtures `agent-hybride-*` : AMO du Berry Profond + Aller-vers Centre Indre (fake-parcours/13).
+const HYBRIDE_ENTREPRISE_AMO_ID = "99999999-9999-4999-8999-999999999901";
+const HYBRIDE_ALLERS_VERS_ID = "88888888-8888-8888-8888-888888888801";
 
 // L'étape amo-av remet leurs deux liens à NULL (ON DELETE SET NULL) : sans ce rattachement,
 // un testeur réel du rôle cumulé devient « compte inexploitable » à chaque re-seed.
