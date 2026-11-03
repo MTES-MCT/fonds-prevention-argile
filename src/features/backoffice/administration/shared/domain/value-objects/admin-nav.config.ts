@@ -49,6 +49,13 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     minRoles: [UserRole.SUPER_ADMINISTRATEUR],
   },
   {
+    id: "structures",
+    label: "Structures",
+    href: "/administration/structures",
+    icon: "fr-icon-community-line",
+    minRoles: [UserRole.SUPER_ADMINISTRATEUR],
+  },
+  {
     id: "amo",
     label: "AMO",
     href: "/administration/amo",
