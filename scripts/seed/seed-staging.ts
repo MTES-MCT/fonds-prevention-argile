@@ -255,11 +255,12 @@ async function seedSuperAdmins(dryRun: boolean): Promise<void> {
 
   for (const email of emails) {
     // Le vrai `sub` et l'état civil viennent de ProConnect ; la désactivation est levée comme
-    // pour les fixtures SQL, sinon le compte reste refusé sans message après re-seed.
+    // pour les fixtures SQL, et la structure retirée : sinon le compte en garderait les rôles.
     await rawClient`
       INSERT INTO agents (sub, email, given_name, usual_name, role)
       VALUES (${`seed_${email}`}, ${email}, 'Super', 'Administrateur', 'super_administrateur'::agent_role)
       ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role,
+        structure_id = NULL, entreprise_amo_id = NULL, allers_vers_id = NULL,
         desactive_at = NULL, desactive_par = NULL, desactive_raison = NULL
     `;
   }
