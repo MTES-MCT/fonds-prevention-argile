@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getAmosDisponibles, getAllAmos } from "./amo-disponibles.actions";
 import { getSession } from "@/features/auth/server";
+import { getCurrentUser } from "@/features/auth/services/user.service";
+import { createMockAuthUser } from "@/shared/testing/mocks";
 import { parcoursRepo } from "@/shared/database/repositories";
 import { db } from "@/shared/database/client";
 import type { ParcoursPrevention } from "@/shared/database/schema";
@@ -8,8 +10,14 @@ import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import { listerAmosDuTerritoire } from "../services/amo-couverture.service";
 
 // Mock des dépendances
-vi.mock("@/features/auth/server", () => ({
+// La garde admin est réelle : seul l'utilisateur relu en base est simulé.
+vi.mock("@/features/auth/server", async () => ({
   getSession: vi.fn(),
+  checkAdminAccess: (await import("@/features/auth/permissions/services/permissions.service")).checkAdminAccess,
+}));
+
+vi.mock("@/features/auth/services/user.service", () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock("@/shared/database/repositories", () => ({
@@ -119,10 +127,9 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
 
   describe("Accès autorisé pour les administrateurs", () => {
     it("devrait autoriser l'accès pour SUPER_ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue({
-        userId: "admin-123",
-        role: UserRole.SUPER_ADMINISTRATEUR,
-      } as Awaited<ReturnType<typeof getSession>>);
+      vi.mocked(getCurrentUser).mockResolvedValue(
+        createMockAuthUser(UserRole.SUPER_ADMINISTRATEUR, { id: "admin-123" })
+      );
 
       mockGetAllAmosDbResults([]);
 
@@ -132,10 +139,7 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
     });
 
     it("devrait autoriser l'accès pour ADMINISTRATEUR", async () => {
-      vi.mocked(getSession).mockResolvedValue({
-        userId: "admin-123",
-        role: UserRole.ADMINISTRATEUR,
-      } as Awaited<ReturnType<typeof getSession>>);
+      vi.mocked(getCurrentUser).mockResolvedValue(createMockAuthUser(UserRole.ADMINISTRATEUR, { id: "admin-123" }));
 
       mockGetAllAmosDbResults([]);
 
@@ -147,10 +151,7 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
 
   describe("Accès refusé pour les non-administrateurs", () => {
     it("devrait refuser l'accès pour AMO", async () => {
-      vi.mocked(getSession).mockResolvedValue({
-        userId: "amo-123",
-        role: UserRole.AMO,
-      } as Awaited<ReturnType<typeof getSession>>);
+      vi.mocked(getCurrentUser).mockResolvedValue(createMockAuthUser(UserRole.AMO, { id: "amo-123" }));
 
       const result = await getAllAmos();
 
@@ -161,10 +162,7 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
     });
 
     it("devrait refuser l'accès pour ANALYSTE", async () => {
-      vi.mocked(getSession).mockResolvedValue({
-        userId: "analyste-123",
-        role: UserRole.ANALYSTE,
-      } as Awaited<ReturnType<typeof getSession>>);
+      vi.mocked(getCurrentUser).mockResolvedValue(createMockAuthUser(UserRole.ANALYSTE, { id: "analyste-123" }));
 
       const result = await getAllAmos();
 
@@ -175,10 +173,7 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
     });
 
     it("devrait refuser l'accès pour PARTICULIER", async () => {
-      vi.mocked(getSession).mockResolvedValue({
-        userId: "particulier-123",
-        role: UserRole.PARTICULIER,
-      } as Awaited<ReturnType<typeof getSession>>);
+      vi.mocked(getCurrentUser).mockResolvedValue(createMockAuthUser(UserRole.PARTICULIER, { id: "particulier-123" }));
 
       const result = await getAllAmos();
 
@@ -189,7 +184,7 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
     });
 
     it("devrait refuser l'accès si non connecté", async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const result = await getAllAmos();
 
@@ -202,10 +197,9 @@ describe("getAllAmos - Restriction accès administrateurs", () => {
 
   describe("Retour des données pour les administrateurs", () => {
     it("devrait retourner la liste des AMO avec leurs relations", async () => {
-      vi.mocked(getSession).mockResolvedValue({
-        userId: "admin-123",
-        role: UserRole.SUPER_ADMINISTRATEUR,
-      } as Awaited<ReturnType<typeof getSession>>);
+      vi.mocked(getCurrentUser).mockResolvedValue(
+        createMockAuthUser(UserRole.SUPER_ADMINISTRATEUR, { id: "admin-123" })
+      );
 
       const mockAmoData = [
         {
