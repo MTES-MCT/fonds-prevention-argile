@@ -19,10 +19,10 @@ agent a invité un demandeur qui avait déjà un compte FranceConnect. Plusieurs
 (dossier archivé), trois invitations ont encore un jeton valide : désormais, un clic sur l'une d'elles
 connecte le demandeur à son compte et trace le conflit au lieu de planter.
 
-**Préalable** : relancer la requête après le déploiement, décider paire par paire avec l'AMO ou
-l'Aller-vers concerné, puis `pnpm fix:fusionner-invite` (la fusion refuse un dossier invité portant
-une qualification ou un formulaire DN, à traiter à la main). Le contact Brevo d'un stub supprimé
-n'est pas effacé : à décider si on le purge.
+**Préalable** : les décisions métier sont prises (3 novembre 2026, six doublons, dont deux trouvés
+par homonymie) ; il reste à les exécuter avec `pnpm fix:fusionner-invite`, `--avec-qualifications` ou
+`--supprimer-seulement` selon la décision. Un dossier invité portant un formulaire DN reste à traiter à
+la main. Le contact Brevo d'un stub supprimé n'est pas effacé : à décider si on le purge.
 
 ### Revue de la PR doublons : points écartés et questions métier
 
