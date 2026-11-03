@@ -1,6 +1,6 @@
 import { eq, inArray, notExists, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import { agents, allersVers, allersVersDepartements, allersVersEpci } from "../schema";
+import { agents, allersVers, allersVersDepartements, allersVersEpci, structures } from "../schema";
 import type { NewAllersVers } from "../schema/allers-vers";
 import { BaseRepository } from "./base.repository";
 import { structuresRepository } from "./structures.repository";
@@ -136,16 +136,22 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
    * Supprime un Allers Vers et toutes ses relations
    */
   async delete(id: string): Promise<boolean> {
-    const existant = await this.findById(id);
-    if (!existant) return false;
-    const structure = await structuresRepository.findAvecHabilitations(existant.structureId);
-    if (!structure?.entrepriseAmo && (await agentsRepository.compterParStructure(existant.structureId)) > 0) {
-      throw new Error(
-        "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer celle-ci"
-      );
-    }
-
     return await db.transaction(async (tx) => {
+      const [existant] = await tx
+        .select({ structureId: allersVers.structureId })
+        .from(allersVers)
+        .where(eq(allersVers.id, id))
+        .limit(1);
+      if (!existant) return false;
+      // Verrou exclusif : une autre suppression ou un rattachement d'agent sur la structure attend, puis voit l'état final.
+      await structuresRepository.verrouiller(existant.structureId, "exclusif", tx);
+      const structure = await structuresRepository.findAvecHabilitations(existant.structureId, tx);
+      if (!structure?.entrepriseAmo && (await agentsRepository.compterParStructure(existant.structureId, tx)) > 0) {
+        throw new Error(
+          "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer celle-ci"
+        );
+      }
+
       // Supprimer les relations départements
       await tx.delete(allersVersDepartements).where(eq(allersVersDepartements.allersVersId, id));
 
@@ -165,12 +171,22 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
    * Supprime les structures dont aucun agent ne relève (désactivés compris)
    */
   async supprimerNonRattaches(): Promise<{ supprimees: string[]; conservees: string[] }> {
-    // Un seul DELETE : un agent rattaché entre-temps ne peut pas se retrouver orphelin.
-    const supprimees = await db
-      .delete(allersVers)
-      .where(notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, allersVers.structureId))))
-      .returning({ nom: allersVers.nom });
-    await structuresRepository.supprimerVides();
+    const sansAgent = notExists(
+      db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, allersVers.structureId))
+    );
+    const supprimees = await db.transaction(async (tx) => {
+      // Un agent rattaché pendant la purge attend ces verrous ; le DELETE, relu après eux, épargne alors sa structure.
+      await tx
+        .select({ id: structures.id })
+        .from(structures)
+        .innerJoin(allersVers, eq(allersVers.structureId, structures.id))
+        .where(sansAgent)
+        .orderBy(structures.id)
+        .for("update", { of: structures });
+      const lignes = await tx.delete(allersVers).where(sansAgent).returning({ nom: allersVers.nom });
+      await structuresRepository.supprimerVides(tx);
+      return lignes;
+    });
 
     const conservees = await db.select({ nom: allersVers.nom }).from(allersVers).orderBy(allersVers.nom);
 

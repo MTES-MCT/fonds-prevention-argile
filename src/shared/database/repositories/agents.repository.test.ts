@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { AgentsRepository } from "./agents.repository";
 import type { Agent, AgentLigne } from "../schema/agents";
 import { db } from "../client";
+import { structuresRepository } from "./structures.repository";
 import { UserRole } from "@/shared/domain/value-objects";
 
 vi.mock("../client", () => ({
   db: {
     select: vi.fn(),
     update: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 
@@ -308,5 +310,72 @@ describe("AgentsRepository.authenticateFromProConnect", () => {
     } as any);
 
     expect(await repo.authenticateFromProConnect(proConnectData)).toEqual(actif);
+  });
+});
+
+describe("AgentsRepository.create — rattachement à une structure sous verrou", () => {
+  const ordre: string[] = [];
+  const insert = vi.fn();
+  const tx = { insert };
+  const compteStructure = { type: "structure" as const, structureId: "s-1" };
+  const nouvel = { sub: "pending_1", email: "marie.martin@soliha.fr", givenName: "Marie", compte: compteStructure };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    ordre.length = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.transaction).mockImplementation(async (fn: any) => fn(tx));
+    insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn(() => {
+          ordre.push("insertion");
+          return Promise.resolve([{ id: "a-1" }]);
+        }),
+      }),
+    });
+    vi.mocked(db.select).mockReturnValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockSelectChain(ligneResolue(ligneAgent({ structureId: "s-1" }), { amo: true })) as any
+    );
+    vi.spyOn(structuresRepository, "verrouiller").mockImplementation(async () => {
+      ordre.push("verrou");
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("lit les habilitations sous verrou partagé, dans la transaction de l'insertion", async () => {
+    vi.spyOn(structuresRepository, "findAvecHabilitations").mockImplementation(async () => {
+      ordre.push("lecture");
+      return { id: "s-1", nom: "Soliha 54", entrepriseAmo: { id: "amo-1", nom: "Soliha 54" }, allersVers: null };
+    });
+
+    const agent = await new AgentsRepository().create(nouvel);
+
+    expect(structuresRepository.verrouiller).toHaveBeenCalledWith("s-1", "partage", tx);
+    expect(structuresRepository.findAvecHabilitations).toHaveBeenCalledWith("s-1", tx);
+    expect(ordre).toEqual(["verrou", "lecture", "insertion"]);
+    expect(agent.role).toBe(UserRole.AMO);
+  });
+
+  it("n'insère rien quand la structure a perdu ses habilitations pendant l'attente du verrou", async () => {
+    vi.spyOn(structuresRepository, "findAvecHabilitations").mockResolvedValue({
+      id: "s-1",
+      nom: "Soliha 54",
+      entrepriseAmo: null,
+      allersVers: null,
+    });
+
+    await expect(new AgentsRepository().create(nouvel)).rejects.toThrow("aucun rôle à transmettre");
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("ne verrouille aucune structure pour un compte plateforme", async () => {
+    await new AgentsRepository().create({ ...nouvel, compte: { type: "plateforme", role: UserRole.ANALYSTE } });
+
+    expect(structuresRepository.verrouiller).not.toHaveBeenCalled();
+    expect(insert).toHaveBeenCalled();
   });
 });

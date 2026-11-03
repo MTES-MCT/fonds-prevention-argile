@@ -30,6 +30,15 @@ export class StructuresRepository {
     await executor.delete(structures).where(eq(structures.id, structureId));
   }
 
+  /** Dans une transaction : exclusif pour retirer une habilitation, partagé pour y rattacher un agent. */
+  async verrouiller(structureId: string, mode: "exclusif" | "partage", executor: StructuresExecutor): Promise<void> {
+    await executor
+      .select({ id: structures.id })
+      .from(structures)
+      .where(eq(structures.id, structureId))
+      .for(mode === "exclusif" ? "update" : "share");
+  }
+
   /** Null si la structure n'existe pas. */
   async findAvecHabilitations(
     structureId: string,

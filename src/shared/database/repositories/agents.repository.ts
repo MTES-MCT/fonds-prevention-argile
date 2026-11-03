@@ -179,36 +179,42 @@ export class AgentsRepository extends BaseRepository<Agent> {
 
   /** Lève si la structure n'existe pas ou n'a aucun rôle à transmettre. */
   async create(nouvel: NouvelAgent): Promise<Agent> {
-    const rattachement = await this.colonnesRattachement(nouvel.compte);
-    const [cree] = await db
-      .insert(agents)
-      .values({
-        sub: nouvel.sub,
-        email: nouvel.email,
-        givenName: nouvel.givenName,
-        usualName: nouvel.usualName ?? null,
-        ...rattachement,
-      })
-      .returning({ id: agents.id });
+    const id = await db.transaction(async (tx) => {
+      const rattachement = await this.colonnesRattachement(nouvel.compte, tx);
+      const [cree] = await tx
+        .insert(agents)
+        .values({
+          sub: nouvel.sub,
+          email: nouvel.email,
+          givenName: nouvel.givenName,
+          usualName: nouvel.usualName ?? null,
+          ...rattachement,
+        })
+        .returning({ id: agents.id });
+      return cree.id;
+    });
 
-    return (await this.findById(cree.id))!;
+    return (await this.findById(id))!;
   }
 
   async update(id: string, modification: ModificationAgent): Promise<Agent | null> {
-    const rattachement = modification.compte ? await this.colonnesRattachement(modification.compte) : {};
-    const [modifie] = await db
-      .update(agents)
-      .set({
-        ...(modification.email !== undefined && { email: modification.email }),
-        ...(modification.givenName !== undefined && { givenName: modification.givenName }),
-        ...(modification.usualName !== undefined && { usualName: modification.usualName }),
-        ...rattachement,
-        updatedAt: new Date(),
-      })
-      .where(eq(agents.id, id))
-      .returning({ id: agents.id });
+    const modifieId = await db.transaction(async (tx) => {
+      const rattachement = modification.compte ? await this.colonnesRattachement(modification.compte, tx) : {};
+      const [modifie] = await tx
+        .update(agents)
+        .set({
+          ...(modification.email !== undefined && { email: modification.email }),
+          ...(modification.givenName !== undefined && { givenName: modification.givenName }),
+          ...(modification.usualName !== undefined && { usualName: modification.usualName }),
+          ...rattachement,
+          updatedAt: new Date(),
+        })
+        .where(eq(agents.id, id))
+        .returning({ id: agents.id });
+      return modifie?.id;
+    });
 
-    return modifie ? this.findById(modifie.id) : null;
+    return modifieId ? this.findById(modifieId) : null;
   }
 
   /**
@@ -338,8 +344,12 @@ export class AgentsRepository extends BaseRepository<Agent> {
   }
 
   /** Agents rattachés à une structure, désactivés compris. */
-  async compterParStructure(structureId: string): Promise<number> {
-    return this.count(eq(agents.structureId, structureId));
+  async compterParStructure(structureId: string, executor: AgentsExecutor = db): Promise<number> {
+    const [resultat] = await executor
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(agents)
+      .where(eq(agents.structureId, structureId));
+    return resultat?.count ?? 0;
   }
 
   /** Réaligne les colonnes héritées des agents d'une structure dont une habilitation a changé. */
@@ -414,12 +424,14 @@ export class AgentsRepository extends BaseRepository<Agent> {
     return agent && aUnRole(agent) ? agent : null;
   }
 
-  private async colonnesRattachement(compte: CompteAgent): Promise<ColonnesRattachement> {
+  private async colonnesRattachement(compte: CompteAgent, tx: AgentsExecutor): Promise<ColonnesRattachement> {
     if (compte.type === "plateforme") {
       return { structureId: null, legacyRole: compte.role, legacyEntrepriseAmoId: null, legacyAllersVersId: null };
     }
 
-    const structure = await structuresRepository.findAvecHabilitations(compte.structureId);
+    // Une suppression d'habilitation concurrente attend la fin du rattachement, puis compte cet agent.
+    await structuresRepository.verrouiller(compte.structureId, "partage", tx);
+    const structure = await structuresRepository.findAvecHabilitations(compte.structureId, tx);
     const role = structure
       ? roleDepuisStructure({ amo: !!structure.entrepriseAmo, allersVers: !!structure.allersVers })
       : null;

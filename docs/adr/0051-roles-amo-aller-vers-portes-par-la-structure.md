@@ -70,7 +70,10 @@ seule perdait donc de l'information et faussait la couverture territoriale.
 - Le rôle est relu en base à chaque requête (`getCurrentUser`, PR #439) : une structure qui perd
   son habilitation coupe ses agents à la requête suivante, session ouverte comprise.
 - Supprimer une ligne AMO ou Aller-vers est refusé si des agents de la structure perdaient leur
-  seul rôle.
+  seul rôle. La vérification se fait sous verrou exclusif de la structure, dans la transaction de
+  la suppression ; rattacher un agent pose un verrou partagé, et les purges avant import verrouillent
+  les structures visées. Deux suppressions simultanées ne peuvent donc plus retirer ensemble les
+  deux habilitations d'une structure qui emploie des agents.
 
 ### Négatives / Risques
 
