@@ -17,14 +17,14 @@ Pipeline en 6 étapes, ~30s en local. Résultat : agents de test + AMO/AV de tes
 
 Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`, sauf `safety`, qui s'exécute **toujours** : l'exclure laissait les autres étapes écrire sans aucun contrôle.
 
-| #   | Step       | Quoi                                                                                           | Idempotent                                |
-| --- | ---------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                     | —                                         |
-| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)               | —                                         |
-| 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`        | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                              | ✅ `ON CONFLICT`                          |
-| 5   | `parcours` | Joue les 15 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `14-dossiers-amo-hybrides.sql` | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides)   | —                                         |
+| #   | Step       | Quoi                                                                                                                          | Idempotent                                |
+| --- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                                    | —                                         |
+| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                                              | —                                         |
+| 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`                                       | ✅ `ON CONFLICT (email) DO UPDATE`        |
+| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                                                             | ✅ `ON CONFLICT`                          |
+| 5   | `parcours` | Joue les 15 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `14-dossiers-amo-hybrides.sql`                                | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides, agents sans structure habilitée) | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -157,11 +157,11 @@ SEED_AGENTS_HYBRIDES="prenom.nom@exemple.fr,autre.personne@exemple.fr" \
   pnpm seed:staging --yes-staging --steps=agents
 ```
 
-Chaque adresse devient un agent `amo_et_allers_vers` rattaché à l'AMO du Berry Profond et à
-l'Aller-vers Centre Indre (département 36), les deux structures qu'exige ce rôle. Tous les hybrides
-partagent cette paire : une AMO et un Aller-vers qu'ils relient formeront une même structure quand
-les rôles passeront à la structure, et `user14` (AMO, Maison Tranquille) et `user` (Aller-vers, Adil 36)
-restent ainsi à un seul rôle. L'étape `verify` échoue si un hybride relie une structure à un second
+Chaque adresse devient un agent de la structure « AMO du Berry Profond », qui porte l'AMO du Berry
+Profond et l'Aller-vers Centre Indre (département 36) : il en hérite le rôle `amo_et_allers_vers`
+(ADR-0051). Tous les hybrides partagent cette structure, créée par `13-amo-av-arrete-2026.sql` avec
+un identifiant fixe, si bien que `user14` (AMO, Maison Tranquille) et `user` (Aller-vers, Adil 36)
+restent à un seul rôle. L'étape `verify` échoue si un hybride relie une structure à un second
 partenaire. Quatre dossiers sont réattribués à l'AMO du Berry Profond
 (`14-dossiers-amo-hybrides.sql`) pour que les hybrides aient un côté AMO à tester. Seule
 `geraldine.moulin@amo-berry.fr` (AMO, non connectable) gagnera le rôle Aller-vers : c'est le cas
@@ -169,7 +169,9 @@ voulu d'un agent à un seul rôle dans une structure qui en porte deux. La varia
 pas un confort : l'étape `amo-av` vide `allers_vers`, ce qui remet à `NULL` le lien de ces
 agents, et sans elle ils tombent en « compte inexploitable » à chaque re-seed. Le rôle, les
 deux rattachements et la désactivation sont réécrits ; le nom et le `sub`, écrits par
-ProConnect, ne le sont pas.
+ProConnect, ne le sont pas. La structure de chaque agent est ensuite déduite de ses rattachements
+(`agents/structures-agents.sql`, même règle que la migration `0059`), et les structures laissées
+vides par le re-seed sont supprimées.
 
 ### Quels comptes sont réellement connectables
 
@@ -197,6 +199,7 @@ Sur une base locale, aucune confirmation n'est demandée.
 sql/
 ├── agents/                          # Super-administrateurs
 │   ├── seed-agents-local-staging.sql   # fixtures + comptes bac à sable ProConnect
+│   ├── structures-agents.sql           # structure de chaque agent, déduite de ses rattachements
 │   └── seed-agents-prod.sql            # amorçage du 1er super-admin, paramétré
 ├── amo-av/                          # Fixtures AMO + Allers-vers
 │   └── seed-amo-av-fixtures.sql        # 2-3 AMO + 2-3 AV de test

@@ -114,3 +114,20 @@ BEGIN
     RAISE EXCEPTION 'Agents hybrides : structure reliée à plusieurs partenaires (%)', ambigues;
   END IF;
 END $$;
+
+-- Rôle porté par la structure (migration 0059) : chaque agent AMO ou Aller-vers du seed doit en avoir une habilitée.
+DO $$
+DECLARE
+  sans_role text;
+BEGIN
+  SELECT string_agg(a.email, ', ') INTO sans_role
+  FROM agents a
+  WHERE a.sub LIKE 'seed_%'
+    AND a.role IN ('amo', 'allers_vers', 'amo_et_allers_vers')
+    AND NOT EXISTS (SELECT 1 FROM entreprises_amo ea WHERE ea.structure_id = a.structure_id)
+    AND NOT EXISTS (SELECT 1 FROM allers_vers av WHERE av.structure_id = a.structure_id);
+
+  IF sans_role IS NOT NULL THEN
+    RAISE EXCEPTION 'Agents du seed sans structure habilitée : %', sans_role;
+  END IF;
+END $$;

@@ -30,11 +30,19 @@ DELETE FROM allers_vers
 DELETE FROM entreprises_amo
   WHERE siret IN ('99999999900001', '99999999900002', '99999999900003');
 
+-- Une structure pour chaque paire : ses deux lignes portent ses deux rôles. Celle du Berry
+-- Profond est la structure des agents hybrides (agents/structures-agents.sql).
+INSERT INTO structures (id, nom)
+VALUES
+  ('77777777-7777-4777-8777-777777777701', 'AMO du Berry Profond (seed test)'),
+  ('77777777-7777-4777-8777-777777777702', 'Soliha 54 (seed test)')
+ON CONFLICT (id) DO NOTHING;
+
 -- =============================================================================
 -- MODE OBLIGATOIRE (dept 36)
 -- 1 AMO + 1 AV liés au dept 36 (l'AV permet aussi de tester `AllerVersLocal`)
 -- =============================================================================
-INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse)
+INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse, structure_id)
 VALUES (
   '99999999-9999-4999-8999-999999999901',
   'AMO du Berry Profond (seed test)',
@@ -42,17 +50,19 @@ VALUES (
   'Indre 36',
   'amo-berry@example.org',
   '02 54 00 00 00',
-  '42 rue de la Châtaigne, 36000 Châteauroux'
+  '42 rue de la Châtaigne, 36000 Châteauroux',
+  '77777777-7777-4777-8777-777777777701'
 )
 ON CONFLICT (siret) DO NOTHING;
 
-INSERT INTO allers_vers (id, nom, emails, telephone, adresse)
+INSERT INTO allers_vers (id, nom, emails, telephone, adresse, structure_id)
 VALUES (
   '88888888-8888-8888-8888-888888888801',
   'Allers-Vers Centre Indre (seed test)',
   ARRAY['av-centre-indre@example.org'],
   '02 54 11 11 11',
-  '7 place du Marché, 36100 Issoudun'
+  '7 place du Marché, 36100 Issoudun',
+  '77777777-7777-4777-8777-777777777701'
 )
 ON CONFLICT (id) DO NOTHING;
 
@@ -65,7 +75,7 @@ ON CONFLICT DO NOTHING;
 -- 1 AMO Soliha + 1 AV Soliha (mêmes coordonnées : c'est la même structure qui
 -- joue les deux rôles, conformément à la spec arrêté 2026).
 -- =============================================================================
-INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse)
+INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse, structure_id)
 VALUES (
   '99999999-9999-4999-8999-999999999902',
   'Soliha 54 (seed test)',
@@ -73,17 +83,19 @@ VALUES (
   'Meurthe-et-Moselle 54',
   'soliha-54-seed@example.org',
   '03 83 00 00 00',
-  '1 rue de Nancy, 54000 Nancy'
+  '1 rue de Nancy, 54000 Nancy',
+  '77777777-7777-4777-8777-777777777702'
 )
 ON CONFLICT (siret) DO NOTHING;
 
-INSERT INTO allers_vers (id, nom, emails, telephone, adresse)
+INSERT INTO allers_vers (id, nom, emails, telephone, adresse, structure_id)
 VALUES (
   '88888888-8888-8888-8888-888888888802',
   'Soliha 54 AV (seed test)',
   ARRAY['soliha-54-seed-av@example.org'],
   '03 83 00 00 00',
-  '1 rue de Nancy, 54000 Nancy'
+  '1 rue de Nancy, 54000 Nancy',
+  '77777777-7777-4777-8777-777777777702'
 )
 ON CONFLICT (id) DO NOTHING;
 
