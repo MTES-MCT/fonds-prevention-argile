@@ -27,6 +27,8 @@ export default function StructuresPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Affichée dans la modale encore ouverte : derrière elle, le message ne se verrait pas.
+  const [erreurOperation, setErreurOperation] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -46,19 +48,19 @@ export default function StructuresPanel() {
 
   const selectionner = (structure: StructureAdministration) => {
     setSelection(structure);
-    setError(null);
+    setErreurOperation(null);
     setNotice(null);
   };
 
   // Recharge après chaque opération : une fusion fait disparaître une ligne, un détachement en crée une.
   const executer = async (operation: () => Promise<ActionResult<void>>, succes: string): Promise<boolean> => {
     setIsSubmitting(true);
-    setError(null);
+    setErreurOperation(null);
     setNotice(null);
     try {
       const result = await operation();
       if (!result.success) {
-        setError(result.error || "L'opération a échoué");
+        setErreurOperation(result.error || "L'opération a échoué");
         return false;
       }
       setNotice(succes);
@@ -139,6 +141,7 @@ export default function StructuresPanel() {
         modalId={MODAL_RENOMMER_ID}
         structure={selection}
         onConfirm={handleRenommer}
+        erreur={erreurOperation}
         isLoading={isSubmitting}
       />
       <StructureFusionModal
@@ -146,12 +149,14 @@ export default function StructuresPanel() {
         cible={selection}
         structures={structures}
         onConfirm={handleFusionner}
+        erreur={erreurOperation}
         isLoading={isSubmitting}
       />
       <StructureDetacherModal
         modalId={MODAL_DETACHER_ID}
         structure={selection}
         onConfirm={handleDetacher}
+        erreur={erreurOperation}
         isLoading={isSubmitting}
       />
     </>

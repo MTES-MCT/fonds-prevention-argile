@@ -75,4 +75,47 @@ describe("StructureFusionModal", () => {
 
     expect(screen.getByText(/Aucune structure ne peut rejoindre celle-ci/)).toBeInTheDocument();
   });
+
+  it("monte le dialogue avant toute sélection, sans quoi DSFR n'ouvre pas le premier clic", () => {
+    render(<StructureFusionModal modalId="modal-fusion" cible={null} structures={[adil36]} onConfirm={vi.fn()} />);
+
+    expect(document.getElementById("modal-fusion")).not.toBeNull();
+  });
+
+  it("nomme un agent désactivé, qui recevra ces droits à sa réactivation", async () => {
+    const avecDesactive: StructureAdministration = {
+      ...adil36,
+      agents: [{ id: "x", nomComplet: "Paul Durand", email: "", desactive: true }],
+    };
+    render(
+      <StructureFusionModal
+        modalId="modal"
+        cible={maisonTranquille}
+        structures={[maisonTranquille, avecDesactive]}
+        onConfirm={vi.fn()}
+      />
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Structure à fusionner"), "Adil 36");
+
+    expect(
+      screen.getByText("Les agents de « Adil 36 » gagnent le rôle AMO : Paul Durand (désactivé, à sa réactivation).")
+    ).toBeInTheDocument();
+  });
+
+  it("affiche le refus de l'opération dans la modale restée ouverte", () => {
+    render(
+      <StructureFusionModal
+        modalId="modal"
+        cible={maisonTranquille}
+        structures={[maisonTranquille, adil36]}
+        onConfirm={vi.fn()}
+        erreur="Les deux structures ont déjà une habilitation AMO"
+      />
+    );
+
+    expect(screen.getByRole("alert", { hidden: true })).toHaveTextContent(
+      "Les deux structures ont déjà une habilitation AMO"
+    );
+  });
 });
