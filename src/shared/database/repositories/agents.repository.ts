@@ -352,6 +352,13 @@ export class AgentsRepository extends BaseRepository<Agent> {
     return resultat?.count ?? 0;
   }
 
+  async changerDeStructure(sourceId: string, cibleId: string, executor: AgentsExecutor): Promise<void> {
+    await executor
+      .update(agents)
+      .set({ structureId: cibleId, updatedAt: new Date() })
+      .where(eq(agents.structureId, sourceId));
+  }
+
   /** Réaligne les colonnes héritées des agents d'une structure dont une habilitation a changé. */
   async resynchroniserColonnesHeritees(structureId: string, executor: AgentsExecutor = db): Promise<void> {
     const structure = await structuresRepository.findAvecHabilitations(structureId, executor);

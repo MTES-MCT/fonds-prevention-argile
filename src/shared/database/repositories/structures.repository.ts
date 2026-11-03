@@ -30,6 +30,29 @@ export class StructuresRepository {
     await executor.delete(structures).where(eq(structures.id, structureId));
   }
 
+  async renommer(structureId: string, nom: string): Promise<boolean> {
+    const renommees = await db
+      .update(structures)
+      .set({ nom, updatedAt: new Date() })
+      .where(eq(structures.id, structureId))
+      .returning({ id: structures.id });
+    return renommees.length > 0;
+  }
+
+  /** Fait passer une ligne d'habilitation dans une autre structure, qui ne doit pas en avoir du même type. */
+  async rattacherLigne(
+    type: "amo" | "allersVers",
+    ligneId: string,
+    structureId: string,
+    executor: StructuresExecutor
+  ): Promise<void> {
+    if (type === "amo") {
+      await executor.update(entreprisesAmo).set({ structureId }).where(eq(entreprisesAmo.id, ligneId));
+    } else {
+      await executor.update(allersVers).set({ structureId }).where(eq(allersVers.id, ligneId));
+    }
+  }
+
   /** Dans une transaction : exclusif pour retirer une habilitation, partagé pour y rattacher un agent. */
   async verrouiller(structureId: string, mode: "exclusif" | "partage", executor: StructuresExecutor): Promise<void> {
     await executor
