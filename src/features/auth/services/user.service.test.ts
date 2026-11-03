@@ -242,7 +242,7 @@ describe("user.service", () => {
         expect(result?.entrepriseAmoId).toBeUndefined();
       });
 
-      it("devrait gérer un agent non trouvé en BDD", async () => {
+      it("devrait refuser un agent introuvable en base, malgré un JWT valide", async () => {
         const mockSession: JWTPayload = {
           userId: "agent-not-found",
           role: ROLES.ADMINISTRATEUR,
@@ -256,17 +256,7 @@ describe("user.service", () => {
         vi.mocked(getSession).mockResolvedValue(mockSession);
         vi.mocked(agentsRepo.findById).mockResolvedValue(null);
 
-        const result = await getCurrentUser();
-
-        expect(result).toMatchObject({
-          id: "agent-not-found",
-          role: ROLES.ADMINISTRATEUR,
-          authMethod: AUTH_METHODS.PROCONNECT,
-          firstName: "Inconnu",
-          lastName: "Agent",
-        });
-        expect(result?.agentId).toBeUndefined();
-        expect(result?.entrepriseAmoId).toBeUndefined();
+        expect(await getCurrentUser()).toBeNull();
       });
 
       it("devrait refuser un agent désactivé, session ouverte comprise", async () => {
