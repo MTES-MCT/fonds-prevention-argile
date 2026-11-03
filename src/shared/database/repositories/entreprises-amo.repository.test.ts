@@ -93,14 +93,17 @@ describe("EntreprisesAmoRepository.delete — un agent ne perd jamais son seul r
 });
 
 describe("EntreprisesAmoRepository.supprimerNonRattachees — purge sous verrou", () => {
-  it("verrouille les structures visées avant de supprimer, dans la même transaction", async () => {
+  let verrou: ReturnType<typeof vi.fn>;
+  let txPurge: { select: ReturnType<typeof vi.fn>; delete: typeof tx.delete };
+
+  beforeEach(() => {
     vi.clearAllMocks();
     ordre.length = 0;
-    const verrou = vi.fn(() => {
+    verrou = vi.fn(() => {
       ordre.push("verrou");
-      return Promise.resolve([]);
+      return Promise.resolve([{ id: "s-1" }]);
     });
-    const txPurge = {
+    txPurge = {
       select: vi.fn(() => ({
         from: () => ({ innerJoin: () => ({ where: () => ({ orderBy: () => ({ for: verrou }) }) }) }),
       })),
@@ -113,12 +116,23 @@ describe("EntreprisesAmoRepository.supprimerNonRattachees — purge sous verrou"
       from: () => ({ where: () => ({}), orderBy: () => Promise.resolve([{ nom: "Soliha 36" }]) }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
+  });
 
+  it("verrouille les structures visées avant de supprimer, dans la même transaction", async () => {
     const bilan = await new EntreprisesAmoRepository().supprimerNonRattachees();
 
     expect(verrou).toHaveBeenCalledWith("update", { of: structures });
     expect(ordre).toEqual(["verrou", "suppression"]);
     expect(structuresRepository.supprimerVides).toHaveBeenCalledWith(txPurge);
     expect(bilan).toEqual({ supprimees: ["Soliha 54"], conservees: ["Soliha 36"] });
+  });
+
+  it("ne supprime rien quand aucune structure n'a été verrouillée", async () => {
+    verrou.mockResolvedValue([]);
+
+    const bilan = await new EntreprisesAmoRepository().supprimerNonRattachees();
+
+    expect(tx.delete).not.toHaveBeenCalled();
+    expect(bilan.supprimees).toEqual([]);
   });
 });

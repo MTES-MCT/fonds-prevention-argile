@@ -1,4 +1,4 @@
-import { eq, inArray, notExists, SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, notExists, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
 import { agents, allersVers, allersVersDepartements, allersVersEpci, structures } from "../schema";
 import type { NewAllersVers } from "../schema/allers-vers";
@@ -176,14 +176,28 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
     );
     const supprimees = await db.transaction(async (tx) => {
       // Un agent rattaché pendant la purge attend ces verrous ; le DELETE, relu après eux, épargne alors sa structure.
-      await tx
+      const verrouillees = await tx
         .select({ id: structures.id })
         .from(structures)
         .innerJoin(allersVers, eq(allersVers.structureId, structures.id))
         .where(sansAgent)
         .orderBy(structures.id)
         .for("update", { of: structures });
-      const lignes = await tx.delete(allersVers).where(sansAgent).returning({ nom: allersVers.nom });
+      // Une structure devenue candidate entre-temps n'est pas verrouillée : elle attend la prochaine purge.
+      const lignes = verrouillees.length
+        ? await tx
+            .delete(allersVers)
+            .where(
+              and(
+                inArray(
+                  allersVers.structureId,
+                  verrouillees.map((v) => v.id)
+                ),
+                sansAgent
+              )
+            )
+            .returning({ nom: allersVers.nom })
+        : [];
       await structuresRepository.supprimerVides(tx);
       return lignes;
     });

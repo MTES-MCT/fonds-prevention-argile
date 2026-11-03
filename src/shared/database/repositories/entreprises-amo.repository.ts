@@ -1,4 +1,4 @@
-import { and, eq, like, notExists, or, SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, like, notExists, or, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
 import {
   agents,
@@ -191,17 +191,28 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
     );
     const supprimees = await db.transaction(async (tx) => {
       // Un agent rattaché pendant la purge attend ces verrous ; le DELETE, relu après eux, épargne alors sa structure.
-      await tx
+      const verrouillees = await tx
         .select({ id: structures.id })
         .from(structures)
         .innerJoin(entreprisesAmo, eq(entreprisesAmo.structureId, structures.id))
         .where(sansAgentNiValidation)
         .orderBy(structures.id)
         .for("update", { of: structures });
-      const lignes = await tx
-        .delete(entreprisesAmo)
-        .where(sansAgentNiValidation)
-        .returning({ nom: entreprisesAmo.nom });
+      // Une structure devenue candidate entre-temps n'est pas verrouillée : elle attend la prochaine purge.
+      const lignes = verrouillees.length
+        ? await tx
+            .delete(entreprisesAmo)
+            .where(
+              and(
+                inArray(
+                  entreprisesAmo.structureId,
+                  verrouillees.map((v) => v.id)
+                ),
+                sansAgentNiValidation
+              )
+            )
+            .returning({ nom: entreprisesAmo.nom })
+        : [];
       await structuresRepository.supprimerVides(tx);
       return lignes;
     });
