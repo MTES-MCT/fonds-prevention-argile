@@ -1,4 +1,4 @@
-import { and, eq, inArray, like, notExists, or, SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, notExists, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
 import {
   agents,
