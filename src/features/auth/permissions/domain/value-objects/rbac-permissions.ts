@@ -24,6 +24,10 @@ export enum BackofficePermission {
   ALLERS_VERS_DELETE = "allers-vers:delete",
   ALLERS_VERS_IMPORT = "allers-vers:import",
 
+  // Experts RGA validés par la DHUP : lecture filtrée par territoire pour l'analyste (ADR-0052)
+  EXPERTS_READ = "experts:read",
+  EXPERTS_WRITE = "experts:write",
+
   // Agents
   AGENTS_READ = "agents:read",
   AGENTS_WRITE = "agents:write",
@@ -81,6 +85,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.ALLERS_VERS_WRITE,
     BackofficePermission.ALLERS_VERS_DELETE,
     BackofficePermission.ALLERS_VERS_IMPORT,
+    // Annuaire des experts en lecture seule : la gestion reste au super-administrateur.
+    BackofficePermission.EXPERTS_READ,
     BackofficePermission.ELIGIBILITE_READ,
     BackofficePermission.ELIGIBILITE_WRITE,
     BackofficePermission.DIAGNOSTIC_READ,
@@ -98,6 +104,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.USERS_STATS_READ,
     BackofficePermission.AMO_READ,
     BackofficePermission.ALLERS_VERS_READ,
+    // Experts de ses départements seulement : aucun pour un analyste national.
+    BackofficePermission.EXPERTS_READ,
     // Suivi DDT : peut ajouter/lire/éditer ses messages sur les dossiers de son
     // territoire, mais ne gère pas l'éligibilité (pas d'ELIGIBILITE_WRITE) ni la
     // création de dossier (pas de DOSSIERS_CREATE).
@@ -119,6 +127,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.DOSSIERS_AMO_STATS_READ,
     // Création de dossier (parcours d'invitation au nom d'un demandeur)
     BackofficePermission.DOSSIERS_CREATE,
+    // Annuaire des experts, tous départements
+    BackofficePermission.EXPERTS_READ,
     // Commentaires : lecture/écriture sur les dossiers accessibles
     BackofficePermission.COMMENTAIRES_CREATE,
     BackofficePermission.COMMENTAIRES_READ,
@@ -137,6 +147,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.PROSPECTS_STATS,
     // Création de dossier (parcours d'invitation au nom d'un demandeur)
     BackofficePermission.DOSSIERS_CREATE,
+    // Annuaire des experts, tous départements
+    BackofficePermission.EXPERTS_READ,
     // Commentaires : lecture/écriture sur les prospects accessibles
     BackofficePermission.COMMENTAIRES_CREATE,
     BackofficePermission.COMMENTAIRES_READ,
@@ -157,6 +169,8 @@ export const ROLE_PERMISSIONS: Record<string, BackofficePermission[]> = {
     BackofficePermission.PROSPECTS_STATS,
     // Création de dossier (parcours d'invitation au nom d'un demandeur)
     BackofficePermission.DOSSIERS_CREATE,
+    // Annuaire des experts, tous départements
+    BackofficePermission.EXPERTS_READ,
     // Commentaires : lecture/écriture sur tous les dossiers/prospects accessibles
     BackofficePermission.COMMENTAIRES_CREATE,
     BackofficePermission.COMMENTAIRES_READ,
@@ -173,6 +187,7 @@ export const TAB_PERMISSIONS: Record<string, BackofficePermission[]> = {
   users: [BackofficePermission.USERS_STATS_READ],
   amo: [BackofficePermission.AMO_READ],
   "allers-vers": [BackofficePermission.ALLERS_VERS_READ],
+  experts: [BackofficePermission.EXPERTS_READ],
   agents: [BackofficePermission.AGENTS_READ],
   eligibilite: [BackofficePermission.ELIGIBILITE_READ],
   diagnostic: [BackofficePermission.DIAGNOSTIC_READ],
