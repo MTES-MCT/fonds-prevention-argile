@@ -104,6 +104,13 @@ docker exec fonds-argile-postgres \
   psql -U fonds_argile_user -d fonds_argile -c "SELECT COUNT(*) FROM users;"
 ```
 
+Vérifier qu'aucun email ni téléphone n'est resté en clair (compteurs seulement, aucune valeur
+affichée ; un téléphone dans `agents.phone` vient d'un compte conservé) :
+
+```bash
+docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile -q < scripts/dev/verifier-anonymisation.sql
+```
+
 ## Changer de rôle agent (tester les espaces du backoffice)
 
 Pour parcourir les différents espaces sans repasser par ProConnect, on modifie directement
