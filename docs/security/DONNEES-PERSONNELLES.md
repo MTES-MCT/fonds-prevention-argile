@@ -20,11 +20,11 @@ ménage. La base locale reste donc une donnée personnelle, à traiter comme tel
 
 Le traitement protège la base locale : l'application lancée dessus, les captures d'écran, un agent
 de code qui lit la base. Les tables modifiées sont réécrites (`VACUUM FULL`) : un `UPDATE` laisse
-sinon l'ancienne ligne, en clair, dans les fichiers de la table et de ses index. Restent deux traces
-hors de la base : le dump, en clair dans le dossier des sauvegardes, à supprimer une fois le
-diagnostic terminé ; et le journal d'écriture de PostgreSQL (`pg_wal`, dans le volume Docker), qui
-enregistre les données au moment de la restauration et n'est écrasé qu'au fil de l'activité.
-`pnpm db:reset` supprime le volume, donc aussi ce journal.
+sinon l'ancienne ligne, en clair, dans les fichiers de la table et de ses index. Restauration et
+pseudonymisation tiennent dans une seule transaction, et le conteneur du dépôt réduit le journal
+d'écriture de PostgreSQL au minimum (`wal_level=minimal`) : le dump n'y est donc jamais écrit. Reste
+une trace hors de la base : le dump lui-même, en clair dans le dossier des sauvegardes, à supprimer
+une fois le diagnostic terminé.
 
 Trois colonnes donnent un **droit d'accès en production** et pas seulement une information :
 le lien de préremplissage DN (qui l'ouvre devient propriétaire du brouillon), le jeton

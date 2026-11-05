@@ -361,22 +361,42 @@ done
 BASE_TEMPORAIRE="$DB_RESTAURATION"
 docker exec "$CONTAINER_NAME" createdb -U "$DB_USER" "$DB_RESTAURATION"
 
-print_step "Restauration du dump (cela peut prendre quelques minutes)..."
-
-docker exec "$CONTAINER_NAME" pg_restore -U "$DB_USER" -d "$DB_RESTAURATION" \
-    --no-owner --no-privileges "/$CONTAINER_DUMP"
-
-print_success "Dump restauré dans la base temporaire"
+# Avec wal_level=minimal, une table créée dans la transaction n'entre pas dans le journal : le dump
+# n'y est écrit qu'en le restaurant et en le pseudonymisant dans une seule transaction.
+WAL_LEVEL=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -c "SHOW wal_level")
+if [ "$WAL_LEVEL" != "minimal" ]; then
+    print_warning "wal_level=$WAL_LEVEL : le journal de PostgreSQL gardera une copie en clair du dump."
+    print_info "Recréer le conteneur avec la configuration du dépôt : pnpm db:start (cf. docs/ops/db-local.md)"
+fi
 
 if [ "$ANONYMISER" = true ]; then
-    print_step "Pseudonymisation (cf. docs/security/DONNEES-PERSONNELLES.md)..."
-    docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_RESTAURATION" -q \
-        -v ON_ERROR_STOP=1 --single-transaction < "$SCRIPT_ANONYMISATION"
+    print_step "Restauration et pseudonymisation (cela peut prendre quelques minutes)..."
+else
+    print_step "Restauration du dump (cela peut prendre quelques minutes)..."
+fi
+
+# wal_skip_threshold=0 : sinon une table de moins de 2 Mo est recopiée dans le journal à la validation.
+set -o pipefail
+{
+    echo '\o /dev/null'
+    docker exec "$CONTAINER_NAME" pg_restore --no-owner --no-privileges -f - "/$CONTAINER_DUMP"
+    echo '\o'
+    if [ "$ANONYMISER" = true ]; then
+        echo 'SET search_path = public, pg_catalog;'
+        cat "$SCRIPT_ANONYMISATION"
+    fi
+} | docker exec -i -e PGOPTIONS="-c wal_skip_threshold=0" "$CONTAINER_NAME" \
+    psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 --single-transaction
+set +o pipefail
+
+if [ "$ANONYMISER" = true ]; then
     # Un UPDATE laisse l'ancienne ligne, en clair, dans les fichiers de la table et de ses index.
     TABLES_REECRITES=$(grep -oE '^UPDATE [a-z_]+' "$SCRIPT_ANONYMISATION" | cut -d' ' -f2 | sort -u | paste -sd, -)
-    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 \
-        -c "VACUUM FULL $TABLES_REECRITES"
-    print_success "Données pseudonymisées et contrôlées, tables réécrites sans les anciennes valeurs"
+    docker exec -e PGOPTIONS="-c wal_skip_threshold=0" "$CONTAINER_NAME" \
+        psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 -c "VACUUM FULL $TABLES_REECRITES"
+    print_success "Dump restauré, pseudonymisé et contrôlé ; tables réécrites sans les anciennes valeurs"
+else
+    print_success "Dump restauré dans la base temporaire"
 fi
 
 print_step "Remplacement de la base '$DB_NAME'..."

@@ -67,8 +67,16 @@ et la base temporaire sont effacés à toute sortie, erreur comprise ; une base 
 une restauration tuée (`kill -9`, terminal fermé) est supprimée au lancement suivant. Le bilan
 affiché en fin de pseudonymisation compte les lignes traitées et liste les clés de simulation
 retirées (inconnues ou de forme inattendue). Les tables pseudonymisées sont ensuite réécrites
-(`VACUUM FULL`), pour qu'aucune ancienne valeur ne reste dans leurs fichiers ; le journal
-d'écriture (`pg_wal`) en garde une trace jusqu'à ce qu'il soit écrasé, ou jusqu'à `pnpm db:reset`.
+(`VACUUM FULL`), pour qu'aucune ancienne valeur ne reste dans leurs fichiers.
+
+**Le journal d'écriture de PostgreSQL ne garde aucune copie du dump**, à deux conditions que le
+script réunit : restauration et pseudonymisation dans une seule transaction, et `wal_level=minimal`
+(posé par `docker-compose.yml`). Une table créée dans la transaction n'entre alors pas dans le journal
+(`pg_wal`), et `wal_skip_threshold=0` évite qu'une petite table y soit recopiée à la validation. Un
+conteneur créé avant ce réglage tourne encore avec le journal complet : le script le signale, et
+`pnpm db:start` le recrée avec la configuration du dépôt. Le journal ne se vide pas pour autant des
+restaurations passées : pour en effacer la trace, `pnpm db:reset` (la base locale est perdue), puis
+restaurer à nouveau.
 Options :
 
 | Option         | Effet                                                            |
