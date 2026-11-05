@@ -66,7 +66,9 @@ ne lit jamais une base en clair. L'ancienne base est supprimée après l'échang
 et la base temporaire sont effacés à toute sortie, erreur comprise ; une base temporaire laissée par
 une restauration tuée (`kill -9`, terminal fermé) est supprimée au lancement suivant. Le bilan
 affiché en fin de pseudonymisation compte les lignes traitées et liste les clés de simulation
-retirées (inconnues ou de forme inattendue).
+retirées (inconnues ou de forme inattendue). Les tables pseudonymisées sont ensuite réécrites
+(`VACUUM FULL`), pour qu'aucune ancienne valeur ne reste dans leurs fichiers ; le journal
+d'écriture (`pg_wal`) en garde une trace jusqu'à ce qu'il soit écrasé, ou jusqu'à `pnpm db:reset`.
 Options :
 
 | Option         | Effet                                                            |

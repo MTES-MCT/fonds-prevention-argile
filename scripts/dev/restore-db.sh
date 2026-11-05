@@ -372,7 +372,11 @@ if [ "$ANONYMISER" = true ]; then
     print_step "Pseudonymisation (cf. docs/security/DONNEES-PERSONNELLES.md)..."
     docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_RESTAURATION" -q \
         -v ON_ERROR_STOP=1 --single-transaction < "$SCRIPT_ANONYMISATION"
-    print_success "Données pseudonymisées et contrôlées"
+    # Un UPDATE laisse l'ancienne ligne, en clair, dans les fichiers de la table et de ses index.
+    TABLES_REECRITES=$(grep -oE '^UPDATE [a-z_]+' "$SCRIPT_ANONYMISATION" | cut -d' ' -f2 | sort -u | paste -sd, -)
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 \
+        -c "VACUUM FULL $TABLES_REECRITES"
+    print_success "Données pseudonymisées et contrôlées, tables réécrites sans les anciennes valeurs"
 fi
 
 print_step "Remplacement de la base '$DB_NAME'..."
