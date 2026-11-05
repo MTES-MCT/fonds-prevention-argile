@@ -10,7 +10,7 @@
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
  *   3. agents   — fixtures d'agents + SEED_AGENTS_SUPERADMINS + SEED_AGENTS_HYBRIDES
- *   4. amo-av   — fixtures AMO + Allers-vers (alias SEED_STRUCTURES_EMAIL posés après parcours)
+ *   4. amo-av   — fixtures AMO + Allers-vers + experts (alias SEED_STRUCTURES_EMAIL posés après parcours)
  *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
  *   6. verify   — joue 99-verification.sql
  *
@@ -353,6 +353,8 @@ async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
   console.log("→ amo-av");
   await runSqlFile("amo-av/seed-amo-av-fixtures.sql", dryRun);
+  // Après les AMO : un expert partage la structure de l'AMO Maison Tranquille.
+  await runSqlFile("experts/seed-experts.sql", dryRun);
 }
 
 async function runParcoursStep(dryRun: boolean): Promise<void> {
