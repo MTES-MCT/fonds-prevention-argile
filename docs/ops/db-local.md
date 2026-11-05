@@ -45,20 +45,31 @@ Sans argument, la commande liste les dumps du dossier, du plus récent au plus a
 liste se filtre en tapant quelques lettres. On peut aussi nommer le fichier directement :
 `pnpm db:restore mon-dump.tar.gz`.
 
+Le dump est **pseudonymisé par défaut** : noms, contacts, adresses, textes libres et jetons sont
+remplacés par [`scripts/dev/anonymiser.sql`](../../scripts/dev/anonymiser.sql), colonne par colonne
+selon [l'inventaire des données personnelles](../security/DONNEES-PERSONNELLES.md). Les agents en
+`@beta.gouv.fr` et `@yopmail.com` sont conservés, pour se connecter en local avec son compte ou un
+compte du bac à sable. Des contrôles en fin de script annulent tout s'il reste une donnée à
+remplacer.
+
 Tout ce qui est réversible passe **avant** la confirmation : le script extrait l'archive dans
 un dossier jetable, vérifie qu'elle contient exactement un `.pgsql`, le copie dans le conteneur
 et le fait lire **en entier** par `pg_restore`, vers `/dev/null`. Un dump illisible ou tronqué
 est donc refusé sans que la base ait été touchée. Ce contrôle ne garantit pas que chaque
 instruction SQL passera à la restauration (une extension manquante, par exemple), seulement que
 le fichier est complet et lisible. Vient ensuite la **confirmation** : toute autre réponse que `o` abandonne sans
-rien modifier. Après accord seulement, la base est supprimée (clients déconnectés), recréée
-vide, puis restaurée. Les fichiers extraits sont effacés à toute sortie, erreur comprise.
+rien modifier. Après accord, le dump est restauré dans une base temporaire (`fonds_argile_restauration`),
+pseudonymisé et contrôlé, et c'est seulement ensuite que la base locale est supprimée (clients
+déconnectés) et remplacée. Un échec à n'importe quelle étape laisse donc la base locale intacte, et
+l'application ne lit jamais une base en clair. Les fichiers extraits et la base temporaire sont
+effacés à toute sortie, erreur comprise.
 Options :
 
 | Option         | Effet                                                            |
 | -------------- | ---------------------------------------------------------------- |
 | `-d <dossier>` | Dossier des dumps, prioritaire sur tout le reste                 |
 | `-k`           | Garde les fichiers temporaires après restauration                |
+| `-n`           | Garde les données nominatives : diagnostic exceptionnel justifié |
 | `-y`           | Pas de confirmation : pour un appel scripté, jamais par habitude |
 | `-h`           | Aide, avec le dossier effectivement retenu                       |
 
@@ -72,7 +83,9 @@ code pourrait la lire. Le `.gitignore` bloque aussi `/backups/`, `*.pgsql`, `*.d
 
 > **Données de développement.** Le développement et les tests se font sur des données
 > synthétiques (`pnpm seed:staging`) ou effectivement anonymisées **avant** leur transfert
-> sur le poste. Une extraction nominative pour un diagnostic exceptionnel demande une
+> sur le poste. La pseudonymisation de `db:restore` protège la base locale, pas le dump, qui reste
+> en clair dans le dossier des sauvegardes ; et une base pseudonymisée reste une donnée
+> personnelle (commune, année de construction et revenu suffisent parfois à retrouver un ménage). Une extraction nominative pour un diagnostic exceptionnel demande une
 > justification tracée, le périmètre minimal, et une échéance de suppression qui couvre le
 > dump, le volume Docker et les sauvegardes du poste. Neutraliser les intégrations sortantes
 > avant de lancer l'app dessus : emails vers Mailhog, pas de token Brevo ni DN de production

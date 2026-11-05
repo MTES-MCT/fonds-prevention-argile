@@ -27,7 +27,7 @@ pnpm db:push        # Appliquer le schema Drizzle
 pnpm db:migrate     # Lancer les migrations
 pnpm db:studio      # Drizzle Studio (GUI)
 pnpm db:generate    # Générer les migrations
-pnpm db:restore     # Restaurer un dump dans la base locale (cf. docs/ops/db-local.md)
+pnpm db:restore     # Restaurer un dump dans la base locale, pseudonymisé (cf. docs/ops/db-local.md)
 ```
 
 ## Stack technique
@@ -119,6 +119,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   interne, met à jour `docs/stats/STATISTIQUES.md` dans la même PR : une ligne par statistique, ce
   qu'elle compte en une ou deux phrases. Une statistique ajoutée y entre, une supprimée en sort, et un
   écart corrigé quitte la section « Écarts connus ».
+- **Toute colonne ajoutée au schéma** entre dans `docs/security/DONNEES-PERSONNELLES.md` avec son
+  traitement à la restauration, et `scripts/dev/anonymiser.sql` la remplace si elle est personnelle :
+  `inventaire-donnees-personnelles.test.ts` échoue sinon, en la nommant.
 - Un sujet écarté d'une PR (retour de revue hors périmètre, arbitrage en attente, rattrapage à
   mesurer d'abord) va dans `docs/SUJETS-A-TRAITER.md`, avec son préalable ; l'entrée est retirée
   par la PR qui le traite.
@@ -541,5 +544,6 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
 - [docs/stats/STATISTIQUES.md](docs/stats/STATISTIQUES.md) — Ce que compte chaque statistique, publique et interne (à lire avant de toucher une stat)
+- [docs/security/DONNEES-PERSONNELLES.md](docs/security/DONNEES-PERSONNELLES.md) — Données personnelles colonne par colonne, et leur traitement à la restauration d'un dump
 
 Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).
