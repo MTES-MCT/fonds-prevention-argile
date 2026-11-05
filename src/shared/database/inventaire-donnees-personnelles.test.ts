@@ -51,17 +51,17 @@ function colonnesDuSchema(): string[] {
     .flatMap((table) => Object.values(getTableColumns(table)).map((c) => `${getTableName(table)}.${c.name}`));
 }
 
-// Seuls les UPDATE de la table comptent : un nom de colonne partagé (`email`) ne suffit pas.
+// Seuls les UPDATE de la table comptent, bloc DO compris : un nom de colonne partagé (`email`) ne suffit pas.
 function misesAJour(table: string): string {
   return SCRIPT.replace(/--.*$/gm, "")
     .split(";")
-    .filter((instruction) => new RegExp(`^\\s*UPDATE\\s+${table}\\b`).test(instruction))
+    .map((instruction) => instruction.match(new RegExp(`\\bUPDATE\\s+${table}\\b[\\s\\S]*`))?.[0] ?? "")
     .join("\n");
 }
 
 // Bloc de contrôle d'une table : l'IF EXISTS qui ajoute son nom aux restes.
 function controle(table: string): string {
-  const bloc = SCRIPT.match(/DO \$\$([\s\S]*?)END \$\$;/)?.[1] ?? "";
+  const bloc = [...SCRIPT.matchAll(/DO \$\$([\s\S]*?)END \$\$;/g)].find((m) => m[1].includes("restes"))?.[1] ?? "";
   return bloc.split("END IF;").find((segment) => segment.includes(`restes || '${table}'`)) ?? "";
 }
 

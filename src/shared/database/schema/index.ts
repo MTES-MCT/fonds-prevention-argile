@@ -27,6 +27,7 @@ export * from "./agent-permissions";
 export * from "./allers-vers";
 export * from "./allers-vers-departements";
 export * from "./allers-vers-epci";
+export * from "./experts";
 export * from "./catastrophes-naturelles";
 export * from "./prospect-qualifications";
 export * from "./rga-zones";

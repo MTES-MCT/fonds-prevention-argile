@@ -274,6 +274,18 @@ UPDATE sync_run_entries SET error = pg_temp.remplacer(error, 'Erreur anonymisée
 
 UPDATE sync_runs SET error_summary = pg_temp.resume_erreurs(error_summary) WHERE error_summary IS NOT NULL;
 
+-- Absente d'un dump antérieur à la migration 0060 : PL/pgSQL ne prépare pas une branche non exécutée.
+DO $$
+BEGIN
+  IF to_regclass('public.experts') IS NOT NULL THEN
+    UPDATE experts SET
+      contact_interne_nom = pg_temp.remplacer(contact_interne_nom, 'Contact anonymisé'),
+      contact_interne_email = pg_temp.remplacer(contact_interne_email, pg_temp.email('expert', id::text)),
+      contact_interne_telephone = pg_temp.remplacer(contact_interne_telephone, '0600000000'),
+      desactive_raison = pg_temp.remplacer(desactive_raison, 'Raison anonymisée');
+  END IF;
+END $$;
+
 -- Agents ----------------------------------------------------------------------
 
 UPDATE agents SET
@@ -357,6 +369,13 @@ BEGIN
   END IF;
   IF EXISTS (SELECT 1 FROM sync_runs WHERE error_summary IS DISTINCT FROM pg_temp.resume_erreurs(error_summary)) THEN
     restes := restes || 'sync_runs'::text;
+  END IF;
+  IF to_regclass('public.experts') IS NOT NULL THEN
+    IF EXISTS (SELECT 1 FROM experts WHERE contact_interne_nom <> 'Contact anonymisé'
+        OR contact_interne_email NOT LIKE '%@anonyme.invalid' OR contact_interne_telephone <> '0600000000'
+        OR desactive_raison <> 'Raison anonymisée') THEN
+      restes := restes || 'experts'::text;
+    END IF;
   END IF;
   IF cardinality(restes) > 0 THEN
     RAISE EXCEPTION 'Anonymisation incomplète, rien n''a été enregistré : %', array_to_string(restes, ', ');

@@ -197,6 +197,25 @@ Les agents conservés (`@beta.gouv.fr`, `@yopmail.com`) ne sont pas touchés.
 | ----------------------------- | ------------- | ----------------- |
 | `allers_vers_id`, `code_epci` | Non personnel | Conservées        |
 
+### `experts`
+
+Experts RGA validés par la DHUP, sans compte (ADR-0052). Absente d'un dump antérieur à la migration
+0060 : le script ne la traite que si elle existe.
+
+| Colonnes                                                                                                  | Nature             | À la restauration                                                                                                                                  |
+| --------------------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contact_interne_nom`, `contact_interne_email`, `contact_interne_telephone`                               | Identifiant direct | Remplacées par `Contact anonymisé`, une adresse `@anonyme.invalid` et `0600000000` : contact réservé au super-administrateur, souvent une personne |
+| `desactive_raison`                                                                                        | Texte libre        | Remplacée par `Raison anonymisée`                                                                                                                  |
+| `nom`, `siret`                                                                                            | Professionnel      | Conservées : raison sociale et SIRET de l'entreprise, comme pour une AMO                                                                           |
+| `id`, `date_validation_dhup`, `structure_id`, `desactive_at`, `desactive_par`, `created_at`, `updated_at` | Non personnel      | Conservées                                                                                                                                         |
+
+### `experts_departements`
+
+| Colonnes                        | Nature        | À la restauration                                                                       |
+| ------------------------------- | ------------- | --------------------------------------------------------------------------------------- |
+| `email`, `telephone`            | Professionnel | Conservées : contact de réservation communiqué aux agents, traité comme celui d'une AMO |
+| `expert_id`, `code_departement` | Non personnel | Conservées                                                                              |
+
 ### `agent_permissions`
 
 | Colonnes                                           | Nature        | À la restauration |

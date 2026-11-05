@@ -421,6 +421,13 @@
       "when": 1793714007870,
       "tag": "0059_roles_portes_par_structure",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1793896849795,
+      "tag": "0060_experts",
+      "breakpoints": true
     }
   ]
 }
