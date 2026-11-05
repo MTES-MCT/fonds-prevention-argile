@@ -253,3 +253,15 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 
 - Détail dans la section « Prochaine revue » de
   [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md#prochaine-revue).
+
+### Valider côté serveur le motif d'archivage et les codes de qualification
+
+Relevé par la revue de la pseudonymisation des dumps (novembre 2026). `archiveDossierAction` prend le
+motif en `string` sans le comparer à `RAISONS_ARCHIVAGE`, et `qualifyProspectAction` accepte toute
+chaîne dans `actionsRealisees` et `raisonsIneligibilite` (seule `autre:<précision>` est prévue). L'UI
+n'envoie que des valeurs de la liste, mais un appel direct à l'action peut écrire un texte libre là où
+les statistiques attendent un code. La restauration locale le neutralise déjà
+([DONNEES-PERSONNELLES.md](security/DONNEES-PERSONNELLES.md)), pas la base de production.
+
+**Préalable** : recenser les appelants de `archiveDossierAction` et de `declineAccompagnementEligible`
+(les sous-listes de `raisons-fin-suivi.ts`), puis valider par `z.enum` en tête des deux actions.

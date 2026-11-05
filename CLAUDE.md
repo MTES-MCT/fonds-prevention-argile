@@ -123,8 +123,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   dans une colonne existante, comme un message qui recopie un nom) revérifie
   `docs/security/DONNEES-PERSONNELLES.md` et `scripts/dev/anonymiser.sql` dans la même PR : une donnée
   personnelle ou un jeton y est remplacé, sinon il part en clair à chaque restauration locale.
-  `inventaire-donnees-personnelles.test.ts` n'attrape qu'une colonne absente de l'inventaire ou du
-  script, pas une clé JSONB ni un contenu qui change : ces deux cas se vérifient à la main.
+  `inventaire-donnees-personnelles.test.ts` attrape une colonne absente de l'inventaire, non traitée
+  ou non contrôlée par le script, et une clé de `RGASimulationData` absente de sa liste ; il ne voit ni
+  une autre clé JSONB, ni un nouveau contenu dans une colonne conservée : ces cas se vérifient à la main.
 - Un sujet écarté d'une PR (retour de revue hors périmètre, arbitrage en attente, rattrapage à
   mesurer d'abord) va dans `docs/SUJETS-A-TRAITER.md`, avec son préalable ; l'entrée est retirée
   par la PR qui le traite.
