@@ -1,7 +1,8 @@
 -- Experts RGA fictifs (ADR-0052) : contacts en example.org, SIRET fictifs à clé valide.
 -- Couvre l'Indre (36), le Cher (18), l'Allier (03, code stocké parfois en « 3 ») et le Nord (59, CA de Cambrai),
 -- un expert désactivé qui ne doit apparaître que dans l'administration, et une AMO qui est aussi expert.
-DELETE FROM experts WHERE siret IN ('88888888800003', '88888888800011', '88888888800029', '88888888800037');
+-- Comme les AMO et Aller-vers de l'étape amo-av : tous les experts repartent du seed, recette comprise.
+DELETE FROM experts;
 
 INSERT INTO structures (id, nom) VALUES
   ('66666666-6666-4666-8666-666666666601', 'Géotechnique du Berry (seed test)'),
