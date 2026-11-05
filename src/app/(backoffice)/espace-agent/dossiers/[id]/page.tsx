@@ -11,9 +11,11 @@ import {
   InfoLogement,
   ParcoursDemandeur,
   AFaire,
+  ExpertsDuDepartement,
   QualificationAllersVers,
   RenvoyerInvitationButton,
 } from "../../shared";
+import { expertsDuDepartementDuDossier } from "@/features/backoffice/espace-agent/experts/services/annuaire-experts.service";
 import { ActionsRealisees } from "../../shared";
 import { VulnerabiliteDossier } from "../../shared/components/VulnerabiliteDossier";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -55,7 +57,7 @@ interface PageProps {
  * Page détail d'un dossier suivi (Espace AMO)
  */
 export default async function DossierDetailPage({ params }: PageProps) {
-  await exigerAccesEspaceAgent();
+  const agentAutorise = await exigerAccesEspaceAgent();
 
   const { id } = await params;
 
@@ -77,6 +79,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
 
   // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.
   const piecesJustificatives = await getPiecesJustificativesForStep(dossier.currentStep);
+  const expertsDuDepartement = await expertsDuDepartementDuDossier(agentAutorise, dossier.codeDepartementLogement);
 
   // Bouton "Ré-ouvrir" : visible sur une demande refusée, pour les rôles habilités
   // (le périmètre fin entreprise/territoire est revérifié côté action).
@@ -338,6 +341,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                     "Préparer la suite pour effectuer le diagnostic si l'éligibilité est validée par la DDT.",
                   ]}
                 />
+                {expertsDuDepartement && <ExpertsDuDepartement departement={expertsDuDepartement} />}
               </div>
             </div>
           </div>
