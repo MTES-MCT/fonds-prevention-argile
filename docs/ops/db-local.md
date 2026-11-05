@@ -58,11 +58,15 @@ et le fait lire **en entier** par `pg_restore`, vers `/dev/null`. Un dump illisi
 est donc refusé sans que la base ait été touchée. Ce contrôle ne garantit pas que chaque
 instruction SQL passera à la restauration (une extension manquante, par exemple), seulement que
 le fichier est complet et lisible. Vient ensuite la **confirmation** : toute autre réponse que `o` abandonne sans
-rien modifier. Après accord, le dump est restauré dans une base temporaire (`fonds_argile_restauration`),
-pseudonymisé et contrôlé, et c'est seulement ensuite que la base locale est supprimée (clients
-déconnectés) et remplacée. Un échec à n'importe quelle étape laisse donc la base locale intacte, et
-l'application ne lit jamais une base en clair. Les fichiers extraits et la base temporaire sont
-effacés à toute sortie, erreur comprise.
+rien modifier. Après accord, le dump est restauré dans une base temporaire propre à l'exécution
+(`fpa_restauration_<pid>`), pseudonymisé et contrôlé. Ensuite seulement, la base locale est fermée
+aux connexions, ses clients déconnectés, et les deux bases échangent leur nom **dans une même
+transaction** : un échec à n'importe quelle étape laisse la base locale en place, et l'application
+ne lit jamais une base en clair. L'ancienne base est supprimée après l'échange. Les fichiers extraits
+et la base temporaire sont effacés à toute sortie, erreur comprise ; une base temporaire laissée par
+une restauration tuée (`kill -9`, terminal fermé) est supprimée au lancement suivant. Le bilan
+affiché en fin de pseudonymisation compte les lignes traitées et liste les clés de simulation
+retirées (inconnues ou de forme inattendue).
 Options :
 
 | Option         | Effet                                                            |

@@ -62,8 +62,12 @@ BACKUP_FILE=""
 TMP_DIR=""
 CONTAINER_DUMP=""
 # Restauration hors de la base locale, substituée à la fin : l'app ne lit jamais une base en clair.
-DB_RESTAURATION="${DB_NAME}_restauration"
+# Noms courts et propres à l'exécution : ni un DB_NAME long tronqué, ni deux restaurations ne se confondent.
+DB_RESTAURATION="fpa_restauration_$$"
+DB_ANCIENNE="fpa_avant_restauration_$$"
 BASE_TEMPORAIRE=""
+BASE_ANCIENNE=""
+CIBLE_FERMEE=false
 
 # Couleurs pour les messages
 RED='\033[0;31m'
@@ -154,6 +158,18 @@ cleanup() {
         docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$BASE_TEMPORAIRE" > /dev/null 2>&1 \
             || print_warning "Base temporaire non supprimée, à effacer à la main : $BASE_TEMPORAIRE"
     fi
+    # Échange interrompu : la base locale, restée en place, est rouverte aux connexions.
+    if [ "$CIBLE_FERMEE" = true ]; then
+        docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -q -v cible="$DB_NAME" > /dev/null 2>&1 <<'SQL' \
+            || print_warning "Base '$DB_NAME' peut-être fermée aux connexions : ALTER DATABASE ... WITH ALLOW_CONNECTIONS true"
+ALTER DATABASE :"cible" WITH ALLOW_CONNECTIONS true;
+SQL
+    fi
+    # Échange fait : l'ancienne base locale n'est plus qu'une copie périmée.
+    if [ -n "$BASE_ANCIENNE" ]; then
+        docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$BASE_ANCIENNE" > /dev/null 2>&1 \
+            || print_warning "Ancienne base non supprimée, à effacer à la main : $BASE_ANCIENNE"
+    fi
     if [ "$KEEP_FILES" = true ]; then
         if [ -n "$TMP_DIR" ]; then print_warning "Option -k : dump extrait conservé dans $TMP_DIR"; fi
         if [ -n "$CONTAINER_DUMP" ]; then print_warning "Option -k : dump conservé dans le conteneur ($CONTAINER_DUMP)"; fi
@@ -221,6 +237,13 @@ echo "  Restauration de backup PostgreSQL"
 echo "  Fonds Prévention Argile"
 echo "=============================================="
 echo ""
+
+case "$DB_NAME" in
+    postgres | template0 | template1 | fpa_restauration_* | fpa_avant_restauration_*)
+        print_error "DB_NAME ne peut pas valoir '$DB_NAME' : base système ou de travail du script"
+        exit 1
+        ;;
+esac
 
 # Vérifier que le répertoire existe
 if [ ! -d "$BACKUP_DIR" ]; then
@@ -325,9 +348,17 @@ fi
 # -----------------------------------------------------------------------------
 print_step "Création de la base temporaire '$DB_RESTAURATION'..."
 
-# --force déconnecte les clients (PostgreSQL 13+) ; dropdb et createdb échappent le nom eux-mêmes.
+# Une restauration tuée (kill -9, terminal fermé) n'a pas pu nettoyer : sa base peut être en clair.
+for base in $(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -c \
+    "SELECT datname FROM pg_database WHERE datname ~ '^fpa_(avant_)?restauration_[0-9]+$'"); do
+    if ! kill -0 "${base##*_}" 2> /dev/null; then
+        docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$base"
+        print_warning "Base laissée par une restauration interrompue, supprimée : $base"
+    fi
+done
+
+# dropdb et createdb échappent le nom eux-mêmes.
 BASE_TEMPORAIRE="$DB_RESTAURATION"
-docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_RESTAURATION"
 docker exec "$CONTAINER_NAME" createdb -U "$DB_USER" "$DB_RESTAURATION"
 
 print_step "Restauration du dump (cela peut prendre quelques minutes)..."
@@ -346,13 +377,30 @@ fi
 
 print_step "Remplacement de la base '$DB_NAME'..."
 
-docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_NAME"
+# Fermée aux connexions avant la déconnexion : sinon l'app s'y reconnecte avant le renommage.
+CIBLE_FERMEE=true
 # Par l'entrée standard : psql n'échappe ses variables (:"nom") ni dans -c, ni sans cette forme.
 docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -q -v ON_ERROR_STOP=1 \
-    -v source="$DB_RESTAURATION" -v cible="$DB_NAME" <<'SQL'
+    -v source="$DB_RESTAURATION" -v cible="$DB_NAME" -v ancienne="$DB_ANCIENNE" <<'SQL'
+SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'cible') AS cible_existe \gset
+\if :cible_existe
+ALTER DATABASE :"cible" WITH ALLOW_CONNECTIONS false;
+SELECT count(pg_terminate_backend(pid, 5000)) FROM pg_stat_activity WHERE datname = :'cible' \g /dev/null
+-- Les deux renommages en une transaction : la base locale n'est jamais absente.
+BEGIN;
+ALTER DATABASE :"cible" RENAME TO :"ancienne";
 ALTER DATABASE :"source" RENAME TO :"cible";
+COMMIT;
+\else
+ALTER DATABASE :"source" RENAME TO :"cible";
+\endif
 SQL
 BASE_TEMPORAIRE=""
+CIBLE_FERMEE=false
+BASE_ANCIENNE="$DB_ANCIENNE"
+docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_ANCIENNE" > /dev/null 2>&1 \
+    || print_warning "Ancienne base non supprimée, à effacer à la main : $DB_ANCIENNE"
+BASE_ANCIENNE=""
 
 print_success "Base '$DB_NAME' remplacée"
 
