@@ -265,3 +265,11 @@ les statistiques attendent un code. La restauration locale le neutralise déjà
 
 **Préalable** : recenser les appelants de `archiveDossierAction` et de `declineAccompagnementEligible`
 (les sous-listes de `raisons-fin-suivi.ts`), puis valider par `z.enum` en tête des deux actions.
+
+### Faire valider la mention de libre choix des experts par la DHUP
+
+L'annuaire des experts (ADR-0052) affiche « Liste des experts validés par la DHUP, présentés sans
+ordre de préférence. Vous êtes libre de faire appel à l'expert de votre choix. », texte proposé par
+l'équipe. Il est défini en un seul endroit, `MENTION_LIBRE_CHOIX` (`administration/experts/domain/regles-experts.ts`).
+
+**Préalable** : le retour de la DHUP sur le texte, et sur l'ordre alphabétique retenu.
