@@ -17,8 +17,8 @@ export async function getInviterName(agentId: string): Promise<string> {
       entrepriseAmoNom: entreprisesAmo.nom,
     })
     .from(agents)
-    .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
-    .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
+    .leftJoin(allersVers, eq(allersVers.structureId, agents.structureId))
+    .leftJoin(entreprisesAmo, eq(entreprisesAmo.structureId, agents.structureId))
     .where(eq(agents.id, agentId))
     .limit(1);
 

@@ -42,6 +42,7 @@ describe("dossier-actions.actions", () => {
     phone: null,
     organizationalUnit: null,
     role: UserRole.AMO as typeof UserRole.AMO,
+    structureId: null,
     entrepriseAmoId: "amo-1",
     allersVersId: null,
     desactiveAt: null,
@@ -56,6 +57,7 @@ describe("dossier-actions.actions", () => {
     ...mockAgent,
     id: "super-admin-1",
     role: UserRole.SUPER_ADMINISTRATEUR as typeof UserRole.SUPER_ADMINISTRATEUR,
+    structureId: null,
     entrepriseAmoId: null,
   };
 

@@ -4,16 +4,19 @@
 # Script de restauration de backup PostgreSQL pour Fonds Prévention Argile
 # =============================================================================
 # Charge un dump PostgreSQL dans la base LOCALE (conteneur Docker du projet).
-# La base locale est détruite et recréée : ce script n'a rien à faire ailleurs.
+# La base locale est remplacée : ce script n'a rien à faire ailleurs.
 #
-# Usage: pnpm db:restore [-d <directory>] [-k] [-y] [backup_file.tar.gz]
+# Usage: pnpm db:restore [-d <directory>] [-k] [-n] [-y] [backup_file.tar.gz]
 #
 # Sans nom de fichier, propose les dumps du dossier, du plus récent au plus ancien.
+# Le dump est restauré dans une base temporaire, pseudonymisée (scripts/dev/anonymiser.sql), puis
+# substituée à la base locale : un échec laisse la base locale intacte.
 #
 # Options:
 #   -d <directory>  Répertoire des dumps (défaut : DB_BACKUP_DIR de l'environnement ou de
 #                   .env.local, sinon ~/fonds-prevention-argile-backups)
 #   -k              Garder les fichiers temporaires après restauration
+#   -n              Garder les données nominatives (diagnostic exceptionnel justifié)
 #   -y              Ne pas demander de confirmation avant d'écraser la base
 #   -h              Afficher l'aide
 #
@@ -22,8 +25,8 @@
 #   pnpm db:restore mon-dump.tar.gz
 #   pnpm db:restore -d ~/dumps -k mon-dump.tar.gz
 #
-# Un dump issu d'un environnement réel contient des données personnelles : le supprimer
-# une fois le diagnostic terminé, et neutraliser les intégrations sortantes avant de
+# Pseudonymisée ne veut pas dire anonyme (cf. docs/security/DONNEES-PERSONNELLES.md) : supprimer
+# le dump une fois le diagnostic terminé, et neutraliser les intégrations sortantes avant de
 # lancer l'app dessus (cf. docs/ops/db-local.md).
 # =============================================================================
 
@@ -34,6 +37,7 @@ CONTAINER_NAME="${DB_CONTAINER:-fonds-argile-postgres}"
 DB_USER="${DB_USER:-fonds_argile_user}"
 DB_NAME="${DB_NAME:-fonds_argile}"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_ANONYMISATION="$REPO_ROOT/scripts/dev/anonymiser.sql"
 
 # Lit une variable de .env.local sans le sourcer : le fichier est écrit pour Next, pas pour bash.
 lire_env_local() {
@@ -51,11 +55,19 @@ DEFAULT_BACKUP_DIR="${DEFAULT_BACKUP_DIR/#\~/$HOME}"
 BACKUP_DIR="$DEFAULT_BACKUP_DIR"
 KEEP_FILES=false
 CONFIRMER=true
+ANONYMISER=true
 BACKUP_FILE=""
 # Dossier d'extraction jetable : un ancien .pgsql du dossier des dumps ne peut plus être pris
 # pour celui de l'archive choisie, ni supprimé à sa place.
 TMP_DIR=""
 CONTAINER_DUMP=""
+# Restauration hors de la base locale, substituée à la fin : l'app ne lit jamais une base en clair.
+# Noms courts et propres à l'exécution : ni un DB_NAME long tronqué, ni deux restaurations ne se confondent.
+DB_RESTAURATION="fpa_restauration_$$"
+DB_ANCIENNE="fpa_avant_restauration_$$"
+BASE_TEMPORAIRE=""
+BASE_ANCIENNE=""
+CIBLE_FERMEE=false
 
 # Couleurs pour les messages
 RED='\033[0;31m'
@@ -88,14 +100,15 @@ print_info() {
 # Fonction d'aide. Argument optionnel : le code de sortie (0 pour -h, 1 sur erreur
 # d'usage, pour qu'un appelant scripté puisse distinguer les deux).
 show_help() {
-    echo "Usage: pnpm db:restore [-d <directory>] [-k] [-y] [backup_file.tar.gz]"
+    echo "Usage: pnpm db:restore [-d <directory>] [-k] [-n] [-y] [backup_file.tar.gz]"
     echo ""
-    echo "Charge un dump PostgreSQL dans la base LOCALE '$DB_NAME' (conteneur Docker)."
-    echo "La base locale est détruite et recréée. Sans nom de fichier, propose les dumps du dossier."
+    echo "Charge un dump PostgreSQL dans la base LOCALE '$DB_NAME' (conteneur Docker), pseudonymisé"
+    echo "par défaut. La base locale est remplacée. Sans nom de fichier, propose les dumps du dossier."
     echo ""
     echo "Options:"
     echo "  -d <directory>  Répertoire des dumps (défaut: $DEFAULT_BACKUP_DIR)"
     echo "  -k              Garder les fichiers temporaires après restauration"
+    echo "  -n              Garder les données nominatives (diagnostic exceptionnel justifié)"
     echo "  -y              Ne pas demander de confirmation avant d'écraser la base"
     echo "  -h              Afficher cette aide"
     echo ""
@@ -140,6 +153,23 @@ choisir_dump() {
 # Appelé à toute sortie, erreur et abandon compris : sinon un dump extrait, donc une copie en
 # clair de la base, restait sur le disque après un échec.
 cleanup() {
+    # Toujours supprimée, -k compris : restaurée et pas encore pseudonymisée, elle peut être en clair.
+    if [ -n "$BASE_TEMPORAIRE" ]; then
+        docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$BASE_TEMPORAIRE" > /dev/null 2>&1 \
+            || print_warning "Base temporaire non supprimée, à effacer à la main : $BASE_TEMPORAIRE"
+    fi
+    # Échange interrompu : la base locale, restée en place, est rouverte aux connexions.
+    if [ "$CIBLE_FERMEE" = true ]; then
+        docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -q -v cible="$DB_NAME" > /dev/null 2>&1 <<'SQL' \
+            || print_warning "Base '$DB_NAME' peut-être fermée aux connexions : ALTER DATABASE ... WITH ALLOW_CONNECTIONS true"
+ALTER DATABASE :"cible" WITH ALLOW_CONNECTIONS true;
+SQL
+    fi
+    # Échange fait : l'ancienne base locale n'est plus qu'une copie périmée.
+    if [ -n "$BASE_ANCIENNE" ]; then
+        docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$BASE_ANCIENNE" > /dev/null 2>&1 \
+            || print_warning "Ancienne base non supprimée, à effacer à la main : $BASE_ANCIENNE"
+    fi
     if [ "$KEEP_FILES" = true ]; then
         if [ -n "$TMP_DIR" ]; then print_warning "Option -k : dump extrait conservé dans $TMP_DIR"; fi
         if [ -n "$CONTAINER_DUMP" ]; then print_warning "Option -k : dump conservé dans le conteneur ($CONTAINER_DUMP)"; fi
@@ -169,13 +199,16 @@ trap 'handle_error $LINENO' ERR
 trap cleanup EXIT
 
 # Parsing des arguments
-while getopts "d:kyh" opt; do
+while getopts "d:knyh" opt; do
     case $opt in
         d)
             BACKUP_DIR="$OPTARG"
             ;;
         k)
             KEEP_FILES=true
+            ;;
+        n)
+            ANONYMISER=false
             ;;
         y)
             CONFIRMER=false
@@ -205,6 +238,13 @@ echo "  Fonds Prévention Argile"
 echo "=============================================="
 echo ""
 
+case "$DB_NAME" in
+    postgres | template0 | template1 | fpa_restauration_* | fpa_avant_restauration_*)
+        print_error "DB_NAME ne peut pas valoir '$DB_NAME' : base système ou de travail du script"
+        exit 1
+        ;;
+esac
+
 # Vérifier que le répertoire existe
 if [ ! -d "$BACKUP_DIR" ]; then
     print_error "Le répertoire n'existe pas : $BACKUP_DIR"
@@ -221,6 +261,16 @@ BACKUP_DIR=$(cd "$BACKUP_DIR" && pwd)
 print_info "Fichier backup : $BACKUP_FILE"
 print_info "Répertoire : $BACKUP_DIR"
 print_info "Conserver les fichiers temporaires : $KEEP_FILES"
+if [ "$ANONYMISER" = true ]; then
+    print_info "Données : pseudonymisées"
+else
+    print_warning "Option -n : données NOMINATIVES, réservé à un diagnostic justifié (cf. docs/ops/db-local.md)"
+fi
+
+if [ "$ANONYMISER" = true ] && [ ! -f "$SCRIPT_ANONYMISATION" ]; then
+    print_error "Script d'anonymisation introuvable : $SCRIPT_ANONYMISATION"
+    exit 1
+fi
 
 # Vérifier que le fichier tar.gz existe
 TAR_FILE_PATH="$BACKUP_DIR/$BACKUP_FILE"
@@ -282,10 +332,10 @@ fi
 
 print_success "Dump lu en entier"
 
-# Dernier point de retour : tout ce qui suit supprime la base locale.
+# Dernier point de retour : tout ce qui suit finit par remplacer la base locale.
 if [ "$CONFIRMER" = true ]; then
     echo ""
-    print_warning "La base locale '$DB_NAME' va être supprimée puis remplacée par $BACKUP_FILE."
+    print_warning "La base locale '$DB_NAME' va être remplacée par $BACKUP_FILE."
     read -r -p "Continuer ? [o/N] " reponse || { echo; exit 1; }
     case "$reponse" in
         o|O|oui|OUI) ;;
@@ -294,22 +344,100 @@ if [ "$CONFIRMER" = true ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# ÉTAPES 3 à 6 : Recréation de la base, puis restauration
+# ÉTAPES 3 à 6 : Restauration dans une base temporaire, pseudonymisation, substitution
 # -----------------------------------------------------------------------------
-print_step "Recréation de la base '$DB_NAME'..."
+print_step "Création de la base temporaire '$DB_RESTAURATION'..."
+print_info "Une fois prête, elle prendra le nom '$DB_NAME' et remplacera la base de ce nom, s'il y en a une."
 
-# --force déconnecte les clients (PostgreSQL 13+) ; dropdb et createdb échappent le nom eux-mêmes.
-docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_NAME"
-docker exec "$CONTAINER_NAME" createdb -U "$DB_USER" "$DB_NAME"
+# Une restauration tuée (kill -9, terminal fermé) n'a pas pu nettoyer : sa base peut être en clair.
+for base in $(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -c \
+    "SELECT datname FROM pg_database WHERE datname ~ '^fpa_(avant_)?restauration_[0-9]+$'"); do
+    if ! kill -0 "${base##*_}" 2> /dev/null; then
+        docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$base"
+        print_warning "Base laissée par une restauration interrompue, supprimée : $base"
+    fi
+done
 
-print_success "Base recréée vide"
+# dropdb et createdb échappent le nom eux-mêmes.
+BASE_TEMPORAIRE="$DB_RESTAURATION"
+docker exec "$CONTAINER_NAME" createdb -U "$DB_USER" "$DB_RESTAURATION"
 
-print_step "Restauration du dump (cela peut prendre quelques minutes)..."
+# Avec wal_level=minimal, une table créée dans la transaction n'entre pas dans le journal : le dump
+# n'y est écrit qu'en le restaurant et en le pseudonymisant dans une seule transaction.
+WAL_LEVEL=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -c "SHOW wal_level")
+if [ "$WAL_LEVEL" != "minimal" ]; then
+    print_warning "wal_level=$WAL_LEVEL : le journal de PostgreSQL gardera une copie en clair du dump."
+    print_info "Recréer le conteneur avec la configuration du dépôt : pnpm db:start (cf. docs/ops/db-local.md)"
+fi
 
-docker exec "$CONTAINER_NAME" pg_restore -U "$DB_USER" -d "$DB_NAME" \
-    --no-owner --no-privileges "/$CONTAINER_DUMP"
+if [ "$ANONYMISER" = true ]; then
+    print_step "Restauration et pseudonymisation (cela peut prendre quelques minutes)..."
+else
+    print_step "Restauration du dump (cela peut prendre quelques minutes)..."
+fi
 
-print_success "Dump restauré"
+# wal_skip_threshold=0 : sinon une table de moins de 2 Mo est recopiée dans le journal à la validation.
+set -o pipefail
+{
+    echo '\o /dev/null'
+    docker exec "$CONTAINER_NAME" pg_restore --no-owner --no-privileges -f - "/$CONTAINER_DUMP"
+    echo '\o'
+    if [ "$ANONYMISER" = true ]; then
+        echo 'SET search_path = public, pg_catalog;'
+        cat "$SCRIPT_ANONYMISATION"
+    fi
+} | docker exec -i -e PGOPTIONS="-c wal_skip_threshold=0" "$CONTAINER_NAME" \
+    psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 --single-transaction
+set +o pipefail
+
+if [ "$ANONYMISER" = true ]; then
+    # Un UPDATE laisse l'ancienne ligne, en clair, dans les fichiers de la table et de ses index.
+    TABLES_REECRITES=$(grep -oE '^UPDATE [a-z_]+' "$SCRIPT_ANONYMISATION" | cut -d' ' -f2 | sort -u | paste -sd, -)
+    docker exec -e PGOPTIONS="-c wal_skip_threshold=0" "$CONTAINER_NAME" \
+        psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 -c "VACUUM FULL $TABLES_REECRITES"
+    print_success "Dump restauré, pseudonymisé et contrôlé ; tables réécrites sans les anciennes valeurs"
+else
+    print_success "Dump restauré dans la base temporaire"
+fi
+
+print_step "Remplacement de la base '$DB_NAME' par '$DB_RESTAURATION'..."
+
+CIBLE_EXISTAIT=$(docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -v cible="$DB_NAME" \
+    <<< "SELECT count(*) FROM pg_database WHERE datname = :'cible';")
+
+# Fermée aux connexions avant la déconnexion : sinon l'app s'y reconnecte avant le renommage.
+CIBLE_FERMEE=true
+# Par l'entrée standard : psql n'échappe ses variables (:"nom") ni dans -c, ni sans cette forme.
+docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -q -v ON_ERROR_STOP=1 \
+    -v source="$DB_RESTAURATION" -v cible="$DB_NAME" -v ancienne="$DB_ANCIENNE" <<'SQL'
+SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'cible') AS cible_existe \gset
+\if :cible_existe
+ALTER DATABASE :"cible" WITH ALLOW_CONNECTIONS false;
+SELECT count(pg_terminate_backend(pid, 5000)) FROM pg_stat_activity WHERE datname = :'cible' \g /dev/null
+-- Les deux renommages en une transaction : la base locale n'est jamais absente.
+BEGIN;
+ALTER DATABASE :"cible" RENAME TO :"ancienne";
+ALTER DATABASE :"source" RENAME TO :"cible";
+COMMIT;
+\else
+ALTER DATABASE :"source" RENAME TO :"cible";
+\endif
+SQL
+BASE_TEMPORAIRE=""
+CIBLE_FERMEE=false
+BASE_ANCIENNE="$DB_ANCIENNE"
+ANCIENNE_SUPPRIMEE=false
+if docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_ANCIENNE" > /dev/null 2>&1; then
+    ANCIENNE_SUPPRIMEE=true
+else
+    print_warning "Ancienne base non supprimée, à effacer à la main : $DB_ANCIENNE"
+fi
+BASE_ANCIENNE=""
+
+print_success "'$DB_RESTAURATION' renommée en '$DB_NAME'"
+if [ "$CIBLE_EXISTAIT" = "1" ] && [ "$ANCIENNE_SUPPRIMEE" = true ]; then
+    print_success "Ancienne base '$DB_NAME' supprimée (renommée '$DB_ANCIENNE' le temps de l'échange)"
+fi
 
 # -----------------------------------------------------------------------------
 # ÉTAPE 7 : Vérification des données

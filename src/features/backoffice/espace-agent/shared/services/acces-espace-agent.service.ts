@@ -6,7 +6,7 @@ import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.conf
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { agentPermissionsRepository } from "@/shared/database/repositories/agent-permissions.repository";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
-import type { Agent } from "@/shared/database/schema/agents";
+import type { AgentAvecRole } from "@/shared/database/schema/agents";
 
 export const ROLES_ESPACE_AGENT: readonly UserRole[] = [
   UserRole.AMO,
@@ -17,7 +17,7 @@ export const ROLES_ESPACE_AGENT: readonly UserRole[] = [
 ];
 
 export type AccesEspaceAgent =
-  | { statut: "autorise"; agent: Agent }
+  | { statut: "autorise"; agent: AgentAvecRole }
   | { statut: "non_connecte" }
   | { statut: "methode_invalide" }
   | { statut: "agent_inconnu" }
@@ -68,7 +68,7 @@ export async function refusAccesEspaceAgent(): Promise<string | null> {
 }
 
 // Garde de page : Next rend la page même quand le layout refuse, son RSC part donc dans le HTML.
-export async function exigerAccesEspaceAgent(): Promise<Agent> {
+export async function exigerAccesEspaceAgent(): Promise<AgentAvecRole> {
   const acces = await evaluerAccesEspaceAgent();
 
   if (acces.statut === "autorise") return acces.agent;

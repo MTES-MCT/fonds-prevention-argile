@@ -414,6 +414,13 @@
       "when": 1792071322306,
       "tag": "0058_vulnerabilite_supprime_source_chaleur",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793714007870,
+      "tag": "0059_roles_portes_par_structure",
+      "breakpoints": true
     }
   ]
 }

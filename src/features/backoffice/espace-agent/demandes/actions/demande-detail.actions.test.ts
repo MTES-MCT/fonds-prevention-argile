@@ -24,7 +24,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 import { db } from "@/shared/database/client";
 import type { AuthUser } from "@/features/auth/domain/entities";
-import type { Agent } from "@/shared/database/schema/agents";
+import type { AgentAvecRole } from "@/shared/database/schema/agents";
 import { detacherAmo } from "@/features/parcours/amo/services/detachement-amo.service";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
 import { getDossierByStep } from "@/features/parcours/dossiers-ds/services/dossier-ds.service";
@@ -339,7 +339,7 @@ describe("demande-detail.actions", () => {
   describe("refuserAccompagnementEligible", () => {
     // Agent minimal : seul `id` est lu par l'action (archivedBy).
     const mockAgent = (id = "agent-1") =>
-      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id } as unknown as Agent });
+      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id } as unknown as AgentAvecRole });
 
     it("archive et refuse l'accompagnement pour un AMO propriétaire", async () => {
       vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
@@ -419,7 +419,10 @@ describe("demande-detail.actions", () => {
     beforeEach(() => {
       vi.mocked(getCurrentUser).mockResolvedValue(makeAgent(UserRole.AMO, "amo-123"));
       mockDemandeOwner("amo-123");
-      vi.mocked(getCurrentAgent).mockResolvedValue({ success: true, data: { id: "agent-1" } as unknown as Agent });
+      vi.mocked(getCurrentAgent).mockResolvedValue({
+        success: true,
+        data: { id: "agent-1" } as unknown as AgentAvecRole,
+      });
       vi.mocked(getDossierByStep).mockResolvedValue(null as never);
       vi.mocked(detacherAmo).mockResolvedValue({
         success: true,

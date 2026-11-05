@@ -1,7 +1,7 @@
 "use server";
 
 import { UserRole } from "@/shared/domain/value-objects";
-import type { Agent } from "@/shared/database/schema/agents";
+import type { AgentAvecRole } from "@/shared/database/schema/agents";
 import { getCurrentAgent } from "./agent.actions";
 import {
   evaluerAccesEspaceAgent,
@@ -9,7 +9,9 @@ import {
 } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 
 type EspaceAgentAccess =
-  { kind: "agent"; agent: Agent } | { kind: "super-admin"; agent: Agent } | { kind: "error"; error: string };
+  | { kind: "agent"; agent: AgentAvecRole }
+  | { kind: "super-admin"; agent: AgentAvecRole }
+  | { kind: "error"; error: string };
 
 /**
  * Résout l'accès à l'espace agent.

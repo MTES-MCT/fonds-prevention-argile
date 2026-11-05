@@ -79,5 +79,6 @@ purement cosmétique.
 
 | 0049 | [Adresse transmise par l'intégrateur d'une iframe](0049-adresse-transmise-par-integrateur-iframe.md) | Accepté |
 | 0050 | [Doublons de demandeur à l'invitation](0050-doublons-de-demandeur-a-l-invitation.md) | Accepté |
+| 0051 | [Rôles AMO et Aller-vers portés par la structure](0051-roles-amo-aller-vers-portes-par-la-structure.md) | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

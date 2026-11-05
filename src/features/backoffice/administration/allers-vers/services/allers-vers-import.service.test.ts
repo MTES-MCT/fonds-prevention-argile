@@ -69,6 +69,7 @@ describe("importAllersVersFromExcel", () => {
       telephone: "",
       adresse: "",
       horaires: null,
+      structureId: `structure-${compteur}`,
     }));
   });
 

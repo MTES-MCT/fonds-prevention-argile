@@ -40,6 +40,7 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     // Rangée pilotage (onglets super-admin inclus)
     expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
     expect(screen.getByText("Agents")).toBeInTheDocument();
+    expect(screen.getByText("Structures")).toBeInTheDocument();
     expect(screen.getByText("Diagnostics DN")).toBeInTheDocument();
     // Rangée dossiers : onglet unique (l'ancienne page Statistiques a été retirée, ADR-0017)
     expect(screen.getByText("Dossiers")).toBeInTheDocument();
@@ -52,6 +53,7 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
     expect(screen.getByText("AMO")).toBeInTheDocument();
     expect(screen.queryByText("Agents")).not.toBeInTheDocument();
+    expect(screen.queryByText("Structures")).not.toBeInTheDocument();
     expect(screen.queryByText("Diagnostics DN")).not.toBeInTheDocument();
     expect(screen.queryByText("Dossiers")).not.toBeInTheDocument();
   });

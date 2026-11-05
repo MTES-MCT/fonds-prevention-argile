@@ -1,14 +1,21 @@
 import { eq, sql, SQL, desc, and, isNull } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import { db } from "../client";
-import { agents, type Agent, type NewAgent } from "../schema/agents";
+import { agents, aUnRole, type Agent, type AgentAvecRole, type AgentLigne } from "../schema/agents";
 import { entreprisesAmo } from "../schema/entreprises-amo";
 import { allersVers } from "../schema/allers-vers";
+import { structures } from "../schema/structures";
 import { parcoursActions } from "../schema/parcours-actions";
 import { parcoursPrevention } from "../schema/parcours-prevention";
 import { prospectQualifications } from "../schema/prospect-qualifications";
 import { BaseRepository } from "./base.repository";
-import { AgentRole } from "@/shared/domain/value-objects";
+import { structuresRepository } from "./structures.repository";
+import {
+  resoudreRoleAgent,
+  roleDepuisStructure,
+  type AgentRole,
+  type CompteAgent,
+} from "@/shared/domain/value-objects";
 
 /**
  * Interface pour les données ProConnect lors de l'upsert
@@ -24,15 +31,27 @@ export interface ProConnectAgentData {
   organizational_unit?: string;
 }
 
-/**
- * Agent avec les informations de son entreprise AMO
- */
-export interface AgentWithEntrepriseAmo extends Agent {
-  entrepriseAmo: {
-    id: string;
-    nom: string;
-    siret: string;
-  } | null;
+/** Agent et les lignes de sa structure, pour l'affichage. */
+export interface AgentAvecStructure extends Agent {
+  structure: { id: string; nom: string } | null;
+  entrepriseAmo: { id: string; nom: string; siret: string } | null;
+  allersVers: { id: string; nom: string } | null;
+}
+
+/** Agent à créer : son rôle vient de son compte, plateforme ou structure. */
+export interface NouvelAgent {
+  sub: string;
+  email: string;
+  givenName: string;
+  usualName?: string | null;
+  compte: CompteAgent;
+}
+
+export interface ModificationAgent {
+  email?: string;
+  givenName?: string;
+  usualName?: string | null;
+  compte?: CompteAgent;
 }
 
 /** Exécuteur : le client global, ou une transaction en cours. */
@@ -51,214 +70,151 @@ export interface AgentTracesCount {
   total: number;
 }
 
+/** Colonnes lues pour tout agent : sa ligne, et les habilitations de sa structure. */
+const colonnesResolues = {
+  agent: agents,
+  structureNom: structures.nom,
+  amoId: entreprisesAmo.id,
+  amoNom: entreprisesAmo.nom,
+  amoSiret: entreprisesAmo.siret,
+  avId: allersVers.id,
+  avNom: allersVers.nom,
+};
+
+interface LigneResolue {
+  agent: AgentLigne;
+  structureNom: string | null;
+  amoId: string | null;
+  amoNom: string | null;
+  amoSiret: string | null;
+  avId: string | null;
+  avNom: string | null;
+}
+
+function selectResolu(executor: AgentsExecutor = db) {
+  return executor
+    .select(colonnesResolues)
+    .from(agents)
+    .leftJoin(structures, eq(structures.id, agents.structureId))
+    .leftJoin(entreprisesAmo, eq(entreprisesAmo.structureId, agents.structureId))
+    .leftJoin(allersVers, eq(allersVers.structureId, agents.structureId));
+}
+
+function versAgent({ agent, amoId, avId }: LigneResolue): Agent {
+  return {
+    id: agent.id,
+    sub: agent.sub,
+    email: agent.email,
+    givenName: agent.givenName,
+    usualName: agent.usualName,
+    uid: agent.uid,
+    siret: agent.siret,
+    phone: agent.phone,
+    organizationalUnit: agent.organizationalUnit,
+    structureId: agent.structureId,
+    role: resoudreRoleAgent({
+      structureId: agent.structureId,
+      roleStocke: agent.legacyRole,
+      habilitations: { amo: amoId !== null, allersVers: avId !== null },
+    }),
+    entrepriseAmoId: amoId,
+    allersVersId: avId,
+    desactiveAt: agent.desactiveAt,
+    desactivePar: agent.desactivePar,
+    desactiveRaison: agent.desactiveRaison,
+    lastLogin: agent.lastLogin,
+    createdAt: agent.createdAt,
+    updatedAt: agent.updatedAt,
+  };
+}
+
+function versAgentAvecStructure(ligne: LigneResolue): AgentAvecStructure {
+  const { agent, structureNom, amoId, amoNom, amoSiret, avId, avNom } = ligne;
+  return {
+    ...versAgent(ligne),
+    structure: agent.structureId && structureNom ? { id: agent.structureId, nom: structureNom } : null,
+    entrepriseAmo: amoId && amoNom && amoSiret ? { id: amoId, nom: amoNom, siret: amoSiret } : null,
+    allersVers: avId && avNom ? { id: avId, nom: avNom } : null,
+  };
+}
+
+/** Colonnes héritées d'un rattachement : écrites pour qu'un retour arrière retrouve des rôles justes. */
+interface ColonnesRattachement {
+  structureId: string | null;
+  legacyRole: AgentRole;
+  legacyEntrepriseAmoId: string | null;
+  legacyAllersVersId: string | null;
+}
+
 export class AgentsRepository extends BaseRepository<Agent> {
-  /**
-   * Trouve un agent par son ID
-   */
-  async findById(id: string): Promise<Agent | null> {
-    const result = await db.select().from(agents).where(eq(agents.id, id));
-    return result[0] || null;
+  async findById(id: string, executor: AgentsExecutor = db): Promise<Agent | null> {
+    const [ligne] = await selectResolu(executor).where(eq(agents.id, id)).limit(1);
+    return ligne ? versAgent(ligne) : null;
   }
 
-  /**
-   * Trouve un agent par son ID avec son entreprise AMO
-   */
-  async findByIdWithEntrepriseAmo(id: string): Promise<AgentWithEntrepriseAmo | null> {
-    const result = await db
-      .select({
-        id: agents.id,
-        sub: agents.sub,
-        email: agents.email,
-        givenName: agents.givenName,
-        usualName: agents.usualName,
-        uid: agents.uid,
-        siret: agents.siret,
-        phone: agents.phone,
-        organizationalUnit: agents.organizationalUnit,
-        role: agents.role,
-        entrepriseAmoId: agents.entrepriseAmoId,
-        allersVersId: agents.allersVersId,
-        desactiveAt: agents.desactiveAt,
-        desactivePar: agents.desactivePar,
-        desactiveRaison: agents.desactiveRaison,
-        lastLogin: agents.lastLogin,
-        createdAt: agents.createdAt,
-        updatedAt: agents.updatedAt,
-        entrepriseAmoDbId: entreprisesAmo.id,
-        entrepriseAmoNom: entreprisesAmo.nom,
-        entrepriseAmoSiret: entreprisesAmo.siret,
-      })
-      .from(agents)
-      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
-      .where(eq(agents.id, id));
-
-    if (!result[0]) return null;
-
-    const row = result[0];
-    return {
-      id: row.id,
-      sub: row.sub,
-      email: row.email,
-      givenName: row.givenName,
-      usualName: row.usualName,
-      uid: row.uid,
-      siret: row.siret,
-      phone: row.phone,
-      organizationalUnit: row.organizationalUnit,
-      role: row.role,
-      entrepriseAmoId: row.entrepriseAmoId,
-      allersVersId: row.allersVersId,
-      desactiveAt: row.desactiveAt,
-      desactivePar: row.desactivePar,
-      desactiveRaison: row.desactiveRaison,
-      lastLogin: row.lastLogin,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      entrepriseAmo:
-        row.entrepriseAmoDbId && row.entrepriseAmoNom && row.entrepriseAmoSiret
-          ? {
-              id: row.entrepriseAmoDbId,
-              nom: row.entrepriseAmoNom,
-              siret: row.entrepriseAmoSiret,
-            }
-          : null,
-    };
+  async findByIdAvecStructure(id: string): Promise<AgentAvecStructure | null> {
+    const [ligne] = await selectResolu().where(eq(agents.id, id)).limit(1);
+    return ligne ? versAgentAvecStructure(ligne) : null;
   }
 
-  /**
-   * Trouve un agent et sa structure de rattachement (entreprise AMO OU
-   * aller-vers). Sert à afficher "Compte créé par X (structure)" côté
-   * demandeur quand un dossier a été pré-créé par un agent.
-   */
-  async findByIdWithStructure(id: string): Promise<{
-    id: string;
-    givenName: string;
-    usualName: string | null;
-    role: AgentRole;
-    entrepriseAmo: { id: string; nom: string } | null;
-    allersVers: { id: string; nom: string } | null;
-  } | null> {
-    const result = await db
-      .select({
-        id: agents.id,
-        givenName: agents.givenName,
-        usualName: agents.usualName,
-        role: agents.role,
-        amoId: entreprisesAmo.id,
-        amoNom: entreprisesAmo.nom,
-        avId: allersVers.id,
-        avNom: allersVers.nom,
-      })
-      .from(agents)
-      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
-      .leftJoin(allersVers, eq(agents.allersVersId, allersVers.id))
-      .where(eq(agents.id, id))
-      .limit(1);
-
-    const row = result[0];
-    if (!row) return null;
-
-    return {
-      id: row.id,
-      givenName: row.givenName,
-      usualName: row.usualName,
-      role: row.role as AgentRole,
-      entrepriseAmo: row.amoId && row.amoNom ? { id: row.amoId, nom: row.amoNom } : null,
-      allersVers: row.avId && row.avNom ? { id: row.avId, nom: row.avNom } : null,
-    };
-  }
-
-  /**
-   * Récupère tous les agents
-   */
   async findAll(): Promise<Agent[]> {
-    return await db.select().from(agents).orderBy(desc(agents.createdAt));
+    const lignes = await selectResolu().orderBy(desc(agents.createdAt));
+    return lignes.map(versAgent);
   }
 
-  /**
-   * Récupère tous les agents avec leur entreprise AMO
-   */
-  async findAllWithEntrepriseAmo(): Promise<AgentWithEntrepriseAmo[]> {
-    const result = await db
-      .select({
-        id: agents.id,
-        sub: agents.sub,
-        email: agents.email,
-        givenName: agents.givenName,
-        usualName: agents.usualName,
-        uid: agents.uid,
-        siret: agents.siret,
-        phone: agents.phone,
-        organizationalUnit: agents.organizationalUnit,
-        role: agents.role,
-        entrepriseAmoId: agents.entrepriseAmoId,
-        allersVersId: agents.allersVersId,
-        desactiveAt: agents.desactiveAt,
-        desactivePar: agents.desactivePar,
-        desactiveRaison: agents.desactiveRaison,
-        lastLogin: agents.lastLogin,
-        createdAt: agents.createdAt,
-        updatedAt: agents.updatedAt,
-        entrepriseAmoDbId: entreprisesAmo.id,
-        entrepriseAmoNom: entreprisesAmo.nom,
-        entrepriseAmoSiret: entreprisesAmo.siret,
-      })
-      .from(agents)
-      .leftJoin(entreprisesAmo, eq(agents.entrepriseAmoId, entreprisesAmo.id))
-      .orderBy(desc(agents.createdAt));
-
-    return result.map((row) => ({
-      id: row.id,
-      sub: row.sub,
-      email: row.email,
-      givenName: row.givenName,
-      usualName: row.usualName,
-      uid: row.uid,
-      siret: row.siret,
-      phone: row.phone,
-      organizationalUnit: row.organizationalUnit,
-      role: row.role,
-      entrepriseAmoId: row.entrepriseAmoId,
-      allersVersId: row.allersVersId,
-      desactiveAt: row.desactiveAt,
-      desactivePar: row.desactivePar,
-      desactiveRaison: row.desactiveRaison,
-      lastLogin: row.lastLogin,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      entrepriseAmo:
-        row.entrepriseAmoDbId && row.entrepriseAmoNom && row.entrepriseAmoSiret
-          ? {
-              id: row.entrepriseAmoDbId,
-              nom: row.entrepriseAmoNom,
-              siret: row.entrepriseAmoSiret,
-            }
-          : null,
-    }));
+  async findAllAvecStructure(): Promise<AgentAvecStructure[]> {
+    const lignes = await selectResolu().orderBy(desc(agents.createdAt));
+    return lignes.map(versAgentAvecStructure);
   }
 
-  /**
-   * Crée un nouvel agent
-   */
-  async create(data: NewAgent): Promise<Agent> {
-    const result = await db.insert(agents).values(data).returning();
-    return result[0];
+  async findBySub(sub: string): Promise<Agent | null> {
+    const [ligne] = await selectResolu().where(eq(agents.sub, sub)).limit(1);
+    return ligne ? versAgent(ligne) : null;
   }
 
-  /**
-   * Met à jour un agent
-   */
-  async update(id: string, data: Partial<NewAgent>): Promise<Agent | null> {
-    const result = await db
-      .update(agents)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(agents.id, id))
-      .returning();
+  async findByEmail(email: string): Promise<Agent | null> {
+    const [ligne] = await selectResolu().where(eq(agents.email, email)).limit(1);
+    return ligne ? versAgent(ligne) : null;
+  }
 
-    return result[0] || null;
+  /** Lève si la structure n'existe pas ou n'a aucun rôle à transmettre. */
+  async create(nouvel: NouvelAgent): Promise<Agent> {
+    const id = await db.transaction(async (tx) => {
+      const rattachement = await this.colonnesRattachement(nouvel.compte, tx);
+      const [cree] = await tx
+        .insert(agents)
+        .values({
+          sub: nouvel.sub,
+          email: nouvel.email,
+          givenName: nouvel.givenName,
+          usualName: nouvel.usualName ?? null,
+          ...rattachement,
+        })
+        .returning({ id: agents.id });
+      return cree.id;
+    });
+
+    return (await this.findById(id))!;
+  }
+
+  async update(id: string, modification: ModificationAgent): Promise<Agent | null> {
+    const modifieId = await db.transaction(async (tx) => {
+      const rattachement = modification.compte ? await this.colonnesRattachement(modification.compte, tx) : {};
+      const [modifie] = await tx
+        .update(agents)
+        .set({
+          ...(modification.email !== undefined && { email: modification.email }),
+          ...(modification.givenName !== undefined && { givenName: modification.givenName }),
+          ...(modification.usualName !== undefined && { usualName: modification.usualName }),
+          ...rattachement,
+          updatedAt: new Date(),
+        })
+        .where(eq(agents.id, id))
+        .returning({ id: agents.id });
+      return modifie?.id;
+    });
+
+    return modifieId ? this.findById(modifieId) : null;
   }
 
   /**
@@ -294,118 +250,55 @@ export class AgentsRepository extends BaseRepository<Agent> {
   }
 
   /**
-   * Trouve un agent par son sub ProConnect
-   */
-  async findBySub(sub: string): Promise<Agent | null> {
-    const result = await db.select().from(agents).where(eq(agents.sub, sub));
-    return result[0] || null;
-  }
-
-  /**
-   * Trouve un agent par son email
-   */
-  async findByEmail(email: string): Promise<Agent | null> {
-    const result = await db.select().from(agents).where(eq(agents.email, email));
-    return result[0] || null;
-  }
-
-  /**
    * Authentifie un agent depuis ProConnect
    * Cherche d'abord par sub (connexions suivantes), puis par email pour la première
    * connexion (le sub en base est encore `pending_`) — auquel cas le sub réel est écrit
-   * Retourne null si l'agent n'est pas autorisé (pas en base, ou désactivé)
+   * Retourne null si l'agent n'est pas autorisé (pas en base, désactivé, ou sans rôle)
    */
-  async authenticateFromProConnect(proConnectData: ProConnectAgentData): Promise<Agent | null> {
-    // 1. Vérifier si l'agent existe déjà par sub (connexions suivantes)
+  async authenticateFromProConnect(proConnectData: ProConnectAgentData): Promise<AgentAvecRole | null> {
     const existingBySub = await this.findBySub(proConnectData.sub);
-
-    // 2. Sinon par email (première connexion, le sub en base est encore pending_)
     const existingByEmail = existingBySub ? null : await this.findByEmail(proConnectData.email);
 
-    // Un agent désactivé est traité comme un agent inconnu : ni connexion, ni mise à jour
-    // de ses informations ProConnect (lastLogin compris).
+    // Refusé sans aucune écriture (lastLogin compris), comme un agent inconnu.
     const existing = existingBySub ?? existingByEmail;
     if (existing?.desactiveAt) {
       console.warn("[AUTH] Connexion ProConnect refusée : agent désactivé", { agentId: existing.id });
       return null;
     }
+    if (existing && !existing.role) {
+      console.warn("[AUTH] Connexion ProConnect refusée : agent sans rôle", { agentId: existing.id });
+      return null;
+    }
+
+    const informations = {
+      givenName: proConnectData.given_name,
+      usualName: proConnectData.usual_name,
+      uid: proConnectData.uid,
+      siret: proConnectData.siret,
+      phone: proConnectData.phone,
+      organizationalUnit: proConnectData.organizational_unit,
+      lastLogin: new Date(),
+      updatedAt: new Date(),
+    };
 
     if (existingBySub) {
-      // Mettre à jour les informations de l'agent existant
-      const [updatedAgent] = await db
+      await db
         .update(agents)
-        .set({
-          email: proConnectData.email,
-          givenName: proConnectData.given_name,
-          usualName: proConnectData.usual_name,
-          uid: proConnectData.uid,
-          siret: proConnectData.siret,
-          phone: proConnectData.phone,
-          organizationalUnit: proConnectData.organizational_unit,
-          lastLogin: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(agents.sub, proConnectData.sub))
-        .returning();
-
-      return updatedAgent;
+        .set({ ...informations, email: proConnectData.email })
+        .where(eq(agents.sub, proConnectData.sub));
+      return this.relireAvecRole(existingBySub.id);
     }
 
     if (existingByEmail) {
-      // Mettre à jour le sub réel et les autres informations
-      const [updatedAgent] = await db
+      // Première connexion : le sub pending_ devient le vrai sub
+      await db
         .update(agents)
-        .set({
-          sub: proConnectData.sub, // Mise à jour du sub depuis pending_ vers le vrai sub
-          givenName: proConnectData.given_name,
-          usualName: proConnectData.usual_name,
-          uid: proConnectData.uid,
-          siret: proConnectData.siret,
-          phone: proConnectData.phone,
-          organizationalUnit: proConnectData.organizational_unit,
-          lastLogin: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(agents.email, proConnectData.email))
-        .returning();
-
-      return updatedAgent;
+        .set({ ...informations, sub: proConnectData.sub })
+        .where(eq(agents.email, proConnectData.email));
+      return this.relireAvecRole(existingByEmail.id);
     }
 
-    // 3. Agent non trouvé = non autorisé
     return null;
-  }
-
-  /**
-   * Met à jour le rôle d'un agent
-   */
-  async updateRole(agentId: string, role: AgentRole): Promise<Agent | null> {
-    const [updatedAgent] = await db
-      .update(agents)
-      .set({
-        role,
-        updatedAt: new Date(),
-      })
-      .where(eq(agents.id, agentId))
-      .returning();
-
-    return updatedAgent || null;
-  }
-
-  /**
-   * Met à jour l'entreprise AMO d'un agent
-   */
-  async updateEntrepriseAmo(agentId: string, entrepriseAmoId: string | null): Promise<Agent | null> {
-    const [updatedAgent] = await db
-      .update(agents)
-      .set({
-        entrepriseAmoId,
-        updatedAt: new Date(),
-      })
-      .where(eq(agents.id, agentId))
-      .returning();
-
-    return updatedAgent || null;
   }
 
   /**
@@ -418,7 +311,7 @@ export class AgentsRepository extends BaseRepository<Agent> {
     raison?: string | null,
     executor: AgentsExecutor = db
   ): Promise<Agent | null> {
-    const [updatedAgent] = await executor
+    const [desactive] = await executor
       .update(agents)
       .set({
         desactiveAt: new Date(),
@@ -427,16 +320,16 @@ export class AgentsRepository extends BaseRepository<Agent> {
         updatedAt: new Date(),
       })
       .where(and(eq(agents.id, agentId), isNull(agents.desactiveAt)))
-      .returning();
+      .returning({ id: agents.id });
 
-    return updatedAgent || null;
+    return desactive ? this.findById(desactive.id, executor) : null;
   }
 
   /**
    * Réactive un agent désactivé (rend l'accès ProConnect).
    */
   async reactiver(agentId: string): Promise<Agent | null> {
-    const [updatedAgent] = await db
+    const [reactive] = await db
       .update(agents)
       .set({
         desactiveAt: null,
@@ -445,9 +338,43 @@ export class AgentsRepository extends BaseRepository<Agent> {
         updatedAt: new Date(),
       })
       .where(eq(agents.id, agentId))
-      .returning();
+      .returning({ id: agents.id });
 
-    return updatedAgent || null;
+    return reactive ? this.findById(reactive.id) : null;
+  }
+
+  /** Agents rattachés à une structure, désactivés compris. */
+  async compterParStructure(structureId: string, executor: AgentsExecutor = db): Promise<number> {
+    const [resultat] = await executor
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(agents)
+      .where(eq(agents.structureId, structureId));
+    return resultat?.count ?? 0;
+  }
+
+  async changerDeStructure(sourceId: string, cibleId: string, executor: AgentsExecutor): Promise<void> {
+    await executor
+      .update(agents)
+      .set({ structureId: cibleId, updatedAt: new Date() })
+      .where(eq(agents.structureId, sourceId));
+  }
+
+  /** Réaligne les colonnes héritées des agents d'une structure dont une habilitation a changé. */
+  async resynchroniserColonnesHeritees(structureId: string, executor: AgentsExecutor = db): Promise<void> {
+    const structure = await structuresRepository.findAvecHabilitations(structureId, executor);
+    if (!structure) return;
+    const role = roleDepuisStructure({ amo: !!structure.entrepriseAmo, allersVers: !!structure.allersVers });
+    // Sans rôle restant, l'ancien code doit garder de quoi refuser : on ne touche à rien.
+    if (!role) return;
+
+    await executor
+      .update(agents)
+      .set({
+        legacyRole: role,
+        legacyEntrepriseAmoId: structure.entrepriseAmo?.id ?? null,
+        legacyAllersVersId: structure.allersVers?.id ?? null,
+      })
+      .where(eq(agents.structureId, structureId));
   }
 
   /**
@@ -497,6 +424,34 @@ export class AgentsRepository extends BaseRepository<Agent> {
    */
   async deleteById(agentId: string): Promise<boolean> {
     return this.delete(agentId);
+  }
+
+  private async relireAvecRole(id: string): Promise<AgentAvecRole | null> {
+    const agent = await this.findById(id);
+    return agent && aUnRole(agent) ? agent : null;
+  }
+
+  private async colonnesRattachement(compte: CompteAgent, tx: AgentsExecutor): Promise<ColonnesRattachement> {
+    if (compte.type === "plateforme") {
+      return { structureId: null, legacyRole: compte.role, legacyEntrepriseAmoId: null, legacyAllersVersId: null };
+    }
+
+    // Une suppression d'habilitation concurrente attend la fin du rattachement, puis compte cet agent.
+    await structuresRepository.verrouiller(compte.structureId, "partage", tx);
+    const structure = await structuresRepository.findAvecHabilitations(compte.structureId, tx);
+    const role = structure
+      ? roleDepuisStructure({ amo: !!structure.entrepriseAmo, allersVers: !!structure.allersVers })
+      : null;
+    if (!structure || !role) {
+      throw new Error("La structure sélectionnée n'existe pas ou n'a aucun rôle à transmettre");
+    }
+
+    return {
+      structureId: structure.id,
+      legacyRole: role,
+      legacyEntrepriseAmoId: structure.entrepriseAmo?.id ?? null,
+      legacyAllersVersId: structure.allersVers?.id ?? null,
+    };
   }
 }
 

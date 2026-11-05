@@ -30,6 +30,8 @@ services:
       POSTGRES_USER: ${DB_USER:-fonds_argile_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-fonds_argile_password}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    # Journal minimal : `pnpm db:restore` charge le dump sans l'y écrire en clair (docs/ops/db-local.md).
+    command: postgres -c wal_level=minimal -c max_wal_senders=0
     # Port lié à la boucle locale : sans le préfixe 127.0.0.1, Docker publie sur toutes
     # les interfaces et la base devient joignable depuis le réseau, avec le mot de passe
     # par défaut ci-dessus. Le conteneur applicatif passe par le réseau Docker, pas par

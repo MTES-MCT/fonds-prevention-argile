@@ -41,6 +41,13 @@ structures conservées sont ensuite mises à jour par l'import si elles figurent
 
 La case exige en plus la permission de suppression (`AMO_DELETE` / `ALLERS_VERS_DELETE`).
 
+## Structure de rattachement
+
+Une AMO ou un Aller-vers créé par l'import devient sa propre structure, avec ce seul rôle
+([ADR-0051](../adr/0051-roles-amo-aller-vers-portes-par-la-structure.md)). Quand une même
+organisation est AMO et Aller-vers, fusionner ses deux structures sur
+`/administration/structures` : ses agents en recevront les deux rôles.
+
 ## Colonnes à plusieurs valeurs
 
 Emails, départements, EPCI et codes INSEE acceptent indifféremment `,` et `;`, dans le
