@@ -347,6 +347,7 @@ fi
 # ÉTAPES 3 à 6 : Restauration dans une base temporaire, pseudonymisation, substitution
 # -----------------------------------------------------------------------------
 print_step "Création de la base temporaire '$DB_RESTAURATION'..."
+print_info "Une fois prête, elle prendra le nom '$DB_NAME' et remplacera la base de ce nom, s'il y en a une."
 
 # Une restauration tuée (kill -9, terminal fermé) n'a pas pu nettoyer : sa base peut être en clair.
 for base in $(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -c \
@@ -399,7 +400,10 @@ else
     print_success "Dump restauré dans la base temporaire"
 fi
 
-print_step "Remplacement de la base '$DB_NAME'..."
+print_step "Remplacement de la base '$DB_NAME' par '$DB_RESTAURATION'..."
+
+CIBLE_EXISTAIT=$(docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -At -v cible="$DB_NAME" \
+    <<< "SELECT count(*) FROM pg_database WHERE datname = :'cible';")
 
 # Fermée aux connexions avant la déconnexion : sinon l'app s'y reconnecte avant le renommage.
 CIBLE_FERMEE=true
@@ -422,11 +426,18 @@ SQL
 BASE_TEMPORAIRE=""
 CIBLE_FERMEE=false
 BASE_ANCIENNE="$DB_ANCIENNE"
-docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_ANCIENNE" > /dev/null 2>&1 \
-    || print_warning "Ancienne base non supprimée, à effacer à la main : $DB_ANCIENNE"
+ANCIENNE_SUPPRIMEE=false
+if docker exec "$CONTAINER_NAME" dropdb -U "$DB_USER" --if-exists --force "$DB_ANCIENNE" > /dev/null 2>&1; then
+    ANCIENNE_SUPPRIMEE=true
+else
+    print_warning "Ancienne base non supprimée, à effacer à la main : $DB_ANCIENNE"
+fi
 BASE_ANCIENNE=""
 
-print_success "Base '$DB_NAME' remplacée"
+print_success "'$DB_RESTAURATION' renommée en '$DB_NAME'"
+if [ "$CIBLE_EXISTAIT" = "1" ] && [ "$ANCIENNE_SUPPRIMEE" = true ]; then
+    print_success "Ancienne base '$DB_NAME' supprimée (renommée '$DB_ANCIENNE' le temps de l'échange)"
+fi
 
 # -----------------------------------------------------------------------------
 # ÉTAPE 7 : Vérification des données
