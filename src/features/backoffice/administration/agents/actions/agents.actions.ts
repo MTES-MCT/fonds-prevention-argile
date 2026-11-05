@@ -121,12 +121,15 @@ export async function getStructuresOptionsAction(): Promise<ActionResult<Structu
     const structures = await structuresRepository.findAllAvecHabilitations();
     return {
       success: true,
-      data: structures.map((structure) => ({
-        id: structure.id,
-        nom: structure.nom,
-        amo: structure.entrepriseAmo?.nom ?? null,
-        allersVers: structure.allersVers?.nom ?? null,
-      })),
+      // Une structure qui n'est qu'un expert ne donnerait aucun rôle à l'agent.
+      data: structures
+        .filter((structure) => structure.entrepriseAmo || structure.allersVers || !structure.expert)
+        .map((structure) => ({
+          id: structure.id,
+          nom: structure.nom,
+          amo: structure.entrepriseAmo?.nom ?? null,
+          allersVers: structure.allersVers?.nom ?? null,
+        })),
     };
   } catch (error) {
     console.error("Erreur getStructuresOptionsAction:", error);

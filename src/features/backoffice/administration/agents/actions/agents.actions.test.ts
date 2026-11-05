@@ -22,6 +22,10 @@ vi.mock("../services/agents-admin.service", () => ({
 // Mock de l'environnement serveur
 vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 
+vi.mock("@/shared/database/repositories/structures.repository", () => ({
+  structuresRepository: { findAllAvecHabilitations: vi.fn() },
+}));
+
 // Import des actions APRÈS les mocks
 import {
   getAgentsAction,
@@ -32,7 +36,9 @@ import {
   desactiverAgentAction,
   reactiverAgentAction,
   getAgentTracesAction,
+  getStructuresOptionsAction,
 } from "./agents.actions";
+import { structuresRepository } from "@/shared/database/repositories/structures.repository";
 
 // Import des mocks
 import { getCurrentUser } from "@/features/auth/services/user.service";
@@ -51,6 +57,27 @@ describe("agents.actions", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe("getStructuresOptionsAction", () => {
+    it("ne propose pas une structure qui n'est qu'un expert : elle ne donnerait aucun rôle", async () => {
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
+      vi.mocked(structuresRepository.findAllAvecHabilitations).mockResolvedValue([
+        { id: "s-amo", nom: "Soliha 36", entrepriseAmo: { id: "a", nom: "Soliha 36" }, allersVers: null, expert: null },
+        { id: "s-expert", nom: "Géotech", entrepriseAmo: null, allersVers: null, expert: { id: "e", nom: "Géotech" } },
+        {
+          id: "s-amo-expert",
+          nom: "Ingé Sols",
+          entrepriseAmo: { id: "b", nom: "Ingé Sols" },
+          allersVers: null,
+          expert: { id: "f", nom: "Ingé Sols" },
+        },
+      ]);
+
+      const result = await getStructuresOptionsAction();
+
+      expect(result.success && result.data.map((s) => s.id)).toEqual(["s-amo", "s-amo-expert"]);
+    });
   });
 
   describe("getAgentsAction", () => {

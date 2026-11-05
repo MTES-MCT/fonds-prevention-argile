@@ -38,6 +38,7 @@ function structureAvec(allersVers: boolean) {
     nom: "Soliha 54",
     entrepriseAmo: { id: "amo-1", nom: "Soliha 54" },
     allersVers: allersVers ? { id: "av-1", nom: "Soliha 54" } : null,
+    expert: null,
   };
 }
 

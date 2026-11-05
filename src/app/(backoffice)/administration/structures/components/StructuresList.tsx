@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { StructureAdministration } from "@/features/backoffice";
+import { habilitationsDeLignes, refusDetachement, type StructureAdministration } from "@/features/backoffice";
 
 interface StructuresListProps {
   structures: StructureAdministration[];
@@ -76,11 +76,27 @@ export default function StructuresList({
                         </Link>
                       </span>
                     )}
-                    {!structure.entrepriseAmo && !structure.allersVers && (
-                      <span className="text-sm text-(--text-default-error)">
-                        Aucune habilitation : ses agents n&apos;ont aucun rôle
+                    {structure.expert && (
+                      <span className="text-sm">
+                        <span className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--green-emeraude fr-mr-1v">
+                          Expert
+                        </span>
+                        <Link href="/administration/experts" className="fr-link fr-link--sm">
+                          {structure.expert.nom}
+                        </Link>
                       </span>
                     )}
+                    {!structure.entrepriseAmo && !structure.allersVers && structure.agents.length > 0 && (
+                      <span className="text-sm text-(--text-default-error)">
+                        Ni AMO ni Aller-vers : ses agents n&apos;ont aucun rôle
+                      </span>
+                    )}
+                    {!structure.entrepriseAmo &&
+                      !structure.allersVers &&
+                      !structure.expert &&
+                      structure.agents.length === 0 && (
+                        <span className="text-sm text-(--text-mention-grey)">Aucune habilitation</span>
+                      )}
                   </div>
                 </td>
 
@@ -125,7 +141,7 @@ export default function StructuresList({
                       disabled={isLoading}>
                       Fusionner
                     </button>
-                    {structure.entrepriseAmo && structure.allersVers && (
+                    {!refusDetachement(habilitationsDeLignes(structure)) && (
                       <button
                         type="button"
                         className="fr-btn fr-btn--sm fr-btn--tertiary fr-btn--icon-left fr-icon-scissors-line"
