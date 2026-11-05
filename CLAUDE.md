@@ -119,9 +119,12 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   interne, met à jour `docs/stats/STATISTIQUES.md` dans la même PR : une ligne par statistique, ce
   qu'elle compte en une ou deux phrases. Une statistique ajoutée y entre, une supprimée en sort, et un
   écart corrigé quitte la section « Écarts connus ».
-- **Toute colonne ajoutée au schéma** entre dans `docs/security/DONNEES-PERSONNELLES.md` avec son
-  traitement à la restauration, et `scripts/dev/anonymiser.sql` la remplace si elle est personnelle :
-  `inventaire-donnees-personnelles.test.ts` échoue sinon, en la nommant.
+- **Toute modification du modèle de données** (table, colonne, clé JSONB, ou nouveau contenu écrit
+  dans une colonne existante, comme un message qui recopie un nom) revérifie
+  `docs/security/DONNEES-PERSONNELLES.md` et `scripts/dev/anonymiser.sql` dans la même PR : une donnée
+  personnelle ou un jeton y est remplacé, sinon il part en clair à chaque restauration locale.
+  `inventaire-donnees-personnelles.test.ts` n'attrape qu'une colonne absente de l'inventaire ou du
+  script, pas une clé JSONB ni un contenu qui change : ces deux cas se vérifient à la main.
 - Un sujet écarté d'une PR (retour de revue hors périmètre, arbitrage en attente, rattrapage à
   mesurer d'abord) va dans `docs/SUJETS-A-TRAITER.md`, avec son préalable ; l'entrée est retirée
   par la PR qui le traite.

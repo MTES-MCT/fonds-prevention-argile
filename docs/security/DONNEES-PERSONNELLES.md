@@ -4,10 +4,11 @@ Chaque colonne du schéma Drizzle, ce qu'elle contient et ce qu'en fait la resta
 en local (`pnpm db:restore`, cf. [db-local.md](../ops/db-local.md)). Le traitement est appliqué par
 [`scripts/dev/anonymiser.sql`](../../scripts/dev/anonymiser.sql).
 
-> **Ajouter une colonne, c'est ajouter une ligne ici.** Le test
-> `src/shared/database/inventaire-donnees-personnelles.test.ts` échoue en la nommant tant qu'elle
-> n'y figure pas, et vérifie que toute colonne qui n'est pas « Conservée » est bien traitée par
-> le script SQL.
+> **Toute modification du modèle de données revérifie cette page et le script.** Le test
+> `src/shared/database/inventaire-donnees-personnelles.test.ts` échoue en nommant une colonne
+> absente d'ici, ou qui n'est pas « Conservée » sans être traitée par le script SQL. Il ne voit ni
+> une nouvelle clé JSONB, ni un nouveau contenu écrit dans une colonne « Conservée » (un message
+> système qui recopierait un nom) : ces deux cas se vérifient à la main.
 
 ## Ce que la restauration garantit, et ce qu'elle ne garantit pas
 
