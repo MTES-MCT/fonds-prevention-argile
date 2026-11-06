@@ -11,13 +11,14 @@ const expert = (id: string, nom: string) => ({
 });
 
 describe("ExpertsDuDepartement", () => {
-  it("montre une carte par expert, dans l'ordre reçu, avec la mention de libre choix", () => {
+  it("met une carte par expert dans la carte du département, dans l'ordre reçu, avec la mention de libre choix", () => {
     render(
       <ExpertsDuDepartement
         departement={{ code: "36", nom: "Indre", experts: [expert("a", "Alpha"), expert("b", "Bêta")] }}
       />
     );
 
+    expect(screen.getByRole("heading", { level: 3, name: "Experts du département" })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 4 }).map((h) => h.textContent)).toEqual(["Alpha", "Bêta"]);
     expect(screen.getByText(/présentés sans ordre de préférence/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Voir l'annuaire des experts" })).toHaveAttribute(
