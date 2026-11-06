@@ -57,6 +57,7 @@ quelle que soit la saisie.
 
 ## Experts (`/administration/experts`, super-administrateur)
 
+L'onglet « Import » de la page reprend l'écran des AMO et des Aller-vers, sans la case de purge.
 L'import lit le référencement transmis par la DHUP tel quel (`Société`, `SIRET/SIREN`,
 `départements d'intervention`, `Contact`, `adresse mail`, `n° téléphone`), ou le modèle de la page,
 qui ajoute la date de validation DHUP et le contact interne. Les en-têtes sont reconnus sans tenir

@@ -247,6 +247,18 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 
 ---
 
+## Administration
+
+### Un seul composant d'import Excel pour les AMO, les Aller-vers et les experts
+
+`AmoSeedUpload`, `AllersVersSeedUpload` et `ExpertsImport` sont trois copies du même écran (tuile du
+modèle, dépôt du fichier, résultat). La copie des experts corrige deux défauts que les deux autres
+gardent : elles annoncent le format `.xls`, qu'ExcelJS ne lit pas (l'import échoue), et colorent la zone
+de dépôt avec la palette Tailwind (`border-blue-500`, `bg-blue-50`) au lieu des tokens DSFR.
+
+**Préalable** : un composant partagé, paramétré par le modèle, le texte, l'action et la case de purge,
+puis une recette des imports AMO et Aller-vers, déjà validés et donc à retester.
+
 ## Sécurité et dépendances
 
 ### Migration Next 16, ESLint 10, `@vitejs/plugin-react` 6, remplacement de `@react-email/components`
