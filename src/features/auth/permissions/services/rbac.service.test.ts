@@ -302,8 +302,9 @@ describe("rbac.service", () => {
     it("devrait retourner les permissions dossiers AMO + stats nationales pour le rôle AMO", () => {
       const permissions = getRolePermissions(UserRole.AMO);
 
-      // 7 permissions historiques + STATS_READ + USERS_STATS_READ (ADR-0017)
-      expect(permissions.length).toBe(9);
+      // 7 permissions historiques + STATS_READ + USERS_STATS_READ (ADR-0017) + EXPERTS_READ (ADR-0052)
+      expect(permissions.length).toBe(10);
+      expect(permissions).toContain(BackofficePermission.EXPERTS_READ);
       expect(permissions).toContain(BackofficePermission.STATS_READ);
       expect(permissions).toContain(BackofficePermission.USERS_STATS_READ);
       expect(permissions).toContain(BackofficePermission.DOSSIERS_AMO_READ);
@@ -316,6 +317,22 @@ describe("rbac.service", () => {
       // Mais JAMAIS la liste nominative des demandeurs
       expect(permissions).not.toContain(BackofficePermission.USERS_READ);
       expect(permissions).not.toContain(BackofficePermission.USERS_DETAIL_READ);
+    });
+
+    it("réserve la gestion des experts au super-administrateur, leur lecture aux agents et administrateurs", () => {
+      const lecteurs = [
+        UserRole.ADMINISTRATEUR,
+        UserRole.ANALYSTE,
+        UserRole.AMO,
+        UserRole.ALLERS_VERS,
+        UserRole.AMO_ET_ALLERS_VERS,
+      ];
+      for (const role of lecteurs) {
+        expect(getRolePermissions(role)).toContain(BackofficePermission.EXPERTS_READ);
+        expect(getRolePermissions(role)).not.toContain(BackofficePermission.EXPERTS_WRITE);
+      }
+      expect(getRolePermissions(UserRole.SUPER_ADMINISTRATEUR)).toContain(BackofficePermission.EXPERTS_WRITE);
+      expect(getRolePermissions(UserRole.PARTICULIER)).not.toContain(BackofficePermission.EXPERTS_READ);
     });
 
     it("devrait retourner un tableau vide pour un rôle inconnu", () => {

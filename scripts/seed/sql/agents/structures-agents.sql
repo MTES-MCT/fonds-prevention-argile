@@ -19,8 +19,9 @@ SET structure_id = COALESCE(
 )
 WHERE a.role IN ('amo', 'allers_vers', 'amo_et_allers_vers');
 
--- Structures laissées sans habilitation ni agent par le DELETE / INSERT des fixtures.
+-- Structures laissées sans habilitation (AMO, Aller-vers, expert) ni agent par le DELETE / INSERT des fixtures.
 DELETE FROM structures s
 WHERE NOT EXISTS (SELECT 1 FROM entreprises_amo ea WHERE ea.structure_id = s.id)
   AND NOT EXISTS (SELECT 1 FROM allers_vers av WHERE av.structure_id = s.id)
-  AND NOT EXISTS (SELECT 1 FROM agents a WHERE a.structure_id = s.id);
+  AND NOT EXISTS (SELECT 1 FROM agents a WHERE a.structure_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM experts e WHERE e.structure_id = s.id);

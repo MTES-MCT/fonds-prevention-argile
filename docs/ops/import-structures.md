@@ -1,7 +1,8 @@
-# Import Excel des structures AMO et Allers-Vers
+# Import Excel des structures AMO, Allers-Vers et experts
 
 Les pages `/administration/amo` et `/administration/allers-vers` importent un fichier Excel
-(modèle téléchargeable sur chaque page). Tout ce qui suit vaut pour les deux, sauf mention.
+(modèle téléchargeable sur chaque page). Tout ce qui suit vaut pour les deux, sauf mention. Les
+experts ont leurs propres règles, en fin de page.
 
 ## Réimporter met à jour, sans dupliquer
 
@@ -53,3 +54,35 @@ organisation est AMO et Aller-vers, fusionner ses deux structures sur
 Emails, départements, EPCI et codes INSEE acceptent indifféremment `,` et `;`, dans le
 fichier comme dans les modales d'édition. Les emails AMO sont stockés séparés par `;`
 quelle que soit la saisie.
+
+## Experts (`/administration/experts`, super-administrateur)
+
+L'onglet « Import » de la page reprend l'écran des AMO et des Aller-vers, sans la case de purge.
+L'import lit le référencement transmis par la DHUP tel quel (`Société`, `SIRET/SIREN`,
+`départements d'intervention`, `Contact`, `adresse mail`, `n° téléphone`), ou le modèle de la page,
+qui ajoute la date de validation DHUP et le contact interne. Les en-têtes sont reconnus sans tenir
+compte de la casse ni des accents ; `adresse postale` est ignorée, l'application ne la stocke pas.
+
+| Colonne                                          | Devient                                                         |
+| ------------------------------------------------ | --------------------------------------------------------------- |
+| `Société`                                        | raison sociale                                                  |
+| `SIRET/SIREN`                                    | SIRET : 14 chiffres et clé valide, sinon la ligne est refusée   |
+| `départements d'intervention`                    | codes, séparés par `,` ou `;` ; un code inconnu refuse la ligne |
+| `adresse mail`, `n° téléphone`                   | contact de réservation de chacun des départements de la ligne   |
+| `Contact`, `Contact interne email` / `téléphone` | contact interne, visible du seul super-administrateur           |
+| `Date de validation DHUP`                        | date, au format `AAAA-MM-JJ` ou `JJ/MM/AAAA`                    |
+
+- **Une ligne par expert, ou par département** quand le contact change d'un département à l'autre :
+  les lignes d'un même SIRET sont réunies. Un département déjà déclaré plus haut pour ce SIRET refuse
+  la ligne qui le répète.
+- **Rapprochement par SIRET.** Un expert existant est mis à jour : ses départements sont remplacés par
+  ceux du fichier ; sa date et son contact interne ne sont remplacés que si le fichier en donne. Son
+  statut (actif ou désactivé) ne change pas.
+- **Aucune suppression** : un expert absent du fichier reste tel quel. Un départ se traite par la
+  désactivation, depuis la liste.
+- Excel lit `03` et `0612345678` comme des nombres et retire le zéro : l'import le rétablit.
+- Chaque ligne refusée est listée avec son numéro et son motif ; les autres sont enregistrées.
+
+Un expert créé, par l'import ou à la main, devient sa propre structure. Une AMO qui est aussi expert
+se fusionne avec sa fiche expert sur `/administration/structures` : cette habilitation ne change le
+rôle d'aucun agent ([ADR-0052](../adr/0052-annuaire-des-experts-ordre-neutre.md)).

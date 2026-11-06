@@ -9,6 +9,11 @@ export const AGENT_TABS: AmoTab[] = [
     label: "Dossiers",
     href: "/espace-agent/dossiers",
   },
+  {
+    id: "experts",
+    label: "Experts",
+    href: "/espace-agent/experts",
+  },
 ];
 
 /** @deprecated remplacé par AGENT_TABS — gardé temporairement pour AmoContext. */

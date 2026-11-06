@@ -70,6 +70,13 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     minRoles: [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR],
   },
   {
+    id: "experts",
+    label: "Experts",
+    href: "/administration/experts",
+    icon: "fr-icon-team-line",
+    minRoles: [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR],
+  },
+  {
     id: "commentaires",
     label: "Notes",
     href: "/administration/commentaires",

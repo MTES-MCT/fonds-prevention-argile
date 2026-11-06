@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   effetFusion,
+  habilitationsDeLignes,
   LIBELLES_HABILITATION,
   refusFusion,
   type StructureAdministration,
@@ -20,9 +21,7 @@ interface StructureFusionModalProps {
   isLoading?: boolean;
 }
 
-function habilitations(structure: StructureAdministration) {
-  return { amo: !!structure.entrepriseAmo, allersVers: !!structure.allersVers };
-}
+const habilitations = habilitationsDeLignes;
 
 function GainsAgents({ structure, gains }: { structure: StructureAdministration; gains: TypeHabilitation[] }) {
   if (gains.length === 0 || structure.agents.length === 0) return null;
@@ -111,6 +110,7 @@ export default function StructureFusionModal({
                     {structure.nom}
                     {structure.entrepriseAmo ? " (AMO)" : ""}
                     {structure.allersVers ? " (Aller-vers)" : ""}
+                    {structure.expert ? " (Expert)" : ""}
                   </option>
                 ))}
               </select>

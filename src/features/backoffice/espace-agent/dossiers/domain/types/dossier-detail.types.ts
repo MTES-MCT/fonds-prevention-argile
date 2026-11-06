@@ -45,6 +45,8 @@ export interface DossierDetail {
   demandeur: InfoDemandeur;
   /** Informations sur le logement */
   logement: InfoLogement;
+  /** Département de la maison (simulation effective), pour l'encart des experts */
+  codeDepartementLogement: string | null;
   /** Résultat du simulateur de vulnérabilité RGA rattaché au compte, null si aucun. */
   vulnerabilite: InfoVulnerabiliteData | null;
   /** Étape actuelle du parcours */

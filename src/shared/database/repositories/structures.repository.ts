@@ -5,14 +5,16 @@ import { structures } from "../schema/structures";
 import { entreprisesAmo } from "../schema/entreprises-amo";
 import { allersVers } from "../schema/allers-vers";
 import { agents } from "../schema/agents";
+import { experts } from "../schema/experts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type StructuresExecutor = typeof db | PgTransaction<any, any, any>;
 
-/** Lignes d'habilitation d'une structure : leur présence fait ses rôles. */
+/** Lignes d'habilitation d'une structure : AMO et Aller-vers font ses rôles, expert n'en donne aucun. */
 export interface HabilitationsLignes {
   entrepriseAmo: { id: string; nom: string } | null;
   allersVers: { id: string; nom: string } | null;
+  expert: { id: string; nom: string } | null;
 }
 
 export interface StructureAvecHabilitations extends HabilitationsLignes {
@@ -41,15 +43,17 @@ export class StructuresRepository {
 
   /** Fait passer une ligne d'habilitation dans une autre structure, qui ne doit pas en avoir du même type. */
   async rattacherLigne(
-    type: "amo" | "allersVers",
+    type: "amo" | "allersVers" | "expert",
     ligneId: string,
     structureId: string,
     executor: StructuresExecutor
   ): Promise<void> {
     if (type === "amo") {
       await executor.update(entreprisesAmo).set({ structureId }).where(eq(entreprisesAmo.id, ligneId));
-    } else {
+    } else if (type === "allersVers") {
       await executor.update(allersVers).set({ structureId }).where(eq(allersVers.id, ligneId));
+    } else {
+      await executor.update(experts).set({ structureId }).where(eq(experts.id, ligneId));
     }
   }
 
@@ -91,6 +95,7 @@ export class StructuresRepository {
           notExists(
             executor.select({ id: allersVers.id }).from(allersVers).where(eq(allersVers.structureId, structures.id))
           ),
+          notExists(executor.select({ id: experts.id }).from(experts).where(eq(experts.structureId, structures.id))),
           notExists(executor.select({ id: agents.id }).from(agents).where(eq(agents.structureId, structures.id)))
         )
       )
@@ -107,10 +112,13 @@ export class StructuresRepository {
         amoNom: entreprisesAmo.nom,
         avId: allersVers.id,
         avNom: allersVers.nom,
+        expertId: experts.id,
+        expertNom: experts.nom,
       })
       .from(structures)
       .leftJoin(entreprisesAmo, eq(entreprisesAmo.structureId, structures.id))
-      .leftJoin(allersVers, eq(allersVers.structureId, structures.id));
+      .leftJoin(allersVers, eq(allersVers.structureId, structures.id))
+      .leftJoin(experts, eq(experts.structureId, structures.id));
   }
 }
 
@@ -121,12 +129,15 @@ function versStructure(ligne: {
   amoNom: string | null;
   avId: string | null;
   avNom: string | null;
+  expertId: string | null;
+  expertNom: string | null;
 }): StructureAvecHabilitations {
   return {
     id: ligne.id,
     nom: ligne.nom,
     entrepriseAmo: ligne.amoId && ligne.amoNom ? { id: ligne.amoId, nom: ligne.amoNom } : null,
     allersVers: ligne.avId && ligne.avNom ? { id: ligne.avId, nom: ligne.avNom } : null,
+    expert: ligne.expertId && ligne.expertNom ? { id: ligne.expertId, nom: ligne.expertNom } : null,
   };
 }
 
