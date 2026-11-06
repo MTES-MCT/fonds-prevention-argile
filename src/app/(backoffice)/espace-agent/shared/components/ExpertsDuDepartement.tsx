@@ -1,36 +1,42 @@
 import Link from "next/link";
-import type { ExpertAnnuaire } from "@/features/backoffice";
-import { ListeExperts } from "./ListeExperts";
+import { MENTION_LIBRE_CHOIX, MESSAGE_AUCUN_EXPERT, type ExpertAnnuaire } from "@/features/backoffice";
+import { CarteExpert } from "./CarteExpert";
 
 interface ExpertsDuDepartementProps {
   departement: { code: string; nom: string; experts: ExpertAnnuaire[] };
 }
 
-/** Encart du détail d'un dossier : les experts du département de la maison. */
+/** Section du détail d'un dossier : les experts du département de la maison, une carte chacun. */
 export function ExpertsDuDepartement({ departement }: ExpertsDuDepartementProps) {
   return (
-    <div className="fr-card">
-      <div className="fr-card__body">
-        <div className="fr-card__content">
-          <h3 className="fr-card__title">
-            <span className="fr-icon-team-line fr-mr-2v" aria-hidden="true"></span>
-            Experts intervenant dans ce département
-          </h3>
-          <div className="fr-card__desc">
-            <p className="fr-text--sm font-medium fr-mt-2w fr-mb-1w">
-              {departement.nom} ({departement.code})
-            </p>
-            <ListeExperts experts={departement.experts} codeDepartement={departement.code} />
-            <p className="fr-mt-3w fr-mb-0">
-              <Link
-                className="fr-link fr-link--sm fr-icon-arrow-right-line fr-link--icon-right"
-                href={`/espace-agent/experts?departement=${departement.code}`}>
-                Voir l&apos;annuaire des experts
-              </Link>
-            </p>
-          </div>
+    <section aria-labelledby="experts-du-departement">
+      <h3 id="experts-du-departement" className="fr-h6 fr-mb-1v">
+        <span className="fr-icon-team-line fr-mr-2v" aria-hidden="true"></span>
+        Experts intervenant dans ce département
+      </h3>
+      <p className="fr-text--sm fr-text-mention--grey fr-mb-2w">
+        {departement.nom} ({departement.code}). {MENTION_LIBRE_CHOIX}
+      </p>
+      {departement.experts.length === 0 ? (
+        <div className="fr-alert fr-alert--info fr-alert--sm">
+          <p>{MESSAGE_AUCUN_EXPERT}.</p>
         </div>
-      </div>
-    </div>
+      ) : (
+        <ul className="fr-raw-list flex flex-col gap-4">
+          {departement.experts.map((expert) => (
+            <li key={expert.id}>
+              <CarteExpert expert={expert} codeDepartement={departement.code} compacte />
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="fr-mt-2w fr-mb-0">
+        <Link
+          className="fr-link fr-link--sm fr-icon-arrow-right-line fr-link--icon-right"
+          href={`/espace-agent/experts?departement=${departement.code}`}>
+          Voir l&apos;annuaire des experts
+        </Link>
+      </p>
+    </section>
   );
 }
