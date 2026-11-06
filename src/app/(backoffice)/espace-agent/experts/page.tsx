@@ -1,6 +1,7 @@
 import { exigerAccesEspaceAgent } from "@/features/backoffice/espace-agent/shared/services/acces-espace-agent.service";
 import { chargerAnnuaireExperts } from "@/features/backoffice/espace-agent/experts/services/annuaire-experts.service";
-import { ListeExperts } from "../shared";
+import { GrilleExperts } from "./components/GrilleExperts";
+import { SelecteurDepartementExperts } from "./components/SelecteurDepartementExperts";
 
 export const dynamic = "force-dynamic";
 
@@ -14,57 +15,42 @@ export default async function ExpertsAgentPage({ searchParams }: PageProps) {
 
   const { departement: demande } = await searchParams;
   const annuaire = await chargerAnnuaireExperts(agent, demande);
+  const { departement } = annuaire;
 
   return (
-    <section className="fr-container fr-py-4w">
-      <h1 className="fr-h2">Experts</h1>
+    <>
+      <div className="fr-container fr-py-6w">
+        <h1 className="fr-h1 fr-mb-0">Experts</h1>
+        <p className="fr-mt-2w fr-mb-0 fr-text--xl fr-text-mention--grey">
+          Les experts RGA validés par la DHUP, département par département
+        </p>
+      </div>
 
-      {annuaire.departementsConsultables.length === 0 ? (
-        <div className="fr-alert fr-alert--info">
-          <p>Aucun département ne vous est rattaché : l&apos;annuaire des experts ne vous est pas accessible.</p>
-        </div>
-      ) : (
-        <>
-          <form method="get" className="flex flex-wrap items-end gap-4 fr-mb-4w">
-            <div className="fr-select-group mb-0">
-              <label className="fr-label" htmlFor="departement-experts">
-                Département
-                {annuaire.departementsDuTerritoire.length > 0 && (
-                  <span className="fr-hint-text">
-                    Votre territoire : {annuaire.departementsDuTerritoire.join(", ")}
-                  </span>
-                )}
-              </label>
-              <select
-                className="fr-select"
-                id="departement-experts"
-                name="departement"
-                defaultValue={annuaire.departement?.code ?? ""}>
-                {!annuaire.departement && <option value="">Sélectionner un département</option>}
-                {annuaire.departementsConsultables.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.code} - {d.nom}
-                  </option>
-                ))}
-              </select>
+      <section className="fr-container-fluid fr-py-8w bg-(--background-alt-blue-france)">
+        <div className="fr-container">
+          {annuaire.departementsConsultables.length === 0 ? (
+            <div className="fr-alert fr-alert--info">
+              <p>Aucun département ne vous est rattaché : l&apos;annuaire des experts ne vous est pas accessible.</p>
             </div>
-            <button type="submit" className="fr-btn fr-btn--secondary">
-              Afficher
-            </button>
-          </form>
-
-          {annuaire.departement ? (
-            <>
-              <h2 className="fr-h4">
-                {annuaire.departement.nom} ({annuaire.departement.code})
-              </h2>
-              <ListeExperts experts={annuaire.experts} codeDepartement={annuaire.departement.code} />
-            </>
           ) : (
-            <p>Choisissez un département pour afficher ses experts.</p>
+            <>
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between fr-mb-3w">
+                <h2 className="fr-h4 fr-mb-0">
+                  {departement ? `${departement.nom} (${departement.code})` : "Choisissez un département"}
+                </h2>
+                <SelecteurDepartementExperts
+                  key={departement?.code ?? "aucun"}
+                  departementActuel={departement?.code ?? null}
+                  departementsConsultables={annuaire.departementsConsultables}
+                  departementsDuTerritoire={annuaire.departementsDuTerritoire}
+                />
+              </div>
+
+              {departement && <GrilleExperts experts={annuaire.experts} codeDepartement={departement.code} />}
+            </>
           )}
-        </>
-      )}
-    </section>
+        </div>
+      </section>
+    </>
   );
 }

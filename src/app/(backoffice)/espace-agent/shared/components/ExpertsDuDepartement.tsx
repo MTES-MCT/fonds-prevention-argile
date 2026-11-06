@@ -21,11 +21,13 @@ export function ExpertsDuDepartement({ departement }: ExpertsDuDepartementProps)
               {departement.nom} ({departement.code})
             </p>
             <ListeExperts experts={departement.experts} codeDepartement={departement.code} />
-            <Link
-              className="fr-link fr-link--sm fr-mt-2w inline-block"
-              href={`/espace-agent/experts?departement=${departement.code}`}>
-              Voir l&apos;annuaire des experts
-            </Link>
+            <p className="fr-mt-3w fr-mb-0">
+              <Link
+                className="fr-link fr-link--sm fr-icon-arrow-right-line fr-link--icon-right"
+                href={`/espace-agent/experts?departement=${departement.code}`}>
+                Voir l&apos;annuaire des experts
+              </Link>
+            </p>
           </div>
         </div>
       </div>
