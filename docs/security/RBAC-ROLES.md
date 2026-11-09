@@ -162,11 +162,11 @@ avant la 2FA tombent au **déploiement**, sans attendre leurs 8 h.
 
 Deux grands espaces back-office, gardés au niveau des `layout.tsx` / `page.tsx`.
 
-| Espace / route                                  | Rôles autorisés                                                                                                                            | Espace de repli                             |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| `/mon-compte`, `/mes-dossiers`, `/mes-demandes` | `PARTICULIER` (FranceConnect)                                                                                                              | `/connexion`                                |
-| `/administration/*`                             | `SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`, **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (onglets stats seulement, ADR-0017) | `PARTICULIER` → `/connexion`                |
-| `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `ANALYSTE` (départemental), `SUPER_ADMINISTRATEUR`                                             | admin/analyste national → `/administration` |
+| Espace / route                                  | Rôles autorisés                                                                                                                            | Espace de repli                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `/mon-compte`, `/mes-dossiers`, `/mes-demandes` | `PARTICULIER` (FranceConnect)                                                                                                              | `/connexion`                                                                     |
+| `/administration/*`                             | `SUPER_ADMINISTRATEUR`, `ADMINISTRATEUR`, `ANALYSTE`, **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (onglets stats seulement, ADR-0017) | non connecté → `/connexion/agent` ; `PARTICULIER` → écran « Accès non autorisé » |
+| `/espace-agent/*`                               | `AMO`, `ALLERS_VERS`, `AMO_ET_ALLERS_VERS`, `ANALYSTE` (départemental), `SUPER_ADMINISTRATEUR`                                             | analyste national → `/administration` ; `ADMINISTRATEUR` → refus (404)           |
 
 Redirection par défaut après connexion (selon rôle) : admins/analystes →
 `/administration` ; `AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS` → `/espace-agent`
@@ -212,7 +212,8 @@ Gardes principales :
 - Test de vulnérabilité du demandeur : `/mon-compte/vulnerabilite` et `getEtatMaVulnerabiliteAction` relisent
   le résultat rattaché au **parcours de la session** (`PARTICULIER` seulement, aucun identifiant accepté du client,
   [ADR-0032](../adr/0032-rattachement-simulation-vulnerabilite-compte.md)). Ils ne renvoient que des catégories, sans
-  adresse ni donnée d'un autre demandeur ; hors production, la page répond 404.
+  adresse ni donnée d'un autre demandeur ; tant que la feature est inactive (production,
+  `isVulnerabiliteRgaActive`), la page répond 404.
 
 ### 3.1 Navigation backoffice (deux rangées, pilotées par rôle) — ADR-0015
 
@@ -231,22 +232,26 @@ page / Server Actions.
 | Rôle                     | Rangée 1 — Pilotage                                                                                     | Rangée 2 — Dossiers |
 | ------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------- |
 | `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, Structures, Notes, Activité, Synchros, Diagnostics DN | Dossiers, Experts   |
-| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, Structures (experts en lecture)                               | —                   |
-| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                                | —                   |
-| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
-| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
-| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
-| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
+| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, Structures (experts en lecture), Activité                     | —                   |
+| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs, Activité                                                      | —                   |
+| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs, Activité                                                      | Dossiers, Experts   |
+| `AMO`                    | Tableau de bord, Acquisition, Demandeurs, Activité                                                      | Dossiers, Experts   |
+| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs, Activité                                                      | Dossiers, Experts   |
+| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs, Activité                                                      | Dossiers, Experts   |
 
 - `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE` /
   **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (ADR-0017). Le filtrage par onglet de
   la rangée 1 reste celui de `ADMIN_NAV_TABS.minRoles` : les AMO/AV n'y voient que les
-  trois onglets stats (Tableau de bord, Acquisition, Demandeurs), les onglets sensibles
-  restant masqués.
+  quatre onglets stats (Tableau de bord, Acquisition, Demandeurs, Activité), les onglets
+  sensibles restant masqués.
+- **Activité** (`/administration/activite`) est ouverte à tout agent depuis août 2026 (PR #315) :
+  la page passe par `checkAgentAccess` et `getActiviteStatsAction` par `STATS_READ`, comme
+  l'Acquisition. Elle ne sert que des agrégats (nombre d'actions par type, délai moyen de
+  première réponse, demandeurs sans réponse), sans nom de demandeur ni d'agent.
 - Un onglet peut en outre être masqué par **disponibilité de la feature**
   (`ADMIN_NAV_TABS.estDisponible`), indépendamment du rôle. Seul cas aujourd'hui :
   **Vulnérabilité** (`/administration/vulnerabilite`, agrégats anonymes, ouvert à tous les
-  rôles ci-dessus au même titre que les trois onglets stats) — masqué et en 404 en
+  rôles ci-dessus au même titre que les quatre onglets stats) — masqué et en 404 en
   production, la feature n'y étant pas déployée. Voir
   [le guide du simulateur](../vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) et l'amendement
   d'[ADR-0030](../adr/0030-simulateur-vulnerabilite-rga.md).
@@ -281,7 +286,9 @@ Repères de permissions par rôle :
   l'exception de la ré-ouverture d'une demande refusée ([§6.1](#61-ré-ouverture-dune-demande-refusée-garde-élargie)).
 - **ADMINISTRATEUR** : stats, users, structures AMO et Aller-vers (R/W/import/delete — l'import
   ne supprime rien, cf. [import-structures](../ops/import-structures.md)), étapes (éligibilité/diagnostic/devis/factures en lecture),
-  commentaires (lecture globale). Pas la gestion des agents.
+  commentaires (lecture globale). Pas la gestion des agents. La matrice lui donne aussi
+  `ELIGIBILITE_WRITE`, que rien ne lit : elle reste sans effet, l'éligibilité se gérant dans
+  l'espace agent, qui lui est fermé.
 - **ANALYSTE** : lecture stats (national ou départemental, voir §5). En mode
   départemental (suivi DDT), peut aussi ajouter/éditer ses propres messages
   (`COMMENTAIRES_*`) sur les dossiers de son territoire, et **lire** le détail d'une
@@ -297,7 +304,7 @@ Repères de permissions par rôle :
   [ADR-0014](../adr/0014-perimetre-donnees-role-analyste.md).
 - **AMO** : dossiers AMO (lecture + stats), création de dossier, commentaires
   (création + édition/suppression des siens). **+ stats NATIONALES** (`STATS_READ`,
-  `USERS_STATS_READ`) : Tableau de bord, Acquisition et Demandeurs agrégés à l'échelle
+  `USERS_STATS_READ`) : Tableau de bord, Acquisition, Demandeurs et Activité agrégés à l'échelle
   nationale (ADR-0017) — jamais la liste nominative (`USERS_READ`/`USERS_DETAIL_READ`).
 - **ALLERS_VERS** : prospects (vue + détail + stats), création de dossier,
   commentaires. **+ stats NATIONALES** (idem AMO, ADR-0017).
