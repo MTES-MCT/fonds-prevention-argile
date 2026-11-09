@@ -61,9 +61,16 @@ export function InfoDemandeur({
           Suivi depuis le {formatDate(suiviDepuis.toISOString())}
         </p>
       )}
+      {/* « 1fr » ne descend pas sous le plus long mot : un email insécable débordait de la carte. */}
       <dl
-        className="fr-mt-2w fr-mb-0"
-        style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.5rem 1rem", alignItems: "baseline" }}>
+        className="fr-mt-2w fr-mb-0 [&>dt]:whitespace-nowrap"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "auto minmax(0, 1fr)",
+          gap: "0.5rem 1rem",
+          alignItems: "baseline",
+          overflowWrap: "anywhere",
+        }}>
         {demandeur.nomFamille && demandeur.nomFamille !== demandeur.nom && (
           <>
             <dt className="fr-text">Nom de famille :</dt>
