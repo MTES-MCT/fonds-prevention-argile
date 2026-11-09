@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { HabilitationAllersVersFiche } from "@/features/backoffice";
 import ModaleStructure from "./ModaleStructure";
-import { fermerModale } from "./fermer-modale";
+import { fermerModale } from "./modales-dsfr";
 import ChampsAllersVers, {
   allersVersDepuis,
   allersVersRempli,

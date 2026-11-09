@@ -2,7 +2,7 @@
 
 import { LIBELLES_HABILITATION, type TypeHabilitation } from "@/features/backoffice";
 import ModaleStructure from "./ModaleStructure";
-import { fermerModale } from "./fermer-modale";
+import { fermerModale } from "./modales-dsfr";
 
 interface SuppressionStructureModalProps {
   modalId: string;

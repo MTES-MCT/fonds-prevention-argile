@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { IdentiteStructure } from "@/features/backoffice";
 import ModaleStructure from "./ModaleStructure";
-import { fermerModale } from "./fermer-modale";
+import { fermerModale } from "./modales-dsfr";
 import ChampsIdentite, { identiteDepuis, identiteRemplie, type IdentiteFormulaire } from "./formulaires/ChampsIdentite";
 
 interface IdentiteStructureModalProps {

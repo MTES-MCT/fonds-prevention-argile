@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { LIBELLES_HABILITATION, TYPES_HABILITATION, type TypeHabilitation } from "@/features/backoffice";
 import ModaleStructure from "./ModaleStructure";
-import { fermerModale } from "./fermer-modale";
+import { fermerModale } from "./modales-dsfr";
 import ChampsAllersVers, {
   allersVersDepuis,
   allersVersRempli,

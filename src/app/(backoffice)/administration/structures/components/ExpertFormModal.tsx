@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ExpertGestion } from "@/features/backoffice";
 import ModaleStructure from "./ModaleStructure";
-import { fermerModale } from "./fermer-modale";
+import { fermerModale } from "./modales-dsfr";
 import ChampsExpert, { expertDepuis, expertRempli, type ExpertFormulaire } from "./formulaires/ChampsExpert";
 
 interface ExpertFormModalProps {

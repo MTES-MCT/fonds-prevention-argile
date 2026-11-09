@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ajouterHabilitationAction,
+  codesDepartementsAmo,
   desactiverExpertAction,
   estExpertGestion,
   getFicheStructureAction,
@@ -22,25 +23,38 @@ import {
   type TypeHabilitation,
   type TypeStructure,
 } from "@/features/backoffice";
+import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { roleDepuisStructure } from "@/shared/domain/value-objects";
 import { UserRole, type AdminRole } from "@/shared/domain/value-objects/user-role.enum";
 import type { ActionResult } from "@/shared/types";
+import { ActionMenu } from "../../../espace-agent/shared/components/ActionMenu";
 import { AdminBreadcrumb } from "../../shared/components/AdminBreadcrumb";
 import BadgesHabilitations from "./BadgesHabilitations";
-import { BlocFiche } from "./BlocFiche";
-import { BoutonModale, CarteAgents, CarteAllersVers, CarteAmo, CarteExpert, CarteIdentite } from "./CartesFiche";
+import { Chiffre } from "./BlocFiche";
+import {
+  BoutonModale,
+  CarteAgents,
+  CarteAllersVers,
+  CarteAmo,
+  CarteAnnuaireExpert,
+  CarteCoordonnees,
+  CarteExpert,
+} from "./CartesFiche";
 import EffetSurAgents from "./EffetSurAgents";
 import ExpertDesactiverModal from "./ExpertDesactiverModal";
 import ExpertFormModal from "./ExpertFormModal";
 import HabilitationAllersVersModal from "./HabilitationAllersVersModal";
 import HabilitationAmoModal from "./HabilitationAmoModal";
 import IdentiteStructureModal from "./IdentiteStructureModal";
+import { libelleRoleDeStructure } from "./libelles-role";
+import { ouvrirModale } from "./modales-dsfr";
 import RetraitHabilitationModal from "./RetraitHabilitationModal";
 import SuppressionStructureModal from "./SuppressionStructureModal";
 import type { SaisieAllersVers } from "./formulaires/ChampsAllersVers";
 import type { SaisieAmo } from "./formulaires/ChampsAmo";
 import { versSaisieExpert, type ExpertFormulaire } from "./formulaires/ChampsExpert";
 import type { IdentiteFormulaire } from "./formulaires/ChampsIdentite";
+import { useNomsEpci, useReferentielEpci } from "./formulaires/useReferentielEpci";
 
 const LISTE = "/administration/structures";
 
@@ -203,6 +217,9 @@ export default function FicheStructurePanel({ structureId, role }: FicheStructur
     }
   };
 
+  const { epcis } = useReferentielEpci();
+  const nomEpci = useNomsEpci(epcis);
+
   const habilitations = fiche ? habilitationsDeFiche(fiche) : { amo: false, allersVers: false, expert: false };
   // Ajouter ou retirer AMO et Aller-vers change les rôles des agents : réservé au super-administrateur s'il y en a.
   const peutChangerRoles = !!fiche && (estSuperAdmin || fiche.nombreAgents === 0);
@@ -213,20 +230,58 @@ export default function FicheStructurePanel({ structureId, role }: FicheStructur
   const rolesReserves = !!fiche && fiche.type === "accompagnement" && !peutChangerRoles;
   // Une structure expert ne se supprime, avec son habilitation, que par le super-administrateur.
   const suppressionPossible = !!fiche?.suppressionPossible && (fiche.type !== "expert" || estSuperAdmin);
+  const roleAgents = roleDepuisStructure(habilitations);
 
   const ajouts = fiche
     ? HABILITATIONS_PAR_TYPE[fiche.type]
         .filter((type) => !refusAjout(fiche.type, habilitations, type))
         .filter((type) => (type === "expert" ? estSuperAdmin : peutChangerRoles))
-        .map((type) => ({ type, modalId: MODALE_AJOUT[type], requiertSiret: type !== "allersVers" }))
     : [];
+
+  const departementsCouverts = fiche
+    ? new Set([
+        ...codesDepartementsAmo(fiche.amo?.departements),
+        ...(fiche.allersVers?.departements.map(toOfficialCodeDepartement) ?? []),
+        ...(fiche.expert?.departements.map((departement) => departement.code) ?? []),
+      ]).size
+    : 0;
 
   const ouvrirAjout = (type: TypeHabilitation) => {
     preparer();
     if (type === "amo") setModeAmo("ajout");
     else if (type === "allersVers") setModeAllersVers("ajout");
     else setModeExpert("ajout");
+    ouvrirModale(MODALE_AJOUT[type]);
   };
+
+  // Actions sur la structure entière ; chaque carte porte les siennes.
+  const elementsMenu = fiche
+    ? [
+        ...ajouts.map((type) => {
+          // AMO et expert recopient le SIRET de la structure sur leur ligne.
+          const bloque = type !== "allersVers" && sansSiret;
+          return {
+            label: `Ajouter l'habilitation ${LIBELLES_HABILITATION[type]}${bloque ? " (renseignez d'abord le SIRET)" : ""}`,
+            icon: "fr-icon-add-line",
+            disabled: bloque,
+            onClick: () => ouvrirAjout(type),
+          };
+        }),
+        ...(suppressionPossible
+          ? [
+              {
+                label: "Supprimer la structure",
+                icon: "fr-icon-delete-line",
+                variant: "danger" as const,
+                onClick: () => {
+                  preparer();
+                  ouvrirModale(MODALES.suppression);
+                },
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   const effetAjout = (type: "amo" | "allersVers", mode: Mode) =>
     fiche && mode === "ajout" ? (
@@ -239,16 +294,8 @@ export default function FicheStructurePanel({ structureId, role }: FicheStructur
       />
     ) : null;
 
-  const boutonsRetrait = (type: "amo" | "allersVers") => {
-    if (!peutChangerRoles) return null;
-    if (derniereHabilitation) {
-      return (
-        <p className="fr-hint-text fr-mb-0 self-center">
-          Dernière habilitation : pour la retirer, supprimez la structure
-        </p>
-      );
-    }
-    return (
+  const boutonRetrait = (type: "amo" | "allersVers") =>
+    peutChangerRoles && !derniereHabilitation ? (
       <BoutonModale
         modalId={MODALES.retrait}
         libelle="Retirer"
@@ -259,19 +306,27 @@ export default function FicheStructurePanel({ structureId, role }: FicheStructur
           setTypeRetrait(type);
         }}
       />
-    );
-  };
+    ) : null;
+
+  const mentionDerniere =
+    peutChangerRoles && derniereHabilitation ? (
+      <p className="fr-hint-text fr-mt-2w fr-mb-0">Dernière habilitation : pour la retirer, supprimez la structure</p>
+    ) : null;
+
+  const boutonModifier = (modalId: string, onClick: () => void) => (
+    <BoutonModale modalId={modalId} libelle="Modifier" icone="fr-icon-edit-line" onClick={onClick} />
+  );
 
   return (
     <>
-      <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
-        <div className="fr-container">
-          <AdminBreadcrumb
-            currentPageLabel={fiche?.identite.nom ?? "Fiche structure"}
-            parents={[{ label: "Structures", href: LISTE }]}
-          />
-          <div className="fr-mb-4w">
-            <h1 className="fr-h2 fr-mb-1w">{fiche?.identite.nom ?? "Structure"}</h1>
+      <div className="fr-container fr-pt-4w">
+        <AdminBreadcrumb
+          currentPageLabel={fiche?.identite.nom ?? "Fiche structure"}
+          parents={[{ label: "Structures", href: LISTE }]}
+        />
+        <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters fr-mb-2w">
+          <div className="fr-col">
+            <h1 className="fr-h2 fr-mb-2w">{fiche?.identite.nom ?? "Structure"}</h1>
             {fiche && (
               <div className="flex flex-wrap gap-2 items-start">
                 <span className="fr-badge fr-badge--sm fr-badge--no-icon">{BADGE_TYPE[fiche.type]}</span>
@@ -279,181 +334,195 @@ export default function FicheStructurePanel({ structureId, role }: FicheStructur
               </div>
             )}
           </div>
-
-          {annonce && (
-            <div
-              className={`fr-alert fr-alert--sm fr-mb-2w ${annonce.type === "succes" ? "fr-alert--success" : "fr-alert--error"}`}>
-              <p>{annonce.texte}</p>
+          {elementsMenu.length > 0 && (
+            <div className="fr-col-auto">
+              <ActionMenu
+                ariaLabel="Gérer la structure"
+                triggerLabel="Gérer"
+                triggerClassName="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-down-s-line fr-btn--icon-right"
+                items={elementsMenu}
+              />
             </div>
           )}
         </div>
-      </section>
 
-      <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
-        <div className="fr-container">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="text-(--text-mention-grey)">Chargement de la structure...</div>
-            </div>
-          ) : !fiche ? (
-            <div className="fr-alert fr-alert--error">
-              <p>{erreurChargement}</p>
-              <p>
-                <Link href={LISTE} className="fr-link">
-                  Retour à la liste des structures
-                </Link>
-              </p>
-            </div>
-          ) : (
-            <>
-              <CarteIdentite
-                identite={fiche.identite}
-                actions={
-                  <BoutonModale
-                    modalId={MODALES.identite}
-                    libelle="Modifier"
-                    icone="fr-icon-edit-line"
-                    onClick={preparer}
+        {annonce && (
+          <div
+            className={`fr-alert fr-alert--sm fr-mb-2w ${annonce.type === "succes" ? "fr-alert--success" : "fr-alert--error"}`}>
+            <p>{annonce.texte}</p>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-(--text-mention-grey)">Chargement de la structure...</div>
+          </div>
+        ) : !fiche ? (
+          <div className="fr-alert fr-alert--error fr-mb-4w">
+            <p>{erreurChargement}</p>
+            <p>
+              <Link href={LISTE} className="fr-link">
+                Retour à la liste des structures
+              </Link>
+            </p>
+          </div>
+        ) : (
+          <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+            <div className="fr-col-12 fr-col-md-8">
+              <div className="fr-callout fr-mb-3w">
+                {fiche.type === "expert" ? (
+                  <>
+                    <h2 className="fr-callout__title fr-h6">L&apos;expertise ne donne aucun rôle</h2>
+                    <p className="fr-callout__text fr-text--md">
+                      Une structure expert ne porte que l&apos;expertise : elle ne peut recevoir ni AMO, ni Aller-vers,
+                      ni agent.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="fr-callout__title fr-h6">
+                      {roleAgents
+                        ? `Ses agents ont le rôle ${libelleRoleDeStructure(roleAgents)}`
+                        : "Ses habilitations ne donnent aucun rôle"}
+                    </h2>
+                    <p className="fr-callout__text fr-text--md">
+                      Ce rôle vient de ses habilitations : en ajouter ou en retirer une le change dès la requête
+                      suivante de chacun de ses agents.
+                    </p>
+                    {rolesReserves && (
+                      <p className="fr-callout__text fr-text--sm fr-mt-1w">
+                        Cette structure a des agents : seul un super-administrateur peut lui ajouter ou retirer
+                        l&apos;habilitation AMO ou Aller-vers.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {fiche.type === "accompagnement" && (
+                  <Chiffre valeur={fiche.nombreAgents} libelle={fiche.nombreAgents > 1 ? "agents" : "agent"} />
+                )}
+                {fiche.amo && (
+                  <Chiffre
+                    valeur={fiche.amo.dossiersSuivis}
+                    libelle={fiche.amo.dossiersSuivis > 1 ? "dossiers suivis en AMO" : "dossier suivi en AMO"}
                   />
-                }
-              />
+                )}
+                {fiche.type === "accompagnement" ? (
+                  <Chiffre
+                    valeur={departementsCouverts}
+                    libelle={departementsCouverts > 1 ? "départements couverts" : "département couvert"}
+                  />
+                ) : (
+                  <>
+                    <Chiffre
+                      valeur={departementsCouverts}
+                      libelle={departementsCouverts > 1 ? "départements d'intervention" : "département d'intervention"}
+                    />
+                    <Chiffre
+                      valeur={
+                        fiche.expert?.dateValidationDhup
+                          ? new Date(fiche.expert.dateValidationDhup).toLocaleDateString("fr-FR", { timeZone: "UTC" })
+                          : "Non renseignée"
+                      }
+                      libelle="validation par la DHUP"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="fr-col-12 fr-col-md-4">
+              <CarteCoordonnees identite={fiche.identite} actions={boutonModifier(MODALES.identite, preparer)} />
+            </div>
+          </div>
+        )}
+      </div>
 
-              {fiche.type === "accompagnement" && fiche.amo && (
-                <CarteAmo
-                  amo={fiche.amo}
-                  actions={
-                    <>
-                      <BoutonModale
-                        modalId={MODALES.amo}
-                        libelle="Modifier"
-                        icone="fr-icon-edit-line"
-                        onClick={() => {
+      {fiche && (
+        <section className="fr-background-alt--blue-france fr-py-4w">
+          <div className="fr-container">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-8 flex flex-col gap-6">
+                {fiche.type === "accompagnement" && fiche.amo && (
+                  <CarteAmo
+                    amo={fiche.amo}
+                    nomEpci={nomEpci}
+                    mention={mentionDerniere}
+                    actions={
+                      <>
+                        {boutonModifier(MODALES.amo, () => {
                           preparer();
                           setModeAmo("modification");
-                        }}
-                      />
-                      {boutonsRetrait("amo")}
-                    </>
-                  }
-                />
-              )}
+                        })}
+                        {boutonRetrait("amo")}
+                      </>
+                    }
+                  />
+                )}
 
-              {fiche.type === "accompagnement" && fiche.allersVers && (
-                <CarteAllersVers
-                  allersVers={fiche.allersVers}
-                  actions={
-                    <>
-                      <BoutonModale
-                        modalId={MODALES.allersVers}
-                        libelle="Modifier"
-                        icone="fr-icon-edit-line"
-                        onClick={() => {
+                {fiche.type === "accompagnement" && fiche.allersVers && (
+                  <CarteAllersVers
+                    allersVers={fiche.allersVers}
+                    nomEpci={nomEpci}
+                    mention={mentionDerniere}
+                    actions={
+                      <>
+                        {boutonModifier(MODALES.allersVers, () => {
                           preparer();
                           setModeAllersVers("modification");
-                        }}
-                      />
-                      {boutonsRetrait("allersVers")}
-                    </>
-                  }
-                />
-              )}
+                        })}
+                        {boutonRetrait("allersVers")}
+                      </>
+                    }
+                  />
+                )}
 
-              {fiche.type === "expert" && fiche.expert && (
-                <CarteExpert
-                  expert={fiche.expert}
-                  actions={
-                    expertGere && (
-                      <>
-                        <BoutonModale
-                          modalId={MODALES.expert}
-                          libelle="Modifier"
-                          icone="fr-icon-edit-line"
-                          onClick={() => {
+                {fiche.type === "expert" && fiche.expert && (
+                  <CarteExpert
+                    expert={fiche.expert}
+                    actions={
+                      expertGere && (
+                        <>
+                          {boutonModifier(MODALES.expert, () => {
                             preparer();
                             setModeExpert("modification");
-                          }}
-                        />
-                        {expertGere.desactivation ? (
-                          <button
-                            type="button"
-                            className="fr-btn fr-btn--sm fr-btn--tertiary fr-btn--icon-left fr-icon-refresh-line"
-                            onClick={handleReactiver}
-                            disabled={isSubmitting}>
-                            Réactiver
-                          </button>
-                        ) : (
-                          <BoutonModale
-                            modalId={MODALES.desactiverExpert}
-                            libelle="Désactiver"
-                            icone="fr-icon-close-circle-line"
-                            variante="tertiary"
-                            onClick={preparer}
-                          />
-                        )}
-                      </>
-                    )
-                  }
-                />
-              )}
-
-              {(ajouts.length > 0 || rolesReserves) && (
-                <BlocFiche titre="Ajouter une habilitation">
-                  {ajouts.length > 0 && (
-                    <div className="flex flex-wrap gap-4 items-start">
-                      {ajouts.map(({ type, modalId, requiertSiret }) => {
-                        const bloque = requiertSiret && sansSiret;
-                        const idExplication = `explication-ajout-${type}`;
-                        return (
-                          <div key={type}>
+                          })}
+                          {expertGere.desactivation ? (
+                            <button
+                              type="button"
+                              className="fr-btn fr-btn--sm fr-btn--tertiary fr-btn--icon-left fr-icon-refresh-line"
+                              onClick={handleReactiver}
+                              disabled={isSubmitting}>
+                              Réactiver
+                            </button>
+                          ) : (
                             <BoutonModale
-                              modalId={modalId}
-                              libelle={`Ajouter l'habilitation ${LIBELLES_HABILITATION[type]}`}
-                              icone="fr-icon-add-line"
-                              onClick={() => ouvrirAjout(type)}
-                              disabled={bloque}
-                              describedBy={bloque ? idExplication : undefined}
+                              modalId={MODALES.desactiverExpert}
+                              libelle="Désactiver"
+                              icone="fr-icon-close-circle-line"
+                              variante="tertiary"
+                              onClick={preparer}
                             />
-                            {bloque && (
-                              <p id={idExplication} className="fr-hint-text fr-mt-1v fr-mb-0">
-                                Renseignez d&apos;abord le SIRET
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {rolesReserves && (
-                    <p className="fr-text--sm text-(--text-mention-grey) fr-mb-0 fr-mt-2w">
-                      Cette structure a des agents : seul un super-administrateur peut lui ajouter ou retirer
-                      l&apos;habilitation AMO ou Aller-vers, qui fait leurs rôles.
-                    </p>
-                  )}
-                </BlocFiche>
-              )}
+                          )}
+                        </>
+                      )
+                    }
+                  />
+                )}
+              </div>
 
-              {/* Une structure expert ne reçoit pas d'agent : les experts n'ont pas encore de compte. */}
-              {(fiche.type === "accompagnement" || fiche.nombreAgents > 0) && (
-                <CarteAgents
-                  nombreAgents={fiche.nombreAgents}
-                  agents={fiche.agents}
-                  role={roleDepuisStructure(habilitations)}
-                />
-              )}
-
-              {suppressionPossible && (
-                <BoutonModale
-                  modalId={MODALES.suppression}
-                  libelle="Supprimer la structure"
-                  icone="fr-icon-delete-line"
-                  variante="tertiary"
-                  onClick={preparer}
-                />
-              )}
-            </>
-          )}
-        </div>
-      </section>
+              <div className="fr-col-12 fr-col-md-4">
+                {/* Une structure expert ne reçoit pas d'agent : les experts n'ont pas encore de compte. */}
+                {fiche.type === "accompagnement" || fiche.nombreAgents > 0 ? (
+                  <CarteAgents nombreAgents={fiche.nombreAgents} agents={fiche.agents} />
+                ) : (
+                  <CarteAnnuaireExpert desactive={!!expertGere?.desactivation} />
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <IdentiteStructureModal
         modalId={MODALES.identite}

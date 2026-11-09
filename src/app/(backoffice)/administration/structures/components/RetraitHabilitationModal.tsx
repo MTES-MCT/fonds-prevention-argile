@@ -3,7 +3,7 @@
 import { habilitationsDeFiche, LIBELLES_HABILITATION, refusRetrait, type FicheStructure } from "@/features/backoffice";
 import EffetSurAgents from "./EffetSurAgents";
 import ModaleStructure from "./ModaleStructure";
-import { fermerModale } from "./fermer-modale";
+import { fermerModale } from "./modales-dsfr";
 
 interface RetraitHabilitationModalProps {
   modalId: string;

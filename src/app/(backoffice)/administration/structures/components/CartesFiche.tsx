@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
+  codesDepartementsAmo,
   estExpertGestion,
   type AgentDeStructure,
   type ExpertAnnuaire,
@@ -9,17 +10,15 @@ import {
   type HabilitationAmoFiche,
   type IdentiteStructure,
 } from "@/features/backoffice";
-import type { AgentRole } from "@/shared/domain/value-objects";
-import { BlocFiche, Champ, ListeChamps, NonRenseigne } from "./BlocFiche";
-import DepartementsExpert from "./DepartementsExpert";
-import { libelleRoleDeStructure } from "./libelles-role";
+import { getDepartementName } from "@/shared/constants/departements.constants";
+import { BlocFiche, Champ, ListeChamps, NonRenseigne, Rubrique } from "./BlocFiche";
 
 interface BoutonModaleProps {
   modalId: string;
   libelle: string;
   icone: string;
   onClick: () => void;
-  variante?: "primary" | "secondary" | "tertiary";
+  variante?: "primary" | "secondary" | "tertiary" | "tertiary-no-outline";
   disabled?: boolean;
   describedBy?: string;
 }
@@ -49,41 +48,105 @@ export function BoutonModale({
   );
 }
 
-const liste = (valeurs: string[], vide = "Aucun") =>
-  valeurs.length > 0 ? valeurs.join(", ") : <NonRenseigne texte={vide} />;
+export type NomEpci = (code: string) => string | null;
 
 function formaterDate(iso: string | null): string {
   if (!iso) return "Non renseignée";
   return new Date(iso).toLocaleDateString("fr-FR", { timeZone: "UTC" });
 }
 
-export function CarteIdentite({ identite, actions }: { identite: IdentiteStructure; actions: ReactNode }) {
+function EtiquettesDepartements({ codes }: { codes: string[] }) {
+  if (codes.length === 0) return <NonRenseigne texte="Aucun" />;
   return (
-    <BlocFiche titre="Identité et contact" actions={actions}>
+    <ul className="fr-tags-group fr-mb-0">
+      {codes.map((code) => (
+        <li key={code}>
+          <p className="fr-tag fr-tag--sm fr-mb-0">
+            {code} - {getDepartementName(code)}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ListeEpci({ codes, nomEpci }: { codes: string[]; nomEpci: NomEpci }) {
+  if (codes.length === 0) return <NonRenseigne texte="Aucun" />;
+  return (
+    <ul className="fr-raw-list flex flex-col gap-1">
+      {codes.map((code) => (
+        <li key={code}>
+          {nomEpci(code) ?? <NonRenseigne texte="EPCI inconnu de l'API Géo" />}
+          <span className="text-sm text-(--text-mention-grey)"> · {code}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ListeEmails({ emails }: { emails: string[] }) {
+  if (emails.length === 0) return <NonRenseigne texte="Aucun" />;
+  return (
+    <ul className="fr-raw-list flex flex-col gap-1">
+      {emails.map((email) => (
+        <li key={email} className="break-all">
+          {email}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function CarteCoordonnees({ identite, actions }: { identite: IdentiteStructure; actions: ReactNode }) {
+  return (
+    <BlocFiche titre="Coordonnées" icone="fr-icon-building-line" actions={actions}>
       <ListeChamps>
-        <Champ libelle="Nom">{identite.nom}</Champ>
         <Champ libelle="SIRET">{identite.siret || <NonRenseigne />}</Champ>
         <Champ libelle="Adresse">{identite.adresse || <NonRenseigne />}</Champ>
         <Champ libelle="Téléphone">{identite.telephone || <NonRenseigne />}</Champ>
-        <Champ libelle="Horaires d'ouverture">{identite.horaires || <NonRenseigne texte="Non renseignés" />}</Champ>
+        <Champ libelle="Horaires">{identite.horaires || <NonRenseigne texte="Non renseignés" />}</Champ>
       </ListeChamps>
     </BlocFiche>
   );
 }
 
-export function CarteAmo({ amo, actions }: { amo: HabilitationAmoFiche; actions: ReactNode }) {
+interface CarteHabilitationProps {
+  actions: ReactNode;
+  // Sous la carte : pourquoi « Retirer » manque.
+  mention?: ReactNode;
+  nomEpci: NomEpci;
+}
+
+export function CarteAmo({ amo, actions, mention, nomEpci }: CarteHabilitationProps & { amo: HabilitationAmoFiche }) {
+  const departements = codesDepartementsAmo(amo.departements);
   return (
     <BlocFiche
       titre="Habilitation AMO"
       badge={<span className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--blue-cumulus">AMO</span>}
       actions={actions}>
-      <ListeChamps>
-        <Champ libelle="Départements">{amo.departements || <NonRenseigne />}</Champ>
-        <Champ libelle="Emails de l'équipe">{liste(amo.emails)}</Champ>
-        <Champ libelle="Codes EPCI">{liste(amo.epci)}</Champ>
-        <Champ libelle="Codes INSEE spécifiques">{liste(amo.communes, "Aucune")}</Champ>
-        <Champ libelle="Dossiers suivis">{amo.dossiersSuivis}</Champ>
-      </ListeChamps>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Rubrique titre="Territoire">
+          <ListeChamps>
+            <Champ libelle="Départements">
+              {departements.length > 0 || !amo.departements ? (
+                <EtiquettesDepartements codes={departements} />
+              ) : (
+                amo.departements
+              )}
+            </Champ>
+            <Champ libelle="EPCI">
+              <ListeEpci codes={amo.epci} nomEpci={nomEpci} />
+            </Champ>
+            <Champ libelle="Communes">
+              {amo.communes.length > 0 ? amo.communes.join(", ") : <NonRenseigne texte="Aucune" />}
+            </Champ>
+          </ListeChamps>
+        </Rubrique>
+        <Rubrique titre="Emails de l'équipe">
+          <ListeEmails emails={amo.emails} />
+        </Rubrique>
+      </div>
+      {mention}
     </BlocFiche>
   );
 }
@@ -91,20 +154,30 @@ export function CarteAmo({ amo, actions }: { amo: HabilitationAmoFiche; actions:
 export function CarteAllersVers({
   allersVers,
   actions,
-}: {
-  allersVers: HabilitationAllersVersFiche;
-  actions: ReactNode;
-}) {
+  mention,
+  nomEpci,
+}: CarteHabilitationProps & { allersVers: HabilitationAllersVersFiche }) {
   return (
     <BlocFiche
       titre="Habilitation Aller-vers"
       badge={<span className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--yellow-tournesol">Aller-vers</span>}
       actions={actions}>
-      <ListeChamps>
-        <Champ libelle="Emails de l'équipe">{liste(allersVers.emails)}</Champ>
-        <Champ libelle="Départements">{liste(allersVers.departements)}</Champ>
-        <Champ libelle="Codes EPCI">{liste(allersVers.epci)}</Champ>
-      </ListeChamps>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Rubrique titre="Territoire">
+          <ListeChamps>
+            <Champ libelle="Départements">
+              <EtiquettesDepartements codes={allersVers.departements} />
+            </Champ>
+            <Champ libelle="EPCI">
+              <ListeEpci codes={allersVers.epci} nomEpci={nomEpci} />
+            </Champ>
+          </ListeChamps>
+        </Rubrique>
+        <Rubrique titre="Emails de l'équipe">
+          <ListeEmails emails={allersVers.emails} />
+        </Rubrique>
+      </div>
+      {mention}
     </BlocFiche>
   );
 }
@@ -137,13 +210,40 @@ export function CarteExpert({ expert, actions }: { expert: ExpertGestion | Exper
         </div>
       )}
       <ListeChamps>
-        <Champ libelle="Date de validation DHUP">{formaterDate(expert.dateValidationDhup)}</Champ>
+        <Champ libelle="Validation DHUP">{formaterDate(expert.dateValidationDhup)}</Champ>
         {gestion && (
           <Champ libelle="Contact interne">{contact.length > 0 ? contact.join(" · ") : <NonRenseigne />}</Champ>
         )}
       </ListeChamps>
-      <p className="text-sm text-(--text-mention-grey) fr-mt-2w fr-mb-1v">Départements d&apos;intervention</p>
-      <DepartementsExpert departements={expert.departements} />
+      <div className="fr-table fr-table--sm fr-table--no-scroll fr-mt-3w fr-mb-0">
+        <div className="fr-table__wrapper">
+          <div className="fr-table__container">
+            <div className="fr-table__content">
+              <table>
+                <caption className="fr-text--sm fr-text--bold">Départements d&apos;intervention et réservation</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Département</th>
+                    <th scope="col">Email de réservation</th>
+                    <th scope="col">Téléphone de réservation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expert.departements.map((departement) => (
+                    <tr key={departement.code}>
+                      <td>
+                        {departement.code} - {departement.nom}
+                      </td>
+                      <td className="break-all">{departement.email ?? <NonRenseigne />}</td>
+                      <td>{departement.telephone ?? <NonRenseigne />}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </BlocFiche>
   );
 }
@@ -152,29 +252,14 @@ interface CarteAgentsProps {
   nombreAgents: number;
   // Null pour l'administrateur, qui ne voit que leur nombre.
   agents: AgentDeStructure[] | null;
-  role: AgentRole | null;
 }
 
-export function CarteAgents({ nombreAgents, agents, role }: CarteAgentsProps) {
+export function CarteAgents({ nombreAgents, agents }: CarteAgentsProps) {
   return (
     <BlocFiche
       titre="Agents"
-      actions={
-        agents ? (
-          <Link href="/administration/agents" className="fr-link fr-icon-arrow-right-line fr-link--icon-right">
-            Gérer les agents
-          </Link>
-        ) : undefined
-      }>
-      <p className="fr-mb-2w">
-        {role ? (
-          <>
-            Rôle donné à ses agents : <strong>{libelleRoleDeStructure(role)}</strong>
-          </>
-        ) : (
-          "Ni AMO ni Aller-vers : la structure ne donne aucun rôle à ses agents."
-        )}
-      </p>
+      icone="fr-icon-team-line"
+      badge={<span className="fr-badge fr-badge--sm fr-badge--no-icon fr-badge--info">{nombreAgents}</span>}>
       {agents === null ? (
         <p className="fr-mb-0">
           {nombreAgents === 0 ? "Aucun agent" : `${nombreAgents} agent${nombreAgents > 1 ? "s" : ""}`}
@@ -182,16 +267,41 @@ export function CarteAgents({ nombreAgents, agents, role }: CarteAgentsProps) {
       ) : agents.length === 0 ? (
         <p className="fr-mb-0">Aucun agent</p>
       ) : (
-        <ul className="fr-mb-0">
+        <ul className="fr-raw-list flex flex-col gap-3">
           {agents.map((agent) => (
             <li key={agent.id}>
-              {agent.nomComplet || agent.email}
-              {agent.nomComplet && <span className="text-(--text-mention-grey)"> · {agent.email}</span>}
+              <span className="font-medium">{agent.nomComplet || agent.email}</span>
               {agent.desactive && <span className="fr-badge fr-badge--sm fr-badge--no-icon fr-ml-1w">Désactivé</span>}
+              {agent.nomComplet && (
+                <span className="block text-sm text-(--text-mention-grey) break-all">{agent.email}</span>
+              )}
             </li>
           ))}
         </ul>
       )}
+      {agents && (
+        <p className="fr-mt-3w fr-mb-0">
+          <Link href="/administration/agents" className="fr-link fr-icon-arrow-right-line fr-link--icon-right">
+            Gérer les agents
+          </Link>
+        </p>
+      )}
+    </BlocFiche>
+  );
+}
+
+/** Colonne de droite d'une structure expert, qui n'a pas d'agent. */
+export function CarteAnnuaireExpert({ desactive }: { desactive: boolean }) {
+  return (
+    <BlocFiche titre="Annuaire des experts" icone="fr-icon-book-2-line">
+      <p className="fr-mb-2w">
+        {desactive
+          ? "Désactivé : les agents ne le voient plus dans l'annuaire."
+          : "Les agents AMO et Aller-vers le trouvent dans l'annuaire des experts de leurs départements."}
+      </p>
+      <p className="fr-text--sm fr-mb-0 text-(--text-mention-grey)">
+        Une structure expert ne reçoit pas d&apos;agent : les experts n&apos;ont pas encore de compte.
+      </p>
     </BlocFiche>
   );
 }

@@ -98,7 +98,11 @@ function expert(donnees: ExpertGestion | ExpertAnnuaire, surcharge: Partial<Fich
 async function afficher(donnees: FicheStructure, role: UserRole.SUPER_ADMINISTRATEUR | UserRole.ADMINISTRATEUR) {
   vi.mocked(getFicheStructureAction).mockResolvedValue({ success: true, data: donnees });
   render(<FicheStructurePanel structureId={donnees.id} role={role} />);
-  await screen.findByRole("heading", { level: 2, name: "Identité et contact" });
+  await screen.findByRole("heading", { level: 2, name: "Coordonnées" });
+}
+
+async function ouvrirGerer() {
+  await userEvent.click(screen.getByRole("button", { name: "Gérer la structure" }));
 }
 
 function bloc(titre: string): HTMLElement {
@@ -115,23 +119,34 @@ describe("FicheStructurePanel", () => {
   });
 
   it("montre au super-administrateur l'identité, les habilitations et les agents nommés", async () => {
-    await afficher(accompagnement({ allersVers: ALLERS_VERS }), UserRole.SUPER_ADMINISTRATEUR);
+    await afficher(
+      accompagnement({ amo: { ...accompagnement().amo!, epci: ["243600236", "999999999"] }, allersVers: ALLERS_VERS }),
+      UserRole.SUPER_ADMINISTRATEUR
+    );
 
     expect(screen.getByRole("heading", { level: 1, name: "Soliha Indre" })).toBeInTheDocument();
     expect(screen.getByText("Structure d'accompagnement")).toBeInTheDocument();
-    expect(within(bloc("Identité et contact")).getByText("1 rue de la Gare, 36000 Châteauroux")).toBeInTheDocument();
-    expect(within(bloc("Habilitation AMO")).getByText("Indre 36")).toBeInTheDocument();
-    expect(within(bloc("Habilitation AMO")).getByRole("button", { name: "Retirer" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Ses agents ont le rôle AMO et Aller-vers" })
+    ).toBeInTheDocument();
+    expect(within(bloc("Coordonnées")).getByText("1 rue de la Gare, 36000 Châteauroux")).toBeInTheDocument();
+
+    const amo = bloc("Habilitation AMO");
+    expect(within(amo).getByText("36 - Indre")).toBeInTheDocument();
+    // L'EPCI est nommé par l'API Géo ; un code qu'elle ne connaît pas reste lisible.
+    expect(await within(amo).findByText("CC du Pays d'Issoudun")).toBeInTheDocument();
+    expect(within(amo).getByText("EPCI inconnu de l'API Géo")).toBeInTheDocument();
+    expect(within(amo).getByRole("button", { name: "Retirer" })).toBeInTheDocument();
     expect(within(bloc("Habilitation Aller-vers")).getByRole("button", { name: "Retirer" })).toBeInTheDocument();
 
     const agents = bloc("Agents");
-    expect(within(agents).getByText("AMO et Aller-vers")).toBeInTheDocument();
     expect(within(agents).getByText("Marie Martin")).toBeInTheDocument();
     expect(within(agents).getByRole("link", { name: "Gérer les agents" })).toHaveAttribute(
       "href",
       "/administration/agents"
     );
-    expect(screen.queryByRole("button", { name: "Supprimer la structure" })).not.toBeInTheDocument();
+    // Rien à ajouter, rien à supprimer : pas de menu.
+    expect(screen.queryByRole("button", { name: "Gérer la structure" })).not.toBeInTheDocument();
   });
 
   it("ne propose pas à l'administrateur d'ajouter ou retirer AMO et Aller-vers sur une structure qui a des agents", async () => {
@@ -140,7 +155,7 @@ describe("FicheStructurePanel", () => {
     const amo = bloc("Habilitation AMO");
     expect(within(amo).getByRole("button", { name: "Modifier" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Retirer" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Ajouter l'habilitation/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Gérer la structure" })).not.toBeInTheDocument();
     expect(screen.getByText(/seul un super-administrateur peut lui ajouter ou retirer/)).toBeInTheDocument();
     expect(within(bloc("Agents")).getByText("2 agents")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Gérer les agents" })).not.toBeInTheDocument();
@@ -171,6 +186,7 @@ describe("FicheStructurePanel", () => {
   it("annonce le rôle cumulé des agents avant d'ajouter un Aller-vers à une AMO", async () => {
     await afficher(accompagnement(), UserRole.SUPER_ADMINISTRATEUR);
 
+    await ouvrirGerer();
     await userEvent.click(screen.getByRole("button", { name: "Ajouter l'habilitation Aller-vers" }));
 
     expect(
@@ -194,8 +210,10 @@ describe("FicheStructurePanel", () => {
       UserRole.ADMINISTRATEUR
     );
 
-    expect(screen.getByRole("button", { name: "Ajouter l'habilitation AMO" })).toBeDisabled();
-    expect(screen.getByText("Renseignez d'abord le SIRET")).toBeInTheDocument();
+    await ouvrirGerer();
+    expect(
+      screen.getByRole("button", { name: "Ajouter l'habilitation AMO (renseignez d'abord le SIRET)" })
+    ).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Ajouter l'habilitation Aller-vers" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ajouter l'habilitation Expert" })).not.toBeInTheDocument();
     expect(within(bloc("Habilitation Aller-vers")).getByText(DERNIERE)).toBeInTheDocument();
@@ -208,6 +226,7 @@ describe("FicheStructurePanel", () => {
     expect(screen.getByText("Structure expert")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 2, name: /Habilitation AMO/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 2, name: /Habilitation Aller-vers/ })).not.toBeInTheDocument();
+    await ouvrirGerer();
     expect(screen.queryByRole("button", { name: /Ajouter l'habilitation/ })).not.toBeInTheDocument();
 
     const carte = bloc("Habilitation Expert");
@@ -215,12 +234,14 @@ describe("FicheStructurePanel", () => {
     expect(within(carte).getByRole("button", { name: "Modifier" })).toBeInTheDocument();
     expect(within(carte).getByRole("button", { name: "Désactiver" })).toBeInTheDocument();
     // Pas de compte expert : la fiche ne propose pas de gérer des agents.
-    expect(screen.queryByRole("heading", { level: 2, name: "Agents" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: /^Agents/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Annuaire des experts" })).toBeInTheDocument();
   });
 
   it("annonce que la suppression emporte les habilitations de la structure", async () => {
     await afficher(expert(EXPERT_GESTION), UserRole.SUPER_ADMINISTRATEUR);
 
+    await ouvrirGerer();
     await userEvent.click(screen.getByRole("button", { name: "Supprimer la structure" }));
 
     expect(
@@ -232,10 +253,11 @@ describe("FicheStructurePanel", () => {
     await afficher(expert(EXPERT_ANNUAIRE, { agents: null }), UserRole.ADMINISTRATEUR);
 
     const carte = bloc("Habilitation Expert");
-    expect(within(carte).getByText("Indre (36)")).toBeInTheDocument();
+    expect(within(carte).getByRole("cell", { name: "36 - Indre" })).toBeInTheDocument();
+    expect(within(carte).getByRole("cell", { name: "rdv@expertise.test" })).toBeInTheDocument();
     expect(within(carte).queryByRole("button")).not.toBeInTheDocument();
     expect(within(carte).queryByText("Contact interne")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Supprimer la structure" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Gérer la structure" })).not.toBeInTheDocument();
   });
 
   it("propose le retour à la liste quand la structure est introuvable", async () => {
