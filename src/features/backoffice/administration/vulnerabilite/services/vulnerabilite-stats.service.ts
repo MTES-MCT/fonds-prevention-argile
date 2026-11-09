@@ -25,8 +25,11 @@ import { getClientEnv } from "@/shared/config/env.config";
 import { plageDerniersJours } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
 import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
+import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import type {
   CritereReponsesStats,
+  EvolutionSimulations,
   ReponseDistribution,
   VulnerabilitePointsMoyens,
   VulnerabiliteComptesStats,
@@ -99,17 +102,55 @@ function computePointsMoyens(rows: VulnerabiliteSimulation[]): VulnerabilitePoin
   ) as VulnerabilitePointsMoyens;
 }
 
+// En UTC, comme les dates stockées en base ; semaine du lundi au dimanche, comme Matomo.
+function debutDuPas(date: Date, granularite: GranulariteVisites): Date {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  if (granularite === "month") d.setUTCDate(1);
+  if (granularite === "week") d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d;
+}
+
+function pasSuivant(date: Date, granularite: GranulariteVisites): Date {
+  const d = new Date(date);
+  if (granularite === "month") d.setUTCMonth(d.getUTCMonth() + 1);
+  else d.setUTCDate(d.getUTCDate() + (granularite === "week" ? 7 : 1));
+  return d;
+}
+
+/** Un point par pas de `debut` à `fin`, à zéro quand aucune simulation n'y tombe. */
+export function compterSimulationsParPas(
+  dates: Date[],
+  debut: Date,
+  fin: Date,
+  granularite: GranulariteVisites
+): EvolutionSimulations {
+  const compte = new Map<string, number>();
+  for (let pas = debutDuPas(debut, granularite); pas <= fin; pas = pasSuivant(pas, granularite)) {
+    compte.set(pas.toISOString().slice(0, 10), 0);
+  }
+  for (const date of dates) {
+    const cle = debutDuPas(date, granularite).toISOString().slice(0, 10);
+    if (compte.has(cle)) compte.set(cle, (compte.get(cle) ?? 0) + 1);
+  }
+  return { granularite, points: [...compte].map(([date, simulations]) => ({ date, simulations })) };
+}
+
 /**
  * Statistiques issues de la table anonyme `vulnerabilite_simulations` : total de simulations
  * terminées, répartition par réponse et points moyens par catégorie — Matomo ne sait pas calculer de moyenne
  * ni agréger des champs de formulaire, cf. ADR sur les stats du simulateur de vulnérabilité.
  */
 export async function getVulnerabiliteStatsBdd(periodeId: PeriodeId): Promise<VulnerabiliteStatsBdd> {
-  const { debut } = getDateRange(periodeId);
+  const { debut, fin } = getDateRange(periodeId);
   const rows = await vulnerabiliteSimulationsRepo.findSince(debut);
+  const dates = rows.map((r) => r.createdAt);
+  // « Depuis le début » part de 1970 : la série commence à la première simulation.
+  const debutSerie =
+    debut.getTime() === 0 ? new Date(Math.min(fin.getTime(), ...dates.map((d) => d.getTime()))) : debut;
 
   return {
     totalSimulations: rows.length,
+    evolution: compterSimulationsParPas(dates, debutSerie, fin, getGranulariteForPeriode(periodeId)),
     reponses: computeReponsesStats(rows),
     pointsMoyens: computePointsMoyens(rows),
   };
