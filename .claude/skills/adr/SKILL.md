@@ -14,6 +14,7 @@ Lister les fichiers dans `docs/adr/` et déterminer le prochain numéro séquent
 ## Étape 2 — Collecter le contexte
 
 Si l'utilisateur n'a pas fourni tous les détails, analyser le code pertinent pour comprendre :
+
 - Le problème ou le besoin qui motive la décision
 - Les alternatives envisagées (au moins 2)
 - Les conséquences positives et négatives
@@ -31,11 +32,16 @@ Créer le fichier `docs/adr/XXXX-titre-en-kebab-case.md` en suivant le template 
 - **Liens** : fichiers du projet concernés, documentation, issues/PRs
 
 Règles :
+
 - Rédiger en **français** avec les accents
 - Référencer les **chemins de fichiers** du projet concernés
 - Être **concis** mais précis
 - Ne PAS utiliser d'emojis
 
-## Étape 4 — Confirmer
+## Étape 4 — Référencer dans l'index
+
+Ajouter une ligne à la fin du tableau « Index » de `docs/adr/README.md`, collée à la dernière ligne : `| XXXX | [Titre](XXXX-titre-en-kebab-case.md) | Accepté |`. Une ligne vide entre deux lignes coupe le tableau (c'est arrivé après 0048).
+
+## Étape 5 — Confirmer
 
 Afficher un résumé : numéro, titre, fichier créé.

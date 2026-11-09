@@ -52,14 +52,31 @@ export async function getDossier(id: string) {
   return db.query.dossiers.findFirst({ where: eq(dossiers.id, id) });
 }
 
-// CORRECT — session vérifiée + appartenance de la ressource
-export async function getDossier(id: string) {
-  const session = await requireSession();
-  const dossier = await db.query.dossiers.findFirst({ where: eq(dossiers.id, id) });
-  if (!dossier || !canAccess(session, dossier)) throw new ForbiddenError();
-  return dossier;
+// CORRECT — garde d'espace en première instruction, puis périmètre sur CETTE ressource
+export async function getDossierAction(parcoursId: string): Promise<ActionResult<Dossier>> {
+  const refus = await refusAccesEspaceAgent();
+  if (refus) return { success: false, error: refus };
+
+  const agent = await getCurrentAgent();
+  if (!agent.success) return { success: false, error: agent.error };
+
+  const { id, role, entrepriseAmoId, allersVersId } = agent.data;
+  const horsPerimetre = await verifyProspectTerritoryAccess(parcoursId, {
+    id,
+    role,
+    entrepriseAmoId: entrepriseAmoId ?? null,
+    allersVersId: allersVersId ?? null,
+  });
+  if (horsPerimetre) return { success: false, error: horsPerimetre };
+  // ... lecture du dossier
 }
 ```
+
+Gardes reconnues par les tests méta (`garde-server-actions.test.ts`,
+`espace-agent/garde-actions.test.ts`) : `refusAccesEspaceAgent`, `checkBackofficePermission`,
+`checkRoleAccess`, `verifyProspectTerritoryAccess`, `verifyAmoOwnership`… Côté demandeur,
+`getSession` ou `getCurrentUser` suffit : le parcours vient de la session, jamais d'un
+identifiant envoyé par le client. Exemple réel : `renvoyer-invitation.actions.ts`.
 
 ## Injection SQL
 

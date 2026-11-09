@@ -15,7 +15,7 @@ pnpm test           # Lancer les tests
 pnpm test:watch     # Tests en mode watch
 pnpm lint           # ESLint
 pnpm typecheck      # Vérification TypeScript
-pnpm validate       # typecheck + lint + test
+pnpm validate       # typecheck + lint + test + Talisman
 pnpm format         # Prettier
 ```
 
@@ -45,12 +45,17 @@ pnpm db:restore     # Restaurer un dump dans la base locale, pseudonymisé (cf. 
 src/
 ├── app/              # Routes Next.js (App Router)
 ├── features/         # Fonctionnalités métier
-│   ├── auth/         # Authentification (FranceConnect)
+│   ├── auth/         # Authentification (FranceConnect, ProConnect), rôles et permissions
+│   ├── backoffice/   # Espaces agents : administration, espace-agent
 │   ├── parcours/     # Parcours utilisateur
 │   │   ├── amo/      # AMO (Assistant Maîtrise d'Ouvrage)
 │   │   ├── core/     # Logique commune parcours
 │   │   └── dossiers-ds/  # Intégration Démarches Simplifiées
-│   └── seo/          # SEO et génération de données
+│   ├── public-stats/ # Statistiques publiques (/stats)
+│   ├── rga-map/      # Carte des zones RGA
+│   ├── seo/          # SEO et génération de données
+│   ├── simulateur/   # Simulateur d'éligibilité RGA
+│   └── vulnerabilite-rga/  # Simulateur de vulnérabilité (inactif en production)
 └── shared/           # Code partagé
     ├── components/   # Composants réutilisables
     ├── database/     # Schema et repositories Drizzle
@@ -98,8 +103,8 @@ Le projet suit une architecture orientée domaine (DDD-lite):
 
 ## Workflow
 
-- Après implémentation, lancer `pnpm validate` (typecheck + lint + test)
-- Préférer lancer un test ciblé (`pnpm test path/to/file.test.ts`) plutôt que toute la suite — **sans `--`** : pnpm le transmet à Vitest, qui ignore alors le filtre et lance les 215 fichiers
+- Après implémentation, lancer `pnpm validate` (typecheck + lint + test + Talisman)
+- Préférer lancer un test ciblé (`pnpm test path/to/file.test.ts`) plutôt que toute la suite — **sans `--`** : pnpm le transmet à Vitest, qui ignore alors le filtre et lance toute la suite (près de 350 fichiers)
 - Lint avant commit : `pnpm format && pnpm lint`
 - Produire du code, pas des plans (sauf si demandé explicitement)
 - À chaque fin de fonctionnalité (groupe de commits / PR), **bumper la version** dans
@@ -505,7 +510,7 @@ Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver 
 
 ## Requêtes base de données
 
-- **Toujours utiliser le query builder Drizzle** (`db.select().from().where()`, `db.insert()`, `db.update()`, etc.) — ne jamais utiliser `db.execute()` avec du SQL brut
+- **Toujours utiliser le query builder Drizzle** (`db.select().from().where()`, `db.insert()`, `db.update()`, etc.) — ne jamais utiliser `db.execute()` avec du SQL brut. Deux exceptions assumées : la requête PostGIS de `rga-zones.repository.ts` (fonctions spatiales hors du query builder) et le `SELECT 1` du healthcheck (`api/health`)
 - Le query builder gère correctement la sérialisation des `Date`, arrays, et le nommage des tables/colonnes
 - Pour les jointures : `innerJoin()`, `leftJoin()` avec `eq()` sur les clés
 - Pour les filtres complexes : composer avec `and()`, `or()`, `gte()`, `lt()`, `inArray()`, `isNotNull()`, etc.
@@ -516,7 +521,7 @@ Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver 
 
 - Les valeurs JSONB (`rgaSimulationData`) peuvent être des nombres au lieu de strings — toujours utiliser `asString()` de `@/shared/utils` pour lire les champs
 - **Un code géographique JSONB n'est pas forcément au format officiel** : les simulations de novembre 2025 à janvier 2026 (104, aucune depuis) stockent `code_departement: 3` et `commune: 3023`. `asString()` et `String()` donnent « 3 », qui ne retrouve jamais « 03 » : le dossier sortait du listing et du détail des agents des départements 01 à 09, si bien qu'une AMO l'a recréé et que le demandeur s'est retrouvé avec deux dossiers (ADR-0050). Comparer un département par `toOfficialCodeDepartement` (`shared/constants/departements.constants.ts`), une commune après `padStart(5, "0")` ; `pnpm fix:codes-geo` corrige les données existantes
-- Le site force le **thème clair** (`data-fr-scheme="light"` sur `<html>`, aucun réglage d'affichage dans le footer depuis #131), mais **DSFR fait primer `localStorage.scheme` sur cet attribut** (`Scheme.init`, `dsfr.module.js`) : un navigateur ayant visité l'app avant ce forçage a gardé `scheme=system` et rend **tout le site** en thème sombre dès que l'OS l'est — les cartes `bg-white` codées en dur (wizard de création de dossier, `InfoLogement`…) deviennent alors illisibles. `syncStoredScheme` (`shared/components/DsfrProvider/dsfr-scheme.ts`) réaligne le stockage sur l'attribut avant `dsfr.start()` : il suit l'attribut, donc repasser le layout en `system` réactive le thème système sans rien toucher d'autre
+- Le site force le **thème clair** (`data-fr-scheme="light"` sur `<html>`, aucun réglage d'affichage dans le footer depuis #131), mais **DSFR fait primer `localStorage.scheme` sur cet attribut** (`Scheme.init`, `dsfr.module.js`) : un navigateur ayant visité l'app avant ce forçage a gardé `scheme=system` et rend **tout le site** en thème sombre dès que l'OS l'est — les cartes `bg-white` alors codées en dur (wizard de création de dossier, `InfoLogement`…) devenaient illisibles. `syncStoredScheme` (`shared/components/DsfrProvider/dsfr-scheme.ts`) réaligne le stockage sur l'attribut avant `dsfr.start()` : il suit l'attribut, donc repasser le layout en `system` réactive le thème système sans rien toucher d'autre
 - Les modales DSFR ne s'ouvrent pas avec l'attribut HTML `open` — utiliser `window.dsfr(modal).modal.disclose()`
 - L'API Matomo Funnels timeout sur les périodes longues — limiter à 7 jours
 - `VisitsSummary.getVisits` en `period=day` sur un range long force Matomo à calculer une archive par jour (jusqu'à ~365 pour "12m"/"tout") : même cause que le timeout Funnels. `getMatomoStatistiques` (`matomo.service.ts`) adapte donc la granularité à la durée sélectionnée (`day` ≤30j, `week` pour 90j/6m, `month` pour 12m/tout) via `getGranulariteForPeriode` — ne pas revenir à `"day"` en dur sans réévaluer ce risque
@@ -531,7 +536,7 @@ Lors de la compaction automatique ou manuelle (`/compact`), TOUJOURS préserver 
 - Les rapports Matomo s'arrêtent à **100 lignes par défaut** (`filter_limit`), sans le signaler. `CustomDimensions.getCustomDimension` en `flat=1` renvoie une ligne par couple **valeur × URL**, donc la limite saute vite : la liste des départements était tronquée en silence. Tout rapport destiné à être listé en entier demande `toutesLesLignes: true` (`filter_limit=-1`, `fetchMatomoDimensionRows`) ; le Top 5 communes garde la limite par défaut, sa taille n'ayant pas été mesurée : le cache de données de Next refuse d'écrire une entrée de plus de 2 Mo (`unstable_cache` de `fetchMatomoApiCached`, vérifié dans Next 15.5.24)
 - L'API Matomo répond **HTTP 200 même sur erreur d'authentification** (le verdict est dans le corps : `{"result":"error"}`) — ne jamais se fier au seul `response.ok`, et ne pas mettre ces réponses en cache HTTP
 - `unstable_cache` **sérialise en JSON** : une valeur cachée contenant un `Date` revient en **string** au premier hit, pas au miss. Le bug ne se voit donc ni au premier chargement ni en test si le mock est un pass-through, mais casse le rendu ensuite (`date.getUTCFullYear is not a function`, constaté en staging sur `/stats`). N'y mettre que du JSON simple (ISO strings, nombres) et réhydrater côté appelant ; un mock de `unstable_cache` doit refaire l'aller-retour `JSON.parse(JSON.stringify(...))`
-- `@gouvfr/dsfr-chart` (`<line-chart>`) n'expose **aucun style de segment/ligne** (pas de `borderDash`, pas de prop de style par point) — vérifié dans le bundle (pas de `.d.ts`, pas de doc dessus) : chaque dataset est construit en dur (`borderWidth: 2`, pas de dash). Pour distinguer visuellement un tronçon, seule option côté composant : une 2e série qui chevauche le point de jonction, avec une couleur différente via `selectedPalette="categorical"` — un vrai pointillé demanderait de sortir du composant et d'utiliser Chart.js directement (déjà présent en interne, v4.5.1, option native `segment.borderDash`). Sur `/stats`, ce tronçon était le mois en cours ; on a préféré ne plus l'afficher du tout (`build-chart-series.utils.ts`) plutôt que de le distinguer visuellement
+- `@gouvfr/dsfr-chart` (`<line-chart>`) n'expose **aucun style de segment/ligne** (pas de `borderDash`, pas de prop de style par point) — vérifié dans le bundle (pas de `.d.ts`, pas de doc dessus) : chaque dataset est construit en dur (`borderWidth: 2`, pas de dash). Pour distinguer visuellement un tronçon, seule option côté composant : une 2e série qui chevauche le point de jonction, avec une couleur différente via `selectedPalette="categorical"` — un vrai pointillé demanderait de sortir du composant et d'utiliser Chart.js directement (déjà présent en interne, v4.5.1, option native `segment.borderDash`). Sur `/stats`, ce tronçon était le mois en cours ; on a préféré ne plus l'afficher du tout (borne au mois précédent dans `getPublicStatsEvolution`, `public-stats.service.ts`) plutôt que de le distinguer visuellement
 - **Sans WebGL2, l'endroit où maplibre échoue dépend de sa version**, et c'est un piège : la v5 levait depuis `new Map()`, la 6.4 construit une carte **sans `painter`** et se contente de `fire` un `GPUInitializationError` — donc un simple `console.error` si personne n'écoute l'évènement. La panne n'éclate qu'ensuite, dans son propre `remove()`, qui déréférence ce `painter` absent : partant d'un **cleanup d'effet React**, l'erreur remonte jusqu'à la frontière racine et `global-error.tsx` remplace **toute la page** par « Application error: a client-side exception has occurred ». Constaté en production sur des demandeurs Firefox (GPU sur liste noire / accélération coupée) alors qu'Edge passait sur la même machine, et déclenché par un geste anodin : re-modifier l'adresse démonte la carte. `useRgaMap` teste donc WebGL2 **avant** d'instancier (`webgl2EstDisponible`, `rga-map/domain/webgl.ts`) et enveloppe **à la fois** `new Map()` et `remove()` : le contexte peut aussi se perdre en cours de route, et la **6.11 lève de nouveau depuis le constructeur** (`_setupPainter`), ce qui faisait retomber la même page blanche dès que la détection mémoïsée passait à tort — vérifié en coupant WebGL2 après la détection. Sans WebGL2, `RgaMap` rend un message à la place du canvas et `StepAdresse` propose immédiatement la saisie manuelle (repli déjà existant, qui ne dépend que des coordonnées BAN)
 - `cookies()` **signale l'usage dynamique en lançant** une erreur de digest `DYNAMIC_SERVER_USAGE` : c'est ainsi que Next bascule une route de statique à dynamique au build. Un `try/catch` générique autour d'une lecture de session **avale ce signal** — la page se prérend alors avec « pas d'agent » et se fige en **redirection statique**, build vert à l'appui. Symptôme visible avant la panne : `[getCurrentAgent] Erreur: … couldn't be rendered statically`. Tout catch traversé pendant un rendu RSC appelle donc `unstable_rethrow(error)` (`next/navigation`) en tête (`agent.actions.ts`, `dossier-detail.service.ts`, `prospect-detail.service.ts`, `edition-simulation.service.ts`) — et toute route derrière une session déclare `export const dynamic = "force-dynamic"` plutôt que de compter sur ce throw
 - **Un layout ne protège pas ses pages** : Next rend layout et page en parallèle, et le RSC de la page part dans le HTML (`self.__next_f`) **même si le layout ne rend pas `children`** — vérifié en local : l'écran de refus s'affiche, la donnée est dans le source. Toute page de l'espace agent appelle donc `exigerAccesEspaceAgent()` en tête, **et son `generateMetadata` aussi** : il est rendu à part, et un titre construit depuis le service de détail livrait le nom du demandeur (test méta `espace-agent/garde-pages.test.ts`) ; le layout ne fait qu'afficher le refus. Même règle pour toute nouvelle zone gardée : la garde va dans la page ou le service, jamais seulement dans le layout
