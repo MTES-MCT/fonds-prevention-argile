@@ -549,5 +549,6 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
 - [docs/stats/STATISTIQUES.md](docs/stats/STATISTIQUES.md) — Ce que compte chaque statistique, publique et interne (à lire avant de toucher une stat)
 - [docs/security/DONNEES-PERSONNELLES.md](docs/security/DONNEES-PERSONNELLES.md) — Données personnelles colonne par colonne, et leur traitement à la restauration d'un dump
+- [docs/security/HOMOLOGATION.md](docs/security/HOMOLOGATION.md) — Index du dossier d'homologation : pièces existantes et à produire (à mettre à jour quand une PR en produit une)
 
 Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).

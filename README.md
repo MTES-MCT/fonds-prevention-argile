@@ -207,6 +207,7 @@ Documentation technique détaillée dans `docs/` :
 - [`docs/testing/TESTING-AUTH.md`](./docs/testing/TESTING-AUTH.md) — Stratégie de tests pour l'authentification
 - [`docs/testing/TESTING-SIMULATEUR.md`](./docs/testing/TESTING-SIMULATEUR.md) — Stratégie de tests pour le simulateur
 - [`docs/security/snyk-accepted-vulnerabilities.md`](./docs/security/snyk-accepted-vulnerabilities.md) — Vulnérabilités acceptées suivies par Snyk
+- [`docs/security/HOMOLOGATION.md`](./docs/security/HOMOLOGATION.md) — **Index du dossier d'homologation de sécurité** : documents existants par rubrique, interconnexions et sous-traitants, pièces restant à produire
 
 ## Structure du projet
 
