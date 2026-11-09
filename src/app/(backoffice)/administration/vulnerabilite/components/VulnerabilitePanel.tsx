@@ -6,6 +6,7 @@ import { DashboardStatCard } from "@/app/(backoffice)/administration/tableau-de-
 import DetailEtapesFunnel from "@/app/(backoffice)/administration/acquisition/components/simulateur/DetailEtapesFunnel";
 import TopSimulationsCard from "@/app/(backoffice)/administration/acquisition/components/simulateur/TopSimulationsCard";
 import { RepartitionReponseCard } from "./RepartitionReponseCard";
+import { EvolutionSimulationsCard } from "./EvolutionSimulationsCard";
 import {
   getVulnerabiliteStatsAction,
   getVulnerabiliteTopDepartementsAction,
@@ -19,6 +20,7 @@ import {
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type {
   CritereReponsesStats,
+  EvolutionSimulations,
   VulnerabiliteComptesStats,
   VulnerabilitePointsMoyens,
   VulnerabiliteTopDepartement,
@@ -50,6 +52,7 @@ export default function VulnerabilitePanel() {
   const [periodeId, setPeriodeId] = useState<PeriodeId>(DEFAULT_PERIODE);
 
   const [totalSimulations, setTotalSimulations] = useState<number | null>(null);
+  const [evolution, setEvolution] = useState<EvolutionSimulations | null>(null);
   const [reponses, setReponses] = useState<CritereReponsesStats[]>([]);
   const [pointsMoyens, setPointsMoyens] = useState<VulnerabilitePointsMoyens | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -74,6 +77,7 @@ export default function VulnerabilitePanel() {
       if (cancelled) return;
       if (result.success) {
         setTotalSimulations(result.data.totalSimulations);
+        setEvolution(result.data.evolution);
         setReponses(result.data.reponses);
         setPointsMoyens(result.data.pointsMoyens);
       } else {
@@ -223,6 +227,10 @@ export default function VulnerabilitePanel() {
                 className="fr-col-6 fr-col-md-3"
               />
             ))}
+          </div>
+
+          <div className="fr-mt-4w">
+            <EvolutionSimulationsCard evolution={evolution} loading={statsLoading} />
           </div>
 
           <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
