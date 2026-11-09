@@ -5,7 +5,7 @@ Application web pour le Fonds de Prévention des Risques liés au Retrait-Gonfle
 ## Prérequis
 
 - **Node.js** 24.x
-- **pnpm** 11.5.0
+- **pnpm** 11.24.0
 - **Git** pour cloner le repository
 
 ## Installation
@@ -44,13 +44,12 @@ Configurez les variables selon votre environnement. Les principales variables in
 - `NEXT_PUBLIC_VULNERABILITE_RGA_ACTIVE` : interrupteur du [simulateur de vulnérabilité](docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md), **à poser au build**. `false` masque tout (par exemple en staging, pour y voir la production), `true` l'active partout, **production comprise**. Absente ou autre valeur : `NEXT_PUBLIC_APP_ENV` décide (actif hors production).
 - `NEXT_PUBLIC_MATOMO_SITE_ID` : ID Matomo pour l'analytics
 - `NEXT_PUBLIC_MATOMO_URL` : URL de l'instance Matomo
-- `MATOMO_API_TOKEN` : Token d'API Matomo (Reporting API) alimentant les statistiques du back-office. **Obligatoire côté serveur** : s'il est absent, expiré ou révoqué, les tuiles Matomo de `/administration` affichent « Indisponible »
+- `MATOMO_API_TOKEN` : Token d'API Matomo (Reporting API) alimentant les statistiques du back-office. **Obligatoire côté serveur** : absent, la validation de l'environnement (`getServerEnv`) échoue et l'app ne démarre pas ; expiré ou révoqué, les tuiles Matomo de `/administration` affichent « Indisponible »
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY` : Clé d'API pour récupérer les informations de la plateforme Démarches Simplifiées via GraphQL
 - `DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL` : URL de l'API GRAPHQL de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_REST_API_URL` : URL de l'API Rest de la plateforme Démarches Simplifiées
 - `DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID` : id GraphQL de l'instructeur au nom duquel l'application écrit les annotations privées (contrôle de l'avis d'imposition). DN l'exige et vérifie qu'il a accès au dossier : il doit être instructeur de **tous les groupes** des démarches d'éligibilité, et le token GraphQL doit être en **lecture et écriture**. Instance DN unique : même id en préprod et en prod
-- `DEMARCHES_SIMPLIFIEES_ID_DEMARCHE` : Identifiant de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
-- `DEMARCHES_SIMPLIFIEES_NOM_DEMARCHE` : Nom de la démarche liée au Fonds prévention argile dans la plateforme Démarches Simplifiées
+- `DEMARCHES_SIMPLIFIEES_ID_<ETAPE>` / `DEMARCHES_SIMPLIFIEES_NOM_<ETAPE>` : identifiant et nom de chacune des quatre démarches, `<ETAPE>` valant `ELIGIBILITE`, `DIAGNOSTIC`, `DEVIS` ou `FACTURES` (huit variables, toutes obligatoires)
 - `BREVO_CONTACT_LIST_ID` : ID de la liste Brevo « cycle de vie » où les contacts sont poussés en flux (inscription, réponse AMO, update DN). **Distinct par environnement** (liste staging vs prod). Optionnel : absent = synchro de contacts désactivée. Voir [docs/emails/BREVO-LIFECYCLE.md](docs/emails/BREVO-LIFECYCLE.md)
 - `NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID` : Channel du widget « Messages » de La Suite numérique (ANCT), affiché sur le site public (staging et production uniquement). **Distinct par environnement**. Optionnel : absent = widget désactivé. Voir [ADR-0023](docs/adr/0023-remplacement-crisp-par-lasuite-messages.md)
 - `NEXT_PUBLIC_MATOMO_FUNNEL_ID_VULNERABILITE` : ID du funnel Matomo du simulateur de vulnérabilité (distinct de `NEXT_PUBLIC_MATOMO_FUNNEL_ID`, qui est celui du simulateur d'éligibilité). Optionnel : absent = le widget funnel de `/administration/vulnerabilite` affiche « données non disponibles ». Voir [ADR-0031](docs/adr/0031-stats-vulnerabilite-matomo-bdd.md)
@@ -61,10 +60,10 @@ Configurez les variables selon votre environnement. Les principales variables in
 
 Le mode d'AMO appliqué à chaque demandeur dépend de son département. La configuration est pilotée par 2 variables d'environnement optionnelles. Si elles ne sont pas définies, des valeurs par défaut alignées sur la dernière config produit sont utilisées.
 
-| Variable                                    | Format         | Défaut                 | Description                                                                                 |
-| ------------------------------------------- | -------------- | ---------------------- | ------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`  | CSV codes dept | `03,04,36,47,54,63,81` | Départements où l'AMO est obligatoire (1 AMO auto-affecté à l'arrivée sur `/mon-compte`).   |
-| `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES` | CSV codes dept | `03,04,32,54,63`       | Départements où l'aller-vers local est aussi l'AMO. N'implique pas l'obligation. Optionnel. |
+| Variable                                    | Format         | Défaut                 | Description                                                                                                                                                  |
+| ------------------------------------------- | -------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE`  | CSV codes dept | `03,04,36,47,54,63,81` | Départements où l'AMO est obligatoire (affectée d'office à l'arrivée sur `/mon-compte` si elle est seule sur le territoire, sinon choisie par le demandeur). |
+| `NEXT_PUBLIC_DEPARTEMENTS_AV_AMO_FUSIONNES` | CSV codes dept | `03,04,32,54,63`       | Départements où l'aller-vers local est aussi l'AMO. N'implique pas l'obligation. Optionnel.                                                                  |
 
 **Les deux listes sont indépendantes** : un département peut cumuler AV et AMO sans imposer l'AMO (cas du Gers), et inversement. Seule `NEXT_PUBLIC_DEPARTEMENTS_AMO_OBLIGATOIRE` retire le choix au demandeur ; hors d'elle, il décide lui-même ("Oui" → l'AMO du territoire, ou celle qu'il choisit quand plusieurs le couvrent ; "Non" → skip vers Éligibilité).
 
@@ -143,20 +142,20 @@ pnpm qa:cas-de-test --comptes
 
 ### Scripts disponibles
 
-| Commande             | Description                                         |
-| -------------------- | --------------------------------------------------- |
-| `pnpm start:dev`     | Lance le serveur de développement                   |
-| `pnpm build`         | Construit l'application pour la production          |
-| `pnpm start`         | Démarre le serveur de production                    |
-| `pnpm lint`          | Vérifie le code avec ESLint                         |
-| `pnpm typecheck`     | Vérifie les types TypeScript                        |
-| `pnpm test`          | Lance les tests unitaires                           |
-| `pnpm test:watch`    | Lance les tests en mode watch                       |
-| `pnpm test:coverage` | Lance les tests avec couverture                     |
-| `pnpm format`        | Formate le code avec Prettier                       |
-| `pnpm validate`      | Lance toutes les vérifications (types, lint, tests) |
-| `pnpm clean`         | Nettoie le cache Next.js                            |
-| `pnpm fresh`         | Réinstallation complète des dépendances             |
+| Commande             | Description                                                                |
+| -------------------- | -------------------------------------------------------------------------- |
+| `pnpm start:dev`     | Lance le serveur de développement                                          |
+| `pnpm build`         | Construit l'application pour la production                                 |
+| `pnpm start`         | Démarre le serveur de production                                           |
+| `pnpm lint`          | Vérifie le code avec ESLint                                                |
+| `pnpm typecheck`     | Vérifie les types TypeScript                                               |
+| `pnpm test`          | Lance les tests unitaires                                                  |
+| `pnpm test:watch`    | Lance les tests en mode watch                                              |
+| `pnpm test:coverage` | Lance les tests avec couverture                                            |
+| `pnpm format`        | Formate le code avec Prettier                                              |
+| `pnpm validate`      | Lance toutes les vérifications (types, lint, tests, Talisman)              |
+| `pnpm clean`         | Nettoie le cache Next.js                                                   |
+| `pnpm fresh`         | Réinstallation complète, `pnpm-lock.yaml` compris (supprimé puis régénéré) |
 
 ## Tests
 
@@ -187,14 +186,11 @@ Cette commande exécute :
 - Vérification des types TypeScript
 - Linting avec ESLint
 - Tests unitaires
+- Détection de secrets avec Talisman (`pnpm precommit`)
 
 ### CI Pipeline
 
-```bash
-pnpm ci
-```
-
-Installe les dépendances avec lockfile et lance la validation complète.
+Le workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) tourne à chaque push et sur les Pull Requests vers `main` ou `dev` : un job Talisman, puis `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm test` et `pnpm build`.
 
 ## Documentation interne
 
@@ -204,99 +200,65 @@ Documentation technique détaillée dans `docs/` :
 - [`docs/parcours/FLOW-AND-SYNC.md`](./docs/parcours/FLOW-AND-SYNC.md) — Flux du parcours utilisateur et synchronisation Démarches Simplifiées
 - [`docs/partners/PARTNER-TRACKING.md`](./docs/partners/PARTNER-TRACKING.md) — **Suivi des partenaires intégrant l'iframe** (MAIF, etc.) : détection, persistance via cookie + champ `users.partner_source`, filtrage backoffice, et procédure pour ajouter un nouveau partenaire
 - [`docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md`](./docs/vulnerabilite/SIMULATEUR-VULNERABILITE-RGA.md) — **Simulateur de vulnérabilité RGA** (prototype, inactif en production) : périmètre, disponibilité par environnement, méthode de calcul, backlog d'améliorations
-- [`docs/testing/TESTING-AUTH.md`](./docs/testing/TESTING-AUTH.md) — Stratégie de tests pour l'authentification
-- [`docs/testing/TESTING-SIMULATEUR.md`](./docs/testing/TESTING-SIMULATEUR.md) — Stratégie de tests pour le simulateur
 - [`docs/security/snyk-accepted-vulnerabilities.md`](./docs/security/snyk-accepted-vulnerabilities.md) — Vulnérabilités acceptées suivies par Snyk
 
 ## Structure du projet
 
 ```
 src/
-├── app/                  # Pages et routes Next.js (App Router)
-│   ├── accessibilite/
-│   ├── admin/
-│   ├── connexion/
-│   ├── dashboard/
-│   ├── mentions-legales/
-│   ├── simulateur/
-│   └── statistiques/
-├── components/           # Composants React réutilisables
-│   ├── DsfrProvider/    # Provider DSFR
-│   ├── Header/
-│   ├── Footer/
-│   └── Matomo/          # Analytics
-├── content/             # Contenus textuels (wording) de l'application
-│   ├── accessibilityPage.json  # Textes page accessibilité
-│   ├── components.json          # Textes composants réutilisables
-│   ├── connexion.json           # Textes page connexion
-│   ├── homePage.json            # Textes page d'accueil
-│   ├── layout.json              # Textes layout (header, footer)
-│   ├── legalNoticePage.json     # Textes mentions légales
-│   ├── notFoundPage.json        # Textes page 404
-│   ├── simulationPage.json      # Textes page simulateur
-│   ├── statisticsPage.json      # Textes page statistiques
-│   └── index.ts                 # Export centralisé
-├── hooks/               # Hooks React personnalisés
-├── lib/                 # Utilitaires et configuration
-│   ├── api/            # Clients API (Démarches Simplifiées)
-│   ├── config/         # Configuration environnement
-│   └── utils/          # Fonctions utilitaires
-├── page-sections/       # Sections spécifiques aux pages
-│   └── home/           # Sections page d'accueil
-├── styles/             # Styles globaux et fonts
-└── types/              # Types TypeScript (si nécessaire)
+├── app/                  # Routes Next.js (App Router)
+│   ├── (main)/           # Site public et espace demandeur (mon-compte, connexion, stats, pages de contenu)
+│   ├── (tunnel)/         # Simulateurs d'éligibilité et de vulnérabilité
+│   ├── (backoffice)/     # Espaces agents : administration, espace-agent
+│   ├── (embed)/          # Simulateurs embarqués chez les partenaires (iframe)
+│   └── api/              # Route Handlers : auth, cron, webhooks, rga, ds, health
+├── features/             # Domaines métier (auth, parcours, simulateur, backoffice…)
+├── shared/               # Code transverse (database, components, email, config, utils…)
+├── styles/               # Styles globaux
+└── middleware.ts         # Aiguillage des connexions FranceConnect / ProConnect
 ```
+
+Détail des features, du code partagé et du modèle de données : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Gestion du contenu textuel
 
-### Architecture du dossier `/content/`
+### Où vivent les textes
 
-Le dossier `src/content/` contient tous les textes de l'application sous forme de fichiers JSON. Cette architecture permet :
+Les pages de contenu du site public gardent leurs textes dans un dossier `content/` voisin de leur `page.tsx` : `src/app/(main)/<page>/content/content.json` (accueil, accessibilité, mentions légales, CGU, travaux éligibles, signes à surveiller, pages RGA par territoire…). Quelques pages y ajoutent un `common.json` partagé par leurs sous-pages, ou un `template.json` pour les pages générées par territoire (`rga/departement`, `rga/epci`, `rga/commune`).
 
-- **Modification facile des textes** : Les contenus peuvent être modifiés sans toucher au code React
-- **Centralisation** : Tous les textes sont regroupés au même endroit
-- **Collaboration simplifiée** : Les contributeurs non-techniques peuvent proposer des modifications via des Pull Requests sur ces fichiers JSON uniquement
-- **Maintenabilité** : Séparation claire entre la logique d'affichage et le contenu éditorial
+Les autres textes (simulateurs, espace demandeur, back-office, header, footer) sont écrits dans les composants.
 
-### Structure des fichiers JSON
-
-Chaque fichier JSON correspond à une page ou un groupe de composants :
-Exemple : homePage.json
+Exemple : `src/app/(main)/(home)/content/content.json`
 
 ```json
 {
-  "hero": {
-    "title": "Fonds de prévention des risques liés au retrait-gonflement des argiles",
-    "subtitle": "Protégez votre logement contre les effets de la sécheresse",
-    "description": "Le service public qui vous accompagne..."
-  },
-  "sections": {
-    "whatIsRGA": {
-      "title": "Qu'est-ce que le RGA ?",
-      "content": "Le retrait-gonflement des argiles..."
-    }
+  "notice": {
+    "description": "La carte d'exposition au phénomène RGA évolue, de nouveaux logements sont éligibles",
+    "title": "Mise à jour importante du 20 mars 2026",
+    "more": "En savoir plus",
+    "more_link": "/carte-exposition-2026"
   }
 }
 ```
 
 ### Modification des contenus
 
-Pour modifier un texte de l'application :
+Pour modifier un texte d'une page de contenu :
 
-1. Identifiez le fichier JSON correspondant dans `src/content/`
-2. Modifiez le texte souhaité
+1. Identifiez la page, puis son fichier `src/app/(main)/<page>/content/content.json`
+2. Modifiez le texte souhaité, sans renommer les clés
 3. Créez une Pull Request avec vos modifications
 4. Les modifications seront visibles après le déploiement
 
-> **Note pour les contributeurs** : Il n'est pas nécessaire de connaître React ou TypeScript pour modifier les contenus textuels. Seuls les fichiers JSON dans le dossier `/content/` doivent être édités.
+> **Note pour les contributeurs** : Il n'est pas nécessaire de connaître React ou TypeScript pour modifier ces fichiers JSON.
 
 ## Technologies
 
 - **[Next.js](https://nextjs.org/)** 15.x - Framework React avec App Router
 - **[React](https://react.dev/)** 19.x - Bibliothèque UI
-- **[TypeScript](https://www.typescriptlang.org/)** 5.x - Typage statique
+- **[TypeScript](https://www.typescriptlang.org/)** 6.x - Typage statique
 - **[Tailwind CSS](https://tailwindcss.com/)** 4.x - Framework CSS utilitaire
-- **[DSFR](https://www.systeme-de-design.gouv.fr/)** 1.14.x - Design System de l'État
+- **[DSFR](https://www.systeme-de-design.gouv.fr/)** 1.15.x - Design System de l'État
 - **[Vitest](https://vitest.dev/)** - Tests unitaires
 - **[Matomo](https://matomo.org/)** - Analytics
 
@@ -344,8 +306,9 @@ Pour que ce mécanisme fonctionne, **`next` et `tsx` doivent être en `dependenc
 
 #### Garde-fous résiduels
 
-- `confirmModulesPurge: false` reste configuré dans `pnpm-workspace.yaml`. Inutile pour le démarrage du conteneur web (pnpm n'y tourne plus), mais filet de sécurité pour les commandes one-shot (`scalingo run pnpm ...`).
-- Si quelqu'un re-introduit `pnpm` dans le `Procfile` un jour, les trois symptômes ci-dessus reviendront. Garder `node node_modules/.bin/*` comme convention.
+- `verifyDepsBeforeRun: false` (`pnpm-workspace.yaml`) est le vrai garde-fou des commandes one-shot (`scalingo run pnpm <script>`) : pnpm ne vérifie plus les dépendances avant un script, donc ne relance pas l'installation complète qui faisait tomber le conteneur one-off (OOM, `SIGKILL`).
+- `confirmModulesPurge: false` reste configuré dans `pnpm-workspace.yaml`. Inutile pour le démarrage du conteneur web (pnpm n'y tourne plus), mais filet de sécurité supplémentaire pour les commandes one-shot.
+- Si quelqu'un re-introduit `pnpm` dans le `Procfile` un jour, les trois symptômes ci-dessus reviendront. Garder `./node_modules/.bin/*` comme convention.
 
 #### Clé de chiffrement des Server Actions (`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`)
 
@@ -378,7 +341,7 @@ scalingo --app fonds-argile-staging env-set EMAIL_DEV_INBOX=ta-boite-privee@exam
 scalingo --app fonds-argile-staging env-unset EMAIL_DEV_INBOX     # pour désactiver
 ```
 
-Au boot, le log `[EMAIL] DEV REDIRECT ACTIVE (env=staging) → ...` confirme l'activation.
+Au boot, le log `[EMAIL] redirect active → ... (env=staging)` confirme l'activation.
 
 **Garde-fous** (`assertEmailDevInboxSafety` dans `env.config.ts`) :
 
@@ -459,9 +422,9 @@ Le workflow utilise une **matrix [staging, production]** sur les **GitHub Enviro
 #### Tables associées
 
 - `sync_runs` — un run par déclenchement (id, started_at, finished_at, status, triggered_by, totaux, error_summary).
-- `sync_run_entries` — une entrée par parcours **modifié** durant un run (transitions step/status, liste des `ds_status_changes`, flag `step_advanced`, erreur).
+- `sync_run_entries` — une entrée par parcours **modifié** ou en erreur durant un run (transitions step/status, liste des `ds_status_changes`, flag `step_advanced`, erreur), ou dont une annotation DN a été traitée : contrôle de l'avis d'imposition, lien FPA, suivi Chorus (cf. FLOW-AND-SYNC § 4.2).
 
-Les parcours non modifiés ne génèrent pas d'entrée — seuls les runs eux-mêmes sont systématiquement enregistrés.
+Les autres parcours ne génèrent pas d'entrée — seuls les runs eux-mêmes sont systématiquement enregistrés.
 
 ## Dépannage
 
@@ -471,7 +434,7 @@ Les parcours non modifiés ne génèrent pas d'entrée — seuls les runs eux-m�
 # Nettoyer le cache Next.js
 pnpm clean
 
-# Réinstallation complète
+# Réinstallation complète (supprime aussi pnpm-lock.yaml, à relire avant tout commit)
 pnpm fresh
 ```
 
@@ -488,8 +451,8 @@ pnpm fresh
 Le projet utilise **Husky** pour automatiser les vérifications avant chaque commit :
 
 - Installation automatique lors du `pnpm install`
-- Exécute les validations définies dans `.husky/pre-commit`
-- Empêche les commits si les tests ou le linting échouent
+- Exécute `.husky/pre-commit`, qui ne lance que Talisman (détection de secrets)
+- Ni tests ni lint au commit : ils passent par `pnpm validate` et la CI
 
 ### Talisman (Protection des secrets)
 
@@ -541,11 +504,12 @@ Le simulateur RGA peut être intégré en iframe sur des sites partenaires. Lors
 
 **Fichiers concernés :**
 
-- `src/features/simulateur-rga/services/encryption.service.ts` - Service de chiffrement/déchiffrement
-- `src/features/simulateur-rga/actions/encrypt-rga-data.actions.ts` - Server Action chiffrement
-- `src/features/simulateur-rga/actions/decrypt-rga-data.actions.ts` - Server Action déchiffrement
-- `src/features/simulateur-rga/components/SimulateurClient.tsx` - Gestion mode embed
-- `src/features/parcours/core/context/ParcoursProvider.tsx` - Déchiffrement et migration BDD
+- `src/features/simulateur/services/encryption.service.ts` - Service de chiffrement/déchiffrement
+- `src/features/simulateur/actions/encrypt-rga-data.actions.ts` - Server Action chiffrement
+- `src/features/simulateur/actions/decrypt-rga-data.actions.ts` - Server Action déchiffrement
+- `src/features/simulateur/components/SimulateurFormulaire.tsx` - Détection de l'iframe, ouverture de `/connexion` et chiffrement (`handleContinueToFC`)
+- `src/features/simulateur/hooks/useLoadRGAFromURL.ts` - Déchiffrement du fragment `#d=` sur `/connexion` et nettoyage de l'URL
+- `src/features/parcours/core/hooks/useMigrateRGAToDB.ts` - Migration vers la base de données
 
 **Variables d'environnement :**
 
@@ -571,7 +535,7 @@ RGA_ENCRYPTION_KEY=a1b2c3d4e5f6...
 Si vous souhaitez uniquement modifier des textes de l'application :
 
 1. Créez une branche pour vos modifications
-2. Éditez les fichiers JSON dans `src/content/`
+2. Éditez les fichiers JSON dans `src/app/(main)/<page>/content/`
 3. Créez une Pull Request en décrivant les changements apportés
 4. Aucune connaissance technique n'est requise pour ce type de contribution
 
@@ -579,26 +543,20 @@ Si vous souhaitez uniquement modifier des textes de l'application :
 
 Ce projet applique plusieurs couches de protection contre les attaques de type supply chain (ex : `shai-hulud`, `mini-shai-hulud` qui a touché l'écosystème `@tanstack/*` en mai 2026).
 
-### Configuration `.npmrc`
-
-| Option               | Valeur  | Protection                                                                                                                                  |
-| -------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ignore-scripts`     | `true`  | Bloque l'exécution automatique des scripts `postinstall`, `preinstall`, etc. Empêche l'exécution de code malveillant lors de l'installation |
-| `auto-install-peers` | `false` | Désactive l'installation automatique des peer dependencies, évitant l'ajout silencieux de packages non audités                              |
-
 ### Configuration `pnpm-workspace.yaml`
 
-| Option                     | Valeur          | Protection                                                                                                                               |
-| -------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `savePrefix`               | `~`             | Force `pnpm add` à figer le minor/major (ex : `5.1.~3`). Sans ça, par défaut, `pnpm add` ouvre la porte aux minor (`^`)                  |
-| `minimumReleaseAge`        | `10080` (7 j)   | Refuse les versions publiées depuis moins de 7 jours (cf. ci-dessous)                                                                    |
-| `minimumReleaseAgeExclude` | liste           | Packages exemptés du délai (ex : `next`, `@next/swc-*`) parce qu'on veut leurs hotfix immédiats et qu'on a confiance dans leur pipeline  |
-| `trustPolicy`              | `no-downgrade`  | Refuse les downgrades silencieux d'une dépendance déjà installée (un attaquant ne peut pas rétrograder un transitif vers une CVE connue) |
-| `trustPolicyExclude`       | liste           | Exceptions runtime-safe documentées (ex : `undici-types`, `semver@6` transitif `@babel/core`) — chaque entrée a un commentaire de justif |
-| `overrides`                | map             | Force des versions patchées pour les CVE transitives connues (vite, rollup, minimatch, picomatch, ajv, esbuild, etc.)                    |
-| `allowBuilds`              | map `pkg: true` | Approbation explicite des scripts d'install natifs (pnpm 11+). Sans ça, toute compilation native est silencieusement bloquée             |
+| Option                     | Valeur                | Protection                                                                                                                                                                                             |
+| -------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `savePrefix`               | `~`                   | `pnpm add` écrit une plage tilde (ex : `~4.9.0`), qui n'accepte que les correctifs. Sans ça, par défaut, `pnpm add` ouvre la porte aux minor (`^`)                                                     |
+| `minimumReleaseAge`        | `10080` (7 j)         | Refuse les versions publiées depuis moins de 7 jours (cf. ci-dessous)                                                                                                                                  |
+| `minimumReleaseAgeExclude` | liste                 | Packages exemptés du délai (ex : `next`, `@next/swc-*`) parce qu'on veut leurs hotfix immédiats et qu'on a confiance dans leur pipeline                                                                |
+| `trustPolicy`              | `no-downgrade`        | Refuse une version publiée avec moins de garanties que les précédentes (attestation de provenance disparue, par exemple), signe possible d'un compte de mainteneur compromis                           |
+| `trustPolicyExclude`       | liste                 | Exceptions runtime-safe documentées (ex : `undici-types`, `semver@6` transitif `@babel/core`) — chaque entrée a un commentaire de justif                                                               |
+| `overrides`                | map                   | Force des versions patchées pour les CVE transitives connues (vite, rollup, minimatch, picomatch, ajv, esbuild, etc.)                                                                                  |
+| `allowBuilds`              | map `pkg: true/false` | Seules les dépendances listées à `true` exécutent leurs scripts d'install (`postinstall`…) ; les autres n'en exécutent aucun. C'est ce réglage qui protège l'installation contre un script malveillant |
+| `verifyDepsBeforeRun`      | `false`               | `pnpm <script>` ne vérifie ni ne réinstalle les dépendances avant de lancer le script : aucune installation implicite hors `pnpm install` (cf. [Déploiement Scalingo](#déploiement-scalingo))          |
 
-> **Note pnpm 11** : `onlyBuiltDependencies` (allow-list utilisée en pnpm 9-10) n'est plus respectée par pnpm 11 — c'est `allowBuilds` qui prend le relais. Si on essayait de garder les deux, ça doublonnerait sans rien apporter.
+> **Note pnpm 11** : `onlyBuiltDependencies` (allow-list utilisée en pnpm 9-10) n'est plus respectée par pnpm 11 — c'est `allowBuilds` qui prend le relais. Si on essayait de garder les deux, ça doublonnerait sans rien apporter. Pour la même raison, le projet n'a plus de `.npmrc` : pnpm 11 n'y lisait ni `ignore-scripts` ni `auto-install-peers`. Les peer dependencies manquantes sont donc installées automatiquement (défaut de pnpm), et figées comme les autres par le lockfile.
 
 ### `minimumReleaseAge` — quarantine de 7 jours
 
@@ -622,8 +580,10 @@ C'est la mesure la plus défensive du projet. Concrètement :
 | `sharp`         | Traitement d'images (génération d'images OG, vignettes). Postinstall qui résout des bindings C++. |
 | `unrs-resolver` | Resolver transitif (stack Next/Oxc). Postinstall qui sélectionne le bon binaire natif Rust.       |
 
-Les `@next/swc-*` ne sont **pas** listés ici : ils n'ont pas de script `install`/`postinstall` côté npm (les binaires sont téléchargés directement par pnpm sans hook), donc rien à approuver.
+Les `@next/swc-*` ne sont **pas** listés ici : ils n'ont pas de script `install`/`postinstall` côté npm (les binaires sont téléchargés directement par pnpm sans hook), donc rien à approuver. `@gouvfr/dsfr` est listé à `false` : son script d'install est refusé explicitement, sans quoi pnpm réinscrit une entrée à trancher à chaque install.
 
 ### Lockfile à intégrité SHA-512
 
 `pnpm-lock.yaml` contient un hash `sha512` pour chaque tarball. Même si un mainteneur d'un package que nous utilisons était compromis demain et republiait une version tamperée **avec le même numéro de version**, pnpm refuserait l'install (mismatch d'intégrité). C'est ce qui rend la combinaison `lockfile committé` + `pnpm install --frozen-lockfile` (utilisée en CI) immune aux republications silencieuses.
+
+`pnpm fresh` supprime `pnpm-lock.yaml` et le régénère : les dépendances transitives peuvent changer de version. Ne committer le lockfile qui en sort qu'après avoir relu son diff.
