@@ -281,13 +281,8 @@ export default async function DossierDetailPage({ params }: PageProps) {
       {/* Panneau principal avec fond bleu - container fluid */}
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
-          {demandeursProches && (
-            <div className="fr-mb-4w">
-              <DemandeursProches donnees={demandeursProches} />
-            </div>
-          )}
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : PiecesJustificatives + InfoLogement + GagnezDuTempsTravaux */}
+            {/* Colonne gauche : PiecesJustificatives + InfoLogement */}
             <div className="fr-col-12 fr-col-md-8">
               {latestQualification && (
                 <div className="fr-mb-4w">
@@ -317,10 +312,6 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.id)}
                   agentEditInfo={dossier.agentEditInfo}
                 />
-              </div>
-              <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
-              <div>
-                <GagnezDuTempsTravaux />
               </div>
             </div>
 
@@ -353,6 +344,22 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   ]}
                 />
                 {expertsDuDepartement && <ExpertsDuDepartement departement={expertsDuDepartement} />}
+              </div>
+            </div>
+          </div>
+
+          {/* Pleine largeur, sous le logement : la carte a besoin de place pour être lue. */}
+          {demandeursProches && (
+            <div className="fr-mb-4w">
+              <DemandeursProches donnees={demandeursProches} />
+            </div>
+          )}
+
+          <div className="fr-grid-row fr-grid-row--gutters">
+            <div className="fr-col-12 fr-col-md-8">
+              <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
+              <div>
+                <GagnezDuTempsTravaux />
               </div>
             </div>
           </div>
