@@ -76,11 +76,10 @@ purement cosmétique.
 | 0046 | [Compter les simulations en visites, partout](0046-unite-de-mesure-des-simulations.md)                                                  | Accepté               |
 | 0047 | [Double authentification obligatoire pour les agents ProConnect](0047-double-authentification-proconnect.md)                            | Accepté               |
 | 0048 | [Une adresse partagée entre les deux simulateurs publics](0048-adresse-partagee-entre-simulateurs.md)                                   | Accepté               |
-
-| 0049 | [Adresse transmise par l'intégrateur d'une iframe](0049-adresse-transmise-par-integrateur-iframe.md) | Accepté |
-| 0050 | [Doublons de demandeur à l'invitation](0050-doublons-de-demandeur-a-l-invitation.md) | Accepté |
-| 0051 | [Rôles AMO et Aller-vers portés par la structure](0051-roles-amo-aller-vers-portes-par-la-structure.md) | Accepté |
-| 0052 | [Annuaire des experts RGA, habilitation de structure et ordre neutre](0052-annuaire-des-experts-ordre-neutre.md) | Accepté |
-| 0053 | [Identité et type portés par la structure, une fiche par structure](0053-identite-portee-par-la-structure.md) | Accepté |
+| 0049 | [Adresse transmise par l'intégrateur d'une iframe](0049-adresse-transmise-par-integrateur-iframe.md)                                    | Accepté               |
+| 0050 | [Doublons de demandeur à l'invitation](0050-doublons-de-demandeur-a-l-invitation.md)                                                    | Accepté               |
+| 0051 | [Rôles AMO et Aller-vers portés par la structure](0051-roles-amo-aller-vers-portes-par-la-structure.md)                                 | Accepté               |
+| 0052 | [Annuaire des experts RGA, habilitation de structure et ordre neutre](0052-annuaire-des-experts-ordre-neutre.md)                        | Accepté               |
+| 0053 | [Identité et type portés par la structure, une fiche par structure](0053-identite-portee-par-la-structure.md)                           | Accepté               |
 
 <!-- Ajouter chaque nouvel ADR ici -->

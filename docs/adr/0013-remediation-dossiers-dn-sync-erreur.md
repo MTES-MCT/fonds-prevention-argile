@@ -3,6 +3,10 @@
 **Date** : 2026-06-18
 **Statut** : Accepté
 
+> **Amendé par [ADR-0026](0026-gel-reset-eligibilite-not-found.md)** : « Dossier not found » ne
+> prouve pas qu'un dossier a disparu, un prérempli non déposé répondant de même. Le reset
+> (`fix:eligibilite-sync-error --apply`) est gelé ; la réparation passe par le relink.
+
 ## Contexte
 
 Des parcours restent bloqués en `eligibilite/todo`, affichés **SYNC EN ERREUR** sur

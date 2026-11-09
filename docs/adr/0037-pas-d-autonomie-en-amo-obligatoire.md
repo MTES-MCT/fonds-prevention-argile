@@ -4,6 +4,12 @@
 **Statut** : Accepté
 **Amende** : [ADR-0018](0018-arret-accompagnement-amo.md)
 
+> **Amendé par [ADR-0038](0038-qualification-aller-vers-pivot-accompagnement.md)** :
+> `peutPasserEnAutonomie` lit l'obligation d'AMO seule (`resolveReglesAmoForParcours`), le
+> cumul aller-vers / AMO n'en décidant plus. **Et par
+> [ADR-0042](0042-choix-amo-parmi-plusieurs.md)** : le rattachement ne retombe sur l'AMO du
+> territoire que si elle est seule ; avec plusieurs AMO, il refuse.
+
 ## Contexte
 
 [ADR-0018](0018-arret-accompagnement-amo.md) a ouvert deux chemins vers l'autonomie : le

@@ -3,6 +3,10 @@
 **Date** : 2026-09-04
 **Statut** : Accepté
 
+> **Amendé par [ADR-0045](0045-categorisation-qualitative-vulnerabilite.md)** : le simulateur
+> n'a plus de score. Les colonnes `score_global` et `score_par_categorie` sont supprimées, et
+> l'onglet affiche des points moyens par catégorie au lieu d'un score moyen.
+
 ## Contexte
 
 Le simulateur de vulnérabilité RGA (`/vulnerabilite-rga`, cf. [ADR-0030](0030-simulateur-vulnerabilite-rga.md)) est

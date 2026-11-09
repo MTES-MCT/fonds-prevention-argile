@@ -3,6 +3,12 @@
 **Date** : 2026-07-16
 **Statut** : Accepté
 
+> **Amendé par [ADR-0037](0037-pas-d-autonomie-en-amo-obligatoire.md)** : « Ne plus
+> accompagner » est refusé là où l'AMO est obligatoire, par le même prédicat que l'annulation
+> du demandeur (`peutPasserEnAutonomie`). **Et par
+> [ADR-0044](0044-demande-paiement-diagnostic-initiee-par-amo.md)** : le demandeur ne peut plus
+> annuler après l'éligibilité, et l'AMO ne peut plus arrêter à l'étape diagnostic.
+
 ## Contexte
 
 L'AMO étant devenu facultatif (arrêté du 23 avril 2026), un demandeur accompagné doit

@@ -38,8 +38,10 @@ seule perdait donc de l'information et faussait la couverture territoriale.
   `allersVersId` y sont ceux des lignes de la structure, donc **les mêmes qu'avant** pour tous les
   agents existants. Périmètres, couverture AMO, responsable, Brevo et pages publiques n'en changent pas.
 - Les colonnes `role`, `entreprise_amo_id`, `allers_vers_id` de `agents` deviennent `legacy*` côté
-  TypeScript : **écrites, jamais lues**, pour qu'un retour à la version précédente retrouve des rôles
-  justes. Elles disparaîtront dans une PR de nettoyage, une release plus tard.
+  TypeScript, et restent écrites pour qu'un retour à la version précédente retrouve des rôles justes.
+  Les deux rattachements ne sont **jamais lus** et disparaîtront dans une PR de nettoyage. `role`
+  reste lu pour un compte plateforme, sans structure (`roleStocke` de `resoudreRoleAgent`) : le
+  nettoyage ne lui retirera que les rôles de structure.
 
 ## Options envisagées
 

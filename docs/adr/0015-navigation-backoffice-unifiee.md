@@ -3,6 +3,11 @@
 **Date** : 2026-06-23
 **Statut** : Accepté
 
+> **Amendé par [ADR-0017](0017-ouverture-stats-nationales-agents.md)** : l'onglet
+> « Statistiques » de l'espace agent est supprimé, et la rangée 1 s'ouvre aux AMO et
+> Aller-vers (onglets de statistiques seulement). La matrice ci-dessous n'est plus à jour :
+> voir [RBAC-ROLES § 3.1](../security/RBAC-ROLES.md#31-navigation-backoffice-deux-rangées-pilotées-par-rôle--adr-0015).
+
 ## Contexte
 
 Le backoffice est composé de deux espaces physiquement séparés, chacun avec son

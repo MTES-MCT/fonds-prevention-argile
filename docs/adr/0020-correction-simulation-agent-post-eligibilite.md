@@ -171,8 +171,8 @@ dossier encore `EN_ATTENTE`/`SANS_AMO`. L'asymétrie est volontaire : refuser un
 vu d'un critère éliminatoire ne usurpe l'avis de personne ; le valider le ferait.
 
 **Audit** : ce refus automatique est tracé dans l'historique du dossier
-(`parcours_actions`, type système `refus_non_eligible_auto`, label « Accompagnement refusé
-(non éligible) »), au même titre que les autres actions système (`dossier_reouvert`,
+(`parcours_actions`, type système `eligibilite_refusee_non_eligible`, celui de la décision
+« non éligible » de l'AMO), au même titre que les autres actions système (`dossier_reouvert`,
 `invitation_renvoyee`…). Écrit hors transaction après le commit (best-effort), même
 pattern que `reouvrirDemandeAction`.
 

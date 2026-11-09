@@ -102,4 +102,5 @@ catch` + log console, pas de fallback UI).
 - Composant : `src/shared/components/LaSuiteMessages/LaSuiteMessages.tsx`
 - Layout d'intégration : `src/app/(main)/layout.tsx`
 - Configuration : `src/shared/config/env.config.ts` (`NEXT_PUBLIC_LASUITE_MESSAGES_CHANNEL_ID`)
-- Documentation : `docs/testing/TESTING-SIMULATEUR.md` (checklist QA mise à jour)
+- Documentation : `docs/testing/TESTING-SIMULATEUR.md` (checklist QA mise à jour), supprimé en
+  novembre 2026 : il décrivait l'ancien simulateur en iframe
