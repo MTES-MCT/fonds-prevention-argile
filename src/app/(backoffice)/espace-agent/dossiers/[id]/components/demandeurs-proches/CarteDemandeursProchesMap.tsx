@@ -11,6 +11,7 @@ import type { PositionLogement } from "@/features/backoffice/espace-agent/demand
 // Seuls les points comptent ici : bâtiments et zones d'argile brouilleraient la lecture des distances.
 const COUCHES_MASQUEES = [LAYER_IDS.rnbPoints, LAYER_IDS.rnbFormes, LAYER_IDS.zonesArgile];
 const ZOOM_MAX_CADRAGE = 13;
+const ECART_SUPERPOSES_PX = 30;
 
 export type VoisinSurCarte = Pick<
   DemandeurProche,
@@ -95,6 +96,22 @@ function contenuBulle(voisin: VoisinSurCarte): HTMLElement {
   return bloc;
 }
 
+/** Décalage en pixels de chaque point : deux logements placés au centre d'une même commune se cachaient l'un l'autre. */
+export function decalagesSuperposes(points: { lat: number; lon: number }[]): [number, number][] {
+  const groupes = new Map<string, number[]>();
+  points.forEach((point, indice) => {
+    const cle = `${point.lat},${point.lon}`;
+    groupes.set(cle, [...(groupes.get(cle) ?? []), indice]);
+  });
+  const decalages: [number, number][] = points.map(() => [0, 0]);
+  for (const indices of groupes.values()) {
+    indices.forEach((indice, rang) => {
+      decalages[indice] = [(rang - (indices.length - 1) / 2) * ECART_SUPERPOSES_PX, 0];
+    });
+  }
+  return decalages;
+}
+
 export function CarteDemandeursProchesMap({ origine, voisins }: CarteDemandeursProchesMapProps) {
   const { mapRef, map, isReady, webglIndisponible } = useRgaMap({ center: origine, zoom: 10 });
 
@@ -105,18 +122,29 @@ export function CarteDemandeursProchesMap({ origine, voisins }: CarteDemandeursP
       if (map.getLayer(couche)) map.setLayoutProperty(couche, "visibility", "none");
     }
 
-    const marqueurs = [new maplibregl.Marker({ element: marqueurOrigine() }).setLngLat([origine.lon, origine.lat])];
-    for (const voisin of voisins) {
+    const [decalageOrigine, ...decalagesVoisins] = decalagesSuperposes([origine, ...voisins]);
+    const marqueurs = [
+      new maplibregl.Marker({ element: marqueurOrigine(), offset: decalageOrigine }).setLngLat([
+        origine.lon,
+        origine.lat,
+      ]),
+    ];
+    voisins.forEach((voisin, indice) => {
+      const [dx, dy] = decalagesVoisins[indice];
       const element = marqueurVoisin(voisin);
-      const bulle = new maplibregl.Popup({ offset: 18, closeButton: true }).setDOMContent(contenuBulle(voisin));
+      const bulle = new maplibregl.Popup({ offset: [dx, dy - 18], closeButton: true }).setDOMContent(
+        contenuBulle(voisin)
+      );
       element.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           element.click();
         }
       });
-      marqueurs.push(new maplibregl.Marker({ element }).setLngLat([voisin.lon, voisin.lat]).setPopup(bulle));
-    }
+      marqueurs.push(
+        new maplibregl.Marker({ element, offset: [dx, dy] }).setLngLat([voisin.lon, voisin.lat]).setPopup(bulle)
+      );
+    });
     marqueurs.forEach((marqueur) => marqueur.addTo(map));
 
     const bornes = new maplibregl.LngLatBounds([origine.lon, origine.lat], [origine.lon, origine.lat]);

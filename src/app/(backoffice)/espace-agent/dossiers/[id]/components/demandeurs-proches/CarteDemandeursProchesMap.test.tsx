@@ -6,7 +6,7 @@ vi.mock("@/features/rga-map", () => ({ useRgaMap }));
 vi.mock("maplibre-gl", () => ({}));
 vi.mock("maplibre-gl/dist/maplibre-gl.css", () => ({}));
 
-import { CarteDemandeursProchesMap } from "./CarteDemandeursProchesMap";
+import { CarteDemandeursProchesMap, decalagesSuperposes } from "./CarteDemandeursProchesMap";
 
 const ORIGINE = { lat: 46.81, lon: 1.69, approximative: false };
 
@@ -27,5 +27,18 @@ describe("CarteDemandeursProchesMap", () => {
 
     expect(useRgaMap).toHaveBeenCalledWith({ center: ORIGINE, zoom: 10 });
     expect(screen.getByRole("region", { name: /demandeurs proches/ })).toBeInTheDocument();
+  });
+});
+
+describe("decalagesSuperposes", () => {
+  it("écarte côte à côte les points d'une même position et laisse les autres en place", () => {
+    const centre = { lat: 46.8023, lon: 1.6903 };
+
+    expect(decalagesSuperposes([{ lat: 46.81, lon: 1.69 }, centre, centre, { ...centre }])).toEqual([
+      [0, 0],
+      [-30, 0],
+      [0, 0],
+      [30, 0],
+    ]);
   });
 });
