@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { db } from "../client";
-import { structures } from "../schema";
 import { AllersVersRepository } from "./allers-vers.repository";
 import { structuresRepository } from "./structures.repository";
 import { agentsRepository } from "./agents.repository";

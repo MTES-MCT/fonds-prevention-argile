@@ -1,6 +1,6 @@
-import { and, eq, inArray, isNull, notExists, SQL, sql } from "drizzle-orm";
+import { eq, inArray, isNull, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import { agents, allersVers, allersVersDepartements, allersVersEpci, structures } from "../schema";
+import { allersVers, allersVersDepartements, allersVersEpci, structures } from "../schema";
 import { structuresRepository, type StructuresExecutor } from "./structures.repository";
 import { agentsRepository } from "./agents.repository";
 import { variantesCodeDepartement } from "@/shared/constants/departements.constants";

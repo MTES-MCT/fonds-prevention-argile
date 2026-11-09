@@ -1,13 +1,6 @@
-import { and, eq, inArray, notExists, SQL, sql } from "drizzle-orm";
+import { eq, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import {
-  agents,
-  entreprisesAmo,
-  entreprisesAmoCommunes,
-  entreprisesAmoEpci,
-  parcoursAmoValidations,
-  structures,
-} from "../schema";
+import { entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci, parcoursAmoValidations } from "../schema";
 import { structuresRepository, type StructuresExecutor } from "./structures.repository";
 import { agentsRepository } from "./agents.repository";
 import type { Amo } from "@/features/parcours/amo/domain/entities";

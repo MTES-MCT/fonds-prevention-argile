@@ -1,8 +1,4 @@
-import { db } from "@/shared/database/client";
 import { expertsRepository } from "@/shared/database/repositories/experts.repository";
-import { trierExperts, type ExpertSaisie } from "../domain/regles-experts";
-import { versAnnuaire, versGestion } from "../domain/projections-experts";
-import type { ExpertAnnuaire, ExpertGestion } from "../domain/experts.types";
 
 /** Refus métier, dont le message peut être montré tel quel. */
 export class RefusOperationExpert extends Error {}
