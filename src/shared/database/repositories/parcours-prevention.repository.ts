@@ -1,4 +1,4 @@
-import { eq, sql, SQL, desc, asc, and, isNull, isNotNull, gte } from "drizzle-orm";
+import { eq, sql, SQL, desc, asc, and, inArray, isNull, isNotNull, gte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { parcoursPrevention } from "../schema/parcours-prevention";
@@ -445,6 +445,9 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     perimetre: PerimetreListing,
     filters?: {
       step?: Step;
+      /** Encart des demandeurs proches : filtrer en base allège le périmètre national. */
+      steps?: readonly Step[];
+      nonArchives?: boolean;
       search?: string;
     }
   ) {
@@ -459,6 +462,13 @@ export class ParcoursPreventionRepository extends BaseRepository<ParcoursPrevent
     const conditions: SQL[] = [];
     if (filters?.step) {
       conditions.push(eq(parcoursPrevention.currentStep, filters.step));
+    }
+    if (filters?.steps) {
+      if (filters.steps.length === 0) return [];
+      conditions.push(inArray(parcoursPrevention.currentStep, [...filters.steps]));
+    }
+    if (filters?.nonArchives) {
+      conditions.push(isNull(parcoursPrevention.archivedAt));
     }
     if (filters?.search) {
       conditions.push(

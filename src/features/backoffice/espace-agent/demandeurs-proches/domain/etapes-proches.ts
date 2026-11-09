@@ -16,6 +16,17 @@ const ETAPES_PROPOSEES: Record<Step, readonly Step[]> = {
   [Step.FACTURES]: [],
 };
 
+const LIBELLE_ETAPES: Partial<Record<Step, string>> = {
+  [Step.INVITATION]: "au choix de l'AMO",
+  [Step.CHOIX_AMO]: "au choix de l'AMO",
+  [Step.ELIGIBILITE]: "en éligibilité ou au choix de l'AMO",
+  [Step.DIAGNOSTIC]: "au diagnostic ou en éligibilité",
+};
+
+export function libelleEtapesProposees(step: Step): string {
+  return LIBELLE_ETAPES[step] ?? "";
+}
+
 /** Étapes des voisins proposés : celle du dossier consulté et celle juste avant. */
 export function etapesProposees(step: Step): readonly Step[] {
   return ETAPES_PROPOSEES[step];
