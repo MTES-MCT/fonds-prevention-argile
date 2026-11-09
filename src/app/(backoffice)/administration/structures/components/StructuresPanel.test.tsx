@@ -127,19 +127,21 @@ describe("StructuresPanel", () => {
     await nomsAffiches();
     const creer = screen.getByRole("button", { name: "Créer la structure", hidden: true });
 
-    await userEvent.type(screen.getByLabelText(/^Nom/), "Adil 18");
+    await userEvent.type(screen.getByLabelText(/^Nom/), "Adil 03");
     await userEvent.click(screen.getByRole("radio", { name: "Aller-vers", hidden: true }));
     expect(creer).toBeDisabled();
-    await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@adil18.test");
-    await choisir(screen.getByRole("combobox", { name: /^Départements/, hidden: true }), "cher", "36");
+    await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@adil03.test");
+    const departements = screen.getByRole("combobox", { name: /^Départements/, hidden: true });
+    // Le Cher n'est pas dans le dispositif : il n'est pas proposé, et Entrée ne choisit rien.
+    await choisir(departements, "cher", "allier", "36");
     await choisir(screen.getByRole("combobox", { name: /^EPCI/, hidden: true }), "issoudun");
     await userEvent.click(creer);
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/administration/structures/nouvelle"));
     expect(creerStructureAction).toHaveBeenCalledWith({
-      identite: { nom: "Adil 18", siret: "", adresse: "", telephone: "", horaires: "" },
+      identite: { nom: "Adil 03", siret: "", adresse: "", telephone: "", horaires: "" },
       habilitation: "allersVers",
-      saisie: { emails: "contact@adil18.test", departements: ["18", "36"], epci: ["243600236"] },
+      saisie: { emails: "contact@adil03.test", departements: ["03", "36"], epci: ["243600236"] },
     });
   });
 
@@ -148,10 +150,10 @@ describe("StructuresPanel", () => {
     await nomsAffiches();
     const creer = screen.getByRole("button", { name: "Créer la structure", hidden: true });
 
-    await userEvent.type(screen.getByLabelText(/^Nom/), "Soliha Cher");
+    await userEvent.type(screen.getByLabelText(/^Nom/), "Soliha Indre");
     await userEvent.click(screen.getByRole("radio", { name: "AMO", hidden: true }));
-    await choisir(screen.getByRole("combobox", { name: /^Départements/, hidden: true }), "Cher 18");
-    await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@soliha18.test");
+    await choisir(screen.getByRole("combobox", { name: /^Départements/, hidden: true }), "Indre 36");
+    await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@soliha36.test");
     expect(creer).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText(/^SIRET/), "12345678900018");

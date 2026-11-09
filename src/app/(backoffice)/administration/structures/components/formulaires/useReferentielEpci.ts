@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getReferentielEpciAction, type EpciReferentiel } from "@/features/backoffice";
+import { isDepartementEligible } from "@/shared/constants/rga.constants";
 import type { ActionResult } from "@/shared/types";
 import type { OptionSelect } from "./SelectMultiple";
 
@@ -42,13 +43,14 @@ export function useNomsEpci(epcis: EpciReferentiel[]): (code: string) => string 
   return (code) => noms.get(code) ?? null;
 }
 
-// Ceux des départements choisis d'abord : une habilitation couvre d'ordinaire ses propres départements.
+// Seuls les EPCI qui touchent un département du dispositif ; ceux des départements choisis d'abord.
 export function optionsEpci(epcis: EpciReferentiel[], departements: string[]): OptionSelect[] {
   const option = (epci: EpciReferentiel): OptionSelect => ({
     valeur: epci.code,
     libelle: `${epci.nom} (${epci.codesDepartements.join(", ")})`,
     motsCles: epci.code,
   });
+  const dansLeDispositif = epcis.filter((epci) => epci.codesDepartements.some(isDepartementEligible));
   const dedans = (epci: EpciReferentiel) => epci.codesDepartements.some((code) => departements.includes(code));
-  return [...epcis.filter(dedans), ...epcis.filter((epci) => !dedans(epci))].map(option);
+  return [...dansLeDispositif.filter(dedans), ...dansLeDispositif.filter((epci) => !dedans(epci))].map(option);
 }

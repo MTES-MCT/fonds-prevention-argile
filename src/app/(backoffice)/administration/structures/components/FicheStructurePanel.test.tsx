@@ -32,7 +32,7 @@ const AGENTS = [
   { id: "ag-2", nomComplet: "Jean Dupont", email: "jean@soliha.test", desactive: true },
 ];
 
-const ALLERS_VERS = { id: "av-1", emails: ["av@soliha.test"], departements: ["36"], epci: [] };
+const ALLERS_VERS = { id: "av-1", emails: ["av@soliha.test"], departements: ["36", "3"], epci: [] };
 
 const EXPERT_ANNUAIRE: ExpertAnnuaire = {
   id: "ex-1",
@@ -120,7 +120,14 @@ describe("FicheStructurePanel", () => {
 
   it("montre au super-administrateur l'identité, les habilitations et les agents nommés", async () => {
     await afficher(
-      accompagnement({ amo: { ...accompagnement().amo!, epci: ["243600236", "999999999"] }, allersVers: ALLERS_VERS }),
+      accompagnement({
+        amo: {
+          ...accompagnement().amo!,
+          departements: "Indre 36, Alpes-Maritimes 06",
+          epci: ["243600236", "999999999"],
+        },
+        allersVers: ALLERS_VERS,
+      }),
       UserRole.SUPER_ADMINISTRATEUR
     );
 
@@ -133,6 +140,9 @@ describe("FicheStructurePanel", () => {
 
     const amo = bloc("Habilitation AMO");
     expect(within(amo).getByText("36 - Indre")).toBeInTheDocument();
+    // Une couverture stockée « 3 » reste l'Allier, du dispositif ; un département hors du dispositif est signalé.
+    expect(within(bloc("Habilitation Aller-vers")).getByText("03 - Allier")).toBeInTheDocument();
+    expect(within(amo).getByText("06 - Alpes-Maritimes (hors dispositif)")).toBeInTheDocument();
     // L'EPCI est nommé par l'API Géo ; un code qu'elle ne connaît pas reste lisible.
     expect(await within(amo).findByText("CC du Pays d'Issoudun")).toBeInTheDocument();
     expect(within(amo).getByText("EPCI inconnu de l'API Géo")).toBeInTheDocument();

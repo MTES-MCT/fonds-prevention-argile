@@ -3,7 +3,7 @@
 import { codesDepartementsAmo, texteDepartementsAmo, type HabilitationAmoFiche } from "@/features/backoffice";
 import { parseListe } from "@/shared/utils/liste.utils";
 import SelectMultiple from "./SelectMultiple";
-import { OPTIONS_DEPARTEMENTS } from "./options-departements";
+import { libelleDepartementHorsDispositif, OPTIONS_DEPARTEMENTS } from "./options-departements";
 import { optionsEpci, useReferentielEpci } from "./useReferentielEpci";
 
 export interface AmoFormulaire {
@@ -59,6 +59,7 @@ export default function ChampsAmo({ idPrefix, valeur, onChange, isLoading = fals
         id={`${idPrefix}-departements`}
         label="Départements"
         options={OPTIONS_DEPARTEMENTS}
+        libelleInconnu={libelleDepartementHorsDispositif}
         valeurs={valeur.departements}
         onChange={(departements) => onChange({ ...valeur, departements })}
         placeholder="Rechercher un département par nom ou numéro"

@@ -10,7 +10,8 @@ import {
   type HabilitationAmoFiche,
   type IdentiteStructure,
 } from "@/features/backoffice";
-import { getDepartementName } from "@/shared/constants/departements.constants";
+import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
+import { isDepartementEligible } from "@/shared/constants/rga.constants";
 import { BlocFiche, Champ, ListeChamps, NonRenseigne, Rubrique } from "./BlocFiche";
 
 interface BoutonModaleProps {
@@ -59,10 +60,12 @@ function EtiquettesDepartements({ codes }: { codes: string[] }) {
   if (codes.length === 0) return <NonRenseigne texte="Aucun" />;
   return (
     <ul className="fr-tags-group fr-mb-0">
-      {codes.map((code) => (
+      {/* Une couverture Aller-vers peut stocker « 3 » : le dispositif se lit au format officiel. */}
+      {[...new Set(codes.map(toOfficialCodeDepartement))].map((code) => (
         <li key={code}>
           <p className="fr-tag fr-tag--sm fr-mb-0">
             {code} - {getDepartementName(code)}
+            {!isDepartementEligible(code) && " (hors dispositif)"}
           </p>
         </li>
       ))}

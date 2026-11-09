@@ -3,7 +3,7 @@
 import type { HabilitationAllersVersFiche } from "@/features/backoffice";
 import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import SelectMultiple from "./SelectMultiple";
-import { OPTIONS_DEPARTEMENTS } from "./options-departements";
+import { libelleDepartementHorsDispositif, OPTIONS_DEPARTEMENTS } from "./options-departements";
 import { optionsEpci, useReferentielEpci } from "./useReferentielEpci";
 
 export interface AllersVersFormulaire {
@@ -74,6 +74,7 @@ export default function ChampsAllersVers({ idPrefix, valeur, onChange, isLoading
           </>
         }
         options={OPTIONS_DEPARTEMENTS}
+        libelleInconnu={libelleDepartementHorsDispositif}
         valeurs={valeur.departements}
         onChange={(departements) => onChange({ ...valeur, departements })}
         placeholder="Rechercher un département par nom ou numéro"

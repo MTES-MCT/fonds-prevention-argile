@@ -11,12 +11,14 @@ const EPCIS = [
 ];
 
 describe("optionsEpci", () => {
-  it("propose d'abord les EPCI des départements choisis, dans l'ordre du référentiel", () => {
-    expect(optionsEpci(EPCIS, ["36"]).map((option) => option.valeur)).toEqual(["243600236", "200068872", "200054781"]);
+  it("ne propose que les EPCI du dispositif, ceux des départements choisis d'abord", () => {
+    const epcis = [{ code: "200071082", nom: "CA Montluçon Communauté", codesDepartements: ["03"] }, ...EPCIS];
+    // Bourges est dans le Cher, hors du dispositif ; Éguzon touche l'Indre, il reste.
+    expect(optionsEpci(epcis, ["36"]).map((option) => option.valeur)).toEqual(["243600236", "200068872", "200071082"]);
   });
 
   it("nomme chaque EPCI avec ses départements et le retrouve par son code SIREN", () => {
-    expect(optionsEpci(EPCIS, [])[2]).toEqual({
+    expect(optionsEpci(EPCIS, [])[1]).toEqual({
       valeur: "200068872",
       libelle: "CC Éguzon - Argenton (36, 23)",
       motsCles: "200068872",

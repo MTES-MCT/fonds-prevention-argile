@@ -1,7 +1,11 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { DEPARTEMENTS_OFFICIELS, type ExpertGestion } from "@/features/backoffice";
+import type { ExpertGestion } from "@/features/backoffice";
+import { getDepartementName } from "@/shared/constants/departements.constants";
+import { getAllDepartementsEligibles, isDepartementEligible } from "@/shared/constants/rga.constants";
+
+const DEPARTEMENTS_DISPOSITIF = getAllDepartementsEligibles();
 
 // Raison sociale et SIRET sont ceux de la structure : ils se modifient avec son identité.
 export interface ExpertFormulaire {
@@ -132,7 +136,13 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
                     disabled={isLoading}
                     onChange={(e) => modifierDepartement(index, "code", e.target.value)}>
                     <option value="">Sélectionner</option>
-                    {DEPARTEMENTS_OFFICIELS.map((d) => (
+                    {/* Un département déjà enregistré hors du dispositif reste lisible, pour pouvoir le changer. */}
+                    {departement.code && !isDepartementEligible(departement.code) && (
+                      <option value={departement.code}>
+                        {departement.code} - {getDepartementName(departement.code)} (hors dispositif)
+                      </option>
+                    )}
+                    {DEPARTEMENTS_DISPOSITIF.map((d) => (
                       <option key={d.code} value={d.code}>
                         {d.code} - {d.nom}
                       </option>

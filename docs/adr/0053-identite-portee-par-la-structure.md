@@ -53,9 +53,12 @@ rôle, et les fichiers arrivent par rôle (liste des AMO, des Aller-vers, réfé
   par habilitation, agents), et les trois onglets d'import. Les pages AMO, Aller-vers et Experts
   redirigent vers la liste filtrée. Renommer, fusionner et détacher disparaissent.
 - **Territoire saisi dans des listes**, à l'écran : départements et EPCI se choisissent dans des
-  listes déroulantes à recherche. Les EPCI viennent de l'API Géo (nom, départements), mise en cache
+  listes déroulantes à recherche, bornées aux 11 départements du dispositif (`DEPARTEMENTS_ELIGIBLES_RGA`)
+  et aux EPCI qui en touchent un. Un département déjà enregistré hors du dispositif reste affiché,
+  signalé, et peut être retiré. Les EPCI viennent de l'API Géo (nom, départements), mise en cache
   une journée ; elle sert aussi à les nommer sur la fiche. Les départements de l'AMO restent stockés
-  en texte, écrit au format « Indre 36, Cher 18 » que lit sa couverture.
+  en texte, écrit au format « Indre 36, Allier 03 » que lit sa couverture. Le serveur et les imports,
+  eux, acceptent encore tout département.
 - Droits : administrateur et super-administrateur. Ajouter ou retirer une habilitation AMO ou
   Aller-vers sur une structure **qui a des agents** change leurs rôles : réservé au
   super-administrateur, à l'écran comme à l'import. Tout ce qui touche aux experts reste au
