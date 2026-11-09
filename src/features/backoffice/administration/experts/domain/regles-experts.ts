@@ -98,13 +98,46 @@ export function peutConsulterDepartement(perimetre: PerimetreExperts, code: stri
   return false;
 }
 
-/** Département affiché par défaut : celui demandé s'il est consultable, sinon le premier du territoire. */
-export function departementAffiche(perimetre: PerimetreExperts, demande: string | null | undefined): string | null {
+/** Ce que montre l'annuaire : un département, les départements du territoire de l'agent, ou tous. */
+export type VueAnnuaire = { type: "departement"; code: string } | { type: "territoire" } | { type: "tous" };
+
+/** Valeurs du paramètre `departement` de l'URL pour les deux vues groupées. */
+export const VUE_TOUS = "tous";
+export const VUE_TERRITOIRE = "territoire";
+
+function territoireDe(perimetre: PerimetreExperts): string[] {
+  if (perimetre.type === "territoire") return perimetre.departements;
+  if (perimetre.type === "tous") return perimetre.departementsParDefaut;
+  return [];
+}
+
+// « Votre territoire » n'a de sens que pour un agent qui en sort et qui couvre plusieurs départements.
+function territoireRegroupable(perimetre: PerimetreExperts): boolean {
+  return perimetre.type === "tous" && perimetre.departementsParDefaut.length > 1;
+}
+
+/** Vue demandée si elle est permise ; sinon le territoire de l'agent, ou tous les départements s'il n'en a pas. */
+export function vueAffichee(perimetre: PerimetreExperts, demande: string | null | undefined): VueAnnuaire | null {
+  if (perimetre.type === "aucun") return null;
+  if (demande === VUE_TOUS) return { type: "tous" };
+  if (demande === VUE_TERRITOIRE && territoireRegroupable(perimetre)) return { type: "territoire" };
   const code = demande ? codeDepartementConnu(demande) : null;
-  if (code && peutConsulterDepartement(perimetre, code)) return code;
-  if (perimetre.type === "territoire") return perimetre.departements[0] ?? null;
-  if (perimetre.type === "tous") return perimetre.departementsParDefaut[0] ?? null;
-  return null;
+  if (code && peutConsulterDepartement(perimetre, code)) return { type: "departement", code };
+
+  const territoire = territoireDe(perimetre);
+  if (territoire.length === 1) return { type: "departement", code: territoire[0] };
+  return territoireRegroupable(perimetre) ? { type: "territoire" } : { type: "tous" };
+}
+
+/** Départements montrés par la vue ; « tous » se limite, pour un périmètre national, à ceux qui ont un expert. */
+export function departementsDeLaVue(
+  perimetre: PerimetreExperts,
+  vue: VueAnnuaire,
+  departementsAvecExperts: readonly string[]
+): string[] {
+  if (vue.type === "departement") return [vue.code];
+  if (vue.type === "territoire" || perimetre.type === "territoire") return territoireDe(perimetre);
+  return [...departementsAvecExperts].sort((a, b) => a.localeCompare(b, "fr", { numeric: true }));
 }
 
 /** Ordre neutre et stable : alphabétique sur la raison sociale, sans accent ni casse (ADR-0052). */

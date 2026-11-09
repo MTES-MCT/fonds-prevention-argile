@@ -4,23 +4,33 @@ import { BackofficePermission } from "@/features/auth/permissions/domain/value-o
 import {
   annuaireDuDepartement,
   codeDepartementConnu,
-  departementAffiche,
   DEPARTEMENTS_OFFICIELS,
+  departementsDeLaVue,
   peutConsulterDepartement,
   perimetreExperts,
+  vueAffichee,
   type ExpertAnnuaire,
   type PerimetreExperts,
+  type VueAnnuaire,
 } from "@/features/backoffice/administration/experts";
 import { expertsRepository } from "@/shared/database/repositories/experts.repository";
 import { getDepartementName } from "@/shared/constants/departements.constants";
 import type { AgentAvecRole } from "@/shared/database/schema/agents";
 import type { UserRole } from "@/shared/domain/value-objects";
 
-export interface AnnuaireExpertsAgent {
-  departement: { code: string; nom: string } | null;
-  departementsConsultables: readonly { code: string; nom: string }[];
-  departementsDuTerritoire: string[];
+export interface SectionAnnuaire {
+  code: string;
+  nom: string;
   experts: ExpertAnnuaire[];
+}
+
+export interface AnnuaireExpertsAgent {
+  vue: VueAnnuaire | null;
+  // « territoire » pour l'analyste, borné à ses départements ; « tous » sinon.
+  perimetre: PerimetreExperts["type"];
+  sections: SectionAnnuaire[];
+  departementsConsultables: readonly { code: string; nom: string; aDesExperts: boolean }[];
+  departementsDuTerritoire: string[];
 }
 
 async function perimetreDe(agent: AgentAvecRole): Promise<PerimetreExperts> {
@@ -34,30 +44,43 @@ async function perimetreDe(agent: AgentAvecRole): Promise<PerimetreExperts> {
   return perimetreExperts(agent.role, scope.departements);
 }
 
-/** Annuaire d'un département, le territoire de l'agent par défaut ; l'analyste ne sort pas du sien. */
+/** Annuaire d'un département ou de plusieurs, regroupés ; le territoire de l'agent par défaut. */
 export async function chargerAnnuaireExperts(
   agent: AgentAvecRole,
-  departementDemande: string | null | undefined
+  vueDemandee: string | null | undefined
 ): Promise<AnnuaireExpertsAgent> {
   const perimetre = await perimetreDe(agent);
-  const code = departementAffiche(perimetre, departementDemande);
-  const experts = code ? annuaireDuDepartement(await expertsRepository.findActifsDuDepartement(code), code) : [];
+  const vue = vueAffichee(perimetre, vueDemandee);
+  if (perimetre.type === "aucun" || !vue) {
+    return {
+      vue: null,
+      perimetre: perimetre.type,
+      sections: [],
+      departementsConsultables: [],
+      departementsDuTerritoire: [],
+    };
+  }
+
+  // Une liste de quelques dizaines d'experts : un seul aller-retour sert la vue et les mentions « aucun expert ».
+  const actifs = await expertsRepository.findActifs();
+  const avecExperts = [...new Set(actifs.flatMap((expert) => expert.departements.map((d) => d.codeDepartement)))];
+  const sections = departementsDeLaVue(perimetre, vue, avecExperts).map((code) => ({
+    code,
+    nom: getDepartementName(code),
+    experts: annuaireDuDepartement(actifs, code),
+  }));
+
+  const consultables =
+    perimetre.type === "tous"
+      ? DEPARTEMENTS_OFFICIELS
+      : perimetre.departements.map((code) => ({ code, nom: getDepartementName(code) }));
 
   return {
-    departement: code ? { code, nom: getDepartementName(code) } : null,
-    departementsConsultables:
-      perimetre.type === "tous"
-        ? DEPARTEMENTS_OFFICIELS
-        : perimetre.type === "territoire"
-          ? perimetre.departements.map((d) => ({ code: d, nom: getDepartementName(d) }))
-          : [],
-    departementsDuTerritoire:
-      perimetre.type === "tous"
-        ? perimetre.departementsParDefaut
-        : perimetre.type === "territoire"
-          ? perimetre.departements
-          : [],
-    experts,
+    vue,
+    perimetre: perimetre.type,
+    sections,
+    departementsConsultables: consultables.map((d) => ({ ...d, aDesExperts: avecExperts.includes(d.code) })),
+    departementsDuTerritoire: perimetre.type === "tous" ? perimetre.departementsParDefaut : perimetre.departements,
   };
 }
 

@@ -7,11 +7,13 @@ interface CarteExpertProps {
   codeDepartement: string;
   /** Petite carte grise à titre h4, pour une carte posée dans une autre carte. */
   compacte?: boolean;
+  /** Niveau du titre, quand la carte vient sous un titre de département. */
+  niveauTitre?: "h3" | "h4";
 }
 
 /** Carte d'un expert : aucune variante ne doit en distinguer un des autres. */
-export function CarteExpert({ expert, codeDepartement, compacte = false }: CarteExpertProps) {
-  const Titre = compacte ? "h4" : "h3";
+export function CarteExpert({ expert, codeDepartement, compacte = false, niveauTitre }: CarteExpertProps) {
+  const Titre = niveauTitre ?? (compacte ? "h4" : "h3");
   return (
     <div className={`fr-card fr-card--no-arrow${compacte ? " fr-card--sm fr-card--grey fr-card--no-border" : ""}`}>
       <div className="fr-card__body">

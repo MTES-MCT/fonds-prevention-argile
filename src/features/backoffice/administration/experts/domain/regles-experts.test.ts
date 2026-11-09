@@ -1,14 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { UserRole } from "@/shared/domain/value-objects";
 import {
-  departementAffiche,
   DEPARTEMENTS_OFFICIELS,
+  departementsDeLaVue,
   estSiretValide,
   expertSchema,
   lireDepartements,
   perimetreExperts,
   peutConsulterDepartement,
   trierExperts,
+  vueAffichee,
 } from "./regles-experts";
 
 describe("estSiretValide", () => {
@@ -62,16 +63,50 @@ describe("perimetreExperts", () => {
   });
 });
 
-describe("departementAffiche", () => {
-  it("ramène l'analyste sur son territoire quand il demande un autre département", () => {
-    expect(departementAffiche(perimetreExperts(UserRole.ANALYSTE, ["36"]), "63")).toBe("36");
+describe("vueAffichee", () => {
+  it("ouvre tous les départements au super-administrateur, qui n'a pas de territoire", () => {
+    expect(vueAffichee(perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []), undefined)).toEqual({ type: "tous" });
   });
 
-  it("affiche le département demandé à un agent AMO, son territoire sinon", () => {
+  it("ouvre l'agent sur son département, ou sur son territoire regroupé s'il en couvre plusieurs", () => {
+    expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36"]), undefined)).toEqual({ type: "departement", code: "36" });
+    expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36", "18"]), undefined)).toEqual({ type: "territoire" });
+    // Un Aller-vers couvert seulement par des EPCI n'a aucun département : il voit tout plutôt qu'une page vide.
+    expect(vueAffichee(perimetreExperts(UserRole.ALLERS_VERS, []), undefined)).toEqual({ type: "tous" });
+  });
+
+  it("affiche la vue demandée si elle est permise, le territoire sinon", () => {
     const perimetre = perimetreExperts(UserRole.AMO, ["36"]);
-    expect(departementAffiche(perimetre, "63")).toBe("63");
-    expect(departementAffiche(perimetre, undefined)).toBe("36");
-    expect(departementAffiche(perimetre, "inconnu")).toBe("36");
+    expect(vueAffichee(perimetre, "63")).toEqual({ type: "departement", code: "63" });
+    expect(vueAffichee(perimetre, "tous")).toEqual({ type: "tous" });
+    // Un seul département : pas de vue « territoire », il est affiché seul.
+    expect(vueAffichee(perimetre, "territoire")).toEqual({ type: "departement", code: "36" });
+    expect(vueAffichee(perimetre, "inconnu")).toEqual({ type: "departement", code: "36" });
+  });
+
+  it("ramène l'analyste sur son territoire quand il demande un autre département", () => {
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36"]), "63")).toEqual({ type: "departement", code: "36" });
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36", "18"]), undefined)).toEqual({ type: "tous" });
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, []), "tous")).toBeNull();
+  });
+});
+
+describe("departementsDeLaVue", () => {
+  const avecExperts = ["59", "03", "36"];
+
+  it("limite « tous » d'un périmètre national aux départements qui ont un expert, par numéro", () => {
+    expect(
+      departementsDeLaVue(perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []), { type: "tous" }, avecExperts)
+    ).toEqual(["03", "36", "59"]);
+  });
+
+  it("garde les départements du territoire, même sans expert, pour le dire", () => {
+    expect(
+      departementsDeLaVue(perimetreExperts(UserRole.AMO, ["36", "18"]), { type: "territoire" }, avecExperts)
+    ).toEqual(["36", "18"]);
+    expect(departementsDeLaVue(perimetreExperts(UserRole.ANALYSTE, ["18"]), { type: "tous" }, avecExperts)).toEqual([
+      "18",
+    ]);
   });
 });
 

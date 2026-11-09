@@ -627,7 +627,7 @@ Les structures de l'administration, experts compris, sont réservées au super-a
 l'administrateur par `checkRoleAccess` : un analyste, qui a `EXPERTS_READ`, n'y lirait sinon des
 départements hors de son territoire. Un expert désactivé n'existe que pour le super-administrateur. Côté espace agent, la page `/espace-agent/experts`
 et l'encart du détail dossier ramènent l'analyste sur son territoire (`perimetreExperts`), quel que soit
-le département demandé dans l'URL.
+le département demandé dans l'URL ; sa vue « tous » se borne à ses départements.
 
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 

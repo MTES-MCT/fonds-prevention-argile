@@ -8,10 +8,18 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 import { SelecteurDepartementExperts } from "./SelecteurDepartementExperts";
 
 const departements = [
-  { code: "18", nom: "Cher" },
-  { code: "36", nom: "Indre" },
-  { code: "59", nom: "Nord" },
+  { code: "18", nom: "Cher", aDesExperts: false },
+  { code: "36", nom: "Indre", aDesExperts: true },
+  { code: "59", nom: "Nord", aDesExperts: true },
 ];
+
+const PROPS = {
+  valeurActuelle: "36",
+  departementsConsultables: departements,
+  departementsDuTerritoire: ["36"],
+  libelleTous: "Tous les départements",
+  territoireRegroupable: false,
+};
 
 describe("SelecteurDepartementExperts", () => {
   beforeEach(() => {
@@ -19,13 +27,7 @@ describe("SelecteurDepartementExperts", () => {
   });
 
   it("charge le département dès qu'il est choisi, sans bouton", async () => {
-    render(
-      <SelecteurDepartementExperts
-        departementActuel="36"
-        departementsConsultables={departements}
-        departementsDuTerritoire={["36"]}
-      />
-    );
+    render(<SelecteurDepartementExperts {...PROPS} />);
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     await userEvent.selectOptions(screen.getByLabelText("Département"), "59");
@@ -33,13 +35,7 @@ describe("SelecteurDepartementExperts", () => {
   });
 
   it("place le territoire de l'agent en tête, à part des autres départements", () => {
-    render(
-      <SelecteurDepartementExperts
-        departementActuel="36"
-        departementsConsultables={departements}
-        departementsDuTerritoire={["36"]}
-      />
-    );
+    render(<SelecteurDepartementExperts {...PROPS} />);
 
     const territoire = screen.getByRole("group", { name: "Votre territoire" });
     expect(
@@ -52,19 +48,36 @@ describe("SelecteurDepartementExperts", () => {
       within(autres)
         .getAllByRole("option")
         .map((o) => o.textContent)
-    ).toEqual(["18 - Cher", "59 - Nord"]);
+    ).toEqual(["18 - Cher (aucun expert)", "59 - Nord"]);
   });
 
-  it("ne fait pas de groupes quand l'agent ne sort pas de son territoire", () => {
+  it("propose en tête tous les départements, et le territoire regroupé d'un agent qui en couvre plusieurs", async () => {
     render(
       <SelecteurDepartementExperts
-        departementActuel="36"
-        departementsConsultables={[{ code: "36", nom: "Indre" }]}
-        departementsDuTerritoire={["36"]}
+        {...PROPS}
+        valeurActuelle="territoire"
+        departementsDuTerritoire={["36", "59"]}
+        territoireRegroupable
+      />
+    );
+
+    const options = screen.getAllByRole("option").map((o) => o.textContent);
+    expect(options.slice(0, 2)).toEqual(["Tous les départements", "Votre territoire (2 départements)"]);
+    expect(screen.getByLabelText("Département")).toHaveValue("territoire");
+
+    await userEvent.selectOptions(screen.getByLabelText("Département"), "tous");
+    expect(replace).toHaveBeenCalledWith("/espace-agent/experts?departement=tous", { scroll: false });
+  });
+
+  it("ne fait ni groupes ni « tous » quand l'agent n'a qu'un département", () => {
+    render(
+      <SelecteurDepartementExperts
+        {...PROPS}
+        departementsConsultables={[{ code: "36", nom: "Indre", aDesExperts: true }]}
       />
     );
 
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "36 - Indre" })).toBeInTheDocument();
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["36 - Indre"]);
   });
 });

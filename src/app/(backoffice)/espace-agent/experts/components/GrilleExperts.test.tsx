@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import { GrilleExperts } from "./GrilleExperts";
+import { ExpertsParDepartement, GrilleExperts } from "./GrilleExperts";
 
 const expert = (id: string, nom: string) => ({
   id,
@@ -27,5 +27,22 @@ describe("GrilleExperts", () => {
     render(<GrilleExperts experts={[]} codeDepartement="75" />);
     expect(screen.getByText("Aucun expert validé dans ce département pour l'instant.")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+  });
+
+  it("regroupe plusieurs départements, chacun sous son titre, avec une seule mention de libre choix", () => {
+    render(
+      <ExpertsParDepartement
+        sections={[
+          { code: "36", nom: "Indre", experts: [expert("a", "Alpha")] },
+          { code: "18", nom: "Cher", experts: [] },
+        ]}
+      />
+    );
+
+    expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Indre (36)", "Cher (18)"]);
+    expect(screen.getByRole("heading", { level: 4, name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByText("1 expert")).toBeInTheDocument();
+    expect(screen.getByText("Aucun expert validé dans ce département pour l'instant.")).toBeInTheDocument();
+    expect(screen.getAllByText(/présentés sans ordre de préférence/)).toHaveLength(1);
   });
 });

@@ -4,7 +4,7 @@ import type { AgentAvecRole } from "@/shared/database/schema/agents";
 
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({ calculateAgentScope: vi.fn() }));
 vi.mock("@/shared/database/repositories/experts.repository", () => ({
-  expertsRepository: { findActifsDuDepartement: vi.fn() },
+  expertsRepository: { findActifs: vi.fn(), findActifsDuDepartement: vi.fn() },
 }));
 
 import { chargerAnnuaireExperts, expertsDuDepartementDuDossier } from "./annuaire-experts.service";
@@ -46,10 +46,44 @@ const EXPERT_INDRE = {
   departements: [{ codeDepartement: "36", email: "indre@exemple.fr", telephone: null }],
 };
 
+const EXPERT_ALLIER = {
+  ...EXPERT_INDRE,
+  id: "e-2",
+  nom: "Alpha Sols",
+  departements: [
+    { codeDepartement: "03", email: "allier@exemple.fr", telephone: null },
+    { codeDepartement: "36", email: "alpha-indre@exemple.fr", telephone: null },
+  ],
+};
+
+const sections = (annuaire: Awaited<ReturnType<typeof chargerAnnuaireExperts>>) =>
+  annuaire.sections.map((section) => [section.code, section.experts.map((expert) => expert.nom)]);
+
 describe("chargerAnnuaireExperts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(expertsRepository.findActifsDuDepartement).mockResolvedValue([EXPERT_INDRE]);
+    vi.mocked(expertsRepository.findActifs).mockResolvedValue([EXPERT_INDRE, EXPERT_ALLIER]);
+  });
+
+  it("montre au super-administrateur tous les départements qui ont un expert, regroupés", async () => {
+    territoire([]);
+
+    const annuaire = await chargerAnnuaireExperts(agent(UserRole.SUPER_ADMINISTRATEUR), undefined);
+
+    expect(annuaire.vue).toEqual({ type: "tous" });
+    // Un expert de deux départements figure dans chacun, avec le contact de celui-ci.
+    expect(sections(annuaire)).toEqual([
+      ["03", ["Alpha Sols"]],
+      ["36", ["Alpha Sols", "Géotech"]],
+    ]);
+    expect(annuaire.sections[1].experts[0].departements).toEqual([
+      { code: "36", nom: "Indre", email: "alpha-indre@exemple.fr", telephone: null },
+    ]);
+    expect(annuaire.departementsConsultables.find((d) => d.code === "75")).toEqual({
+      code: "75",
+      nom: "Paris",
+      aDesExperts: false,
+    });
   });
 
   it("ouvre l'annuaire d'un agent AMO sur son territoire, sans contact interne", async () => {
@@ -57,25 +91,27 @@ describe("chargerAnnuaireExperts", () => {
 
     const annuaire = await chargerAnnuaireExperts(agent(UserRole.AMO), undefined);
 
-    expect(annuaire.departement).toEqual({ code: "36", nom: "Indre" });
-    expect(annuaire.experts.map((e) => e.nom)).toEqual(["Géotech"]);
+    expect(annuaire.vue).toEqual({ type: "departement", code: "36" });
+    expect(sections(annuaire)).toEqual([["36", ["Alpha Sols", "Géotech"]]]);
     expect(JSON.stringify(annuaire)).not.toContain("interne@exemple.fr");
   });
 
-  it("laisse un agent AMO consulter un autre département", async () => {
+  it("laisse un agent AMO consulter un autre département, même sans expert", async () => {
     territoire(["36"]);
-    await chargerAnnuaireExperts(agent(UserRole.AMO), "63");
-    expect(expertsRepository.findActifsDuDepartement).toHaveBeenCalledWith("63");
+    const annuaire = await chargerAnnuaireExperts(agent(UserRole.AMO), "63");
+    expect(sections(annuaire)).toEqual([["63", []]]);
   });
 
-  it("ne sort pas un analyste de son territoire, même s'il en demande un autre", async () => {
+  it("ne sort pas un analyste de son territoire, même s'il en demande un autre ou tous", async () => {
     territoire(["36"]);
 
-    const annuaire = await chargerAnnuaireExperts(agent(UserRole.ANALYSTE), "63");
-
-    expect(expertsRepository.findActifsDuDepartement).toHaveBeenCalledWith("36");
-    expect(expertsRepository.findActifsDuDepartement).not.toHaveBeenCalledWith("63");
+    const annuaire = await chargerAnnuaireExperts(agent(UserRole.ANALYSTE), "03");
+    expect(sections(annuaire)).toEqual([["36", ["Alpha Sols", "Géotech"]]]);
     expect(annuaire.departementsConsultables.map((d) => d.code)).toEqual(["36"]);
+
+    const tous = await chargerAnnuaireExperts(agent(UserRole.ANALYSTE), "tous");
+    expect(tous.perimetre).toBe("territoire");
+    expect(sections(tous).map(([code]) => code)).toEqual(["36"]);
   });
 
   it("ne donne rien à un analyste sans département", async () => {
@@ -84,12 +120,13 @@ describe("chargerAnnuaireExperts", () => {
     const annuaire = await chargerAnnuaireExperts(agent(UserRole.ANALYSTE), "36");
 
     expect(annuaire).toEqual({
-      departement: null,
+      vue: null,
+      perimetre: "aucun",
+      sections: [],
       departementsConsultables: [],
       departementsDuTerritoire: [],
-      experts: [],
     });
-    expect(expertsRepository.findActifsDuDepartement).not.toHaveBeenCalled();
+    expect(expertsRepository.findActifs).not.toHaveBeenCalled();
   });
 });
 

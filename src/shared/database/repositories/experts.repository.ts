@@ -54,6 +54,11 @@ export class ExpertsRepository {
   }
 
   /** Experts actifs ayant déclaré ce département (code officiel). */
+  /** Tous les experts actifs : l'annuaire « tous les départements » les répartit lui-même. */
+  async findActifs(): Promise<ExpertLu[]> {
+    return this.lire(isNull(experts.desactiveAt));
+  }
+
   async findActifsDuDepartement(codeDepartement: string): Promise<ExpertLu[]> {
     const ids = await db
       .select({ id: expertsDepartements.expertId })
