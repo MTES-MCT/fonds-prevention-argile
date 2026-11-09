@@ -51,9 +51,9 @@ Relevés par la revue du 2 novembre 2026, laissés hors de la PR :
 
 ### Historique des opérations sur les structures
 
-Fusionner ou détacher une habilitation change les droits d'agents, mais n'en laisse qu'un log
-technique (`[structures]`), comme la gestion des agents. À tracer en base si l'on doit pouvoir dire
-qui a donné quel rôle, et quand.
+Ajouter ou retirer une habilitation AMO ou Aller-vers change les droits d'agents, mais n'en laisse
+aucune trace en base, comme la gestion des agents. À tracer si l'on doit pouvoir dire qui a donné
+quel rôle, et quand.
 
 **Préalable** : un besoin d'audit exprimé.
 
@@ -77,6 +77,24 @@ plateforme XOR structure ». Ce nettoyage rend le retour arrière impossible.
   les validations bloquant la suppression de la ligne AMO.
 
 **Préalable** : un besoin métier exprimé.
+
+### Identité des structures : trois écarts tranchés par la migration, cinq SIRET douteux
+
+La migration `0061` (ADR-0053) a gardé les valeurs de l'AMO là où la structure AMO et Aller-vers
+divergeait : téléphone de Soliha métropole Nord, noms de Soliha 03 et de Soliha Dordogne
+(mesure du 4 novembre 2026). Par ailleurs, 5 des 18 SIRET d'AMO ne passent pas la clé de contrôle,
+alors que le formulaire DN de l'éligibilité les reprend.
+
+**Préalable** : vérifier ces valeurs auprès des structures, puis les corriger dans leur fiche.
+
+### Départements des AMO en texte libre
+
+`entreprises_amo.departements` est du texte (« Indre 36, Cher 18 »), quand les Aller-vers et les experts
+ont une table de codes. La fiche et l'import AMO le saisissent donc en texte libre. Le passer en table
+(`entreprises_amo_departements`) unifierait la saisie et l'affichage du territoire des trois rôles.
+
+**Préalable** : reprendre les cinq lecteurs de ce texte (`parseCodesDepartement`), dont le calcul de
+couverture des AMO (ADR-0042), et les couvrir par test avant de changer le stockage.
 
 ---
 

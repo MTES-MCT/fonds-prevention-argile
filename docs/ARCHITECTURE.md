@@ -131,6 +131,12 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 > `entreprise_amo_id` et `allers_vers_id` de `agents` ne servent plus qu'au retour arrière. Voir
 > [ADR-0051](adr/0051-roles-amo-aller-vers-portes-par-la-structure.md).
 
+> Une structure a un **type** : `accompagnement` (AMO et/ou Aller-vers) ou `expert` (expertise seule).
+> Son **identité** (nom, SIRET, adresse, téléphone, horaires) est portée par la structure et recopiée
+> sur ses lignes d'habilitation par une seule écriture (`structuresRepository.mettreAJourIdentite`) ;
+> chaque ligne garde son territoire et ses contacts. Les imports se font par rôle et rattachent par
+> SIRET. Voir [ADR-0053](adr/0053-identite-portee-par-la-structure.md).
+
 > Un agent qui quitte ses fonctions est **désactivé** (`agents.desactive_at`), pas supprimé :
 > son nom doit survivre sur les actions, qualifications, archivages et dossiers créés qu'il a
 > laissés. La suppression reste possible pour un agent sans aucune trace. Voir
