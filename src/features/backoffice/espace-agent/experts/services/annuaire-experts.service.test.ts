@@ -71,19 +71,23 @@ describe("chargerAnnuaireExperts", () => {
     const annuaire = await chargerAnnuaireExperts(agent(UserRole.SUPER_ADMINISTRATEUR), undefined);
 
     expect(annuaire.vue).toEqual({ type: "tous" });
-    // Un expert de deux départements figure dans chacun, avec le contact de celui-ci.
-    expect(sections(annuaire)).toEqual([
-      ["03", ["Alpha Sols"]],
-      ["36", ["Alpha Sols", "Géotech"]],
-    ]);
-    expect(annuaire.sections[1].experts[0].departements).toEqual([
-      { code: "36", nom: "Indre", email: "alpha-indre@exemple.fr", telephone: null },
-    ]);
-    expect(annuaire.departementsConsultables.find((d) => d.code === "75")).toEqual({
-      code: "75",
-      nom: "Paris",
+    // Les 11 départements du dispositif, ceux sans expert compris ; aucun autre n'est proposé.
+    expect(annuaire.departementsConsultables.map((d) => d.code)).toEqual(annuaire.sections.map((s) => s.code));
+    expect(annuaire.sections).toHaveLength(11);
+    expect(annuaire.departementsConsultables.find((d) => d.code === "75")).toBeUndefined();
+    expect(annuaire.departementsConsultables.find((d) => d.code === "24")).toEqual({
+      code: "24",
+      nom: "Dordogne",
       aDesExperts: false,
     });
+    // Un expert de deux départements figure dans chacun, avec le contact de celui-ci.
+    const parCode = Object.fromEntries(sections(annuaire));
+    expect(parCode["03"]).toEqual(["Alpha Sols"]);
+    expect(parCode["36"]).toEqual(["Alpha Sols", "Géotech"]);
+    expect(parCode["24"]).toEqual([]);
+    expect(annuaire.sections.find((s) => s.code === "36")?.experts[0].departements).toEqual([
+      { code: "36", nom: "Indre", email: "alpha-indre@exemple.fr", telephone: null },
+    ]);
   });
 
   it("ouvre l'annuaire d'un agent AMO sur son territoire, sans contact interne", async () => {

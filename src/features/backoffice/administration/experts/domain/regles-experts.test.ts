@@ -70,7 +70,7 @@ describe("vueAffichee", () => {
 
   it("ouvre l'agent sur son département, ou sur son territoire regroupé s'il en couvre plusieurs", () => {
     expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36"]), undefined)).toEqual({ type: "departement", code: "36" });
-    expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36", "18"]), undefined)).toEqual({ type: "territoire" });
+    expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36", "24"]), undefined)).toEqual({ type: "territoire" });
     // Un Aller-vers couvert seulement par des EPCI n'a aucun département : il voit tout plutôt qu'une page vide.
     expect(vueAffichee(perimetreExperts(UserRole.ALLERS_VERS, []), undefined)).toEqual({ type: "tous" });
   });
@@ -86,27 +86,42 @@ describe("vueAffichee", () => {
 
   it("ramène l'analyste sur son territoire quand il demande un autre département", () => {
     expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36"]), "63")).toEqual({ type: "departement", code: "36" });
-    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36", "18"]), undefined)).toEqual({ type: "tous" });
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36", "24"]), undefined)).toEqual({ type: "tous" });
     expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, []), "tous")).toBeNull();
   });
 });
 
 describe("departementsDeLaVue", () => {
-  const avecExperts = ["59", "03", "36"];
-
-  it("limite « tous » d'un périmètre national aux départements qui ont un expert, par numéro", () => {
-    expect(
-      departementsDeLaVue(perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []), { type: "tous" }, avecExperts)
-    ).toEqual(["03", "36", "59"]);
+  it("donne au périmètre national les 11 départements du dispositif, même sans expert", () => {
+    const tous = departementsDeLaVue(perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []), { type: "tous" });
+    expect(tous).toEqual(["03", "04", "24", "32", "36", "47", "54", "59", "63", "81", "82"]);
   });
 
   it("garde les départements du territoire, même sans expert, pour le dire", () => {
-    expect(
-      departementsDeLaVue(perimetreExperts(UserRole.AMO, ["36", "18"]), { type: "territoire" }, avecExperts)
-    ).toEqual(["36", "18"]);
-    expect(departementsDeLaVue(perimetreExperts(UserRole.ANALYSTE, ["18"]), { type: "tous" }, avecExperts)).toEqual([
-      "18",
+    expect(departementsDeLaVue(perimetreExperts(UserRole.AMO, ["36", "18"]), { type: "territoire" })).toEqual(["36"]);
+    expect(departementsDeLaVue(perimetreExperts(UserRole.AMO, ["36", "24"]), { type: "territoire" })).toEqual([
+      "36",
+      "24",
     ]);
+    expect(departementsDeLaVue(perimetreExperts(UserRole.ANALYSTE, ["24"]), { type: "tous" })).toEqual(["24"]);
+  });
+});
+
+describe("départements du dispositif", () => {
+  it("ne laisse consulter aucun département hors des 11, même au super-administrateur", () => {
+    const national = perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []);
+    expect(peutConsulterDepartement(national, "36")).toBe(true);
+    expect(peutConsulterDepartement(national, "75")).toBe(false);
+    expect(vueAffichee(national, "75")).toEqual({ type: "tous" });
+  });
+
+  it("retire d'un territoire les départements hors du dispositif", () => {
+    // Une AMO de production déclare aussi la Haute-Corse, les Alpes-Maritimes et l'Ardèche.
+    expect(perimetreExperts(UserRole.AMO, ["2B", "04", "06", "07"])).toEqual({
+      type: "tous",
+      departementsParDefaut: ["04"],
+    });
+    expect(perimetreExperts(UserRole.ANALYSTE, ["75"])).toEqual({ type: "aucun" });
   });
 });
 

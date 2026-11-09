@@ -6,6 +6,7 @@ import {
   normalizeCodeDepartement,
   toOfficialCodeDepartement,
 } from "@/shared/constants/departements.constants";
+import { DEPARTEMENTS_ELIGIBLES_RGA, isDepartementEligible } from "@/shared/constants/rga.constants";
 import { parseListe } from "@/shared/utils/liste.utils";
 
 /** Texte à faire valider par la DHUP : il accompagne chaque liste d'experts (ADR-0052). */
@@ -74,9 +75,14 @@ export type PerimetreExperts =
   | { type: "territoire"; departements: string[] }
   | { type: "aucun" };
 
-/** L'analyste départemental ne voit que son territoire ; AMO et Aller-vers consultent tout, leur territoire d'abord. */
+/**
+ * L'analyste départemental ne voit que son territoire ; AMO et Aller-vers consultent tout, leur territoire
+ * d'abord. « Tout », ce sont les départements du dispositif : un territoire qui déborde n'en sort pas.
+ */
 export function perimetreExperts(role: string, departementsDuScope: string[]): PerimetreExperts {
-  const departements = [...new Set(departementsDuScope.map((code) => toOfficialCodeDepartement(code)))];
+  const departements = [...new Set(departementsDuScope.map((code) => toOfficialCodeDepartement(code)))].filter(
+    isDepartementEligible
+  );
   switch (role) {
     case UserRole.SUPER_ADMINISTRATEUR:
     case UserRole.ADMINISTRATEUR:
@@ -93,7 +99,7 @@ export function perimetreExperts(role: string, departementsDuScope: string[]): P
 }
 
 export function peutConsulterDepartement(perimetre: PerimetreExperts, code: string): boolean {
-  if (perimetre.type === "tous") return true;
+  if (perimetre.type === "tous") return isDepartementEligible(toOfficialCodeDepartement(code));
   if (perimetre.type === "territoire") return perimetre.departements.includes(toOfficialCodeDepartement(code));
   return false;
 }
@@ -129,15 +135,11 @@ export function vueAffichee(perimetre: PerimetreExperts, demande: string | null 
   return territoireRegroupable(perimetre) ? { type: "territoire" } : { type: "tous" };
 }
 
-/** Départements montrés par la vue ; « tous » se limite, pour un périmètre national, à ceux qui ont un expert. */
-export function departementsDeLaVue(
-  perimetre: PerimetreExperts,
-  vue: VueAnnuaire,
-  departementsAvecExperts: readonly string[]
-): string[] {
+/** Départements montrés par la vue, ceux sans expert compris : l'agent doit savoir qu'il n'y en a pas. */
+export function departementsDeLaVue(perimetre: PerimetreExperts, vue: VueAnnuaire): string[] {
   if (vue.type === "departement") return [vue.code];
   if (vue.type === "territoire" || perimetre.type === "territoire") return territoireDe(perimetre);
-  return [...departementsAvecExperts].sort((a, b) => a.localeCompare(b, "fr", { numeric: true }));
+  return [...DEPARTEMENTS_ELIGIBLES_RGA];
 }
 
 /** Ordre neutre et stable : alphabétique sur la raison sociale, sans accent ni casse (ADR-0052). */

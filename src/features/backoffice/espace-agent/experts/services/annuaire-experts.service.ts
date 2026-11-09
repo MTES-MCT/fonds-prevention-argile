@@ -4,7 +4,6 @@ import { BackofficePermission } from "@/features/auth/permissions/domain/value-o
 import {
   annuaireDuDepartement,
   codeDepartementConnu,
-  DEPARTEMENTS_OFFICIELS,
   departementsDeLaVue,
   peutConsulterDepartement,
   perimetreExperts,
@@ -15,6 +14,7 @@ import {
 } from "@/features/backoffice/administration/experts";
 import { expertsRepository } from "@/shared/database/repositories/experts.repository";
 import { getDepartementName } from "@/shared/constants/departements.constants";
+import { DEPARTEMENTS_ELIGIBLES_RGA } from "@/shared/constants/rga.constants";
 import type { AgentAvecRole } from "@/shared/database/schema/agents";
 import type { UserRole } from "@/shared/domain/value-objects";
 
@@ -63,23 +63,22 @@ export async function chargerAnnuaireExperts(
 
   // Une liste de quelques dizaines d'experts : un seul aller-retour sert la vue et les mentions « aucun expert ».
   const actifs = await expertsRepository.findActifs();
-  const avecExperts = [...new Set(actifs.flatMap((expert) => expert.departements.map((d) => d.codeDepartement)))];
-  const sections = departementsDeLaVue(perimetre, vue, avecExperts).map((code) => ({
+  const avecExperts = new Set(actifs.flatMap((expert) => expert.departements.map((d) => d.codeDepartement)));
+  const sections = departementsDeLaVue(perimetre, vue).map((code) => ({
     code,
     nom: getDepartementName(code),
     experts: annuaireDuDepartement(actifs, code),
   }));
 
-  const consultables =
-    perimetre.type === "tous"
-      ? DEPARTEMENTS_OFFICIELS
-      : perimetre.departements.map((code) => ({ code, nom: getDepartementName(code) }));
+  const consultables = (perimetre.type === "tous" ? [...DEPARTEMENTS_ELIGIBLES_RGA] : perimetre.departements).map(
+    (code) => ({ code, nom: getDepartementName(code) })
+  );
 
   return {
     vue,
     perimetre: perimetre.type,
     sections,
-    departementsConsultables: consultables.map((d) => ({ ...d, aDesExperts: avecExperts.includes(d.code) })),
+    departementsConsultables: consultables.map((d) => ({ ...d, aDesExperts: avecExperts.has(d.code) })),
     departementsDuTerritoire: perimetre.type === "tous" ? perimetre.departementsParDefaut : perimetre.departements,
   };
 }

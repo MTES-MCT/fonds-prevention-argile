@@ -30,9 +30,10 @@ une liste d'entreprises privées, l'ordre d'affichage ne doit favoriser personne
   `ExpertAnnuaire` et `ExpertGestion`, construites champ par champ.
 - Un expert qui part est désactivé, pas supprimé.
 - L'annuaire des agents (`/espace-agent/experts`) montre un département, le territoire de l'agent ou
-  tous les départements qui ont un expert, regroupés par département ; l'ordre alphabétique vaut dans
-  chacun. Par défaut : le territoire de l'agent, ou tout s'il n'a aucun département (super-administrateur,
-  Aller-vers couvert par des EPCI seulement). L'analyste ne sort jamais de ses départements.
+  les 11 départements du dispositif (`DEPARTEMENTS_ELIGIBLES_RGA`), regroupés par département, ceux sans
+  expert compris ; l'ordre alphabétique vaut dans chacun. Aucun autre département n'est proposé, même au
+  super-administrateur. Par défaut : le territoire de l'agent, ou tout s'il n'a aucun département
+  (super-administrateur, Aller-vers couvert par des EPCI seulement). L'analyste ne sort jamais de ses départements.
 
 ## Options envisagées
 
