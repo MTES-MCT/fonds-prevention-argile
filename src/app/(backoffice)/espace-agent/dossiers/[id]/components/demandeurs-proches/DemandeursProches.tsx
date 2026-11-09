@@ -15,20 +15,9 @@ const STYLE_RANG = {
   flex: "none",
   fontWeight: 700,
   fontSize: "0.75rem",
-} as const;
-
-const STYLE_RANG_EXACT = {
-  ...STYLE_RANG,
   background: "var(--background-action-high-blue-france)",
   color: "var(--text-inverted-blue-france)",
-};
-
-const STYLE_RANG_APPROXIMATIF = {
-  ...STYLE_RANG,
-  background: "var(--background-default-grey)",
-  color: "var(--text-action-high-blue-france)",
-  border: "2px dashed var(--border-action-high-blue-france)",
-};
+} as const;
 
 /** Carte de la fiche dossier : les demandeurs les plus proches, pour regrouper les visites. */
 export function DemandeursProches({ donnees }: DemandeursProchesProps) {
@@ -56,22 +45,20 @@ export function DemandeursProches({ donnees }: DemandeursProchesProps) {
               </div>
             ) : (
               <div className="fr-grid-row fr-grid-row--gutters">
-                <div className="fr-col-12 fr-col-lg-7">
+                <div className="fr-col-12 fr-col-lg-8">
                   <CarteDemandeursProches origine={origine} voisins={voisins} />
                   <p className="fr-text--xs fr-text-mention--grey fr-mt-1w fr-mb-0">
                     <span className="fr-icon-home-4-fill fr-icon--sm fr-mr-1v" aria-hidden="true"></span>
-                    Ce logement · numéro plein : position exacte · numéro en pointillés : centre de la commune
+                    Ce logement · les numéros renvoient à la liste
                   </p>
                 </div>
-                <div className="fr-col-12 fr-col-lg-5">
+                <div className="fr-col-12 fr-col-lg-4">
                   <ol className="fr-raw-list">
                     {voisins.map((voisin) => (
                       <li
                         key={voisin.href}
                         className="flex gap-3 py-3 border-t border-(--border-default-grey) first:border-t-0 first:pt-0">
-                        <span
-                          style={voisin.positionApproximative ? STYLE_RANG_APPROXIMATIF : STYLE_RANG_EXACT}
-                          aria-hidden="true">
+                        <span style={STYLE_RANG} aria-hidden="true">
                           {voisin.rang}
                         </span>
                         <div>

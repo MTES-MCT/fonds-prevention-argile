@@ -13,10 +13,7 @@ const COUCHES_MASQUEES = [LAYER_IDS.rnbPoints, LAYER_IDS.rnbFormes, LAYER_IDS.zo
 const ZOOM_MAX_CADRAGE = 13;
 const ECART_SUPERPOSES_PX = 30;
 
-export type VoisinSurCarte = Pick<
-  DemandeurProche,
-  "rang" | "nom" | "etape" | "lat" | "lon" | "positionApproximative" | "href"
->;
+export type VoisinSurCarte = Pick<DemandeurProche, "rang" | "nom" | "etape" | "lat" | "lon" | "href">;
 
 interface CarteDemandeursProchesMapProps {
   origine: PositionLogement;
@@ -42,21 +39,11 @@ function pastille(contenu: string, styles: Partial<CSSStyleDeclaration>): HTMLEl
 }
 
 function marqueurVoisin(voisin: VoisinSurCarte): HTMLElement {
-  const element = pastille(
-    String(voisin.rang),
-    voisin.positionApproximative
-      ? {
-          background: "var(--background-default-grey)",
-          color: "var(--text-action-high-blue-france)",
-          border: "2px dashed var(--border-action-high-blue-france)",
-          cursor: "pointer",
-        }
-      : {
-          background: "var(--background-action-high-blue-france)",
-          color: "var(--text-inverted-blue-france)",
-          cursor: "pointer",
-        }
-  );
+  const element = pastille(String(voisin.rang), {
+    background: "var(--background-action-high-blue-france)",
+    color: "var(--text-inverted-blue-france)",
+    cursor: "pointer",
+  });
   element.setAttribute("role", "button");
   element.setAttribute("tabindex", "0");
   element.setAttribute("aria-label", `${voisin.rang}. ${voisin.nom}, ${voisin.etape}`);
@@ -168,7 +155,7 @@ export function CarteDemandeursProchesMap({ origine, voisins }: CarteDemandeursP
   return (
     <div
       ref={mapRef}
-      style={{ height: "22rem", width: "100%", borderRadius: "0.5rem", overflow: "hidden" }}
+      style={{ height: "30rem", width: "100%", borderRadius: "0.5rem", overflow: "hidden" }}
       role="region"
       aria-label="Carte du logement de ce dossier et des demandeurs proches, numérotés comme dans la liste"
     />

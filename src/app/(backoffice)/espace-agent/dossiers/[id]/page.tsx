@@ -281,6 +281,11 @@ export default async function DossierDetailPage({ params }: PageProps) {
       {/* Panneau principal avec fond bleu - container fluid */}
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
+          {demandeursProches && (
+            <div className="fr-mb-4w">
+              <DemandeursProches donnees={demandeursProches} />
+            </div>
+          )}
           <div className="fr-grid-row fr-grid-row--gutters">
             {/* Colonne gauche : PiecesJustificatives + InfoLogement + GagnezDuTempsTravaux */}
             <div className="fr-col-12 fr-col-md-8">
@@ -313,11 +318,6 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   agentEditInfo={dossier.agentEditInfo}
                 />
               </div>
-              {demandeursProches && (
-                <div className="fr-mb-4w">
-                  <DemandeursProches donnees={demandeursProches} />
-                </div>
-              )}
               <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
               <div>
                 <GagnezDuTempsTravaux />
