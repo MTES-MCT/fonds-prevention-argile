@@ -22,10 +22,13 @@ vi.mock("../services/structures-admin.service", async (importOriginal) => {
   };
 });
 
+vi.mock("../services/referentiel-epci.service", () => ({ listerEpcis: vi.fn() }));
+
 import {
   ajouterHabilitationAction,
   creerStructureAction,
   getFicheStructureAction,
+  getReferentielEpciAction,
   getStructuresAction,
   modifierHabilitationAction,
   modifierIdentiteAction,
@@ -34,6 +37,7 @@ import {
 } from "./structures.actions";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import * as service from "../services/structures-admin.service";
+import { listerEpcis } from "../services/referentiel-epci.service";
 
 const ID = "22222222-2222-4222-8222-222222222222";
 const IDENTITE = { nom: "Soliha 36", siret: "39248872200027" };
@@ -64,6 +68,7 @@ describe("structures.actions", () => {
     () => ajouterHabilitationAction(AMO),
     () => modifierHabilitationAction(AMO),
     () => retirerHabilitationAction({ structureId: ID, habilitation: "amo" }),
+    () => getReferentielEpciAction(),
   ];
 
   it.each([UserRole.ANALYSTE, UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS, UserRole.PARTICULIER])(
@@ -77,8 +82,21 @@ describe("structures.actions", () => {
       for (const fonction of Object.values(service)) {
         if (vi.isMockFunction(fonction)) expect(fonction).not.toHaveBeenCalled();
       }
+      expect(listerEpcis).not.toHaveBeenCalled();
     }
   );
+
+  it("donne les EPCI à l'administrateur, et un message lisible quand l'API Géo est indisponible", async () => {
+    const epcis = [{ code: "243600236", nom: "CC du Pays d'Issoudun", codesDepartements: ["36"] }];
+    vi.mocked(listerEpcis).mockResolvedValueOnce(epcis).mockRejectedValueOnce(new Error("Erreur API Geo: 502"));
+    connecter(UserRole.ADMINISTRATEUR);
+
+    expect(await getReferentielEpciAction()).toEqual({ success: true, data: epcis });
+    expect(await getReferentielEpciAction()).toEqual({
+      success: false,
+      error: "La liste des EPCI est indisponible pour le moment",
+    });
+  });
 
   it("refuse un visiteur non connecté", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null);

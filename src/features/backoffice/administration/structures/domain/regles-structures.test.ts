@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { UserRole } from "@/shared/domain/value-objects";
 import {
+  codesDepartementsAmo,
   fusionnerIdentite,
   refusAjout,
   filtrerStructures,
@@ -10,6 +11,7 @@ import {
   refusRetrait,
   refusSuppression,
   roleApres,
+  texteDepartementsAmo,
   type FiltresStructures,
   type StructureListee,
 } from "./regles-structures";
@@ -140,5 +142,18 @@ describe("filtrerStructures", () => {
   it("cherche dans le nom sans tenir compte des accents, et dans le SIRET sans ses espaces", () => {
     expect(filtrerStructures(LISTE, { ...filtres, recherche: "geotech" }).map((s) => s.nom)).toEqual(["Géotech"]);
     expect(filtrerStructures(LISTE, { ...filtres, recherche: "392 488" }).map((s) => s.nom)).toEqual(["Soliha Indre"]);
+  });
+});
+
+describe("départements d'une AMO", () => {
+  it("lit les codes d'un texte libre, au format officiel et sans doublon", () => {
+    expect(codesDepartementsAmo("Puy de Dôme 63, Allier 03, Allier 03")).toEqual(["63", "03"]);
+    expect(codesDepartementsAmo(null)).toEqual([]);
+  });
+
+  it("écrit les codes choisis au format que lit la couverture des AMO", () => {
+    const texte = texteDepartementsAmo(["63", "03"]);
+    expect(texte).toBe("Puy-de-Dôme 63, Allier 03");
+    expect(codesDepartementsAmo(texte)).toEqual(["63", "03"]);
   });
 });

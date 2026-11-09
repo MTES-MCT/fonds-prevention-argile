@@ -18,6 +18,10 @@ vi.mock("@/features/backoffice", async () => ({
   supprimerStructureAction: vi.fn(),
   desactiverExpertAction: vi.fn(),
   reactiverExpertAction: vi.fn(),
+  getReferentielEpciAction: vi.fn(async () => ({
+    success: true,
+    data: [{ code: "243600236", nom: "CC du Pays d'Issoudun", codesDepartements: ["36"] }],
+  })),
 }));
 
 import { getFicheStructureAction, retirerHabilitationAction } from "@/features/backoffice";

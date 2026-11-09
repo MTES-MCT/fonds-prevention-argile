@@ -13,6 +13,13 @@ vi.mock("@/features/backoffice", async () => ({
   getStructuresAction: vi.fn(),
   creerStructureAction: vi.fn(),
   importerStructuresAction: vi.fn(),
+  getReferentielEpciAction: vi.fn(async () => ({
+    success: true,
+    data: [
+      { code: "200054781", nom: "CA Bourges Plus", codesDepartements: ["18"] },
+      { code: "243600236", nom: "CC du Pays d'Issoudun", codesDepartements: ["36"] },
+    ],
+  })),
 }));
 
 import { creerStructureAction, getStructuresAction } from "@/features/backoffice";
@@ -46,6 +53,14 @@ async function nomsAffiches(): Promise<string[]> {
   return within(tableau)
     .getAllByRole("link")
     .map((lien) => lien.textContent ?? "");
+}
+
+// Tape dans la liste déroulante, puis choisit la première proposition au clavier.
+async function choisir(champ: HTMLElement, ...recherches: string[]) {
+  for (const recherche of recherches) {
+    await userEvent.clear(champ);
+    await userEvent.type(champ, `${recherche}{Enter}`);
+  }
 }
 
 const afficher = (role: AdminRole = UserRole.SUPER_ADMINISTRATEUR, criteresInitiaux: CritereHabilitation[] = []) =>
@@ -116,14 +131,15 @@ describe("StructuresPanel", () => {
     await userEvent.click(screen.getByRole("radio", { name: "Aller-vers", hidden: true }));
     expect(creer).toBeDisabled();
     await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@adil18.test");
-    await userEvent.type(screen.getByLabelText(/^Codes départements/), "18, 36");
+    await choisir(screen.getByRole("combobox", { name: /^Départements/, hidden: true }), "cher", "36");
+    await choisir(screen.getByRole("combobox", { name: /^EPCI/, hidden: true }), "issoudun");
     await userEvent.click(creer);
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/administration/structures/nouvelle"));
     expect(creerStructureAction).toHaveBeenCalledWith({
       identite: { nom: "Adil 18", siret: "", adresse: "", telephone: "", horaires: "" },
       habilitation: "allersVers",
-      saisie: { emails: "contact@adil18.test", departements: ["18", "36"], epci: [] },
+      saisie: { emails: "contact@adil18.test", departements: ["18", "36"], epci: ["243600236"] },
     });
   });
 
@@ -134,7 +150,7 @@ describe("StructuresPanel", () => {
 
     await userEvent.type(screen.getByLabelText("Nom"), "Soliha Cher");
     await userEvent.click(screen.getByRole("radio", { name: "AMO", hidden: true }));
-    await userEvent.type(screen.getByLabelText(/^Départements/), "Cher 18");
+    await choisir(screen.getByRole("combobox", { name: /^Départements/, hidden: true }), "Cher 18");
     await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@soliha18.test");
     expect(creer).toBeDisabled();
 

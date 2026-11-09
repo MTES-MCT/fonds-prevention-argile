@@ -1,13 +1,15 @@
 "use client";
 
-import type { ChangeEvent } from "react";
 import type { HabilitationAllersVersFiche } from "@/features/backoffice";
-import { parseListe } from "@/shared/utils/liste.utils";
+import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
+import SelectMultiple from "./SelectMultiple";
+import { OPTIONS_DEPARTEMENTS } from "./options-departements";
+import { optionsEpci, useReferentielEpci } from "./useReferentielEpci";
 
 export interface AllersVersFormulaire {
   emails: string;
-  departements: string;
-  epci: string;
+  departements: string[];
+  epci: string[];
 }
 
 /** Forme attendue par `habilitationAllersVersSchema`. */
@@ -20,21 +22,18 @@ export interface SaisieAllersVers {
 export function allersVersDepuis(allersVers: HabilitationAllersVersFiche | null): AllersVersFormulaire {
   return {
     emails: allersVers?.emails.join("; ") ?? "",
-    departements: allersVers?.departements.join(", ") ?? "",
-    epci: allersVers?.epci.join(", ") ?? "",
+    // Certaines couvertures stockent « 3 » pour l'Allier : la liste ne connaît que « 03 ».
+    departements: [...new Set(allersVers?.departements.map(toOfficialCodeDepartement) ?? [])],
+    epci: allersVers?.epci ?? [],
   };
 }
 
 export function versSaisieAllersVers(formulaire: AllersVersFormulaire): SaisieAllersVers {
-  return {
-    emails: formulaire.emails,
-    departements: parseListe(formulaire.departements),
-    epci: parseListe(formulaire.epci),
-  };
+  return { ...formulaire };
 }
 
 export function allersVersRempli(formulaire: AllersVersFormulaire): boolean {
-  return formulaire.emails.trim() !== "" && (formulaire.departements.trim() !== "" || formulaire.epci.trim() !== "");
+  return formulaire.emails.trim() !== "" && formulaire.departements.length + formulaire.epci.length > 0;
 }
 
 interface ChampsAllersVersProps {
@@ -45,12 +44,7 @@ interface ChampsAllersVersProps {
 }
 
 export default function ChampsAllersVers({ idPrefix, valeur, onChange, isLoading = false }: ChampsAllersVersProps) {
-  const champ = (nom: keyof AllersVersFormulaire) => ({
-    id: `${idPrefix}-${nom}`,
-    value: valeur[nom],
-    disabled: isLoading,
-    onChange: (e: ChangeEvent<HTMLInputElement>) => onChange({ ...valeur, [nom]: e.target.value }),
-  });
+  const { epcis, erreur } = useReferentielEpci();
 
   return (
     <>
@@ -62,29 +56,45 @@ export default function ChampsAllersVers({ idPrefix, valeur, onChange, isLoading
         <input
           className="fr-input"
           type="text"
+          id={`${idPrefix}-emails`}
           required
           placeholder="email1@exemple.fr; email2@exemple.fr"
-          {...champ("emails")}
+          value={valeur.emails}
+          disabled={isLoading}
+          onChange={(e) => onChange({ ...valeur, emails: e.target.value })}
         />
       </div>
 
-      <div className="fr-input-group">
-        <label className="fr-label" htmlFor={`${idPrefix}-departements`}>
-          Codes départements
-          <span className="fr-hint-text">Séparés par des virgules. Ex : 36, 18</span>
-        </label>
-        <input className="fr-input" type="text" {...champ("departements")} />
-      </div>
+      <SelectMultiple
+        id={`${idPrefix}-departements`}
+        label={
+          <>
+            Départements
+            <span className="fr-hint-text">Au moins un département ou un EPCI</span>
+          </>
+        }
+        options={OPTIONS_DEPARTEMENTS}
+        valeurs={valeur.departements}
+        onChange={(departements) => onChange({ ...valeur, departements })}
+        placeholder="Rechercher un département par nom ou numéro"
+        disabled={isLoading}
+      />
 
-      <div className="fr-input-group">
-        <label className="fr-label" htmlFor={`${idPrefix}-epci`}>
-          Codes EPCI
-          <span className="fr-hint-text">
-            Séparés par des virgules. Au moins un département ou un EPCI est nécessaire
-          </span>
-        </label>
-        <input className="fr-input" type="text" placeholder="200054781, 200054807" {...champ("epci")} />
-      </div>
+      <SelectMultiple
+        id={`${idPrefix}-epci`}
+        label={
+          <>
+            EPCI
+            <span className="fr-hint-text">Ceux des départements choisis sont proposés en premier</span>
+          </>
+        }
+        options={optionsEpci(epcis, valeur.departements)}
+        valeurs={valeur.epci}
+        onChange={(epci) => onChange({ ...valeur, epci })}
+        placeholder="Rechercher un EPCI par nom ou code SIREN"
+        disabled={isLoading}
+        indisponible={erreur}
+      />
     </>
   );
 }

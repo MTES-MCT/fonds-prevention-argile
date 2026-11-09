@@ -1,13 +1,15 @@
 "use client";
 
-import type { ChangeEvent } from "react";
-import type { HabilitationAmoFiche } from "@/features/backoffice";
+import { codesDepartementsAmo, texteDepartementsAmo, type HabilitationAmoFiche } from "@/features/backoffice";
 import { parseListe } from "@/shared/utils/liste.utils";
+import SelectMultiple from "./SelectMultiple";
+import { OPTIONS_DEPARTEMENTS } from "./options-departements";
+import { optionsEpci, useReferentielEpci } from "./useReferentielEpci";
 
 export interface AmoFormulaire {
-  departements: string;
+  departements: string[];
   emails: string;
-  epci: string;
+  epci: string[];
   communes: string;
 }
 
@@ -21,24 +23,24 @@ export interface SaisieAmo {
 
 export function amoDepuis(amo: HabilitationAmoFiche | null): AmoFormulaire {
   return {
-    departements: amo?.departements ?? "",
+    departements: codesDepartementsAmo(amo?.departements),
     emails: amo?.emails.join("; ") ?? "",
-    epci: amo?.epci.join(", ") ?? "",
+    epci: amo?.epci ?? [],
     communes: amo?.communes.join(", ") ?? "",
   };
 }
 
 export function versSaisieAmo(formulaire: AmoFormulaire): SaisieAmo {
   return {
-    departements: formulaire.departements,
+    departements: texteDepartementsAmo(formulaire.departements),
     emails: formulaire.emails,
     communes: parseListe(formulaire.communes),
-    epci: parseListe(formulaire.epci),
+    epci: formulaire.epci,
   };
 }
 
 export function amoRemplie(formulaire: AmoFormulaire): boolean {
-  return formulaire.departements.trim() !== "" && formulaire.emails.trim() !== "";
+  return formulaire.departements.length > 0 && formulaire.emails.trim() !== "";
 }
 
 interface ChampsAmoProps {
@@ -49,22 +51,19 @@ interface ChampsAmoProps {
 }
 
 export default function ChampsAmo({ idPrefix, valeur, onChange, isLoading = false }: ChampsAmoProps) {
-  const champ = (nom: keyof AmoFormulaire) => ({
-    id: `${idPrefix}-${nom}`,
-    value: valeur[nom],
-    disabled: isLoading,
-    onChange: (e: ChangeEvent<HTMLInputElement>) => onChange({ ...valeur, [nom]: e.target.value }),
-  });
+  const { epcis, erreur } = useReferentielEpci();
 
   return (
     <>
-      <div className="fr-input-group">
-        <label className="fr-label" htmlFor={`${idPrefix}-departements`}>
-          Départements
-          <span className="fr-hint-text">Ex : Indre 36, Cher 18</span>
-        </label>
-        <input className="fr-input" type="text" required {...champ("departements")} />
-      </div>
+      <SelectMultiple
+        id={`${idPrefix}-departements`}
+        label="Départements"
+        options={OPTIONS_DEPARTEMENTS}
+        valeurs={valeur.departements}
+        onChange={(departements) => onChange({ ...valeur, departements })}
+        placeholder="Rechercher un département par nom ou numéro"
+        disabled={isLoading}
+      />
 
       <div className="fr-input-group">
         <label className="fr-label" htmlFor={`${idPrefix}-emails`}>
@@ -74,26 +73,45 @@ export default function ChampsAmo({ idPrefix, valeur, onChange, isLoading = fals
         <input
           className="fr-input"
           type="text"
+          id={`${idPrefix}-emails`}
           required
           placeholder="email1@exemple.fr; email2@exemple.fr"
-          {...champ("emails")}
+          value={valeur.emails}
+          disabled={isLoading}
+          onChange={(e) => onChange({ ...valeur, emails: e.target.value })}
         />
       </div>
 
-      <div className="fr-input-group">
-        <label className="fr-label" htmlFor={`${idPrefix}-epci`}>
-          Codes EPCI
-          <span className="fr-hint-text">Séparés par des virgules. Facultatif</span>
-        </label>
-        <input className="fr-input" type="text" placeholder="200054781, 200054807" {...champ("epci")} />
-      </div>
+      <SelectMultiple
+        id={`${idPrefix}-epci`}
+        label={
+          <>
+            EPCI
+            <span className="fr-hint-text">Facultatif. Ceux des départements choisis sont proposés en premier</span>
+          </>
+        }
+        options={optionsEpci(epcis, valeur.departements)}
+        valeurs={valeur.epci}
+        onChange={(epci) => onChange({ ...valeur, epci })}
+        placeholder="Rechercher un EPCI par nom ou code SIREN"
+        disabled={isLoading}
+        indisponible={erreur}
+      />
 
       <div className="fr-input-group">
         <label className="fr-label" htmlFor={`${idPrefix}-communes`}>
           Codes INSEE spécifiques
           <span className="fr-hint-text">Séparés par des virgules. Facultatif</span>
         </label>
-        <input className="fr-input" type="text" placeholder="75001, 75002, 75003" {...champ("communes")} />
+        <input
+          className="fr-input"
+          type="text"
+          id={`${idPrefix}-communes`}
+          placeholder="75001, 75002, 75003"
+          value={valeur.communes}
+          disabled={isLoading}
+          onChange={(e) => onChange({ ...valeur, communes: e.target.value })}
+        />
       </div>
     </>
   );

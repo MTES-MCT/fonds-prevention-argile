@@ -12,9 +12,11 @@ import {
   habilitationAmoSchema,
   habilitationExpertSchema,
   identiteStructureSchema,
+  type EpciReferentiel,
   type FicheStructure,
   type StructureListee,
 } from "../domain/regles-structures";
+import { listerEpcis } from "../services/referentiel-epci.service";
 import {
   ajouterHabilitation,
   chargerFiche,
@@ -78,6 +80,18 @@ export async function getStructuresAction(): Promise<ActionResult<StructureListe
     return { success: true, data: await listerStructures(acces.user.role === UserRole.SUPER_ADMINISTRATEUR) };
   } catch (error) {
     return erreur(error, "getStructuresAction");
+  }
+}
+
+/** EPCI de France, pour nommer et choisir ceux d'une habilitation ; lus dans l'API Géo. */
+export async function getReferentielEpciAction(): Promise<ActionResult<EpciReferentiel[]>> {
+  try {
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    return { success: true, data: await listerEpcis() };
+  } catch (error) {
+    console.error("Erreur getReferentielEpciAction:", error);
+    return { success: false, error: "La liste des EPCI est indisponible pour le moment" };
   }
 }
 

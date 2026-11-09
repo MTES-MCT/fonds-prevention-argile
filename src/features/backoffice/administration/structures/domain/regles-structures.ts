@@ -7,6 +7,8 @@ import {
 } from "@/shared/domain/value-objects";
 import type { IdentiteStructure } from "@/shared/database/repositories/structures.repository";
 import { parseListe } from "@/shared/utils/liste.utils";
+import { parseCodesDepartement } from "@/shared/utils/departements.utils";
+import { getDepartementName } from "@/shared/constants/departements.constants";
 import { codeDepartementConnu, expertSchema } from "../../experts/domain/regles-experts";
 import type { ExpertAnnuaire, ExpertGestion } from "../../experts/domain/experts.types";
 
@@ -75,6 +77,23 @@ export interface HabilitationAllersVersFiche {
   emails: string[];
   departements: string[];
   epci: string[];
+}
+
+/** Un EPCI du référentiel de l'API Géo. */
+export interface EpciReferentiel {
+  code: string;
+  nom: string;
+  codesDepartements: string[];
+}
+
+/** Codes officiels des départements d'une AMO, stockés en texte libre (« Indre 36, Cher 18 »). */
+export function codesDepartementsAmo(texte: string | null | undefined): string[] {
+  return parseCodesDepartement(texte);
+}
+
+/** Texte des départements d'une AMO, au format que lisent la couverture et l'email de l'AMO. */
+export function texteDepartementsAmo(codes: string[]): string {
+  return codes.map((code) => `${getDepartementName(code)} ${code}`).join(", ");
 }
 
 export interface FicheStructure {

@@ -4,6 +4,7 @@ import {
   fetchCommuneByCode,
   fetchCentresCommunesDepartement,
   fetchContoursDepartements,
+  fetchEpcis,
 } from "./geo.adapter";
 
 describe("Geo Adapter", () => {
@@ -156,5 +157,33 @@ describe("fetchContoursDepartements", () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, statusText: "Service Unavailable" });
 
     await expect(fetchContoursDepartements()).rejects.toThrow("503");
+  });
+});
+
+describe("fetchEpcis", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("garde code, nom et départements, une liste vide quand l'API n'en donne pas", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve([
+          { code: "243600236", nom: "CC du Pays d'Issoudun", codesDepartements: ["36"] },
+          { code: "200000000", nom: "CC sans département" },
+        ]),
+    });
+
+    expect(await fetchEpcis()).toEqual([
+      { code: "243600236", nom: "CC du Pays d'Issoudun", codesDepartements: ["36"] },
+      { code: "200000000", nom: "CC sans département", codesDepartements: [] },
+    ]);
+  });
+
+  it("lève une erreur quand l'API ne répond pas, pour que l'échec ne soit pas mis en cache", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 502, statusText: "Bad Gateway" });
+
+    await expect(fetchEpcis()).rejects.toThrow("502");
   });
 });
