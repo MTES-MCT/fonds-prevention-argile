@@ -304,7 +304,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   stepLabel={DOSSIER_STEP_LABELS[dossier.currentStep]}
                 />
               </div>
-              <div className="fr-mb-4w">
+              <div>
                 <InfoLogement
                   logement={dossier.logement}
                   adresse={dossier.demandeur.adresse}
@@ -350,16 +350,19 @@ export default async function DossierDetailPage({ params }: PageProps) {
 
           {/* Pleine largeur, sous le logement : la carte a besoin de place pour être lue. */}
           {demandeursProches && (
-            <div className="fr-mb-4w">
+            <div className="fr-mt-4w">
               <DemandeursProches donnees={demandeursProches} />
             </div>
           )}
 
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-8">
-              <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
-              <div>
-                <GagnezDuTempsTravaux />
+          {/* L'écart part de la plus haute des deux colonnes au-dessus, quelle qu'elle soit. */}
+          <div className="fr-mt-4w">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-8">
+                <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
+                <div>
+                  <GagnezDuTempsTravaux />
+                </div>
               </div>
             </div>
           </div>
