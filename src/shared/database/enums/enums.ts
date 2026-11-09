@@ -11,6 +11,7 @@ import {
   SyncRunTrigger,
 } from "@/shared/domain/value-objects";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
+import { TYPES_STRUCTURE } from "@/shared/domain/value-objects/type-structure.enum";
 
 /**
  * PgEnums pour la base de données PostgreSQL
@@ -94,3 +95,5 @@ export const syncRunStatusPgEnum = pgEnum("sync_run_status", [
 ]);
 
 export const syncRunTriggerPgEnum = pgEnum("sync_run_trigger", [SyncRunTrigger.CRON, SyncRunTrigger.MANUAL]);
+
+export const typeStructurePgEnum = pgEnum("type_structure", TYPES_STRUCTURE);

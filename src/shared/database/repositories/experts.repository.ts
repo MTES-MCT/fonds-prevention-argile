@@ -24,9 +24,8 @@ export interface ExpertLu {
   departements: DepartementExpertLu[];
 }
 
+/** Ce que porte l'habilitation expert en propre ; nom et SIRET sont ceux de la structure. */
 export interface ExpertAEnregistrer {
-  nom: string;
-  siret: string;
   dateValidationDhup: string | null;
   contactInterneNom: string | null;
   contactInterneEmail: string | null;
@@ -41,6 +40,11 @@ export class ExpertsRepository {
 
   async findById(id: string, executor: StructuresExecutor = db): Promise<ExpertLu | null> {
     const [expert] = await this.lire(eq(experts.id, id), executor);
+    return expert ?? null;
+  }
+
+  async findByStructure(structureId: string, executor: StructuresExecutor = db): Promise<ExpertLu | null> {
+    const [expert] = await this.lire(eq(experts.structureId, structureId), executor);
     return expert ?? null;
   }
 
@@ -65,12 +69,15 @@ export class ExpertsRepository {
     );
   }
 
-  /** Crée l'expert et sa structure, à son nom. */
-  async creer(saisie: ExpertAEnregistrer, executor: StructuresExecutor): Promise<string> {
-    const structureId = await structuresRepository.creer(saisie.nom, executor);
+  /** Ajoute l'habilitation expert à une structure, qui doit avoir un SIRET : la ligne reprend son identité. */
+  async ajouter(structureId: string, saisie: ExpertAEnregistrer, executor: StructuresExecutor): Promise<string> {
+    const identite = await structuresRepository.findIdentite(structureId, executor);
+    if (!identite) throw new Error("Structure introuvable");
+    if (!identite.siret)
+      throw new Error("Renseignez le SIRET de la structure avant de lui ajouter l'habilitation expert");
     const [cree] = await executor
       .insert(experts)
-      .values({ ...colonnesExpert(saisie), structureId })
+      .values({ ...colonnesExpert(saisie), nom: identite.nom, siret: identite.siret, structureId })
       .returning({ id: experts.id });
     await this.remplacerDepartements(cree.id, saisie.departements, executor);
     return cree.id;
@@ -83,6 +90,11 @@ export class ExpertsRepository {
       .set({ ...colonnesExpert(saisie), updatedAt: new Date() })
       .where(eq(experts.id, id));
     await this.remplacerDepartements(id, saisie.departements, executor);
+  }
+
+  /** Ses départements partent avec lui, par cascade. */
+  async supprimer(id: string, executor: StructuresExecutor): Promise<void> {
+    await executor.delete(experts).where(eq(experts.id, id));
   }
 
   async desactiver(id: string, agentId: string | null, raison: string): Promise<boolean> {
@@ -167,8 +179,6 @@ export class ExpertsRepository {
 
 function colonnesExpert(saisie: ExpertAEnregistrer) {
   return {
-    nom: saisie.nom,
-    siret: saisie.siret,
     dateValidationDhup: saisie.dateValidationDhup,
     contactInterneNom: saisie.contactInterneNom,
     contactInterneEmail: saisie.contactInterneEmail,

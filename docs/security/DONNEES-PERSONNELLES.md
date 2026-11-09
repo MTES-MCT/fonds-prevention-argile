@@ -155,9 +155,13 @@ Les agents conservés (`@beta.gouv.fr`, `@yopmail.com`) ne sont pas touchés.
 
 ### `structures`
 
-| Colonnes                                | Nature        | À la restauration |
-| --------------------------------------- | ------------- | ----------------- |
-| `id`, `nom`, `created_at`, `updated_at` | Professionnel | Conservées        |
+| Colonnes                                           | Nature        | À la restauration                                            |
+| -------------------------------------------------- | ------------- | ------------------------------------------------------------ |
+| `nom`, `siret`, `adresse`, `telephone`, `horaires` | Professionnel | Conservées : coordonnées publiées aux demandeurs sur le site |
+| `id`, `type`, `created_at`, `updated_at`           | Non personnel | Conservées                                                   |
+
+> Depuis ADR-0053, l'identité vit sur la structure et se recopie sur ses lignes `entreprises_amo`,
+> `allers_vers` et `experts` : les deux copies sont de même nature et conservées ensemble.
 
 ### `entreprises_amo`
 

@@ -419,6 +419,7 @@ async function main(): Promise<void> {
   // Après parcours : 07 et 13 suppriment puis réinsèrent les structures « seed test ».
   if (args.steps.includes("amo-av") || args.steps.includes("parcours")) {
     await redirigerEmailsStructures(args.dryRun);
+    await runSqlFile("amo-av/aligner-identite-structures.sql", args.dryRun);
   }
   if (args.steps.includes("agents")) await runAgentsStep(args.dryRun);
   if (args.steps.includes("verify")) await runVerifyStep(args.dryRun);

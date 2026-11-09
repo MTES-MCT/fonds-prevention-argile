@@ -8,17 +8,21 @@ import {
   parcoursAmoValidations,
   structures,
 } from "../schema";
-import type { NewEntrepriseAmo } from "../schema/entreprises-amo";
-import { BaseRepository } from "./base.repository";
-import { structuresRepository } from "./structures.repository";
+import { structuresRepository, type StructuresExecutor } from "./structures.repository";
 import { agentsRepository } from "./agents.repository";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
+/** Ce que porte l'habilitation AMO en propre : son territoire et l'équipe qui reçoit les demandes. */
+export interface HabilitationAmoAEnregistrer {
+  departements: string;
+  emails: string;
+}
+
 /**
  * Repository pour les entreprises AMO
  */
-export class EntreprisesAmoRepository extends BaseRepository<Amo> {
+export class EntreprisesAmoRepository {
   /**
    * Trouve une AMO par ID
    */
@@ -101,49 +105,53 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
     return Array.from(amosMap.values());
   }
 
-  /**
-   * Crée une nouvelle AMO
-   */
-  async create(data: Partial<Amo>): Promise<Amo> {
-    return await db.transaction(async (tx) => {
-      const insertData: NewEntrepriseAmo = {
-        nom: data.nom!,
-        siret: data.siret || "",
-        departements: data.departements!,
-        emails: data.emails!,
-        telephone: data.telephone || "",
-        adresse: data.adresse || "",
-        // Une nouvelle AMO est sa propre structure, sans rôle Aller-vers.
-        structureId: await structuresRepository.creer(data.nom!, tx),
-      };
-
-      const [created] = await tx.insert(entreprisesAmo).values(insertData).returning();
-      return created;
-    });
+  /** Ajoute l'habilitation AMO à une structure, qui doit avoir un SIRET : la ligne reprend son identité. */
+  async ajouter(
+    structureId: string,
+    habilitation: HabilitationAmoAEnregistrer,
+    executor: StructuresExecutor
+  ): Promise<string> {
+    const identite = await structuresRepository.findIdentite(structureId, executor);
+    if (!identite) throw new Error("Structure introuvable");
+    if (!identite.siret) throw new Error("Renseignez le SIRET de la structure avant de lui ajouter l'habilitation AMO");
+    const [creee] = await executor
+      .insert(entreprisesAmo)
+      .values({
+        nom: identite.nom,
+        siret: identite.siret,
+        adresse: identite.adresse,
+        telephone: identite.telephone,
+        horaires: identite.horaires,
+        departements: habilitation.departements,
+        emails: habilitation.emails,
+        structureId,
+      })
+      .returning({ id: entreprisesAmo.id });
+    return creee.id;
   }
 
-  /**
-   * Met à jour une AMO
-   */
-  async update(id: string, data: Partial<Amo>): Promise<Amo | null> {
-    const updateData: Partial<NewEntrepriseAmo> = {};
-
-    if (data.nom !== undefined) updateData.nom = data.nom;
-    // Ne pas permettre de mettre à jour le SIRET via cette méthode (clé unique)
-    if (data.departements !== undefined) updateData.departements = data.departements;
-    if (data.emails !== undefined) updateData.emails = data.emails;
-    if (data.telephone !== undefined) updateData.telephone = data.telephone || "";
-    if (data.adresse !== undefined) updateData.adresse = data.adresse || "";
-    if (data.horaires !== undefined) updateData.horaires = data.horaires;
-
-    const [updated] = await db.update(entreprisesAmo).set(updateData).where(eq(entreprisesAmo.id, id)).returning();
-
-    return updated || null;
+  /** Territoire et équipe seulement : l'identité se modifie sur la structure. */
+  async mettreAJourHabilitation(
+    id: string,
+    habilitation: HabilitationAmoAEnregistrer,
+    executor: StructuresExecutor = db
+  ): Promise<boolean> {
+    const lignes = await executor
+      .update(entreprisesAmo)
+      .set({ departements: habilitation.departements, emails: habilitation.emails, updatedAt: new Date() })
+      .where(eq(entreprisesAmo.id, id))
+      .returning({ id: entreprisesAmo.id });
+    return lignes.length > 0;
   }
 
-  /**
-   * Supprime une AMO et toutes ses relations
-   */
+  /** Avec la structure qui la porte : l'appelant a vérifié qu'aucun agent ni aucun dossier n'en dépend. */
+  async supprimerAvecStructure(id: string, executor: StructuresExecutor): Promise<void> {
+    await executor.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, id));
+    await executor.delete(entreprisesAmoEpci).where(eq(entreprisesAmoEpci.entrepriseAmoId, id));
+    await executor.delete(entreprisesAmo).where(eq(entreprisesAmo.id, id));
+  }
+
+  /** Retire l'habilitation AMO d'une structure qui en garde une autre. */
   async delete(id: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
       const [existante] = await tx
@@ -154,82 +162,20 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
       if (!existante) return false;
       // Verrou exclusif : une autre suppression ou un rattachement d'agent sur la structure attend, puis voit l'état final.
       await structuresRepository.verrouiller(existante.structureId, "exclusif", tx);
-      const [relue] = await tx
-        .select({ structureId: entreprisesAmo.structureId })
-        .from(entreprisesAmo)
-        .where(eq(entreprisesAmo.id, id))
-        .limit(1);
-      if (!relue) return false;
-      // Une fusion ou un détachement l'a déplacée avant le verrou : la garde porterait sur la mauvaise structure.
-      if (relue.structureId !== existante.structureId) {
-        throw new Error("Cette AMO vient de changer de structure : recommencez la suppression");
-      }
       const structure = await structuresRepository.findAvecHabilitations(existante.structureId, tx);
       if (!structure?.allersVers && (await agentsRepository.compterParStructure(existante.structureId, tx)) > 0) {
         throw new Error(
-          "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer cette AMO"
+          "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de retirer l'habilitation AMO"
         );
       }
 
-      // Supprimer les relations communes
       await tx.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, id));
-
-      // Supprimer les relations EPCI
       await tx.delete(entreprisesAmoEpci).where(eq(entreprisesAmoEpci.entrepriseAmoId, id));
-
-      // Supprimer l'AMO
       const result = await tx.delete(entreprisesAmo).where(eq(entreprisesAmo.id, id)).returning();
 
       await agentsRepository.resynchroniserColonnesHeritees(existante.structureId, tx);
-      await structuresRepository.supprimerVides(tx);
       return result.length > 0;
     });
-  }
-
-  /**
-   * Supprime les entreprises qu'aucun agent ni aucune validation AMO ne référence
-   */
-  async supprimerNonRattachees(): Promise<{ supprimees: string[]; conservees: string[] }> {
-    const sansAgentNiValidation = and(
-      notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, entreprisesAmo.structureId))),
-      notExists(
-        db
-          .select({ id: parcoursAmoValidations.id })
-          .from(parcoursAmoValidations)
-          .where(eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
-      )
-    );
-    const supprimees = await db.transaction(async (tx) => {
-      // Un agent rattaché pendant la purge attend ces verrous ; le DELETE, relu après eux, épargne alors sa structure.
-      const verrouillees = await tx
-        .select({ id: structures.id })
-        .from(structures)
-        .innerJoin(entreprisesAmo, eq(entreprisesAmo.structureId, structures.id))
-        .where(sansAgentNiValidation)
-        .orderBy(structures.id)
-        .for("update", { of: structures });
-      // Une structure devenue candidate entre-temps n'est pas verrouillée : elle attend la prochaine purge.
-      const lignes = verrouillees.length
-        ? await tx
-            .delete(entreprisesAmo)
-            .where(
-              and(
-                inArray(
-                  entreprisesAmo.structureId,
-                  verrouillees.map((v) => v.id)
-                ),
-                sansAgentNiValidation
-              )
-            )
-            .returning({ nom: entreprisesAmo.nom })
-        : [];
-      await structuresRepository.supprimerVides(tx);
-      return lignes;
-    });
-
-    const conservees = await db.select({ nom: entreprisesAmo.nom }).from(entreprisesAmo).orderBy(entreprisesAmo.nom);
-
-    return { supprimees: supprimees.map((s) => s.nom), conservees: conservees.map((s) => s.nom) };
   }
 
   /**
@@ -262,41 +208,65 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
   /**
    * Met à jour les relations communes d'une AMO
    */
-  async updateCommunesRelations(amoId: string, codeInsees: string[]): Promise<void> {
-    await this.transaction(async (tx) => {
-      // Supprimer les anciennes relations
-      await tx.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, amoId));
+  async updateCommunesRelations(amoId: string, codeInsees: string[], tx: StructuresExecutor = db): Promise<void> {
+    // Supprimer les anciennes relations
+    await tx.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, amoId));
 
-      // Insérer les nouvelles relations si présentes
-      if (codeInsees.length > 0) {
-        await tx.insert(entreprisesAmoCommunes).values(
-          codeInsees.map((codeInsee) => ({
-            entrepriseAmoId: amoId,
-            codeInsee: codeInsee,
-          }))
-        );
-      }
-    });
+    // Insérer les nouvelles relations si présentes
+    if (codeInsees.length > 0) {
+      await tx.insert(entreprisesAmoCommunes).values(
+        codeInsees.map((codeInsee) => ({
+          entrepriseAmoId: amoId,
+          codeInsee: codeInsee,
+        }))
+      );
+    }
   }
 
   /**
    * Met à jour les relations EPCI d'une AMO
    */
-  async updateEpciRelations(amoId: string, codeEpcis: string[]): Promise<void> {
-    await this.transaction(async (tx) => {
-      // Supprimer les anciennes relations
-      await tx.delete(entreprisesAmoEpci).where(eq(entreprisesAmoEpci.entrepriseAmoId, amoId));
+  async updateEpciRelations(amoId: string, codeEpcis: string[], tx: StructuresExecutor = db): Promise<void> {
+    // Supprimer les anciennes relations
+    await tx.delete(entreprisesAmoEpci).where(eq(entreprisesAmoEpci.entrepriseAmoId, amoId));
 
-      // Insérer les nouvelles relations si présentes
-      if (codeEpcis.length > 0) {
-        await tx.insert(entreprisesAmoEpci).values(
-          codeEpcis.map((codeEpci) => ({
-            entrepriseAmoId: amoId,
-            codeEpci: codeEpci,
-          }))
-        );
-      }
-    });
+    // Insérer les nouvelles relations si présentes
+    if (codeEpcis.length > 0) {
+      await tx.insert(entreprisesAmoEpci).values(
+        codeEpcis.map((codeEpci) => ({
+          entrepriseAmoId: amoId,
+          codeEpci: codeEpci,
+        }))
+      );
+    }
+  }
+
+  async findHabilitationParStructure(
+    structureId: string,
+    executor: StructuresExecutor = db
+  ): Promise<{ id: string; departements: string; emails: string } | null> {
+    const [ligne] = await executor
+      .select({ id: entreprisesAmo.id, departements: entreprisesAmo.departements, emails: entreprisesAmo.emails })
+      .from(entreprisesAmo)
+      .where(eq(entreprisesAmo.structureId, structureId));
+    return ligne ?? null;
+  }
+
+  async getCommunesByEntrepriseAmoId(entrepriseAmoId: string): Promise<string[]> {
+    const lignes = await db
+      .select({ codeInsee: entreprisesAmoCommunes.codeInsee })
+      .from(entreprisesAmoCommunes)
+      .where(eq(entreprisesAmoCommunes.entrepriseAmoId, entrepriseAmoId));
+    return lignes.map((ligne) => ligne.codeInsee);
+  }
+
+  /** Validations qui pointent l'AMO : la clé étrangère interdit alors de retirer son habilitation. */
+  async compterValidations(entrepriseAmoId: string): Promise<number> {
+    const [resultat] = await db
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(parcoursAmoValidations)
+      .where(eq(parcoursAmoValidations.entrepriseAmoId, entrepriseAmoId));
+    return resultat?.count ?? 0;
   }
 
   /**

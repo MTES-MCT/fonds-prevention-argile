@@ -7,7 +7,7 @@ import { agentsRepository } from "./agents.repository";
 
 vi.mock("../client", () => ({ db: { select: vi.fn(), transaction: vi.fn() } }));
 vi.mock("./structures.repository", () => ({
-  structuresRepository: { verrouiller: vi.fn(), findAvecHabilitations: vi.fn(), supprimerVides: vi.fn() },
+  structuresRepository: { verrouiller: vi.fn(), findAvecHabilitations: vi.fn() },
 }));
 vi.mock("./agents.repository", () => ({
   agentsRepository: { compterParStructure: vi.fn(), resynchroniserColonnesHeritees: vi.fn() },
@@ -15,7 +15,7 @@ vi.mock("./agents.repository", () => ({
 
 const ordre: string[] = [];
 
-// Structures lues pour la ligne : avant le verrou, puis après.
+// Structure lue pour la ligne avant le verrou.
 let lectures: string[] = [];
 
 const tx = {
@@ -35,6 +35,7 @@ const tx = {
 function structureAvec(amo: boolean) {
   return {
     id: "s-1",
+    type: "accompagnement" as const,
     nom: "Adil 32",
     entrepriseAmo: amo ? { id: "amo-1", nom: "Adil 32" } : null,
     allersVers: { id: "av-1", nom: "Adil 32" },
@@ -65,14 +66,6 @@ describe("AllersVersRepository.delete — un agent ne perd jamais son seul rôle
     expect(tx.delete).not.toHaveBeenCalled();
   });
 
-  it("refuse quand une fusion ou un détachement a déplacé l'Aller-vers avant le verrou", async () => {
-    lectures = ["s-1", "s-2"];
-    vi.mocked(structuresRepository.findAvecHabilitations).mockResolvedValue(structureAvec(true));
-
-    await expect(repo.delete("av-1")).rejects.toThrow("vient de changer de structure");
-    expect(tx.delete).not.toHaveBeenCalled();
-  });
-
   it("vérifie sous verrou exclusif, dans la transaction de la suppression", async () => {
     vi.mocked(structuresRepository.findAvecHabilitations).mockImplementation(async () => {
       ordre.push("lecture");
@@ -94,51 +87,5 @@ describe("AllersVersRepository.delete — un agent ne perd jamais son seul rôle
     expect(await repo.delete("av-1")).toBe(true);
     expect(structuresRepository.findAvecHabilitations).toHaveBeenCalledWith("s-1", tx);
     expect(agentsRepository.resynchroniserColonnesHeritees).toHaveBeenCalledWith("s-1", tx);
-    expect(structuresRepository.supprimerVides).toHaveBeenCalledWith(tx);
-  });
-});
-
-describe("AllersVersRepository.supprimerNonRattaches — purge sous verrou", () => {
-  let verrou: ReturnType<typeof vi.fn>;
-  let txPurge: { select: ReturnType<typeof vi.fn>; delete: typeof tx.delete };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    ordre.length = 0;
-    verrou = vi.fn(() => {
-      ordre.push("verrou");
-      return Promise.resolve([{ id: "s-1" }]);
-    });
-    txPurge = {
-      select: vi.fn(() => ({
-        from: () => ({ innerJoin: () => ({ where: () => ({ orderBy: () => ({ for: verrou }) }) }) }),
-      })),
-      delete: tx.delete,
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(db.transaction).mockImplementation(async (fn: any) => fn(txPurge));
-    // Sous-requêtes de la purge, puis relecture des lignes conservées.
-    vi.mocked(db.select).mockReturnValue({
-      from: () => ({ where: () => ({}), orderBy: () => Promise.resolve([{ nom: "Soliha 36" }]) }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
-  });
-
-  it("verrouille les structures visées avant de supprimer, dans la même transaction", async () => {
-    const bilan = await new AllersVersRepository().supprimerNonRattaches();
-
-    expect(verrou).toHaveBeenCalledWith("update", { of: structures });
-    expect(ordre).toEqual(["verrou", "suppression"]);
-    expect(structuresRepository.supprimerVides).toHaveBeenCalledWith(txPurge);
-    expect(bilan).toEqual({ supprimees: ["Adil 32"], conservees: ["Soliha 36"] });
-  });
-
-  it("ne supprime rien quand aucune structure n'a été verrouillée", async () => {
-    verrou.mockResolvedValue([]);
-
-    const bilan = await new AllersVersRepository().supprimerNonRattaches();
-
-    expect(tx.delete).not.toHaveBeenCalled();
-    expect(bilan.supprimees).toEqual([]);
   });
 });

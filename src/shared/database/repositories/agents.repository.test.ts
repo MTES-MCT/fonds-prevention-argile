@@ -349,7 +349,14 @@ describe("AgentsRepository.create — rattachement à une structure sous verrou"
   it("lit les habilitations sous verrou partagé, dans la transaction de l'insertion", async () => {
     vi.spyOn(structuresRepository, "findAvecHabilitations").mockImplementation(async () => {
       ordre.push("lecture");
-      return { id: "s-1", nom: "Soliha 54", entrepriseAmo: { id: "amo-1", nom: "Soliha 54" }, allersVers: null, expert: null };
+      return {
+        id: "s-1",
+        type: "accompagnement" as const,
+        nom: "Soliha 54",
+        entrepriseAmo: { id: "amo-1", nom: "Soliha 54" },
+        allersVers: null,
+        expert: null,
+      };
     });
 
     const agent = await new AgentsRepository().create(nouvel);
@@ -363,6 +370,7 @@ describe("AgentsRepository.create — rattachement à une structure sous verrou"
   it("n'insère rien quand la structure a perdu ses habilitations pendant l'attente du verrou", async () => {
     vi.spyOn(structuresRepository, "findAvecHabilitations").mockResolvedValue({
       id: "s-1",
+      type: "accompagnement" as const,
       nom: "Soliha 54",
       entrepriseAmo: null,
       allersVers: null,
