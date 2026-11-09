@@ -11,21 +11,21 @@ Outils pour bootstrap une base **de zéro** avec des données de test cohérente
 pnpm seed:staging
 ```
 
-Pipeline en 7 étapes, ~30s en local. Résultat : agents de test + AMO/AV de test + experts de test + 70 users + parcours à tous les stades.
+Pipeline en 7 étapes, ~30s en local. Résultat : agents de test + AMO/AV de test + experts de test + ~230 users + parcours à tous les stades.
 
 ## Pipeline
 
 Le script `seed-staging.ts` enchaîne 7 étapes. Chacune est lançable séparément via `--steps`, sauf `safety`, qui s'exécute **toujours** : l'exclure laissait les autres étapes écrire sans aucun contrôle.
 
-| #   | Step       | Quoi                                                                                                                                                          | Idempotent                                |
-| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                                                                    | —                                         |
-| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                                                                              | —                                         |
-| 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`                                                                       | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) ; une entreprise AMO et Aller-vers partage une structure, comme en production               | ✅ `ON CONFLICT`                          |
-| 5   | `experts`  | Structures expert de test (`sql/experts/seed-experts.sql`). Ne touche rien d'autre : jouable seule sur une base restaurée (`pnpm db:restore`)                 | ✅ `DELETE FROM experts` en tête          |
-| 6   | `parcours` | Joue les 16 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `15-demandeurs-proches.sql`                                                                   | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 7   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides, agents sans structure habilitée, hybrides sans leurs deux rôles) | —                                         |
+| #   | Step       | Quoi                                                                                                                                                             | Idempotent                                |
+| --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                                                                       | —                                         |
+| 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                                                                                 | —                                         |
+| 3   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) ; une entreprise AMO et Aller-vers partage une structure, comme en production                  | ✅ `ON CONFLICT`                          |
+| 4   | `experts`  | Structures expert de test (`sql/experts/seed-experts.sql`). Ne touche rien d'autre : jouable seule sur une base restaurée (`pnpm db:restore`)                    | ✅ `DELETE FROM experts` en tête          |
+| 5   | `parcours` | Joue 16 fichiers SQL de `sql/fake-parcours/00-init.sql` à `15-demandeurs-proches.sql`, tous sauf `06-test-aucun-amo.sql` (scénario manuel)                       | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`, après `parcours` (dont le fichier 13 recrée les AMO qu'ils référencent) | ✅ `ON CONFLICT (email) DO UPDATE`        |
+| 7   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides, agents sans structure habilitée, hybrides sans leurs deux rôles)    | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -34,7 +34,7 @@ Les **données de référence** (RGA + catnat) ne sont **pas** créées par ce s
 À lancer manuellement **une seule fois** par environnement, avant le premier `seed:staging` :
 
 ```bash
-# 1. Zones RGA (12 départements pilotes, ~121k polygones, ~2 min)
+# 1. Zones RGA (France métropolitaine, ~121k polygones, ~2 min)
 pnpm rga:import /tmp/rga-2025/AleaRG_2025_Fxx_L93.shp
 # → cf. scripts/import/rga-zones/README.md pour récupérer le shapefile
 
@@ -211,15 +211,15 @@ sql/
 │   └── aligner-identite-structures.sql # identité des structures reprise des lignes d'habilitation
 ├── experts/                         # Structures expert (ADR-0052, ADR-0053)
 │   └── seed-experts.sql                # 4 experts de test, dont un désactivé
-└── fake-parcours/                   # 13 étapes pour peupler les parcours
+└── fake-parcours/                   # 17 fichiers SQL, 16 joués par l'étape parcours
     ├── 00-init.sql                  # TRUNCATE des tables touchées
-    ├── 01-users.sql                 # 40 users (parcours AMO)
-    ├── 01b-users-prospects.sql      # 30 users (parcours Allers-vers)
-    ├── 02-parcours.sql              # 70 parcours_prevention
-    ├── 03-validations-amo.sql       # 30 validations AMO (4 statuts)
-    ├── 04-dossiers-ds.sql           # 8 dossiers Démarches Simplifiées
-    ├── 05-prospects-sans-amo.sql    # 30 prospects (sans AMO, AV)
-    ├── 06-test-aucun-amo.sql        # Edge case "aucun AMO disponible"
+    ├── 01-users.sql                 # 43 users (parcours AMO)
+    ├── 01b-users-prospects.sql      # 38 users (parcours Allers-vers)
+    ├── 02-parcours.sql              # 43 parcours_prevention (users de 01)
+    ├── 03-validations-amo.sql       # 43 validations AMO (4 statuts)
+    ├── 04-dossiers-ds.sql           # 43 dossiers Démarches Simplifiées
+    ├── 05-prospects-sans-amo.sql    # 38 prospects (sans AMO, AV)
+    ├── 06-test-aucun-amo.sql        # Edge case "aucun AMO disponible", manuel : exclu du seed
     ├── 07-commentaires.sql          # 20 commentaires + 2 agents fictifs
     ├── 08-prospect-qualifications.sql
     ├── 09-archives-dashboard.sql
@@ -238,7 +238,7 @@ sql/
 2. Si dans `fake-parcours/`, numéroter pour respecter l'ordre (les FK dépendent de l'ordre).
 3. Préfixer toute insertion d'un `ON CONFLICT ... DO UPDATE/NOTHING` ou compter sur le `TRUNCATE` de `00-init.sql`.
 4. Ajouter une ligne dans le `99-verification.sql` (count attendu).
-5. Si nouvelle étape distincte (pas dans `fake-parcours/`), l'ajouter dans `STEPS` du `seed-staging.ts`.
+5. Si nouvelle étape distincte (pas dans `fake-parcours/`), l'ajouter dans `ALL_STEPS` du `seed-staging.ts`. Un nouveau fichier `fake-parcours/` s'ajoute à `FAKE_PARCOURS_FILES`.
 
 ## Vérification post-seed
 
@@ -249,13 +249,13 @@ pnpm db:studio
 Ou via psql :
 
 ```sql
-SELECT count(*) FROM agents;                       -- 7
+SELECT count(*) FROM agents;                       -- 6 sur une base neuve, + un par adresse de SEED_AGENTS_*
 SELECT count(*) FROM entreprises_amo;              -- ≥ 1
 SELECT count(*) FROM allers_vers;                  -- ≥ 1
-SELECT count(*) FROM users;                        -- ~70
-SELECT count(*) FROM parcours_prevention;          -- ~70
-SELECT count(*) FROM parcours_amo_validations;     -- 30
-SELECT count(*) FROM dossiers_demarches_simplifiees; -- 8
+SELECT count(*) FROM users;                        -- ~230
+SELECT count(*) FROM parcours_prevention;          -- ~230
+SELECT count(*) FROM parcours_amo_validations;     -- ~60
+SELECT count(*) FROM dossiers_demarches_simplifiees; -- ~90
 ```
 
 Les counts exacts sont dans `sql/fake-parcours/99-verification.sql`.

@@ -92,7 +92,11 @@ FROM parcours_amo_validations
 WHERE parcours_id = '<PARCOURS_UUID>';
 ```
 
-## En cas de 401
+## En cas de refus
+
+Seul le healthcheck (`GET`) répond 401. Un `POST` mal authentifié répond **200**
+`{"success":false,"error":"Authentification invalide"}`, pour que Brevo ne le rejoue pas : lire
+le corps, pas le code HTTP.
 
 Dans l'ordre : le secret exporté est-il bien celui de l'environnement visé (local et staging
 n'ont pas le même) ; `$FPA_URL` pointe-t-il vers cet environnement ; et la variable est-elle

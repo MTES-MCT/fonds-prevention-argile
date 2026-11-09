@@ -10,17 +10,12 @@ Avant cette feature, un parcours ne pouvait exister qu'après connexion du deman
 
 ### Points d'entrée
 
-Deux entrées vers le wizard, selon le rôle de l'agent :
-
-| Page                      | Bouton « + Nouveau dossier » | Rôles                            | URL cible                      |
-| ------------------------- | ---------------------------- | -------------------------------- | ------------------------------ |
-| `/espace-agent/dossiers`  | ✅                           | AMO + AMO_ET_ALLERS_VERS         | `/dossiers/nouveau?intent=amo` |
-| `/espace-agent/prospects` | ✅                           | ALLERS_VERS + AMO_ET_ALLERS_VERS | `/dossiers/nouveau?intent=av`  |
+Une seule entrée vers le wizard : le bouton « + Nouveau dossier » de `/espace-agent/dossiers`, visible pour `AMO`, `ALLERS_VERS` et `AMO_ET_ALLERS_VERS`, qui mène à `/dossiers/nouveau?intent=amo`. `/espace-agent/prospects` redirige vers `/espace-agent/dossiers` (listing unifié) : aucun lien de l'interface ne porte plus `intent=av`.
 
 Le param URL **`?intent=av\|amo`** détermine le « chapeau » sous lequel l'agent agit :
 
-- **`intent=amo`** (entrée /dossiers) : le service `createDossierByAgent` **auto-claim** une `parcours_amo_validations` sur l'entreprise AMO de l'agent. Le dossier apparaît immédiatement dans /dossiers. Redirect post-création : `/dossiers`.
-- **`intent=av`** (entrée /prospects) : **pas** de claim AMO même si l'agent a un `entrepriseAmoId` (cas AMO_ET_ALLERS_VERS qui crée comme un AV). Le dossier reste un prospect. Redirect post-création : `/prospects`.
+- **`intent=amo`** (le bouton) : le service `createDossierByAgent` **auto-claim** une `parcours_amo_validations` sur l'entreprise AMO de l'agent. Le dossier apparaît immédiatement dans /dossiers. Redirect post-création : `/dossiers`.
+- **`intent=av`** (URL saisie à la main seulement) : **pas** de claim AMO même si l'agent a un `entrepriseAmoId` (cas AMO_ET_ALLERS_VERS qui crée comme un AV). Le dossier reste un prospect. Redirect post-création : `/prospects`, qui renvoie sur `/dossiers`.
 
 L'intent est lu côté serveur dans `/dossiers/nouveau/page.tsx` + `/dossiers/nouveau/simulation/page.tsx` puis posé dans `useCreationDossierStore` au mount. Il est propagé jusqu'au call de `createDossierAllerVersAction` côté client.
 
@@ -28,9 +23,8 @@ L'intent est lu côté serveur dans `/dossiers/nouveau/page.tsx` + `/dossiers/no
 
 ### Garde-fous
 
-- AV pur arrivant sur `/espace-agent/dossiers` → redirect server-side vers `/prospects` (la page AMO ne fonctionne pas pour lui de toute façon).
 - Forge `?intent=av` par un AMO pur → l'action retourne 400 (« Mode AV demandé mais agent non rattaché à un Aller-vers »).
-- Forge `?intent=amo` par un AV pur → le service détecte l'absence d'`entrepriseAmoId` et ne crée pas de validation. Dégradation gracieuse vers le comportement AV.
+- `intent=amo` (le bouton) pour un AV pur → le service détecte l'absence d'`entrepriseAmoId` et ne crée pas de validation. Dégradation gracieuse vers le comportement AV.
 
 ### Étapes du wizard
 
@@ -61,6 +55,7 @@ Après création :
 - Redirection pilotée par l'`intent` du wizard (cf. `getPostCreationRedirectUrl(user, intent)`) :
   - `intent=av` → `/espace-agent/prospects`
   - `intent=amo` → `/espace-agent/dossiers` (ou `/prospects` en fallback si l'agent n'a pas d'`entrepriseAmoId`).
+  - `/espace-agent/prospects` redirige vers `/espace-agent/dossiers` : l'agent atterrit toujours sur le listing unifié.
 
 ## Modèle de données
 
@@ -125,7 +120,7 @@ Au callback FC, `upsertFromFranceConnect()` applique dans l'ordre :
 3. **Fallback email** — si un **unique** stub non réclamé a le même email (case-insensitive), on le rattache au compte FC. Si plusieurs stubs correspondent, on ne rattache pas (ambigu).
 4. **Création** — nouveau user FC normal.
 
-Le cookie `FC_CLAIM_TOKEN` est posé par le **Route Handler** `/claim-dossier/[token]/route.ts` (TTL 5 min, httpOnly) avant la redirection vers `/api/auth/fc/login`. C'est volontairement un Route Handler et pas une Page : Next.js 15 interdit de modifier les cookies depuis un Server Component. Le cas « lien invalide » est affiché par la page sœur `/claim-dossier/invalide`. Le cookie est consommé (lu + supprimé) dans `handleFranceConnectCallback`.
+Le cookie `FC_CLAIM_TOKEN` est posé par le **Route Handler** `/claim-dossier/[token]/route.ts` (TTL 15 min, httpOnly) avant la redirection vers `/connexion`, où le demandeur lance lui-même FranceConnect. C'est volontairement un Route Handler et pas une Page : Next.js 15 interdit de modifier les cookies depuis un Server Component. Le cas « lien invalide » est affiché par la page sœur `/claim-dossier/invalide`. Le cookie est consommé (lu + supprimé) dans `handleFranceConnectCallback`.
 
 ### Promotion `rgaSimulationDataAgent` → `rgaSimulationData` au claim
 
@@ -202,8 +197,8 @@ Pourquoi une permission dédiée plutôt que `PROSPECTS_VIEW` (utilisée auparav
 
 Côté pages :
 
-- `/espace-agent/dossiers` : redirect server-side `→ /prospects` pour ALLERS_VERS pur (la page n'a pas de sens pour lui). Bouton « + Nouveau dossier » visible pour `AMO | AMO_ET_ALLERS_VERS`, lien `→ /dossiers/nouveau?intent=amo`.
-- `/espace-agent/prospects` : bouton « + Nouveau dossier » visible pour `ALLERS_VERS | AMO_ET_ALLERS_VERS`, lien `→ /dossiers/nouveau?intent=av`.
+- `/espace-agent/dossiers` : ouverte à tous les rôles de l'espace agent. Bouton « + Nouveau dossier » visible pour `AMO | ALLERS_VERS | AMO_ET_ALLERS_VERS` (`travailleSurMesDossiers`), lien `→ /dossiers/nouveau?intent=amo`.
+- `/espace-agent/prospects` : redirige vers `/espace-agent/dossiers`.
 - `/espace-agent/dossiers/nouveau` (wizard) — même check, redirige vers `/espace-agent/dossiers` sinon.
 - `/espace-agent/dossiers/nouveau/simulation` (page simulation sans paramètre — état en `useSimulateurStore` + `useCreationDossierStore`) — idem.
 

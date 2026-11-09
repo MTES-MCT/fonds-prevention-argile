@@ -158,13 +158,14 @@ PAGER=cat psql $SCALINGO_POSTGRESQL_URL
 
 ### `current_step` — étape en cours
 
-| Valeur        | Étape                         |
-| ------------- | ----------------------------- |
-| `choix_amo`   | 1 — choix de l'accompagnement |
-| `eligibilite` | 2 — formulaire d'éligibilité  |
-| `diagnostic`  | 3 — diagnostic technique      |
-| `devis`       | 4 — devis des travaux         |
-| `factures`    | 5 — factures finales          |
+| Valeur        | Étape                                                                     |
+| ------------- | ------------------------------------------------------------------------- |
+| `invitation`  | dossier créé par un agent, le demandeur n'a pas encore réclamé son compte |
+| `choix_amo`   | 1 — choix de l'accompagnement                                             |
+| `eligibilite` | 2 — formulaire d'éligibilité                                              |
+| `diagnostic`  | 3 — diagnostic technique                                                  |
+| `devis`       | 4 — devis des travaux                                                     |
+| `factures`    | 5 — factures finales                                                      |
 
 ### `current_status` — statut de l'étape en cours
 

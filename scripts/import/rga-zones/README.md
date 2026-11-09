@@ -47,6 +47,10 @@ qui, combines aux donnees, depassent le quota disque (10-20 Go selon le plan).
 La methode fiable : importer en local, simplifier les geometries (~160 Mo),
 exporter en SQL et restaurer via db-tunnel.
 
+Dans les commandes `scalingo` ci-dessous, `<app-name>` et `<region>` dependent de l'environnement
+(cf. [docs/ops/scalingo.md](../../../docs/ops/scalingo.md)) : `fonds-argile-staging` et `osc-fr1`
+en staging, `fonds-argile` et `osc-secnum-fr1` en production. Une commande prod avec `osc-fr1` echoue.
+
 ### Etape 1 : Importer en local
 
 Si ce n'est pas deja fait :
@@ -109,7 +113,7 @@ scalingo keys-add "Mon Mac" ~/.ssh/id_ed25519.pub
 Dans un terminal dedie (reste ouvert pendant l'import) :
 
 ```bash
-scalingo -a <app-name> -region osc-fr1 db-tunnel SCALINGO_POSTGRESQL_URL -p 10000 -i ~/.ssh/id_ed25519
+scalingo -a <app-name> -region <region> db-tunnel SCALINGO_POSTGRESQL_URL -p 10000 -i ~/.ssh/id_ed25519
 ```
 
 Attendre le message :
@@ -123,7 +127,7 @@ You can access your database on:
 ### Etape 6 : Recuperer les credentials
 
 ```bash
-scalingo -a <app-name> -region osc-fr1 env | grep SCALINGO_POSTGRESQL_URL
+scalingo -a <app-name> -region <region> env | grep SCALINGO_POSTGRESQL_URL
 # -> postgres://USER:PASSWORD@host:port/DBNAME
 # Noter USER, PASSWORD et DBNAME
 ```
@@ -148,7 +152,7 @@ PGPASSWORD=<password> psql -h localhost -p 10000 -U <user> -d <dbname> -f /tmp/r
 PGPASSWORD=<password> psql -h localhost -p 10000 -U <user> -d <dbname> -c "SELECT alea, COUNT(*) FROM rga_zones GROUP BY alea;"
 # -> fort: 22269, moyen: 64039, faible: 35091
 
-# Tester l'API
+# Tester l'API (staging ; en production : https://fonds-prevention-argile.beta.gouv.fr)
 curl "https://staging.fonds-prevention-argile.beta.gouv.fr/api/rga/alea?lat=44.2&lon=0.62"
 # -> {"alea":"moyen"}
 
@@ -214,7 +218,7 @@ Si le tunnel se ferme apres une erreur PostgreSQL (PANIC), attendre quelques min
 que PostgreSQL redemarre, puis relancer :
 
 ```bash
-scalingo -a <app-name> -region osc-fr1 db-tunnel SCALINGO_POSTGRESQL_URL -p 10000 -i ~/.ssh/id_ed25519
+scalingo -a <app-name> -region <region> db-tunnel SCALINGO_POSTGRESQL_URL -p 10000 -i ~/.ssh/id_ed25519
 ```
 
 Si la DB ne revient pas, un changement de plan (upgrade puis downgrade) force un restart.

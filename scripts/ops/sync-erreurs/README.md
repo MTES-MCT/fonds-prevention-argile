@@ -5,7 +5,10 @@ Toolkit de diagnostic et remédiation des parcours bloqués en `eligibilite/todo
 
 Guide complet (cas, sous-cas, playbook) : [docs/parcours/SYNC-ERREURS-ET-REMEDIATION.md](../../../docs/parcours/SYNC-ERREURS-ET-REMEDIATION.md).
 
-Tous les scripts : **dry-run par défaut**, `--anonymize` pour masquer les PII. `--apply`
+Tous les scripts : **dry-run par défaut**. Les PII sont masquées par défaut dans `probe` et
+`reconcilier` (`--no-anonymize` pour le clair), sur demande dans `reset` et `relink`
+(`--anonymize`). Le dry-run de `ds:reconcilier` écrit tout de même ses constats dans
+`ds_reconciliation_observations` (aucun dossier repointé). `--apply`
 écrit — **sauf `fix:eligibilite-sync-error`, dont le `--apply` est gelé** (refus + sortie en
 erreur, cf. [ADR-0026](../../../docs/adr/0026-gel-reset-eligibilite-not-found.md) et l'encadré
 en bas de page) : il ne reste utilisable qu'en dry-run, comme diagnostic. Ils chargent l'env

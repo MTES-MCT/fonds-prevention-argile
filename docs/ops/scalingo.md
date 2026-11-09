@@ -137,15 +137,7 @@ nominatives et ont leurs propres précautions.
 
 ## CRON et jobs
 
-```bash
-scalingo --app fonds-argile-staging --region osc-fr1 cron-tasks
-```
-
-Depuis un one-off, la définition effective :
-
-```bash
-cat /app/cron.json
-```
+Aucun cron Scalingo : le dépôt n'a pas de `cron.json`.
 
 La synchronisation des parcours n'est pas un cron Scalingo mais un **workflow GitHub Actions**
 qui appelle `POST /api/cron/sync-parcours` (3 fois par jour). Voir

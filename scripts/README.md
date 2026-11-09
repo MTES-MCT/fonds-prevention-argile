@@ -17,7 +17,7 @@ Les scripts liés à une feature applicative (ex : génération SEO, import catn
 
 - **Toujours vérifier `DATABASE_URL`** avant de lancer un script qui écrit en base. Un script destructif sur la prod = catastrophe.
 - Les scripts de seed **refusent de tourner si `NEXT_PUBLIC_APP_ENV=production`** via un garde-fou triple (cf. [`seed/README.md`](./seed/README.md)).
-- Les scripts `ops/` sont par défaut **read-only** sauf indication contraire dans leur en-tête. Ceux qui écrivent (ex : `fix-missing-epci.ts`) ont un mode `--dry-run`.
+- Les scripts `ops/` sont par défaut **read-only** sauf indication contraire dans leur en-tête. Ceux qui écrivent font un passage à blanc par défaut et n'écrivent qu'avec `--apply`.
 - Aucun script ne doit être lancé en CI sans flag explicite (`CI=true` + flag dédié).
 
 ## Tooling

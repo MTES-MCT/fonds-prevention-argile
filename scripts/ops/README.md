@@ -2,7 +2,7 @@
 
 Utilitaires pour intervenir sur une BDD existante : audit d'intégrité, correction ponctuelle, debug d'un comportement. Pas de seed ici (cf. [`../seed/`](../seed/README.md)).
 
-> Tous les scripts read-only par défaut. Ceux qui écrivent ont un mode `--dry-run` pour prévisualiser avant d'appliquer.
+> Tous les scripts read-only par défaut. Ceux qui écrivent font un passage à blanc par défaut et n'écrivent qu'avec `--apply`.
 
 ## Exécution sur Scalingo
 
@@ -52,12 +52,23 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`purge-comptes-test-fc.ts`](#purge-comptes-test-fc)             | **écrit** | Supprime (cascade) les comptes demandeurs de test FranceConnect du CSV mocké FC low — staging/local uniquement, refus en prod                                                                    | `pnpm fix:purge-comptes-test-fc`                       |
 | [`backfill-brevo-attributes.ts`](#backfill-brevo-attributes)     | **écrit** | Recalcule et pousse (upsert, sans rejouer les évènements) l'état complet des attributs Brevo pour tous les contacts                                                                              | `pnpm fix:backfill-brevo`                              |
 | [`backfill-actions-audit.ts`](#backfill-actions-audit)           | **écrit** | Rejoue dans `parcours_actions` les réponses Aller-vers et les archivages passés, à leur date d'origine                                                                                           | `pnpm fix:backfill-actions-audit`                      |
+| `lier-amo-oblig.ts`                                              | **écrit** | Crée la demande à l'AMO des dossiers qualifiés éligibles par un Aller-vers mais sans validation AMO, en département à AMO imposée                                                                | `pnpm fix:lier-amo-oblig`                              |
+| `rattacher-amo.ts`                                               | **écrit** | Rattache de nouveau l'AMO aux parcours détachés à tort (« Ne plus accompagner ») dans un département où elle est obligatoire                                                                     | `pnpm fix:rattacher-amo`                               |
+| `mandat-financier.ts`                                            | **écrit** | Passe en mandataire financier les validations éligibles restées sans réponse (antérieures au 20/07/2026) des structures données par SIRET                                                        | `pnpm fix:mandat-financier --siret=<siret>`            |
+| `reclasser-source-autre.ts`                                      | **écrit** | Reclasse en « Assurance » ou « Site gouvernemental » les sources d'acquisition « Autre » dont la précision libre contient un mot-clé connu                                                       | `pnpm fix:reclasser-source-autre`                      |
 | [`cas-de-test.ts`](#cas-de-test)                                 | read-only | Prépare une session de tests manuels : les cas visibles par un compte donné, par scénario, avec URLs directes                                                                                    | `pnpm qa:cas-de-test`                                  |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                                                                                  | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                                                                                      | `pnpm ds:fetch-schema <numero>`                        |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                                                                                             | `pnpm ds:check-permissions`                            |
-| [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse la date d'expiration des tokens AMO expirés                                                                                                                                             | `psql -f scripts/ops/sql/extend-expired-tokens.sql`    |
-| [`cleanup-staging.sql`](#cleanup-staging)                        | **écrit** | Nettoyage destructif d'une BDD staging (TRUNCATE des tables transactionnelles)                                                                                                                   | `psql -f scripts/ops/sql/cleanup-staging.sql`          |
+| `fetch-pieces-justificatives.ts`                                 | read-only | Liste les pièces justificatives de chaque démarche configurée, avec leur modèle, leur catégorie et leur condition (à relancer à chaque évolution d'un formulaire DN)                             | `pnpm ds:fetch-pieces`                                 |
+| `backfill-processed-at.ts`                                       | **écrit** | Recopie la date de décision DN (`dateTraitement`) dans `processed_at` des dossiers en état final, parcours archivés et complétés compris                                                         | `pnpm ds:backfill-processed-at`                        |
+| `rattraper-mandat-financier.ts`                                  | **écrit** | Reprend de DN le mandat « administratif et financier » des parcours archivés ou complétés, que le CRON ne visite pas ; ne remplit que les NULL                                                   | `pnpm ds:rattraper-mandat-financier`                   |
+| `controler-avis-impot.ts`                                        | **écrit** | Contrôle l'avis d'imposition de dossiers d'éligibilité et écrit les annotations d'instruction dans DN, comme le CRON (ADR-0043)                                                                  | `pnpm ds:controler-avis-impot --tous`                  |
+| `inspecter-avis-impot.ts`                                        | read-only | Montre ce que DN a lu des avis d'imposition d'un dossier, à côté des déclaratifs et du verdict ; valeurs masquées par défaut                                                                     | `pnpm ds:inspecter-avis-impot --dossier=<n>`           |
+| `lister-instructeurs.ts`                                         | read-only | Liste les instructeurs d'une démarche, leur id GraphQL et les groupes où chacun manque (choix de `DEMARCHES_SIMPLIFIEES_INSTRUCTEUR_ID`)                                                         | `pnpm ds:lister-instructeurs <numero>`                 |
+| [`sync-erreurs/`](sync-erreurs/README.md)                        | mixte     | Dossiers DN en erreur de synchro : sonde, relink, réconciliation, registre des tentatives, faux dépôts                                                                                           | voir son README                                        |
+| [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse d'un an l'expiration de **tous** les tokens AMO non utilisés, expirés ou non                                                                                                            | `psql -f scripts/ops/sql/extend-expired-tokens.sql`    |
+| [`cleanup-staging.sql`](#cleanup-staging)                        | **écrit** | Nettoyage destructif d'une BDD staging : vide l'historique de synchro et supprime tous les `users` (cascade)                                                                                     | `psql -f scripts/ops/sql/cleanup-staging.sql`          |
 
 ## Détails
 
@@ -77,10 +88,12 @@ tsx scripts/ops/audit/audit-parcours-ds-integrity.ts --anonymize   # masque les 
 ### audit-dossiers-bloques
 
 Parcours actifs bloqués sur le dossier de leur **étape courante**. Audite par défaut
-les deux statuts : `en_construction` (brouillon jamais déposé = drop-off usager) et
-`en_instruction` (déposé mais qui n'avance pas). Sortie : répartition par étape/statut
-et par ancienneté. Avec `--check-ds`, croise chaque dossier avec son vrai statut DS pour
-séparer **drop-off** (DS aussi en_construction, pas un bug) de **désync** (DS plus avancé
+les deux statuts : `en_construction` (déposé, en attente d'instruction, cf.
+[ADR-0009](../../docs/adr/0009-semantique-statut-ds-depose-vs-brouillon.md)) et
+`en_instruction` (déposé mais qui n'avance pas). Un brouillon, sans `ds_status`, n'y figure
+pas. Sortie : répartition par étape/statut et par ancienneté. Avec `--check-ds`, croise
+chaque dossier avec son vrai statut DS pour séparer **drop-off** (DS aussi en_construction ;
+libellé antérieur à ADR-0009, c'est un dépôt en attente, pas un bug) de **désync** (DS plus avancé
 que nous = bug) et des cas **DS supprimé/inaccessible** (démarche test/permission, cf.
 [ADR-0011](../../docs/adr/0011-instance-unique-ds-et-permissions-token.md)).
 
@@ -383,6 +396,7 @@ pnpm qa:cas-de-test --comptes                        # comptes disponibles et ce
 pnpm qa:cas-de-test --agent=prenom.nom@structure.fr  # cas de test de ce compte
 pnpm qa:cas-de-test --agent=... --markdown           # cases à cocher collables dans Notion
 pnpm qa:cas-de-test --agent=... --scenario=dossier-archive --limit=5
+pnpm qa:cas-de-test --multi-amo                      # EPCI et départements couverts par au moins deux AMO
 ```
 
 **Les cas se consomment** : qualifier un prospect le retire du scénario « à qualifier ».
@@ -443,10 +457,10 @@ tsx scripts/ops/ds/check-ds-permissions.ts --instance=both     # teste les 2 dom
 
 ### extend-expired-tokens
 
-Repousse la date d'expiration des tokens AMO expirés (`amo_validation_tokens.expires_at < now()`). À utiliser uniquement si nécessaire pour débloquer un AMO ou un test, jamais en prod sans raison documentée.
+Repousse à un an l'expiration de **tous** les tokens AMO non utilisés (`amo_validation_tokens.used_at IS NULL`), expirés ou non. À utiliser uniquement si nécessaire pour débloquer un AMO ou un test, jamais en prod sans raison documentée.
 
 ### cleanup-staging
 
-**DESTRUCTIF**. TRUNCATE de toutes les tables transactionnelles (users, parcours, validations, commentaires, etc.). Préserve les tables de référence (rga_zones, catastrophes_naturelles, entreprises_amo, allers_vers).
+**DESTRUCTIF**. Vide `sync_run_entries` et `sync_runs`, puis supprime tous les `users` : la cascade emporte parcours, dossiers, validations AMO et jetons. Ne touche ni aux agents, ni aux structures, ni aux tables de référence (rga_zones, catastrophes_naturelles, entreprises_amo, allers_vers).
 
 À utiliser comme prérequis avant un `seed:staging` si la BDD n'est pas vide et qu'on veut repartir from-scratch sans tout reset.
