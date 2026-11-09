@@ -23,12 +23,16 @@ une liste d'entreprises privées, l'ordre d'affichage ne doit favoriser personne
 - Tables `experts` (`structure_id` unique, comme `entreprises_amo` et `allers_vers`) et
   `experts_departements` : un département en code officiel par ligne, avec le contact de réservation
   propre à ce département.
-- Une entreprise AMO qui est aussi expert partage une seule structure (fusion depuis la page Structures).
-  L'habilitation expert ne change le rôle d'aucun agent : `roleDepuisStructure` ne lit que AMO et
-  Aller-vers.
+- Une entreprise à la fois AMO et experte a deux structures de même SIRET : une structure expert ne
+  porte que l'expertise ([ADR-0053](0053-identite-portee-par-la-structure.md)). L'habilitation expert ne
+  change le rôle d'aucun agent : `roleDepuisStructure` ne lit que AMO et Aller-vers.
 - Le contact interne ne sort du serveur que pour le super-administrateur : deux projections,
   `ExpertAnnuaire` et `ExpertGestion`, construites champ par champ.
 - Un expert qui part est désactivé, pas supprimé.
+- L'annuaire des agents (`/espace-agent/experts`) montre un département, le territoire de l'agent ou
+  tous les départements qui ont un expert, regroupés par département ; l'ordre alphabétique vaut dans
+  chacun. Par défaut : le territoire de l'agent, ou tout s'il n'a aucun département (super-administrateur,
+  Aller-vers couvert par des EPCI seulement). L'analyste ne sort jamais de ses départements.
 
 ## Options envisagées
 
@@ -63,13 +67,14 @@ une liste d'entreprises privées, l'ordre d'affichage ne doit favoriser personne
 - Un seul annuaire, géré par le super-administrateur (saisie ou import Excel du référencement DHUP),
   consulté par les AMO, les Aller-vers, l'administrateur et l'analyste départemental (son territoire
   seulement), et repris dans le détail de chaque dossier.
-- La page Structures montre qu'une AMO est aussi expert, sans toucher aux rôles.
+- Les experts se gèrent dans la page Structures, comme les AMO et les Aller-vers, sans toucher aux rôles.
 
 ### Négatives / Risques
 
 - Le texte de la mention reste à faire valider par la DHUP (SUJETS-A-TRAITER).
-- La purge des structures vides doit compter les experts : une structure qui n'est qu'un expert n'a
-  ni agent ni AMO ni Aller-vers, et serait supprimée à tort (la clé étrangère l'empêche, en erreur).
+- Tout nettoyage des structures vides doit compter les experts, comme celui du seed
+  (`structures-agents.sql`) : une structure expert n'a ni agent ni AMO ni Aller-vers, et serait
+  supprimée à tort (la clé étrangère l'empêche, en erreur).
 
 ## Liens
 
@@ -77,4 +82,4 @@ une liste d'entreprises privées, l'ordre d'affichage ne doit favoriser personne
   `src/shared/database/schema/experts.ts`, migration `0060_experts.sql`
 - Documentation : [RBAC-ROLES.md](../security/RBAC-ROLES.md), [import-structures.md](../ops/import-structures.md)
 - ADR liées : [ADR-0051](0051-roles-amo-aller-vers-portes-par-la-structure.md),
-  [ADR-0042](0042-choix-amo-parmi-plusieurs.md)
+  [ADR-0053](0053-identite-portee-par-la-structure.md), [ADR-0042](0042-choix-amo-parmi-plusieurs.md)
