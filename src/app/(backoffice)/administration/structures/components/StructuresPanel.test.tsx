@@ -98,11 +98,11 @@ describe("StructuresPanel", () => {
     afficher();
     await nomsAffiches();
 
-    await userEvent.type(screen.getByLabelText("Rechercher (nom ou SIRET)"), "expértise");
+    await userEvent.type(screen.getByLabelText("Rechercher par nom ou SIRET"), "expértise");
     expect(await nomsAffiches()).toEqual(["Expertise Berry"]);
 
-    await userEvent.clear(screen.getByLabelText("Rechercher (nom ou SIRET)"));
-    await userEvent.type(screen.getByLabelText("Rechercher (nom ou SIRET)"), "123 456");
+    await userEvent.clear(screen.getByLabelText("Rechercher par nom ou SIRET"));
+    await userEvent.type(screen.getByLabelText("Rechercher par nom ou SIRET"), "123 456");
     expect(await nomsAffiches()).toEqual(["Soliha Indre"]);
   });
 

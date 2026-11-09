@@ -118,7 +118,7 @@ export default function StructuresPanel({ role, criteresInitiaux }: StructuresPa
       <section className="fr-container-fluid fr-pt-4w" style={{ borderBottom: "1px solid var(--border-default-grey)" }}>
         <div className="fr-container">
           <AdminBreadcrumb currentPageLabel="Structures" />
-          <div className="fr-grid-row fr-grid-row--middle fr-mb-6w">
+          <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters fr-mb-4w">
             <div className="fr-col">
               <h1 className="fr-h2 fr-mb-1v">Structures</h1>
               <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
@@ -221,22 +221,25 @@ export default function StructuresPanel({ role, criteresInitiaux }: StructuresPa
                     </select>
                   </div>
                 </div>
-                <div>
-                  <div className="fr-input-group">
-                    <label className="fr-label" htmlFor="recherche-structure">
-                      Rechercher (nom ou SIRET)
-                    </label>
-                    <input
-                      className="fr-input"
-                      type="search"
-                      id="recherche-structure"
-                      value={recherche}
-                      onChange={(e) => {
-                        setRecherche(e.target.value);
-                        setPage(1);
-                      }}
-                    />
-                  </div>
+                {/* Même barre que la page Demandeurs, étirée jusqu'au bord ; le filtrage suit la frappe. */}
+                <div className="fr-search-bar flex-1 min-w-72" role="search">
+                  <label className="fr-label" htmlFor="recherche-structure">
+                    Rechercher par nom ou SIRET
+                  </label>
+                  <input
+                    className="fr-input"
+                    placeholder="Rechercher par nom ou SIRET"
+                    type="search"
+                    id="recherche-structure"
+                    value={recherche}
+                    onChange={(e) => {
+                      setRecherche(e.target.value);
+                      setPage(1);
+                    }}
+                  />
+                  <button type="button" className="fr-btn" title="Rechercher">
+                    Rechercher
+                  </button>
                 </div>
               </div>
 
