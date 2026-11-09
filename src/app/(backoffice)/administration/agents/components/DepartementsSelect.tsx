@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { DEPARTEMENTS } from "@/shared/constants/departements.constants";
+import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
+import { getAllDepartementsEligibles } from "@/shared/constants/rga.constants";
 
 interface DepartementsSelectProps {
   value: string[];
@@ -10,22 +11,8 @@ interface DepartementsSelectProps {
   placeholder?: string;
 }
 
-/**
- * Liste des départements pour le select
- * Exclut "20" (Corse générique) car on a 2A et 2B
- */
-const DEPARTEMENTS_LIST = Object.entries(DEPARTEMENTS)
-  .filter(([code]) => code !== "20")
-  .map(([code, name]) => ({ code, name }))
-  .sort((a, b) => {
-    // Trier numériquement puis alphabétiquement pour les DOM-TOM
-    const aNum = parseInt(a.code, 10);
-    const bNum = parseInt(b.code, 10);
-    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-    if (!isNaN(aNum)) return -1;
-    if (!isNaN(bNum)) return 1;
-    return a.code.localeCompare(b.code);
-  });
+// Un analyste suit un département du dispositif : les 90 autres n'ont rien à lui montrer.
+const DEPARTEMENTS_LIST = getAllDepartementsEligibles().map(({ code, nom }) => ({ code, name: nom }));
 
 export default function DepartementsSelect({
   value,
@@ -58,21 +45,24 @@ export default function DepartementsSelect({
 
   // Ajouter un département
   const addDepartement = (code: string) => {
-    if (!value.includes(code)) {
+    if (!estChoisi(code)) {
       onChange([...value, code]);
     }
     setSearch("");
     inputRef.current?.focus();
   };
 
+  // Les suivis enregistrés mêlent « 3 » et « 03 » : on compare au format officiel.
+  const estChoisi = (code: string) => value.some((c) => toOfficialCodeDepartement(c) === code);
+
   // Supprimer un département
   const removeDepartement = (code: string) => {
-    onChange(value.filter((c) => c !== code));
+    onChange(value.filter((c) => toOfficialCodeDepartement(c) !== toOfficialCodeDepartement(code)));
   };
 
   // Toggle un département
   const toggleDepartement = (code: string) => {
-    if (value.includes(code)) {
+    if (estChoisi(code)) {
       removeDepartement(code);
     } else {
       addDepartement(code);
@@ -106,12 +96,12 @@ export default function DepartementsSelect({
             key={code}
             className="fr-tag fr-tag--sm fr-tag--dismiss"
             style={{ margin: 0 }}
-            aria-label={`Retirer ${code} ${DEPARTEMENTS[code]}`}
+            aria-label={`Retirer ${code} ${getDepartementName(code)}`}
             onClick={(e) => {
               e.stopPropagation();
               if (!disabled) removeDepartement(code);
             }}>
-            {code} - {DEPARTEMENTS[code]}
+            {code} - {getDepartementName(code)}
           </span>
         ))}
 
@@ -154,7 +144,7 @@ export default function DepartementsSelect({
             </div>
           ) : (
             filteredDepartements.map((dept) => {
-              const isSelected = value.includes(dept.code);
+              const isSelected = estChoisi(dept.code);
               return (
                 <button
                   key={dept.code}
