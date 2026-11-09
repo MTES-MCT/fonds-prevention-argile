@@ -173,6 +173,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Brevo Contacts        | Synchro contacts + évènements (cycle de vie)                    | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |
 | Matomo                | Analytics                                                       | `@socialgouv/matomo-next`                                         |
 | Géorisques / RGA      | Données risque                                                  | `src/features/seo/`, `scripts/import/rga-zones/`                  |
+| API Géo               | Communes et EPCI (code, nom, départements)                      | `src/shared/adapters/geo/`                                        |
 
 > Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
 > `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de

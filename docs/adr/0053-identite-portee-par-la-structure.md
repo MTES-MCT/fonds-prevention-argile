@@ -52,6 +52,10 @@ rôle, et les fichiers arrivent par rôle (liste des AMO, des Aller-vers, réfé
 - **Un seul onglet « Structures »** : une liste filtrable, une fiche par structure (identité, une carte
   par habilitation, agents), et les trois onglets d'import. Les pages AMO, Aller-vers et Experts
   redirigent vers la liste filtrée. Renommer, fusionner et détacher disparaissent.
+- **Territoire saisi dans des listes**, à l'écran : départements et EPCI se choisissent dans des
+  listes déroulantes à recherche. Les EPCI viennent de l'API Géo (nom, départements), mise en cache
+  une journée ; elle sert aussi à les nommer sur la fiche. Les départements de l'AMO restent stockés
+  en texte, écrit au format « Indre 36, Cher 18 » que lit sa couverture.
 - Droits : administrateur et super-administrateur. Ajouter ou retirer une habilitation AMO ou
   Aller-vers sur une structure **qui a des agents** change leurs rôles : réservé au
   super-administrateur, à l'écran comme à l'import. Tout ce qui touche aux experts reste au
@@ -100,8 +104,11 @@ rôle, et les fichiers arrivent par rôle (liste des AMO, des Aller-vers, réfé
   fiche.
 - L'administrateur ne peut plus donner un rôle aux agents d'une structure en lui ajoutant une
   habilitation : il passe par un super-administrateur.
-- Les départements de l'AMO restent du texte libre, contrairement à ceux de l'Aller-vers et de
-  l'expert ; leur normalisation est reportée (`docs/SUJETS-A-TRAITER.md`).
+- Les départements de l'AMO restent du texte libre en base, contrairement à ceux de l'Aller-vers et
+  de l'expert ; leur normalisation est reportée (`docs/SUJETS-A-TRAITER.md`). La fiche réécrit ce
+  texte au format canonique dès qu'on enregistre l'habilitation.
+- Sans l'API Géo, la liste des EPCI est vide : ceux déjà choisis restent affichés par leur code et
+  se retirent, mais aucun ne s'ajoute à l'écran (l'import, lui, n'en dépend pas).
 
 ### Migration
 
@@ -129,4 +136,5 @@ et le détachement n'y arrivent jamais, et l'import des experts crée déjà des
 - Règles et service : `src/features/backoffice/administration/structures/domain/regles-structures.ts`,
   `domain/import-structures.ts`, `services/structures-admin.service.ts`, `services/import-structures.service.ts`
 - Écran : `src/app/(backoffice)/administration/structures/`
+- Référentiel des EPCI : `src/shared/adapters/geo/geo.adapter.ts` (`fetchEpcis`), `services/referentiel-epci.service.ts`
 - Documentation : [RBAC-ROLES](../security/RBAC-ROLES.md), [DONNEES-PERSONNELLES](../security/DONNEES-PERSONNELLES.md), [import-structures](../ops/import-structures.md)
