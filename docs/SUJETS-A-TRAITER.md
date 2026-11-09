@@ -265,6 +265,16 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 
 ---
 
+## Espace agent
+
+### Demandeurs proches sur les fiches demande et prospect
+
+L'encart (carte et liste des cinq dossiers les plus proches) n'est que sur la fiche d'un dossier suivi.
+Les fiches demande (AMO) et prospect (Aller-vers) s'ouvrent pourtant à l'étape où se préparent les
+premières visites. Le service sait déjà les servir : il ne manque que le composant dans ces deux pages.
+
+**Préalable** : un retour des AMO et des Aller-vers sur l'usage de l'encart de la fiche dossier.
+
 ## Administration
 
 ### Un seul composant d'import Excel pour les AMO, les Aller-vers et les experts
