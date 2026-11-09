@@ -16,6 +16,8 @@ import {
   RenvoyerInvitationButton,
 } from "../../shared";
 import { expertsDuDepartementDuDossier } from "@/features/backoffice/espace-agent/experts/services/annuaire-experts.service";
+import { chargerDemandeursProches } from "@/features/backoffice/espace-agent/demandeurs-proches/services/demandeurs-proches.service";
+import { DemandeursProches } from "./components/demandeurs-proches/DemandeursProches";
 import { ActionsRealisees } from "../../shared";
 import { VulnerabiliteDossier } from "../../shared/components/VulnerabiliteDossier";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -80,6 +82,10 @@ export default async function DossierDetailPage({ params }: PageProps) {
   // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.
   const piecesJustificatives = await getPiecesJustificativesForStep(dossier.currentStep);
   const expertsDuDepartement = await expertsDuDepartementDuDossier(agentAutorise, dossier.codeDepartementLogement);
+  const demandeursProches = await chargerDemandeursProches(agentAutorise, {
+    parcoursId: dossier.parcoursId,
+    validationStatut: dossier.validationStatut,
+  });
 
   // Bouton "Ré-ouvrir" : visible sur une demande refusée, pour les rôles habilités
   // (le périmètre fin entreprise/territoire est revérifié côté action).
@@ -307,6 +313,11 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   agentEditInfo={dossier.agentEditInfo}
                 />
               </div>
+              {demandeursProches && (
+                <div className="fr-mb-4w">
+                  <DemandeursProches donnees={demandeursProches} />
+                </div>
+              )}
               <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
               <div>
                 <GagnezDuTempsTravaux />
