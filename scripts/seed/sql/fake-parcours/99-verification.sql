@@ -171,3 +171,19 @@ BEGIN
     RAISE EXCEPTION 'Entreprises AMO et Aller-vers scindées en deux structures : %', scindees;
   END IF;
 END $$;
+
+-- Cas de l'encart « Demandeurs proches » (15) : un fichier rejoué sans erreur mais incomplet ne se verrait pas à l'écran.
+DO $$
+DECLARE
+  autonomes int;
+  voisin_autre_amo int;
+BEGIN
+  SELECT count(*) INTO autonomes FROM parcours_amo_validations
+  WHERE id::text LIKE '33333333-3333-4333-8333-333333333d%' AND statut = 'sans_amo' AND entreprise_amo_id IS NULL;
+  SELECT count(*) INTO voisin_autre_amo FROM parcours_amo_validations
+  WHERE id = '33333333-3333-4333-8333-333333333d04' AND entreprise_amo_id = '99999999-9999-4999-8999-999999999901';
+
+  IF autonomes <> 3 OR voisin_autre_amo <> 1 THEN
+    RAISE EXCEPTION 'Demandeurs proches : % dossiers en autonomie (3 attendus), % voisin d''une autre AMO (1 attendu)', autonomes, voisin_autre_amo;
+  END IF;
+END $$;
