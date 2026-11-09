@@ -53,27 +53,6 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     label: "Structures",
     href: "/administration/structures",
     icon: "fr-icon-community-line",
-    minRoles: [UserRole.SUPER_ADMINISTRATEUR],
-  },
-  {
-    id: "amo",
-    label: "AMO",
-    href: "/administration/amo",
-    icon: "fr-icon-building-fill",
-    minRoles: [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR],
-  },
-  {
-    id: "allers-vers",
-    label: "Allers Vers",
-    href: "/administration/allers-vers",
-    icon: "fr-icon-road-map-line",
-    minRoles: [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR],
-  },
-  {
-    id: "experts",
-    label: "Experts",
-    href: "/administration/experts",
-    icon: "fr-icon-team-line",
     minRoles: [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR],
   },
   {

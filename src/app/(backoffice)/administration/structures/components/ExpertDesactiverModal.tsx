@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { ExpertGestion } from "@/features/backoffice";
-import ModaleStructure from "../../structures/components/ModaleStructure";
-import { fermerModale } from "../../structures/components/fermer-modale";
+import ModaleStructure from "./ModaleStructure";
+import { fermerModale } from "./fermer-modale";
 
 interface ExpertDesactiverModalProps {
   modalId: string;
@@ -41,8 +41,8 @@ export default function ExpertDesactiverModal({
       onConfirm={handleConfirm}
       isLoading={isLoading}>
       <p className="text-sm text-(--text-mention-grey)">
-        L&apos;expert disparaît de l&apos;annuaire des agents et du détail des dossiers. Il reste ici, avec la date et
-        le motif, et peut être réactivé.
+        L&apos;expert disparaît de l&apos;annuaire des agents et du détail des dossiers. Son habilitation reste sur la
+        fiche de la structure, avec la date et le motif, et peut être réactivée.
       </p>
       <div className="fr-input-group">
         <label className="fr-label" htmlFor={`${modalId}-raison`}>

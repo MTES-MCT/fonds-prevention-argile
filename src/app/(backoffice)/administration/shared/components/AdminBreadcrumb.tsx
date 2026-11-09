@@ -2,9 +2,11 @@ import Link from "next/link";
 
 interface AdminBreadcrumbProps {
   currentPageLabel: string;
+  // Pages intermédiaires entre le tableau de bord et la page courante.
+  parents?: { label: string; href: string }[];
 }
 
-export function AdminBreadcrumb({ currentPageLabel }: AdminBreadcrumbProps) {
+export function AdminBreadcrumb({ currentPageLabel, parents = [] }: AdminBreadcrumbProps) {
   const id = "breadcrumb-admin";
 
   return (
@@ -19,6 +21,13 @@ export function AdminBreadcrumb({ currentPageLabel }: AdminBreadcrumbProps) {
               Tableau de bord
             </Link>
           </li>
+          {parents.map((parent) => (
+            <li key={parent.href}>
+              <Link className="fr-breadcrumb__link" href={parent.href}>
+                {parent.label}
+              </Link>
+            </li>
+          ))}
           <li>
             <span className="fr-breadcrumb__link" aria-current="page">
               {currentPageLabel}

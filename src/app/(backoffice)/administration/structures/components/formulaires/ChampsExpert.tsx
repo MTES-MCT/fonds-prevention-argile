@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { DEPARTEMENTS_OFFICIELS, type ExpertGestion } from "@/features/backoffice";
-import ModaleStructure from "../../structures/components/ModaleStructure";
-import { fermerModale } from "../../structures/components/fermer-modale";
 
+// Raison sociale et SIRET sont ceux de la structure : ils se modifient avec son identité.
 export interface ExpertFormulaire {
-  nom: string;
-  siret: string;
   dateValidationDhup: string;
   contactInterneNom: string;
   contactInterneEmail: string;
@@ -15,17 +12,7 @@ export interface ExpertFormulaire {
   departements: { code: string; email: string; telephone: string }[];
 }
 
-interface ExpertFormModalProps {
-  modalId: string;
-  expert: ExpertGestion | null;
-  onConfirm: (formulaire: ExpertFormulaire) => Promise<boolean>;
-  erreur?: string | null;
-  isLoading?: boolean;
-}
-
 const VIDE: ExpertFormulaire = {
-  nom: "",
-  siret: "",
   dateValidationDhup: "",
   contactInterneNom: "",
   contactInterneEmail: "",
@@ -33,11 +20,9 @@ const VIDE: ExpertFormulaire = {
   departements: [{ code: "", email: "", telephone: "" }],
 };
 
-function depuisExpert(expert: ExpertGestion | null): ExpertFormulaire {
+export function expertDepuis(expert: ExpertGestion | null): ExpertFormulaire {
   if (!expert) return VIDE;
   return {
-    nom: expert.nom,
-    siret: expert.siret,
     dateValidationDhup: expert.dateValidationDhup ?? "",
     contactInterneNom: expert.contactInterne.nom ?? "",
     contactInterneEmail: expert.contactInterne.email ?? "",
@@ -50,75 +35,42 @@ function depuisExpert(expert: ExpertGestion | null): ExpertFormulaire {
   };
 }
 
-// Création et modification : sans expert sélectionné, la modale crée.
-export default function ExpertFormModal({
-  modalId,
-  expert,
-  onConfirm,
-  erreur = null,
-  isLoading = false,
-}: ExpertFormModalProps) {
-  const [formulaire, setFormulaire] = useState<ExpertFormulaire>(VIDE);
+/** Forme attendue par `habilitationExpertSchema` : une ligne de département sans code n'est pas envoyée. */
+export function versSaisieExpert(formulaire: ExpertFormulaire): ExpertFormulaire {
+  return { ...formulaire, departements: formulaire.departements.filter((d) => d.code) };
+}
 
-  useEffect(() => {
-    setFormulaire(depuisExpert(expert));
-  }, [expert]);
+export function expertRempli(formulaire: ExpertFormulaire): boolean {
+  return formulaire.departements.length > 0 && formulaire.departements.every((d) => d.code);
+}
 
+interface ChampsExpertProps {
+  idPrefix: string;
+  valeur: ExpertFormulaire;
+  onChange: (valeur: ExpertFormulaire) => void;
+  isLoading?: boolean;
+}
+
+export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = false }: ChampsExpertProps) {
   const champ = (nom: keyof Omit<ExpertFormulaire, "departements">) => ({
-    id: `${modalId}-${nom}`,
-    value: formulaire[nom],
+    id: `${idPrefix}-${nom}`,
+    value: valeur[nom],
     disabled: isLoading,
-    onChange: (e: ChangeEvent<HTMLInputElement>) => setFormulaire({ ...formulaire, [nom]: e.target.value }),
+    onChange: (e: ChangeEvent<HTMLInputElement>) => onChange({ ...valeur, [nom]: e.target.value }),
   });
 
-  const modifierDepartement = (index: number, cle: "code" | "email" | "telephone", valeur: string) =>
-    setFormulaire({
-      ...formulaire,
-      departements: formulaire.departements.map((d, i) => (i === index ? { ...d, [cle]: valeur } : d)),
+  const modifierDepartement = (index: number, cle: "code" | "email" | "telephone", texte: string) =>
+    onChange({
+      ...valeur,
+      departements: valeur.departements.map((d, i) => (i === index ? { ...d, [cle]: texte } : d)),
     });
 
-  const handleConfirm = async () => {
-    if (await onConfirm(formulaire)) fermerModale(modalId);
-  };
-
-  const remplie =
-    formulaire.nom.trim() !== "" &&
-    formulaire.siret.trim() !== "" &&
-    formulaire.departements.length > 0 &&
-    formulaire.departements.every((d) => d.code);
-
   return (
-    <ModaleStructure
-      modalId={modalId}
-      titre={expert ? `Modifier « ${expert.nom} »` : "Ajouter un expert"}
-      erreur={erreur}
-      libelleConfirmation="Enregistrer"
-      libelleEnCours="Enregistrement..."
-      confirmationPossible={remplie}
-      onConfirm={handleConfirm}
-      isLoading={isLoading}
-      large>
+    <>
       <div className="fr-grid-row fr-grid-row--gutters">
-        <div className="fr-col-12 fr-col-md-7">
-          <div className="fr-input-group">
-            <label className="fr-label" htmlFor={`${modalId}-nom`}>
-              Raison sociale
-            </label>
-            <input className="fr-input" type="text" {...champ("nom")} />
-          </div>
-        </div>
         <div className="fr-col-12 fr-col-md-5">
           <div className="fr-input-group">
-            <label className="fr-label" htmlFor={`${modalId}-siret`}>
-              SIRET
-              <span className="fr-hint-text">14 chiffres</span>
-            </label>
-            <input className="fr-input" type="text" inputMode="numeric" {...champ("siret")} />
-          </div>
-        </div>
-        <div className="fr-col-12 fr-col-md-5">
-          <div className="fr-input-group">
-            <label className="fr-label" htmlFor={`${modalId}-dateValidationDhup`}>
+            <label className="fr-label" htmlFor={`${idPrefix}-dateValidationDhup`}>
               Date de validation DHUP
               <span className="fr-hint-text">Facultatif</span>
             </label>
@@ -134,7 +86,7 @@ export default function ExpertFormModal({
         </legend>
         <div className="fr-fieldset__element fr-fieldset__element--inline">
           <div className="fr-input-group">
-            <label className="fr-label" htmlFor={`${modalId}-contactInterneNom`}>
+            <label className="fr-label" htmlFor={`${idPrefix}-contactInterneNom`}>
               Nom
             </label>
             <input className="fr-input" type="text" {...champ("contactInterneNom")} />
@@ -142,7 +94,7 @@ export default function ExpertFormModal({
         </div>
         <div className="fr-fieldset__element fr-fieldset__element--inline">
           <div className="fr-input-group">
-            <label className="fr-label" htmlFor={`${modalId}-contactInterneEmail`}>
+            <label className="fr-label" htmlFor={`${idPrefix}-contactInterneEmail`}>
               Email
             </label>
             <input className="fr-input" type="email" {...champ("contactInterneEmail")} />
@@ -150,7 +102,7 @@ export default function ExpertFormModal({
         </div>
         <div className="fr-fieldset__element fr-fieldset__element--inline">
           <div className="fr-input-group">
-            <label className="fr-label" htmlFor={`${modalId}-contactInterneTelephone`}>
+            <label className="fr-label" htmlFor={`${idPrefix}-contactInterneTelephone`}>
               Téléphone
             </label>
             <input className="fr-input" type="tel" {...champ("contactInterneTelephone")} />
@@ -165,17 +117,17 @@ export default function ExpertFormModal({
             Le contact de réservation de chaque département est communiqué aux agents.
           </span>
         </legend>
-        {formulaire.departements.map((departement, index) => (
+        {valeur.departements.map((departement, index) => (
           <div key={index} className="fr-fieldset__element">
             <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--bottom">
               <div className="fr-col-12 fr-col-md-4">
                 <div className="fr-select-group">
-                  <label className="fr-label" htmlFor={`${modalId}-dep-${index}`}>
+                  <label className="fr-label" htmlFor={`${idPrefix}-dep-${index}`}>
                     Département
                   </label>
                   <select
                     className="fr-select"
-                    id={`${modalId}-dep-${index}`}
+                    id={`${idPrefix}-dep-${index}`}
                     value={departement.code}
                     disabled={isLoading}
                     onChange={(e) => modifierDepartement(index, "code", e.target.value)}>
@@ -190,13 +142,13 @@ export default function ExpertFormModal({
               </div>
               <div className="fr-col-12 fr-col-md-4">
                 <div className="fr-input-group">
-                  <label className="fr-label" htmlFor={`${modalId}-dep-email-${index}`}>
+                  <label className="fr-label" htmlFor={`${idPrefix}-dep-email-${index}`}>
                     Email de réservation
                   </label>
                   <input
                     className="fr-input"
                     type="email"
-                    id={`${modalId}-dep-email-${index}`}
+                    id={`${idPrefix}-dep-email-${index}`}
                     value={departement.email}
                     disabled={isLoading}
                     onChange={(e) => modifierDepartement(index, "email", e.target.value)}
@@ -205,13 +157,13 @@ export default function ExpertFormModal({
               </div>
               <div className="fr-col-12 fr-col-md-3">
                 <div className="fr-input-group">
-                  <label className="fr-label" htmlFor={`${modalId}-dep-tel-${index}`}>
+                  <label className="fr-label" htmlFor={`${idPrefix}-dep-tel-${index}`}>
                     Téléphone
                   </label>
                   <input
                     className="fr-input"
                     type="tel"
-                    id={`${modalId}-dep-tel-${index}`}
+                    id={`${idPrefix}-dep-tel-${index}`}
                     value={departement.telephone}
                     disabled={isLoading}
                     onChange={(e) => modifierDepartement(index, "telephone", e.target.value)}
@@ -223,12 +175,9 @@ export default function ExpertFormModal({
                   type="button"
                   className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-icon-delete-line"
                   title="Retirer ce département"
-                  disabled={isLoading || formulaire.departements.length === 1}
+                  disabled={isLoading || valeur.departements.length === 1}
                   onClick={() =>
-                    setFormulaire({
-                      ...formulaire,
-                      departements: formulaire.departements.filter((_, i) => i !== index),
-                    })
+                    onChange({ ...valeur, departements: valeur.departements.filter((_, i) => i !== index) })
                   }>
                   Retirer ce département
                 </button>
@@ -242,15 +191,12 @@ export default function ExpertFormModal({
             className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left fr-icon-add-line"
             disabled={isLoading}
             onClick={() =>
-              setFormulaire({
-                ...formulaire,
-                departements: [...formulaire.departements, { code: "", email: "", telephone: "" }],
-              })
+              onChange({ ...valeur, departements: [...valeur.departements, { code: "", email: "", telephone: "" }] })
             }>
             Ajouter un département
           </button>
         </div>
       </fieldset>
-    </ModaleStructure>
+    </>
   );
 }
