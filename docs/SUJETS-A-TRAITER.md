@@ -60,9 +60,10 @@ quel rôle, et quand.
 ### Nettoyage : trigger transitoire et colonnes héritées
 
 Les triggers `structure_par_defaut_*` et `agents_structure_depuis_rattachements` et les colonnes
-`agents.role` / `entreprise_amo_id` / `allers_vers_id` ne servent qu'au retour arrière. À supprimer (avec les trois valeurs de rôle de
-structure de l'enum `agent_role`, procédé de la migration `0036`), puis poser la contrainte « rôle
-plateforme XOR structure ». Ce nettoyage rend le retour arrière impossible.
+`agents.entreprise_amo_id` / `allers_vers_id` ne servent qu'au retour arrière : à supprimer.
+`agents.role`, lui, reste lu pour un compte plateforme (`resoudreRoleAgent`) : il ne perd que les
+trois valeurs de rôle de structure de l'enum `agent_role` (procédé de la migration `0036`), puis on
+pose la contrainte « rôle plateforme XOR structure ». Ce nettoyage rend le retour arrière impossible.
 
 **Préalable** : une release complète sans retour arrière après la PR 1.
 
@@ -93,8 +94,9 @@ alors que le formulaire DN de l'éligibilité les reprend.
 ont une table de codes. La fiche et l'import AMO le saisissent donc en texte libre. Le passer en table
 (`entreprises_amo_departements`) unifierait la saisie et l'affichage du territoire des trois rôles.
 
-**Préalable** : reprendre les cinq lecteurs de ce texte (`parseCodesDepartement`), dont le calcul de
-couverture des AMO (ADR-0042), et les couvrir par test avant de changer le stockage.
+**Préalable** : reprendre les six lecteurs de ce texte dans `src/` (`parseCodesDepartement`), dont le
+calcul de couverture des AMO (ADR-0042), plus celui de `pnpm qa:cas-de-test`, et les couvrir par test
+avant de changer le stockage.
 
 ---
 
@@ -108,8 +110,8 @@ couverture des AMO (ADR-0042), et les couvrir par test avant de changer le stock
   parcours archivés ou complétés, et `pnpm ds:backfill-processed-at` ne sélectionne que les dossiers
   déjà finaux en base. Ceux-là restent donc faux.
 - **Préalable** : mesurer en production avec `pnpm ds:analyser-ecarts` (cause « classé sans suite dans DN,
-  jamais recopié en base »), après le déploiement de #392 et un premier run du CRON. Ce script vit sur la
-  branche `feat/audit-ecarts-dn`, pas encore mergée : il faut la merger d'abord.
+  jamais recopié en base »), après le déploiement de #392 et un premier run du CRON. Le script est
+  mergé (#401).
 - **À faire si des dossiers restent** : un script ops ponctuel, dry-run par défaut, qui écrit le
   statut traduit (`dsStatusFromEtatDn`) et les dates DN, **sans** progression ni réouverture du
   parcours.
@@ -125,7 +127,7 @@ couverture des AMO (ADR-0042), et les couvrir par test avant de changer le stock
   change les rattachements, ce qui sort d'une PR de script d'analyse.
 - **À faire** : lire le drapeau du descripteur FPA avant d'analyser sa valeur, avec un test sur une
   annotation modifiée devenue illisible.
-- **Référence** : [FLOW-AND-SYNC §2.6.1](parcours/FLOW-AND-SYNC.md#261-annotation-privée--lien-vers-le-dossier-fpa--adr-0025).
+- **Référence** : [FLOW-AND-SYNC §2.6.1](parcours/FLOW-AND-SYNC.md#261-annotation-privée--lien-vers-le-dossier-fpa---adr-0025).
 
 ### Transition d'étape conditionnée à l'étape attendue
 
@@ -142,6 +144,16 @@ couverture des AMO (ADR-0042), et les couvrir par test avant de changer le stock
 ### Purge de l'historique des synchros et flag « parcours complété »
 
 - Dette déjà décrite dans [FLOW-AND-SYNC §6.10](parcours/FLOW-AND-SYNC.md#610-non-décisions--dette-technique-connue).
+
+### Le diagnostic DN appelle « brouillon non déposé » un dossier déposé
+
+`classifyDossierAnomaly` (`ds-anomaly.ts`) classe en « Brouillon non déposé » un dossier
+`en_construction` en base comme dans DN, alors que depuis ADR-0009 `en_construction` veut dire déposé,
+en attente d'instruction ; un brouillon n'a pas de `ds_status`. Le script `audit:dossiers-bloques`
+porte la même étiquette « drop-off ».
+
+**Préalable** : relire les états de `DsAnomalyType` contre ADR-0009 avant de renommer, le libellé
+alimentant les diagnostics du super-administrateur.
 
 ---
 
@@ -275,17 +287,21 @@ premières visites. Le service sait déjà les servir : il ne manque que le comp
 
 **Préalable** : un retour des AMO et des Aller-vers sur l'usage de l'encart de la fiche dossier.
 
-## Administration
+---
 
-### Un seul composant d'import Excel pour les AMO, les Aller-vers et les experts
+## Parcours et accompagnement
 
-`AmoSeedUpload`, `AllersVersSeedUpload` et `ExpertsImport` sont trois copies du même écran (tuile du
-modèle, dépôt du fichier, résultat). La copie des experts corrige deux défauts que les deux autres
-gardent : elles annoncent le format `.xls`, qu'ExcelJS ne lit pas (l'import échoue), et colorent la zone
-de dépôt avec la palette Tailwind (`border-blue-500`, `bg-blue-50`) au lieu des tokens DSFR.
+### `passerEnAutonomie` recode la règle d'autonomie
 
-**Préalable** : un composant partagé, paramétré par le modèle, le texte, l'action et la case de purge,
-puis une recette des imports AMO et Aller-vers, déjà validés et donc à retester.
+`passerEnAutonomie` (`amo-selection.service.ts`) sert au demandeur qui renonce à l'AMO et à l'Aller-vers
+qui le note à la qualification. Elle résout la commune et teste `estAmoObligatoire` elle-même, au lieu
+d'appeler `peutPasserEnAutonomie`, présenté comme la porte d'entrée unique de l'autonomie (ADR-0037). Le
+verdict est identique aujourd'hui, mais les deux codes peuvent diverger.
+
+**Préalable** : choisir entre un message d'erreur unique et les deux motifs actuels (commune
+introuvable, AMO obligatoire), que `resolveReglesAmoForParcours` permet de garder.
+
+---
 
 ## Sécurité et dépendances
 
@@ -307,6 +323,55 @@ puis une recette des imports AMO et Aller-vers, déjà validés et donc à retes
 - Détail dans la section « Prochaine revue » de
   [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md#prochaine-revue).
 
+### Passer l'override `minimatch` en 11.0.1
+
+`minimatch` <11.0.1 reste accepté (Moderate, transitif via `exceljs` et l'outillage). Son correctif,
+11.0.1, est installable depuis le 3 novembre 2026, sorti de la fenêtre `minimumReleaseAge`, mais il a
+deux majors d'avance sur l'override actuel (`^9.0.7`).
+
+**Préalable** : tester l'override en 11.0.1 sur eslint, exceljs et drizzle-kit avant de l'appliquer
+(cf. [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md)).
+
+### `ELIGIBILITE_WRITE` accordée à l'administrateur sans être lue
+
+La matrice (`rbac-permissions.ts`) donne `ELIGIBILITE_WRITE` à l'`ADMINISTRATEUR`, alors qu'aucune
+garde ne la lit : seuls les tests de la matrice la vérifient. RBAC-ROLES lui prête l'éligibilité en
+lecture seule.
+
+**Préalable** : décider si l'administrateur gère l'éligibilité, pour retirer la permission ou la
+brancher dans les actions d'éligibilité.
+
+### L'administrateur entre là où la navigation ne le mène pas
+
+Deux écarts sans fuite, relevés en novembre 2026 :
+
+- `getDemandeDetail` (`demande-detail.service.ts`) traite l'`ADMINISTRATEUR` comme le super-admin. Seules
+  la garde de la page et `refusAccesEspaceAgent` dans l'action le refusent : la défense ne tient qu'à
+  ces deux couches.
+- `/administration/commentaires` accepte l'`ADMINISTRATEUR` (`isAdminRole`, `COMMENTAIRES_READ_ALL`),
+  alors que l'onglet « Notes » ne s'affiche qu'au super-admin.
+
+**Préalable** : trancher si l'administrateur lit les notes, puis aligner l'onglet ou la garde, et
+retirer l'administrateur du service de détail.
+
+### Routes qui ne mènent plus nulle part
+
+`routes.config.ts` protège encore `/mes-dossiers` et `/mes-demandes`, qui n'ont plus de page, et
+`getPostCreationRedirectUrl` renvoie vers `/espace-agent/prospects`, qui redirige vers
+`/espace-agent/dossiers`.
+
+**Préalable** : vérifier qu'aucun lien externe (emails, DN, Brevo) ne pointe vers ces chemins avant de
+les retirer.
+
+### Un test simule un refus d'accès AMO que la matrice ne produit pas
+
+`get-statistiques.action.test.ts` refuse l'accès à un AMO en simulant un échec de
+`checkBackofficePermission`, alors que l'AMO a `STATS_READ` depuis ADR-0017 : le cas teste un refus
+qui n'arrive jamais.
+
+**Préalable** : vérifier qu'aucun rôle agent n'est privé de `STATS_READ`, puis corriger le cas (AMO
+autorisé) ou le rejouer avec un rôle réellement refusé.
+
 ### Valider côté serveur le motif d'archivage et les codes de qualification
 
 Relevé par la revue de la pseudonymisation des dumps (novembre 2026). `archiveDossierAction` prend le
@@ -316,8 +381,9 @@ n'envoie que des valeurs de la liste, mais un appel direct à l'action peut écr
 les statistiques attendent un code. La restauration locale le neutralise déjà
 ([DONNEES-PERSONNELLES.md](security/DONNEES-PERSONNELLES.md)), pas la base de production.
 
-**Préalable** : recenser les appelants de `archiveDossierAction` et de `declineAccompagnementEligible`
-(les sous-listes de `raisons-fin-suivi.ts`), puis valider par `z.enum` en tête des deux actions.
+**Préalable** : recenser les appelants de `archiveDossierAction` et de `refuserAccompagnementEligible`
+(les sous-listes de `raisons-fin-suivi.ts`, qu'elle transmet à `declineAccompagnementEligible`), puis
+valider par `z.enum` en tête des deux actions.
 
 ### Faire valider la mention de libre choix des experts par la DHUP
 
