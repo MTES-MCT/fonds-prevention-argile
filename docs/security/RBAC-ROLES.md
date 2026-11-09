@@ -656,9 +656,9 @@ dossiers les plus proches, à la même étape ou à l'étape d'avant, pour regro
 - **Analyste départemental, super-administrateur** : tout leur listing, territorial ou national, faute de
   dossiers dont ils soient responsables.
 - Calculé dans la page, sous `exigerAccesEspaceAgent()` : aucune server action.
-- Le navigateur reçoit par voisin le nom, la commune, l'étape, la distance, la position du logement (point
-  GPS, ou centre de la commune) et le lien vers sa fiche, qui refait son propre contrôle d'accès. Ni email,
-  ni téléphone, ni adresse.
+- Le navigateur reçoit par voisin le nom, la commune, l'étape, la distance, le point GPS du logement et le
+  lien vers sa fiche, qui refait son propre contrôle d'accès. Ni email, ni téléphone, ni adresse. Un dossier
+  sans point GPS n'est pas proposé.
 
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
