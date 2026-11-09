@@ -39,20 +39,8 @@ export async function getDossiersByAgent(
   const rows = await parcoursRepo.getParcoursByTerritoire(perimetre, filters);
   const bareItems = rows.map(toDossierItemSansResponsable);
 
-  const resolverInput: ResolverDossier[] = bareItems.map((item) => ({
-    parcoursId: item.parcoursId,
-    archivedAt: item.archivedAt,
-    currentStatus: item.currentStatus,
-    codeDepartement: item.logement.codeDepartement,
-    codeEpci: item.logement.codeEpci,
-    validation: item.validation
-      ? { statut: item.validation.statut, entrepriseAmoId: item.validation.entrepriseAmoId }
-      : null,
-    dsStatus: item.dsStatus,
-    instructedAt: item.instructedAt,
-  }));
   const [resolved, actor, actionsMap] = await Promise.all([
-    resolveResponsables(resolverInput),
+    resolveResponsables(rows.map(entreeResolveur)),
     getActorContext({ entrepriseAmoId: agent.entrepriseAmoId ?? null, allersVersId: agent.allersVersId ?? null }),
     parcoursActionsRepo.getLastActionByParcoursIds(bareItems.map((i) => i.parcoursId)),
   ]);
@@ -110,7 +98,35 @@ function buildEpciChoices(dossiers: DossierItem[]): EpciChoice[] {
     .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 }
 
-type Row = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
+export type LigneListing = Awaited<ReturnType<typeof parcoursRepo.getParcoursByTerritoire>>[number];
+type Row = LigneListing;
+
+function entreeResolveur(row: Row): ResolverDossier {
+  const logement = getDemandeurFirstLogement(row);
+  return {
+    parcoursId: row.parcoursId,
+    archivedAt: row.archivedAt,
+    currentStatus: row.currentStatus,
+    codeDepartement: logement?.code_departement ? toOfficialCodeDepartement(logement.code_departement) : null,
+    codeEpci: logement?.epci ? String(logement.epci) : null,
+    validation: row.validationId ? { statut: row.validationStatut!, entrepriseAmoId: row.entrepriseAmoId } : null,
+    dsStatus: row.dsStatus ?? null,
+    instructedAt: row.instructedAt ?? null,
+  };
+}
+
+/** Lignes de l'onglet « Mes dossiers » : celles dont l'agent est responsable, même calcul que le listing. */
+export async function filtrerMesDossiers<R extends Row>(
+  agent: Pick<AgentScopeInput, "entrepriseAmoId" | "allersVersId">,
+  rows: R[]
+): Promise<R[]> {
+  if (rows.length === 0) return [];
+  const [resolved, actor] = await Promise.all([
+    resolveResponsables(rows.map(entreeResolveur)),
+    getActorContext({ entrepriseAmoId: agent.entrepriseAmoId ?? null, allersVersId: agent.allersVersId ?? null }),
+  ]);
+  return rows.filter((row) => canActAsResponsable(actor, resolved.get(row.parcoursId)!.responsable));
+}
 type DossierItemSansResponsable = Omit<DossierItem, "responsable" | "etat" | "canActAsResponsable" | "derniereAction">;
 
 function toDossierItemSansResponsable(row: Row): DossierItemSansResponsable {
