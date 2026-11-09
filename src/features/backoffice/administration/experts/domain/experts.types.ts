@@ -38,14 +38,3 @@ export interface ExpertComplet {
   desactiveRaison: string | null;
   departements: { codeDepartement: string; email: string | null; telephone: string | null }[];
 }
-
-export interface LigneImportRefusee {
-  ligne: number;
-  motif: string;
-}
-
-export interface BilanImportExperts {
-  crees: number;
-  misAJour: number;
-  lignesRefusees: LigneImportRefusee[];
-}

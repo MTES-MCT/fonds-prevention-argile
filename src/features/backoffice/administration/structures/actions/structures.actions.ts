@@ -1,26 +1,40 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkRoleAccess } from "@/features/auth/server";
+import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
+import { hasPermission } from "@/features/auth/permissions/services/rbac.service";
 import { UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
 import {
-  detacherHabilitation,
-  fusionnerStructures,
+  habilitationAllersVersSchema,
+  habilitationAmoSchema,
+  habilitationExpertSchema,
+  identiteStructureSchema,
+  type FicheStructure,
+  type StructureListee,
+} from "../domain/regles-structures";
+import {
+  ajouterHabilitation,
+  chargerFiche,
+  compterAgents,
+  creerStructure,
   listerStructures,
+  modifierHabilitation,
+  modifierIdentite,
   RefusOperationStructure,
-  renommerStructure,
-  type StructureAdministration,
+  retirerHabilitation,
+  supprimerStructure,
 } from "../services/structures-admin.service";
 
-const ACCES_REFUSE = "Accès non autorisé. Réservé aux super administrateurs.";
+const ROLES_ADMINISTRATION = [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR];
+const ACCES_REFUSE = "Accès non autorisé.";
+const PERMISSION_INSUFFISANTE = "Permission insuffisante pour cette opération.";
+const AGENTS_RATTACHES =
+  "Cette structure a des agents : seul un super-administrateur peut changer ses habilitations, qui font leurs rôles.";
 
-// Rôle relu en base : changer les structures change les droits des agents.
-async function ensureSuperAdmin(): Promise<{ ok: true; agentId: string } | { ok: false }> {
-  const acces = await checkRoleAccess([UserRole.SUPER_ADMINISTRATEUR]);
-  return acces.hasAccess && acces.user ? { ok: true, agentId: acces.user.id } : { ok: false };
-}
-
+const idSchema = z.string().uuid("Structure invalide");
 const premiereErreur = (error: z.ZodError) => error.issues[0]?.message ?? "Données invalides";
 
 function erreur(error: unknown, contexte: string): { success: false; error: string } {
@@ -29,87 +43,188 @@ function erreur(error: unknown, contexte: string): { success: false; error: stri
   return { success: false, error: "Erreur inattendue, l'opération n'a pas été enregistrée" };
 }
 
-/**
- * Liste les structures, leurs habilitations et leurs agents (super admin uniquement)
- */
-export async function getStructuresAction(): Promise<ActionResult<StructureAdministration[]>> {
-  try {
-    const garde = await ensureSuperAdmin();
-    if (!garde.ok) return { success: false, error: ACCES_REFUSE };
+// Coordonnées et territoires des structures alimentent les pages publiques des conseillers.
+function rafraichirPagesPubliques() {
+  revalidatePath("/rga", "layout");
+}
 
-    return { success: true, data: await listerStructures() };
+const peutUne = (role: UserRole, permissions: BackofficePermission[]) =>
+  permissions.some((permission) => hasPermission(role, permission));
+
+const PERMISSION_ECRITURE = {
+  amo: BackofficePermission.AMO_WRITE,
+  allersVers: BackofficePermission.ALLERS_VERS_WRITE,
+  expert: BackofficePermission.EXPERTS_WRITE,
+} as const;
+
+const PERMISSION_RETRAIT = {
+  amo: BackofficePermission.AMO_DELETE,
+  allersVers: BackofficePermission.ALLERS_VERS_DELETE,
+} as const;
+
+const habilitationSaisieSchema = z.discriminatedUnion("habilitation", [
+  z.object({ habilitation: z.literal("amo"), saisie: habilitationAmoSchema }),
+  z.object({ habilitation: z.literal("allersVers"), saisie: habilitationAllersVersSchema }),
+  z.object({ habilitation: z.literal("expert"), saisie: habilitationExpertSchema }),
+]);
+
+const surStructure = <T extends z.ZodTypeAny>(schema: T) => z.intersection(z.object({ structureId: idSchema }), schema);
+
+/** Liste des structures, sans leurs agents (administrateur et super-administrateur). */
+export async function getStructuresAction(): Promise<ActionResult<StructureListee[]>> {
+  try {
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    return { success: true, data: await listerStructures(acces.user.role === UserRole.SUPER_ADMINISTRATEUR) };
   } catch (error) {
     return erreur(error, "getStructuresAction");
   }
 }
 
-const renommageSchema = z.object({
-  structureId: z.string().uuid("Structure invalide"),
-  nom: z.string().trim().min(1, "Le nom est requis").max(200, "Nom trop long"),
-});
-
-/**
- * Renomme une structure, sans effet sur les droits (super admin uniquement)
- */
-export async function renommerStructureAction(input: unknown): Promise<ActionResult<void>> {
+/** Fiche d'une structure ; ses agents ne sont nommés qu'au super-administrateur. */
+export async function getFicheStructureAction(input: unknown): Promise<ActionResult<FicheStructure>> {
   try {
-    const garde = await ensureSuperAdmin();
-    if (!garde.ok) return { success: false, error: ACCES_REFUSE };
-
-    const parsed = renommageSchema.safeParse(input);
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    const parsed = idSchema.safeParse(input);
     if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
 
-    await renommerStructure(parsed.data.structureId, parsed.data.nom);
-    return { success: true, data: undefined };
+    const fiche = await chargerFiche(parsed.data, acces.user.role === UserRole.SUPER_ADMINISTRATEUR);
+    return fiche ? { success: true, data: fiche } : { success: false, error: "Structure introuvable" };
   } catch (error) {
-    return erreur(error, "renommerStructureAction");
+    return erreur(error, "getFicheStructureAction");
   }
 }
 
-const fusionSchema = z.object({
-  cibleId: z.string().uuid("Structure invalide"),
-  sourceId: z.string().uuid("Structure invalide"),
-});
-
-/**
- * Fusionne la source dans la cible : habilitations et agents rejoignent la cible (super admin uniquement)
- */
-export async function fusionnerStructuresAction(input: unknown): Promise<ActionResult<void>> {
+/** Crée une structure avec sa première habilitation, qui fixe son type (accompagnement ou expert). */
+export async function creerStructureAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   try {
-    const garde = await ensureSuperAdmin();
-    if (!garde.ok) return { success: false, error: ACCES_REFUSE };
-
-    const parsed = fusionSchema.safeParse(input);
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    const parsed = z
+      .intersection(z.object({ identite: identiteStructureSchema }), habilitationSaisieSchema)
+      .safeParse(input);
     if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
+    const { identite, ...premiere } = parsed.data;
+    if (!hasPermission(acces.user.role as UserRole, PERMISSION_ECRITURE[premiere.habilitation])) {
+      return { success: false, error: PERMISSION_INSUFFISANTE };
+    }
 
-    await fusionnerStructures(parsed.data.cibleId, parsed.data.sourceId);
-    console.info("[structures] fusion", { ...parsed.data, parAgentId: garde.agentId });
-    return { success: true, data: undefined };
+    const id = await creerStructure(identite, premiere);
+    rafraichirPagesPubliques();
+    return { success: true, data: { id } };
   } catch (error) {
-    return erreur(error, "fusionnerStructuresAction");
+    return erreur(error, "creerStructureAction");
   }
 }
 
-const detachementSchema = z.object({
-  structureId: z.string().uuid("Structure invalide"),
-  habilitation: z.enum(["amo", "allersVers"]),
-});
-
-/**
- * Détache une habilitation dans une nouvelle structure ; les agents restent (super admin uniquement)
- */
-export async function detacherHabilitationAction(input: unknown): Promise<ActionResult<void>> {
+export async function modifierIdentiteAction(input: unknown): Promise<ActionResult<void>> {
   try {
-    const garde = await ensureSuperAdmin();
-    if (!garde.ok) return { success: false, error: ACCES_REFUSE };
-
-    const parsed = detachementSchema.safeParse(input);
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    if (!peutUne(acces.user.role as UserRole, Object.values(PERMISSION_ECRITURE))) {
+      return { success: false, error: PERMISSION_INSUFFISANTE };
+    }
+    const parsed = z.object({ structureId: idSchema, identite: identiteStructureSchema }).safeParse(input);
     if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
 
-    await detacherHabilitation(parsed.data.structureId, parsed.data.habilitation);
-    console.info("[structures] détachement", { ...parsed.data, parAgentId: garde.agentId });
+    await modifierIdentite(parsed.data.structureId, parsed.data.identite);
+    rafraichirPagesPubliques();
     return { success: true, data: undefined };
   } catch (error) {
-    return erreur(error, "detacherHabilitationAction");
+    return erreur(error, "modifierIdentiteAction");
+  }
+}
+
+/** Supprime une structure et ses habilitations ; une structure expert relève du super-administrateur. */
+export async function supprimerStructureAction(input: unknown): Promise<ActionResult<void>> {
+  try {
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    const parsed = idSchema.safeParse(input);
+    if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
+    const role = acces.user.role as UserRole;
+    const fiche = await chargerFiche(parsed.data, role === UserRole.SUPER_ADMINISTRATEUR);
+    if (!fiche) return { success: false, error: "Structure introuvable" };
+    const requises = fiche.type === "expert" ? [BackofficePermission.EXPERTS_WRITE] : Object.values(PERMISSION_RETRAIT);
+    if (!peutUne(role, requises)) return { success: false, error: PERMISSION_INSUFFISANTE };
+
+    await supprimerStructure(parsed.data);
+    rafraichirPagesPubliques();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return erreur(error, "supprimerStructureAction");
+  }
+}
+
+/** Ajoute une habilitation ; sur une structure qui a des agents, réservé au super-administrateur. */
+export async function ajouterHabilitationAction(input: unknown): Promise<ActionResult<void>> {
+  try {
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    const parsed = surStructure(habilitationSaisieSchema).safeParse(input);
+    if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
+    const role = acces.user.role as UserRole;
+    const { structureId, ...demande } = parsed.data;
+    if (!hasPermission(role, PERMISSION_ECRITURE[demande.habilitation])) {
+      return { success: false, error: PERMISSION_INSUFFISANTE };
+    }
+    if (
+      demande.habilitation !== "expert" &&
+      role !== UserRole.SUPER_ADMINISTRATEUR &&
+      (await compterAgents(structureId)) > 0
+    ) {
+      return { success: false, error: AGENTS_RATTACHES };
+    }
+
+    await ajouterHabilitation(structureId, demande);
+    rafraichirPagesPubliques();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return erreur(error, "ajouterHabilitationAction");
+  }
+}
+
+/** Territoire, équipe et contacts propres à l'habilitation : sans effet sur les rôles. */
+export async function modifierHabilitationAction(input: unknown): Promise<ActionResult<void>> {
+  try {
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    const parsed = surStructure(habilitationSaisieSchema).safeParse(input);
+    if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
+    const { structureId, ...demande } = parsed.data;
+    if (!hasPermission(acces.user.role as UserRole, PERMISSION_ECRITURE[demande.habilitation])) {
+      return { success: false, error: PERMISSION_INSUFFISANTE };
+    }
+
+    await modifierHabilitation(structureId, demande);
+    rafraichirPagesPubliques();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return erreur(error, "modifierHabilitationAction");
+  }
+}
+
+/** Retire l'AMO ou l'Aller-vers ; sur une structure qui a des agents, réservé au super-administrateur. */
+export async function retirerHabilitationAction(input: unknown): Promise<ActionResult<void>> {
+  try {
+    const acces = await checkRoleAccess(ROLES_ADMINISTRATION);
+    if (!acces.hasAccess || !acces.user) return { success: false, error: ACCES_REFUSE };
+    const parsed = z.object({ structureId: idSchema, habilitation: z.enum(["amo", "allersVers"]) }).safeParse(input);
+    if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
+    const role = acces.user.role as UserRole;
+    const { structureId, habilitation } = parsed.data;
+    if (!hasPermission(role, PERMISSION_RETRAIT[habilitation])) {
+      return { success: false, error: PERMISSION_INSUFFISANTE };
+    }
+    if (role !== UserRole.SUPER_ADMINISTRATEUR && (await compterAgents(structureId)) > 0) {
+      return { success: false, error: AGENTS_RATTACHES };
+    }
+
+    await retirerHabilitation(structureId, habilitation);
+    rafraichirPagesPubliques();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return erreur(error, "retirerHabilitationAction");
   }
 }
