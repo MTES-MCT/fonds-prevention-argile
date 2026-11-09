@@ -39,8 +39,8 @@ Sous-modules notables :
 - `parcours/dossiers-ds/` est la feature de référence pour la structure DDD-lite
   (`domain/`, `adapters/graphql` + `adapters/rest`, `services/`, `actions/`,
   `mappers/`, `utils/`).
-- `backoffice/administration/` (gestion AMO, agents, structures, allers-vers, experts, synchronisations,
-  stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté, demandeurs proches, annuaire des experts).
+- `backoffice/administration/` (structures et leurs habilitations AMO, Aller-vers et expert, gérées depuis
+  `/administration/structures` ; agents, synchronisations, stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté, demandeurs proches, annuaire des experts).
 - `seo/catnat/` (import et recherche catastrophes naturelles) et
   `seo/allers-vers/` (structures de sensibilisation et leurs territoires).
 
@@ -70,9 +70,10 @@ Sous-modules notables :
 | `(tunnel)`              | Simulateurs d'éligibilité (`/simulateur`) et de vulnérabilité (`/vulnerabilite-rga`) : header réduit à l'aide, sans navigation — [ADR-0040](adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)   |
 | `(backoffice)`          | Espaces agents privés ProConnect (`espace-agent`, `administration`)                                                                                                                                 |
 | `(embed)`               | Pages embarquées pour partenaires (iframes) — voir `docs/partners/`                                                                                                                                 |
-| `api/auth`              | Callbacks et logout FranceConnect / ProConnect                                                                                                                                                      |
+| `api/auth`              | Login, callbacks et logout FranceConnect / ProConnect ; état de la session (`check`)                                                                                                                |
 | `api/cron`              | Jobs récurrents (sync parcours DS) — voir `docs/parcours/FLOW-AND-SYNC.md`                                                                                                                          |
-| `api/webhooks`          | Webhooks entrants (DS, Brevo)                                                                                                                                                                       |
+| `api/webhooks`          | Webhook entrant Brevo (suivi des emails AMO)                                                                                                                                                        |
+| `api/ds`                | Proxy des modèles de pièces justificatives DN (`piece-modele`, URL temporaire régénérée à chaque appel)                                                                                             |
 | `api/rga`, `api/health` | Requêtes spatiales RGA, healthcheck                                                                                                                                                                 |
 
 Le contrôle d'accès aux routes est détaillé dans
@@ -102,6 +103,7 @@ agents ──N:1── structures             structures ──1:0..1── entr
                                       structures ──1:0..1── experts         (habilitation expert, sans rôle)
                                       experts ──1:N── experts_departements  (code, réservation, expert sur place, forfaits)
                                       entreprises_amo ──1:N── entreprises_amo_communes
+                                      entreprises_amo ──1:N── entreprises_amo_epci
                                       allers_vers ──1:N── allers_vers_departements
 agent_permissions ──N:1── agents      allers_vers ──1:N── allers_vers_epci
 
@@ -114,12 +116,12 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Domaine           | Tables                                                                                                                                                                                                            |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Parcours          | `users`, `parcours_prevention`, `dossiers_demarches_simplifiees`, `dossiers_ds_tentatives`, `parcours_actions`                                                                                                    |
-| AMO               | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`                                                                                                                |
+| AMO               | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`, `entreprises_amo_epci`                                                                                        |
 | Agents            | `agents`, `agent_permissions`, `structures`                                                                                                                                                                       |
 | Allers-vers       | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                                                                                                                          |
 | Experts           | `experts`, `experts_departements` (habilitation de structure sans rôle, cf. ADR-0052)                                                                                                                             |
 | Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                                                                                                                                  |
-| Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                                                                                                                   |
+| Synchronisation   | `sync_runs`, `sync_run_entries`, `ds_reconciliation_observations` (constats de la réconciliation DN, cf. ADR-0027)                                                                                                |
 | Vulnérabilité RGA | `vulnerabilite_simulations` (table anonyme, sans FK `users` — cf. ADR-0031). Pointeur nullable `parcours_prevention.vulnerabilite_simulation_id` vers la dernière simulation connue d'un demandeur (cf. ADR-0032) |
 
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
@@ -127,8 +129,10 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 > Les rôles AMO et Aller-vers d'un agent viennent de **sa structure** : une ligne
 > `entreprises_amo` lui donne le rôle AMO, une ligne `allers_vers` le rôle Aller-vers, les deux
-> le rôle cumulé. Contacts et territoires restent sur chaque ligne. Les colonnes `role`,
-> `entreprise_amo_id` et `allers_vers_id` de `agents` ne servent plus qu'au retour arrière. Voir
+> le rôle cumulé. Contacts et territoires restent sur chaque ligne. La colonne `role` de `agents`
+> ne fait foi que pour un compte plateforme (super-administrateur, administrateur, analyste,
+> `resoudreRoleAgent`). Pour un membre de structure, ni elle ni `entreprise_amo_id` et
+> `allers_vers_id` ne sont lues : elles ne sont écrites que pour garder le retour arrière. Voir
 > [ADR-0051](adr/0051-roles-amo-aller-vers-portes-par-la-structure.md).
 
 > Une structure a un **type** : `accompagnement` (AMO et/ou Aller-vers) ou `expert` (expertise seule).
@@ -164,16 +168,21 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 
 ## 6. Intégrations externes
 
-| Service               | Usage                                                           | Adapter / config                                                  |
-| --------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| FranceConnect         | Identité demandeurs                                             | `src/features/auth/adapters/franceconnect/`                       |
-| ProConnect            | Identité agents, double authentification obligatoire (ADR-0047) | `src/features/auth/adapters/proconnect/`                          |
-| Démarches Simplifiées | Dossiers (GraphQL lecture + annotations, REST préremplissage)   | `src/features/parcours/dossiers-ds/adapters/`                     |
-| Brevo / Mailhog       | Emails transactionnels (prod / dev)                             | `src/shared/email/`                                               |
-| Brevo Contacts        | Synchro contacts + évènements (cycle de vie)                    | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |
-| Matomo                | Analytics                                                       | `@socialgouv/matomo-next`                                         |
-| Géorisques / RGA      | Données risque                                                  | `src/features/seo/`, `scripts/import/rga-zones/`                  |
-| API Géo               | Communes et EPCI (code, nom, départements)                      | `src/shared/adapters/geo/`                                        |
+| Service                  | Usage                                                                                                    | Adapter / config                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| FranceConnect            | Identité demandeurs                                                                                      | `src/features/auth/adapters/franceconnect/`                                                  |
+| ProConnect               | Identité agents, double authentification obligatoire (ADR-0047)                                          | `src/features/auth/adapters/proconnect/`                                                     |
+| Démarches Simplifiées    | Dossiers (GraphQL lecture + annotations, REST préremplissage)                                            | `src/features/parcours/dossiers-ds/adapters/`                                                |
+| Brevo / Mailhog          | Emails transactionnels (prod / dev)                                                                      | `src/shared/email/`                                                                          |
+| Brevo Contacts           | Synchro contacts + évènements (cycle de vie)                                                             | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`)                            |
+| Matomo                   | Analytics                                                                                                | `@socialgouv/matomo-next`                                                                    |
+| Géorisques / RGA         | Données risque                                                                                           | `src/features/seo/`, `scripts/import/rga-zones/`                                             |
+| API Géo                  | Communes et EPCI (code, nom, départements), contours des départements (Etalab)                           | `src/shared/adapters/geo/`                                                                   |
+| Géoplateforme (BAN)      | Géocodage et autocomplétion d'adresse (navigateur), localisation de la maison au contrôle DN (CRON)      | `src/shared/adapters/ban/`                                                                   |
+| BDNB                     | Caractéristiques du bâtiment cliqué sur la carte, à partir de son identifiant RNB (navigateur)           | `src/shared/adapters/bdnb/`, `src/shared/services/bdnb/`                                     |
+| Tuiles cartographiques   | Aléa argile en PMTiles (`static.data.gouv.fr`), fond OpenMapTiles data.gouv.fr, bâtiments RNB            | `src/features/rga-map/domain/config/rga-map.config.ts`, `public/map/style-carte-argile.json` |
+| API de reporting Matomo  | Lecture des statistiques (onglets stats du back-office, `/stats`), jeton `MATOMO_API_TOKEN` côté serveur | `src/features/backoffice/administration/acquisition/adapters/matomo-api.adapter.ts`          |
+| La Suite Messages (ANCT) | Widget « Contactez-nous » du site public et du tunnel, désactivé en développement                        | `src/shared/components/LaSuiteMessages/`                                                     |
 
 > Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
 > `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de
