@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { formaterDistance, plusProches } from "./demandeurs-proches";
 
-const ORIGINE = { lat: 46.81, lon: 1.69, approximative: false };
+const ORIGINE = { lat: 46.81, lon: 1.69 };
 
 function candidat(nom: string, lat: number) {
-  return { nom, position: { lat, lon: 1.69, approximative: false }, donnees: nom };
+  return { nom, position: { lat, lon: 1.69 }, donnees: nom };
 }
 
 describe("plusProches", () => {
@@ -34,11 +34,6 @@ describe("formaterDistance", () => {
     [9.96, "10 km"],
     [23.4, "23 km"],
   ])("affiche %s km comme « %s »", (km, attendu) => {
-    expect(formaterDistance(km, false)).toBe(attendu);
-  });
-
-  it("n'annonce qu'un ordre de grandeur pour une position approximative", () => {
-    expect(formaterDistance(7.3, true)).toBe("environ 7 km");
-    expect(formaterDistance(0.2, true)).toBe("environ 1 km");
+    expect(formaterDistance(km)).toBe(attendu);
   });
 });

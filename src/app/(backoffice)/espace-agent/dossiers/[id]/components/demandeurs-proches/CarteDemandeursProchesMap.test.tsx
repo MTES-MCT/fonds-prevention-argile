@@ -8,7 +8,7 @@ vi.mock("maplibre-gl/dist/maplibre-gl.css", () => ({}));
 
 import { CarteDemandeursProchesMap, decalagesSuperposes } from "./CarteDemandeursProchesMap";
 
-const ORIGINE = { lat: 46.81, lon: 1.69, approximative: false };
+const ORIGINE = { lat: 46.81, lon: 1.69 };
 
 describe("CarteDemandeursProchesMap", () => {
   it("remplace la carte par un message sans WebGL 2, la liste restant à côté", () => {

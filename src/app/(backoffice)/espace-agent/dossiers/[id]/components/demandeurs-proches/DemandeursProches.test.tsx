@@ -10,7 +10,7 @@ vi.mock("./CarteDemandeursProches", () => ({
 
 import { DemandeursProches } from "./DemandeursProches";
 
-const ORIGINE = { lat: 46.81, lon: 1.69, approximative: false };
+const ORIGINE = { lat: 46.81, lon: 1.69 };
 
 function voisin(rang: number, overrides: Partial<Donnees["voisins"][number]> = {}): Donnees["voisins"][number] {
   return {
@@ -21,7 +21,6 @@ function voisin(rang: number, overrides: Partial<Donnees["voisins"][number]> = {
     etape: "Diagnostic logement",
     chezLaDdt: false,
     distance: `${rang},2 km`,
-    positionApproximative: false,
     lat: 46.8,
     lon: 1.7,
     href: `/espace-agent/dossiers/v${rang}`,
@@ -59,26 +58,15 @@ describe("DemandeursProches", () => {
     expect(lien).toHaveAttribute("rel", "noopener");
   });
 
-  it("signale un dossier chez la DDT et une position approximative", () => {
-    render(
-      <DemandeursProches
-        donnees={donnees({ voisins: [voisin(1, { chezLaDdt: true, positionApproximative: true })] })}
-      />
-    );
+  it("signale un dossier chez la DDT", () => {
+    render(<DemandeursProches donnees={donnees({ voisins: [voisin(1, { chezLaDdt: true })] })} />);
 
     expect(screen.getByText("Chez la DDT")).toBeInTheDocument();
-    expect(screen.getByText("Position approximative")).toBeInTheDocument();
   });
 
   it("parle des dossiers du périmètre à qui n'est responsable d'aucun", () => {
     render(<DemandeursProches donnees={donnees({ mesDossiers: false, voisins: [voisin(1)] })} />);
 
     expect(screen.getByText(/^Les dossiers de votre périmètre au diagnostic ou en éligibilité/)).toBeInTheDocument();
-  });
-
-  it("prévient quand le logement consulté n'est placé qu'au centre de sa commune", () => {
-    render(<DemandeursProches donnees={donnees({ origine: { ...ORIGINE, approximative: true } })} />);
-
-    expect(screen.getByText(/les distances sont approximatives/)).toBeInTheDocument();
   });
 });

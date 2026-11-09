@@ -6,11 +6,10 @@ import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-valida
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import type { AgentScope } from "@/features/auth/permissions/domain/types/agent-scope.types";
 
-const { findById, getParcoursByTerritoire, calculateAgentScope, getCentresCommunes } = vi.hoisted(() => ({
+const { findById, getParcoursByTerritoire, calculateAgentScope } = vi.hoisted(() => ({
   findById: vi.fn(),
   getParcoursByTerritoire: vi.fn(),
   calculateAgentScope: vi.fn(),
-  getCentresCommunes: vi.fn(),
 }));
 
 // Résolution des responsables réelle : seules les tables sont simulées, pour que les refus soient ceux du listing.
@@ -26,9 +25,6 @@ vi.mock("@/shared/database", () => ({
   },
 }));
 vi.mock("@/features/auth/permissions/services/agent-scope.service", () => ({ calculateAgentScope }));
-vi.mock("@/features/backoffice/administration/demandeurs/services/centres-communes.service", () => ({
-  getCentresCommunes,
-}));
 
 import { chargerDemandeursProches } from "./demandeurs-proches.service";
 
@@ -78,6 +74,7 @@ const LIGNES = [
     entrepriseAmoId: MAISON,
   }),
   ligne("p6", "Prospect", Step.ELIGIBILITE, "46.9000,1.9000", null),
+  ligne("p7", "Proche", Step.DIAGNOSTIC, "46.8120,1.6950", eligible(MAISON)),
 ];
 
 function scope(overrides: Partial<AgentScope>): AgentScope {
@@ -108,7 +105,6 @@ describe("chargerDemandeursProches", () => {
     findById.mockResolvedValue({ ...LIGNES[0], id: "p0" });
     getParcoursByTerritoire.mockResolvedValue(LIGNES);
     calculateAgentScope.mockResolvedValue(scope({ entrepriseAmoIds: [MAISON], canViewDossiersByEntreprise: true }));
-    getCentresCommunes.mockResolvedValue({ centres: { "36044": [1.6903, 46.8023] }, departementsEnEchec: [] });
   });
 
   it("cherche dans le périmètre du listing, aux étapes voisines, sans les archivés", async () => {
@@ -123,7 +119,7 @@ describe("chargerDemandeursProches", () => {
   it("ne propose à une AMO que les dossiers de son entreprise, jamais ceux d'une autre AMO voisine", async () => {
     const resultat = await chargerDemandeursProches(AMO, DOSSIER);
 
-    expect(noms(resultat)).toEqual(["SansGps", "Deposee"]);
+    expect(noms(resultat)).toEqual(["Proche", "Deposee"]);
     expect(resultat?.mesDossiers).toBe(true);
   });
 
@@ -160,27 +156,26 @@ describe("chargerDemandeursProches", () => {
     );
 
     expect(getParcoursByTerritoire).toHaveBeenCalledWith({ kind: "national" }, expect.anything());
-    expect(noms(resultat)).toEqual(["AutreAmo", "SansGps", "Deposee", "Autonome", "Prospect"]);
+    expect(noms(resultat)).toEqual(["AutreAmo", "Proche", "Deposee", "Autonome", "Prospect"]);
     expect(resultat?.mesDossiers).toBe(false);
   });
 
   it("décrit chaque voisin pour la carte et la liste", async () => {
-    const [sansGps, deposee] = (await chargerDemandeursProches(AMO, DOSSIER))!.voisins;
+    const [proche, deposee] = (await chargerDemandeursProches(AMO, DOSSIER))!.voisins;
 
-    expect(sansGps).toMatchObject({
+    expect(proche).toMatchObject({
       rang: 1,
-      positionApproximative: true,
-      distance: "environ 1 km",
+      distance: "moins d'1 km",
       etape: "Diagnostic logement",
-      href: "/espace-agent/dossiers/v-p3",
+      href: "/espace-agent/dossiers/v-p7",
+      lat: 46.812,
+      lon: 1.695,
     });
     expect(deposee).toMatchObject({ rang: 2, chezLaDdt: true, distance: "2,4 km", codeDepartement: "36" });
   });
 
-  it("écarte sans erreur un voisin dont le centre de commune n'a pas pu être lu", async () => {
-    getCentresCommunes.mockResolvedValue({ centres: {}, departementsEnEchec: ["36"] });
-
-    expect(noms(await chargerDemandeursProches(AMO, DOSSIER))).toEqual(["Deposee"]);
+  it("ne propose pas un dossier sans point GPS, même dans la commune du logement", async () => {
+    expect(noms(await chargerDemandeursProches(AMO, DOSSIER))).not.toContain("SansGps");
   });
 
   it("n'a pas d'encart aux devis, ni pour un logement sans position", async () => {

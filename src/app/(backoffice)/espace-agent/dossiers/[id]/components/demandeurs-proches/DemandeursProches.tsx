@@ -35,8 +35,6 @@ export function DemandeursProches({ donnees }: DemandeursProchesProps) {
           <div className="fr-card__desc">
             <p className="fr-text--sm fr-text-mention--grey fr-mt-1w fr-mb-2w">
               {qui} {etapes} les plus proches de ce logement, pour regrouper les visites.
-              {origine.approximative &&
-                " Ce logement n'a pas de point GPS : il est placé au centre de sa commune, les distances sont approximatives."}
             </p>
 
             {voisins.length === 0 ? (
@@ -78,11 +76,6 @@ export function DemandeursProches({ donnees }: DemandeursProchesProps) {
                           <div className="fr-badges-group">
                             <p className="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">{voisin.etape}</p>
                             {voisin.chezLaDdt && <p className="fr-badge fr-badge--sm">Chez la DDT</p>}
-                            {voisin.positionApproximative && (
-                              <p className="fr-badge fr-badge--sm fr-badge--warning fr-badge--no-icon">
-                                Position approximative
-                              </p>
-                            )}
                           </div>
                         </div>
                       </li>
