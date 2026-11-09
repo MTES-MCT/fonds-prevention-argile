@@ -119,6 +119,12 @@ affichée ; un téléphone dans `agents.phone` vient d'un compte conservé) :
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile -q < scripts/dev/verifier-anonymisation.sql
 ```
 
+Une base restaurée n'a pas encore d'experts. Pour en avoir de test, sans toucher au reste :
+
+```bash
+pnpm seed:staging --steps=experts
+```
+
 ## Changer de rôle agent (tester les espaces du backoffice)
 
 Pour parcourir les différents espaces sans repasser par ProConnect, on modifie directement

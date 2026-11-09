@@ -5,12 +5,16 @@
 -- Comme les AMO et Aller-vers de l'étape amo-av : tous les experts repartent du seed, recette comprise.
 DELETE FROM experts;
 
-INSERT INTO structures (id, nom, type) VALUES
-  ('66666666-6666-4666-8666-666666666601', 'Géotechnique du Berry (seed test)', 'expert'),
-  ('66666666-6666-4666-8666-666666666602', 'Expertise Sols Centre (seed test)', 'expert'),
-  ('66666666-6666-4666-8666-666666666603', 'Ancien Expert Argile (seed test)', 'expert'),
-  ('66666666-6666-4666-8666-666666666604', 'AMO Maison Tranquille', 'expert')
-ON CONFLICT (id) DO NOTHING;
+-- L'identité est posée sur la structure, d'où l'application la lit : l'étape tourne seule sur une base restaurée.
+INSERT INTO structures (id, nom, type, siret, adresse, telephone) VALUES
+  ('66666666-6666-4666-8666-666666666601', 'Géotechnique du Berry (seed test)', 'expert', '88888888800003',
+   '12 rue des Argiles, 36000 Châteauroux', '02 54 00 00 00'),
+  ('66666666-6666-4666-8666-666666666602', 'Expertise Sols Centre (seed test)', 'expert', '88888888800011',
+   '3 avenue du Sol, 18000 Bourges', ''),
+  ('66666666-6666-4666-8666-666666666603', 'Ancien Expert Argile (seed test)', 'expert', '88888888800029', '', ''),
+  ('66666666-6666-4666-8666-666666666604', 'AMO Maison Tranquille', 'expert', '99999999900006', '', '')
+ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, type = EXCLUDED.type, siret = EXCLUDED.siret,
+  adresse = EXCLUDED.adresse, telephone = EXCLUDED.telephone;
 
 INSERT INTO experts (id, nom, siret, date_validation_dhup, contact_interne_nom, contact_interne_email,
   contact_interne_telephone, structure_id, desactive_at, desactive_raison) VALUES

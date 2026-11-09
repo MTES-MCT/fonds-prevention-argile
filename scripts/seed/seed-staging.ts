@@ -6,17 +6,19 @@
  * triple refuse l'exécution si `NEXT_PUBLIC_APP_ENV=production` ou si l'URL DB
  * semble pointer la prod.
  *
- * Pipeline (6 étapes, ~30s en local) :
+ * Pipeline (7 étapes, ~30s en local) :
  *   1. safety   — vérifs env + DB URL
  *   2. ref-data — bail si rga_zones ou catastrophes_naturelles est vide
  *   3. agents   — fixtures d'agents + SEED_AGENTS_SUPERADMINS + SEED_AGENTS_HYBRIDES
- *   4. amo-av   — fixtures AMO + Allers-vers + experts (alias SEED_STRUCTURES_EMAIL posés après parcours)
- *   5. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
- *   6. verify   — joue 99-verification.sql
+ *   4. amo-av   — fixtures AMO + Allers-vers (alias SEED_STRUCTURES_EMAIL posés après parcours)
+ *   5. experts  — structures expert de test, seules : jouable sur une base restaurée
+ *   6. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
+ *   7. verify   — joue 99-verification.sql
  *
  * Usage :
  *   pnpm seed:staging
  *   pnpm seed:staging --steps=agents,amo-av
+ *   pnpm seed:staging --steps=experts         # experts de test sur une base restaurée (pnpm db:restore)
  *   pnpm seed:staging --dry-run
  *   pnpm seed:staging --yes-staging         # requis quand APP_ENV=staging
  *   pnpm seed:staging --yes-staging --purge-fc   # + supprime les comptes de test FranceConnect
@@ -43,7 +45,7 @@ config({ path: ".env.local" });
 // référencent un AMO `dedd84de-…` créé par amo-av), et agents APRÈS parcours
 // (parcours/13 fait DELETE+INSERT sur les AMOs `99999999*` que les agents
 // référencent — un agents avant parcours verrait ses FK reset à NULL).
-const ALL_STEPS = ["safety", "ref-data", "amo-av", "parcours", "agents", "verify"] as const;
+const ALL_STEPS = ["safety", "ref-data", "amo-av", "experts", "parcours", "agents", "verify"] as const;
 type Step = (typeof ALL_STEPS)[number];
 
 const FAKE_PARCOURS_FILES = [
@@ -353,7 +355,11 @@ async function redirigerEmailsStructures(dryRun: boolean): Promise<void> {
 async function runAmoAvStep(dryRun: boolean): Promise<void> {
   console.log("→ amo-av");
   await runSqlFile("amo-av/seed-amo-av-fixtures.sql", dryRun);
-  // Après les AMO : un expert partage la structure de l'AMO Maison Tranquille.
+}
+
+// Ne touche ni AMO, ni Aller-vers, ni parcours : sans danger sur une base restaurée de la production.
+async function runExpertsStep(dryRun: boolean): Promise<void> {
+  console.log("→ experts");
   await runSqlFile("experts/seed-experts.sql", dryRun);
 }
 
@@ -415,6 +421,7 @@ async function main(): Promise<void> {
 
   if (args.steps.includes("ref-data") && !args.dryRun) await assertRefDataPresent();
   if (args.steps.includes("amo-av")) await runAmoAvStep(args.dryRun);
+  if (args.steps.includes("experts")) await runExpertsStep(args.dryRun);
   if (args.steps.includes("parcours")) await runParcoursStep(args.dryRun);
   // Après parcours : 07 et 13 suppriment puis réinsèrent les structures « seed test ».
   if (args.steps.includes("amo-av") || args.steps.includes("parcours")) {
