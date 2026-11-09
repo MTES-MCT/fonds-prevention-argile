@@ -50,10 +50,10 @@ Un **partenaire** est un site tiers qui intègre notre simulateur d'éligibilit�
 
 ## Deux sources d'identification du partenaire
 
-| Source | Comportement | Couverture |
-|--------|--------------|------------|
-| `?partner=<slug>` dans l'URL d'embed | Prioritaire, validé contre la liste des partenaires connus | 100% si le partenaire a mis à jour son URL |
-| `document.referrer` | Fallback automatique (map `host → slug`) | ~90% (selon `Referrer-Policy` + extensions navigateur) |
+| Source                               | Comportement                                               | Couverture                                             |
+| ------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------ |
+| `?partner=<slug>` dans l'URL d'embed | Prioritaire, validé contre la liste des partenaires connus | 100% si le partenaire a mis à jour son URL             |
+| `document.referrer`                  | Fallback automatique (map `host → slug`)                   | ~90% (selon `Referrer-Policy` + extensions navigateur) |
 
 **Conséquence** : tracking automatique dès qu'un partenaire intègre l'iframe — même sans changer son URL. Le param URL est uniquement utile pour fiabiliser à 100%.
 
@@ -74,6 +74,8 @@ Le filtre "Partenaire" sur `/administration/acquisition` applique :
 - **Limitation Matomo Funnels** : l'API `Funnels.getFunnelFlowTable` ne supporte pas le segment → le funnel détaillé est masqué quand un filtre partenaire est actif.
 
 Les parcours **anonymes** (sans `userId`) sont automatiquement exclus du filtrage BDD partenaire — c'est le rôle de Matomo de les compter via le referrer.
+
+La liste nominative de `/administration/demandeurs` affiche aussi le libellé du partenaire (`PARTNER_LABELS`) dans sa colonne « Source ».
 
 ---
 
@@ -103,14 +105,20 @@ export const PARTNERS = {
     referrerHost: "auxalentours.maif.fr",
     label: "MAIF (auxalentours)",
   },
-  "partenaire-test": {                              // ← slug (kebab-case, ≤50 chars)
-    referrerHost: "test-partenaire.example.com",   // ← host du site partenaire
-    label: "Partenaire Test",                       // ← libellé affiché dans le filtre
+  "maisons-sans-fissures": {
+    referrerHost: "maisons-sans-fissures.vercel.app",
+    label: "Maisons sans fissures (test)",
+  },
+  // Slug ci-dessous : kebab-case, ≤50 chars
+  "partenaire-test": {
+    referrerHost: "test-partenaire.example.com", // ← host du site partenaire
+    label: "Partenaire Test", // ← libellé affiché dans le filtre
   },
 } as const satisfies Record<string, PartnerDefinition>;
 ```
 
 C'est tout. TypeScript dérive automatiquement :
+
 - Le type `PartnerKey` (union des slugs)
 - Les maps `PARTNER_REFERRERS`, `PARTNER_LABELS`, `PARTNER_OPTIONS`
 - Les helpers `isPartnerKey`, `normalizePartnerSlug`, `detectPartnerFromReferrer`, `resolvePartner`
@@ -142,7 +150,7 @@ Et le snippet d'intégration (identique à celui de `/documentation/integration-
    - `resolvePartner("partenaire-test", document.referrer)` retourne `"partenaire-test"` (priorité au param URL).
 3. **Le visiteur fait sa simulation** dans l'iframe. Matomo capture déjà le referrer `test-partenaire.example.com` automatiquement → toutes ses visites/événements sont taggés côté Matomo.
 4. **Clic "Continuer"** → `handleContinueToFC()` ouvre une nouvelle fenêtre :
-   - URL : `/connexion?redirect=/parcours&partner=partenaire-test`
+   - URL : `/connexion?redirect=/parcours&partner=partenaire-test` (le paramètre `redirect` n'est pas lu)
 5. **Page `/connexion`** lit le param `partner` et pose un cookie first-party :
    ```
    Set-Cookie: partner_source=partenaire-test; path=/; max-age=2592000; SameSite=Lax
@@ -157,28 +165,28 @@ Et le snippet d'intégration (identique à celui de `/documentation/integration-
      - Si user existant sans `partner_source` : backfill.
      - Si user existant avec `partner_source` : on ne touche pas (préserve l'origine).
    - Supprime le cookie après consommation.
-8. **L'utilisateur arrive sur `/parcours`**, identifié, avec `users.partner_source = "partenaire-test"` en base.
+8. **L'utilisateur arrive sur `/mon-compte`** (`DEFAULT_REDIRECTS.particulier`), identifié, avec `users.partner_source = "partenaire-test"` en base.
 
 ### 4. Stats observables dans le backoffice
 
 `/administration/acquisition` → filtre **"Partenaire Test"** :
 
-| Métrique | Source | Filtré ? |
-|---|---|---|
-| Visites totales | Matomo (`referrerName==test-partenaire.example.com`) | ✅ |
-| Visiteurs uniques | Matomo segmenté | ✅ |
-| Taux de rebond | Matomo segmenté | ✅ |
-| Simulations terminées (events) | Matomo events segmentés | ✅ |
-| Simulations éligibles / non éligibles | Matomo events segmentés | ✅ |
-| Top départements / communes | Matomo custom dimensions segmentées | ✅ |
-| Comptes créés | BDD : `EXISTS users.partner_source='partenaire-test'` | ✅ |
-| Demandes AMO / Dossiers DN / Archivées | BDD avec EXISTS partner_source | ✅ |
-| Taux de transformation | Calculé : comptes BDD / simulations Matomo | ✅ |
-| Funnel détaillé Matomo | _non disponible_ — l'API Funnels ne supporte pas les segments | ❌ |
+| Métrique                               | Source                                                        | Filtré ? |
+| -------------------------------------- | ------------------------------------------------------------- | -------- |
+| Visites totales                        | Matomo (`referrerName==test-partenaire.example.com`)          | ✅       |
+| Visiteurs uniques                      | Matomo segmenté                                               | ✅       |
+| Taux de rebond                         | Matomo segmenté                                               | ✅       |
+| Simulations terminées (events)         | Matomo events segmentés                                       | ✅       |
+| Simulations éligibles / non éligibles  | Matomo events segmentés                                       | ✅       |
+| Top départements / communes            | Matomo custom dimensions segmentées                           | ✅       |
+| Comptes créés                          | BDD : `EXISTS users.partner_source='partenaire-test'`         | ✅       |
+| Demandes AMO / Dossiers DN / Archivées | BDD avec EXISTS partner_source                                | ✅       |
+| Taux de transformation                 | Calculé : comptes BDD / simulations Matomo                    | ✅       |
+| Funnel détaillé Matomo                 | _non disponible_ — l'API Funnels ne supporte pas les segments | ❌       |
 
 ### 5. Vérification end-to-end
 
-1. **Local** : ajouter `partenaire-test` dans les deux maps, lancer `pnpm start:dev`, ouvrir `http://localhost:3000/embed-simulateur?partner=partenaire-test`, faire une simulation complète, login FC, vérifier en DB :
+1. **Local** : ajouter `partenaire-test` dans le catalogue `PARTNERS`, lancer `pnpm start:dev`, ouvrir `http://localhost:3000/embed-simulateur?partner=partenaire-test`, faire une simulation complète, login FC, vérifier en DB :
    ```sql
    SELECT id, email, partner_source FROM users ORDER BY created_at DESC LIMIT 1;
    ```
@@ -192,20 +200,21 @@ Une alternative envisagée était d'exposer le slug partenaire (`"maif"`) via un
 
 **Choix retenu : ne pas l'implémenter.** Justification :
 
-| Cas d'usage | Mécanisme actuel suffisant |
-|---|---|
-| Filtrer les visites Matomo par partenaire | `referrerName==<host>` natif Matomo (segments + rapports Acquisition) |
-| Filtrer les events simulateur par partenaire | Le segment Matomo fonctionne sur les events aussi |
-| Filtrer les comptes/parcours BDD par partenaire | `users.partner_source` (Phase B) |
+| Cas d'usage                                     | Mécanisme actuel suffisant                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------- |
+| Filtrer les visites Matomo par partenaire       | `referrerName==<host>` natif Matomo (segments + rapports Acquisition) |
+| Filtrer les events simulateur par partenaire    | Le segment Matomo fonctionne sur les events aussi                     |
+| Filtrer les comptes/parcours BDD par partenaire | `users.partner_source` (Phase B)                                      |
 
 La custom dimension serait **redondante** avec `referrerName` pour la couche Matomo, et n'apporterait rien pour la couche BDD.
 
 **Cas marginaux où elle deviendrait utile** (à réévaluer si observés en prod) :
 
 - Le partenaire change sa `Referrer-Policy` en `no-referrer` → le host n'est plus transmis dans le `Referer` HTTP. Détectable globalement (chute brutale du trafic référent).
-- Plusieurs hosts du même partenaire à agréger sous un slug unique. Solution intermédiaire : étendre la map `PARTNER_REFERRER_HOSTS` côté client + `PARTNER_REFERRERS` côté server avec tous les hosts pointant vers le même slug. La custom dimension ne serait nécessaire que si l'agrégation devient ingérable en map statique.
+- Plusieurs hosts du même partenaire à agréger sous un slug unique. Solution intermédiaire : chaque entrée de `PARTNERS` n'a qu'un `referrerHost` ; le remplacer par une liste de hosts pointant vers le même slug, en adaptant la détection et le segment Matomo. La custom dimension ne serait nécessaire que si l'agrégation devient ingérable en map statique.
 
 Si le besoin émerge, l'ajout est straightforward (~30 min) :
+
 1. Créer une dimension "Partner" (scope Visit) dans l'admin Matomo
 2. Ajouter `NEXT_PUBLIC_MATOMO_DIMENSION_PARTNER_ID` dans `env.config.ts`
 3. Push `["setCustomDimension", id, partner]` dans `SimulateurFormulaire` avant chaque `trackEvent`

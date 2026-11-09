@@ -46,8 +46,11 @@ actif en `local`, `docker` et `staging`, **inactif en `production`** — sauf in
 | `/vulnerabilite-rga`                          | 404                                                                      |
 | `/embed-vulnerabilite-rga`                    | 404                                                                      |
 | `/administration/vulnerabilite`               | 404                                                                      |
+| `/mon-compte/vulnerabilite`                   | 404                                                                      |
+| `/espace-agent/vulnerabilite/[id]`            | 404                                                                      |
 | Onglet « Vulnérabilité » de la nav backoffice | masqué (`AdminNavTab.estDisponible`)                                     |
 | `enregistrerResultatVulnerabiliteAction`      | no-op — une Server Action reste appelable même quand sa page renvoie 404 |
+| `enregistrerTestVulnerabiliteAgentAction`     | refus « Le simulateur de vulnérabilité n'est pas disponible »            |
 
 > La carte « Vulnérabilité au RGA » de l'espace agent (`VulnerabiliteDossier`) suit la même bascule : inactive,
 > elle disparaît, résultat existant compris. L'adresse partagée entre simulateurs (ADR-0048) n'est pas non plus
@@ -97,6 +100,7 @@ Tous derrière la même bascule : hors des environnements actifs, aucun ne s'aff
 | Entrée                 | Où                                                                                                      | Condition d'affichage                                                                        |
 | ---------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État »                                | bascule active ; l'aperçu de résultat est illustratif, sans score                            |
+| Lien de la home        | `LogementConcerneRgaSection`, sous le bouton principal : « Ou estimer d'abord la vulnérabilité… »       | bascule active                                                                               |
 | Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton                                       | bascule active, site principal (pas l'iframe), maison, propriétaire                          |
 | « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top                                   | bascule active, à toutes les étapes du parcours                                              |
 | Dossier côté agent     | `VulnerabiliteDossier` sur les pages dossier, demande et prospect : « Faire le test avec le demandeur » | bascule active ; AMO, Aller-vers et hybride (ni super-admin, ni analyste, ni administrateur) |
@@ -131,10 +135,10 @@ domain/
   services/eligibilite-fonds.service.ts    ← renvoi vers `/simulateur`, règles importées
   services/recommandations.service.ts      ← fiches regroupées en trois sections
   catalogues/recommandations.catalogue.ts  ← fiches conseil, par critère et réponse déclenchante
-  rules/navigation/step-flow.rules.ts      ← ordre des étapes + branchement arbre → essence
+  rules/navigation/step-flow.rules.ts      ← ordre linéaire des étapes
   value-objects/resultat-content.const.ts  ← textes de l'écran de résultat, partagés HTML + PDF
 stores/vulnerabilite.store.ts              ← Zustand + sessionStorage (pas de localStorage)
-components/                                ← 14 étapes, 10 illustrations SVG, synthèse, recommandations
+components/                                ← 13 étapes, 10 illustrations SVG, synthèse, recommandations
 components/pdf/VulnerabilitePdfDocument.tsx ← PDF téléchargeable depuis l'écran de résultat
 components/pdf/TelechargerPdfButton.tsx    ← bouton, chargé en `next/dynamic` (seul accès à la lib PDF)
 actions/enregistrer-resultat.actions.ts    ← écriture anonyme (best-effort)
@@ -219,7 +223,7 @@ Dans l'ordre : la synthèse, le callout expert, la pédagogie, les fiches.
 
 Chaque simulation terminée écrit une ligne dans `vulnerabilite_simulations` — table **strictement
 anonyme** : pas de FK `users`, pas d'adresse, pas de commune, pas de coordonnées, pas
-d'identifiant de visiteur. Seuls le code département et les réponses : les catégories se relisent
+d'identifiant de visiteur. Seuls le code département, l'aléa RGA et les réponses : les catégories se relisent
 dans la grille en vigueur, elles ne sont pas stockées.
 
 Deux garde-fous, parce que la page est publique et non authentifiée :
@@ -231,7 +235,8 @@ Deux garde-fous, parce que la page est publique et non authentifiée :
 
 Répartition Matomo / BDD (ADR-0031) : Matomo pour le volume, le funnel et la répartition par
 département ; la table pour la répartition par réponse et le nombre moyen de points par
-catégorie (critiques en tête), que Matomo ne sait pas agréger. Onglet `/administration/vulnerabilite`, ouvert à tous les agents (agrégats non nominatifs,
+catégorie (critiques en tête), que Matomo ne sait pas agréger. Le pointeur du parcours (§ 5) donne en plus les
+comptes créés sur la période qui ont fait une simulation, et leur part. Onglet `/administration/vulnerabilite`, ouvert à tous les agents (agrégats non nominatifs,
 même logique qu'ADR-0017).
 
 ### Export PDF
@@ -261,7 +266,7 @@ synthèse ou le callout. Le titre d'une section est attaché à sa première fic
 insécable : `minPresenceAhead` a été essayé et ne l'empêchait pas de rester seul en bas de page.
 
 **`@react-pdf/renderer` n'est jamais dans le first-load** : la lib pèse ~256 Ko gzip, soit plus
-que tout le reste de la page, alors que le bouton n'apparaît qu'à la 14e étape. `ResultVulnerabilite`
+que tout le reste de la page, alors que le bouton n'apparaît qu'à la 13e étape. `ResultVulnerabilite`
 la charge donc en `next/dynamic(..., { ssr: false })` via `TelechargerPdfButton.tsx`, seul module à
 l'importer. Corollaire à ne pas défaire : rien d'autre ne doit importer ce module en statique — y
 compris pour une constante partagée — sinon la lib revient dans le bundle d'entrée de
@@ -315,7 +320,8 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 
 ### Méthode et contenu
 
-- Préciser à l'écran ce que « proche » veut dire pour l'arbre et la haie.
+- Préciser à l'écran ce que « proche » veut dire pour la haie : l'arbre l'a déjà (moins de 1,5 fois sa hauteur
+  adulte), la haie seulement sur une réponse (moins de 2 mètres).
 - La fiche arbre s'affiche aussi sur « je ne sais pas », alors que son texte suppose un arbre
   présent : à reformuler ou à dédoubler.
 
@@ -332,10 +338,9 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
   tests : la navigation arrière passe par `history`. Du code mort qui a l'air couvert.
 - Remplacer les couleurs en dur de `CATEGORIES_AFFICHAGE` (badge et PDF) par les classes ou
   variables DSFR pour suivre un éventuel thème sombre.
-- `ETAPES_NUMEROTEES_BASE` (`vulnerabilite-step.enum.ts`) duplique volontairement l'ordre et la
-  règle de branchement de `step-flow.rules.ts` : à dériver si une seconde question conditionnelle
-  apparaît.
-- Ajouter un test négatif RBAC sur les trois Server Actions de `vulnerabilite-stats.actions.ts`
+- `ETAPES_NUMEROTEES` (`vulnerabilite-step.enum.ts`) duplique l'ordre de `step-flow.rules.ts` :
+  à dériver si une question conditionnelle réapparaît.
+- Ajouter un test négatif RBAC sur les quatre Server Actions de `vulnerabilite-stats.actions.ts`
   (cf. [RBAC-TEST-PLAN §5](../security/RBAC-TEST-PLAN.md)) — gravité faible (agrégats anonymes),
   mais c'est la règle du repo pour toute nouvelle surface.
 - Créer le funnel Matomo du simulateur (sans l'étape `vulnerabilite_step_source_chaleur_sous_sol`, retirée),
@@ -357,8 +362,8 @@ Priorisé. Les points bloquants pour une mise en production sont marqués **P0**
 | Synthèse du résultat (callout)         | `vulnerabilite-rga/domain/services/synthese-resultat.service.ts`                                                      |
 | Renvoi conditionnel vers `/simulateur` | `vulnerabilite-rga/domain/services/eligibilite-fonds.service.ts`                                                      |
 | Sections de recommandations            | `vulnerabilite-rga/domain/services/recommandations.service.ts`                                                        |
-| Navigation et branchement              | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                                        |
-| Orchestrateur des 14 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
+| Ordre des étapes                       | `vulnerabilite-rga/domain/rules/navigation/step-flow.rules.ts`                                                        |
+| Orchestrateur des 13 étapes            | `vulnerabilite-rga/components/VulnerabiliteFormulaire.tsx`                                                            |
 | Écriture anonyme                       | `vulnerabilite-rga/actions/enregistrer-resultat.actions.ts`                                                           |
 | Table anonyme                          | `shared/database/schema/vulnerabilite-simulations.ts`                                                                 |
 | PDF téléchargeable                     | `vulnerabilite-rga/components/pdf/VulnerabilitePdfDocument.tsx`                                                       |
