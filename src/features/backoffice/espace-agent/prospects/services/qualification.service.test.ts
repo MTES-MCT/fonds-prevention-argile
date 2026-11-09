@@ -3,8 +3,9 @@ import { qualificationService } from "./qualification.service";
 import { QualificationDecision } from "../domain/types";
 import { prospectQualificationsRepo } from "@/shared/database/repositories/prospect-qualifications.repository";
 import { parcoursPreventionRepository } from "@/shared/database/repositories/parcours-prevention.repository";
-import { assignAmoAutomatiqueForUser } from "@/features/parcours/amo/services/amo-selection.service";
+import { assignAmoAutomatiqueForUser, passerEnAutonomie } from "@/features/parcours/amo/services/amo-selection.service";
 import { SituationParticulier } from "@/shared/domain/value-objects/situation-particulier.enum";
+import { AccompagnementSouhaite } from "@/shared/domain/value-objects/accompagnement-souhaite.enum";
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import {
   ACTION_TYPE_AV_QUALIFICATION_ELIGIBLE,
@@ -219,6 +220,24 @@ describe("qualificationService.qualifyProspect — auto-lien AMO (dépt obligato
     });
 
     expect(assignAmoAutomatiqueForUser).not.toHaveBeenCalled();
+  });
+
+  it("passe en autonomie un prospect archivé qu'il vient de désarchiver", async () => {
+    const archive = { ...mockParcours("59350"), archivedAt: new Date("2026-10-01") };
+    vi.mocked(parcoursPreventionRepository.findById).mockResolvedValue(archive as never);
+    vi.mocked(parcoursPreventionRepository.updateSituationParticulier).mockResolvedValueOnce({
+      ...archive,
+      archivedAt: null,
+    } as never);
+
+    await qualificationService.qualifyProspect({
+      parcoursId: "parcours-1",
+      agentId: "agent-1",
+      decision: QualificationDecision.ELIGIBLE,
+      accompagnementSouhaite: AccompagnementSouhaite.AUTONOMIE,
+    });
+
+    expect(passerEnAutonomie).toHaveBeenCalledWith(expect.objectContaining({ archivedAt: null }));
   });
 
   it("ne crée PAS de lien AMO pour une décision non éligible", async () => {

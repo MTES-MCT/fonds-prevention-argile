@@ -85,11 +85,14 @@ export class QualificationService {
     // 3. Mettre à jour situation_particulier selon la décision
     let suiteAccompagnement: SuiteAccompagnement = null;
     if (decision === QualificationDecision.ELIGIBLE) {
-      await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE);
+      // La suite lit l'état désarchivé : le parcours lu plus haut ferait refuser l'autonomie.
+      const parcoursAJour =
+        (await parcoursPreventionRepository.updateSituationParticulier(parcoursId, SituationParticulier.ELIGIBLE)) ??
+        parcours;
       // La qualification de l'Aller-vers met le dossier en relation avec l'AMO, sans
       // attendre que le ménage redemande ce qu'il vient de dire à l'agent.
       suiteAccompagnement = await donnerSuiteAQualificationEligible(
-        parcours,
+        parcoursAJour,
         { agentId, ...(contexteAgent ?? { entrepriseAmoId: null, aLaCapaciteAmo: false }) },
         accompagnementSouhaite,
         estMandataireFinancier,
