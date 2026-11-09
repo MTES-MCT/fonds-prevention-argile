@@ -12,17 +12,17 @@
  *
  * Catégorisation de chaque parcours problématique :
  *   1. REGRESSABLE        : aucun dossier DS du tout → simple régression.
- *   2. CLEANUP_REQUIS     : dossiers downstream UNIQUEMENT en_construction (brouillons
- *                           DS jamais soumis, résidus du bug — ex. l'utilisateur a cliqué
+ *   2. CLEANUP_REQUIS     : dossiers downstream UNIQUEMENT sans statut DS (brouillons
+ *                           jamais déposés, résidus du bug — ex. l'utilisateur a cliqué
  *                           "Créer mon dossier diagnostic"). Régression possible APRÈS
  *                           suppression de ces brouillons. Nécessite --with-cleanup.
- *   3. A_REVIEWER         : au moins un dossier downstream SOUMIS (en_instruction/accepte/
- *                           refuse/...). Jamais touché automatiquement — vraie donnée en jeu.
+ *   3. A_REVIEWER         : au moins un dossier downstream DÉPOSÉ (en_construction depuis
+ *                           ADR-0009, en_instruction, accepte…). Jamais touché automatiquement.
  *
  * Niveaux d'engagement :
  *   (rien)                 dry-run : affiche le plan, aucune écriture
  *   --apply                corrige la catégorie 1 (régression). Catégorie 2 affichée, pas touchée.
- *   --apply --with-cleanup corrige aussi la catégorie 2 (DELETE brouillons en_construction
+ *   --apply --with-cleanup corrige aussi la catégorie 2 (DELETE des brouillons sans statut DS
  *                          downstream + régression, en transaction).
  *
  * Filtres / options :
@@ -34,11 +34,11 @@
  * pour ne pas écraser un changement concurrent survenu entre la détection et l'apply.
  *
  * Usage :
- *   pnpm tsx scripts/ops/fix-double-progression-amo.ts                          # dry-run
- *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --anonymize              # dry-run anonymisé
- *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --apply                  # cat. 1
- *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --apply --with-cleanup   # cat. 1 + 2
- *   pnpm tsx scripts/ops/fix-double-progression-amo.ts --parcours-id=<uuid>     # cible
+ *   pnpm fix:double-progression                          # dry-run
+ *   pnpm fix:double-progression --anonymize              # dry-run anonymisé
+ *   pnpm fix:double-progression --apply                  # cat. 1
+ *   pnpm fix:double-progression --apply --with-cleanup   # cat. 1 + 2
+ *   pnpm fix:double-progression --parcours-id=<uuid>     # cible
  *
  * Prérequis : .env.local avec DATABASE_URL (les DEMARCHES_SIMPLIFIEES_* ne sont pas requis,
  * ce script ne touche pas à l'API DS).
@@ -83,7 +83,7 @@ type Category = "regressable" | "cleanup_requis" | "a_reviewer";
 interface LocalDossier {
   id: string;
   step: Step;
-  dsStatus: DSStatus;
+  dsStatus: DSStatus | null;
   dsNumber: string | null;
 }
 
@@ -94,8 +94,8 @@ interface Case {
   currentStatus: Status;
   dossiers: LocalDossier[];
   category: Category;
-  // Brouillons en_construction downstream à supprimer (catégorie cleanup_requis).
-  enConstructionToDelete: { id: string; step: Step }[];
+  // Brouillons downstream jamais déposés à supprimer (catégorie cleanup_requis).
+  brouillonsToDelete: { id: string; step: Step }[];
   reviewReason?: string;
 }
 
@@ -142,14 +142,14 @@ async function categorize(): Promise<Case[]> {
     }
 
     const category: Category = fullCategory;
-    let enConstructionToDelete: { id: string; step: Step }[] = [];
+    let brouillonsToDelete: { id: string; step: Step }[] = [];
     let reviewReason: string | undefined;
 
     if (category === "cleanup_requis") {
-      enConstructionToDelete = dossiers.map((d) => ({ id: d.id, step: d.step }));
+      brouillonsToDelete = dossiers.map((d) => ({ id: d.id, step: d.step }));
     } else if (category === "a_reviewer") {
-      const soumis = dossiers.filter((d) => d.dsStatus !== DSStatus.EN_CONSTRUCTION);
-      reviewReason = `dossier(s) downstream soumis côté DS : ${soumis
+      const deposes = dossiers.filter((d) => d.dsStatus !== null);
+      reviewReason = `dossier(s) downstream déposé(s) côté DS : ${deposes
         .map((d) => `${d.step}=${d.dsStatus}`)
         .join(", ")}`;
     }
@@ -161,7 +161,7 @@ async function categorize(): Promise<Case[]> {
       currentStatus: c.currentStatus as Status,
       dossiers,
       category,
-      enConstructionToDelete,
+      brouillonsToDelete,
       reviewReason,
     });
   }
@@ -178,20 +178,22 @@ async function regresser(parcoursId: string): Promise<boolean> {
   return !!moved;
 }
 
-async function cleanupAndRegresser(c: Case): Promise<boolean> {
-  return await db.transaction(async (tx) => {
-    // Suppression conditionnelle : uniquement les brouillons en_construction.
-    // La condition ds_status=en_construction protège contre une soumission survenue
-    // entre la détection et l'apply.
-    for (const d of c.enConstructionToDelete) {
-      await tx
+// Lancée dans la transaction pour l'annuler : suppression et régression vont ensemble ou pas du tout.
+class EtatModifieError extends Error {}
+
+async function cleanupAndRegresser(c: Case): Promise<void> {
+  await db.transaction(async (tx) => {
+    // ds_status NULL = jamais déposé (ADR-0009) ; un dépôt survenu depuis la détection l'exclut.
+    let supprimes = 0;
+    for (const d of c.brouillonsToDelete) {
+      const deleted = await tx
         .delete(dossiersDemarchesSimplifiees)
-        .where(
-          and(
-            eq(dossiersDemarchesSimplifiees.id, d.id),
-            eq(dossiersDemarchesSimplifiees.dsStatus, DSStatus.EN_CONSTRUCTION)
-          )
-        );
+        .where(and(eq(dossiersDemarchesSimplifiees.id, d.id), isNull(dossiersDemarchesSimplifiees.dsStatus)))
+        .returning({ id: dossiersDemarchesSimplifiees.id });
+      supprimes += deleted.length;
+    }
+    if (supprimes !== c.brouillonsToDelete.length) {
+      throw new EtatModifieError(`${supprimes}/${c.brouillonsToDelete.length} brouillon(s) encore supprimable(s)`);
     }
 
     const [moved] = await tx
@@ -199,8 +201,7 @@ async function cleanupAndRegresser(c: Case): Promise<boolean> {
       .set({ currentStep: TARGET_STEP, currentStatus: TARGET_STATUS })
       .where(and(eq(parcoursPrevention.id, c.parcoursId), inArray(parcoursPrevention.currentStep, STEPS_AVALES)))
       .returning({ id: parcoursPrevention.id });
-
-    return !!moved;
+    if (!moved) throw new EtatModifieError("étape modifiée");
   });
 }
 
@@ -229,8 +230,8 @@ async function main() {
   // --- Affichage du plan ---
   console.log(`Parcours problématiques détectés : ${cases.length}`);
   console.log(`  - régressables (0 dossier)        : ${regressables.length}`);
-  console.log(`  - cleanup requis (en_construction): ${cleanupRequis.length}`);
-  console.log(`  - à reviewer (dossier soumis)     : ${aReviewer.length}`);
+  console.log(`  - cleanup requis (brouillons)     : ${cleanupRequis.length}`);
+  console.log(`  - à reviewer (dossier déposé)     : ${aReviewer.length}`);
   console.log();
 
   if (regressables.length > 0) {
@@ -307,17 +308,17 @@ async function main() {
   if (WITH_CLEANUP) {
     for (const c of cleanupRequis) {
       try {
-        const moved = await cleanupAndRegresser(c);
-        if (moved) {
-          okCleanup++;
-          console.log(
-            `  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.enConstructionToDelete.length} brouillon(s) supprimé(s))`
-          );
-        } else {
-          skippedState++;
-          console.log(`  SKIP (état modifié depuis la détection) ${redactUuid(c.parcoursId)}`);
-        }
+        await cleanupAndRegresser(c);
+        okCleanup++;
+        console.log(
+          `  OK cleanup+régressé ${redactUuid(c.parcoursId)} (${c.brouillonsToDelete.length} brouillon(s) supprimé(s))`
+        );
       } catch (err) {
+        if (err instanceof EtatModifieError) {
+          skippedState++;
+          console.log(`  SKIP (état modifié depuis la détection : ${err.message}) ${redactUuid(c.parcoursId)}`);
+          continue;
+        }
         failed++;
         console.error(`  ERR ${redactUuid(c.parcoursId)} : ${err instanceof Error ? err.message : String(err)}`);
       }

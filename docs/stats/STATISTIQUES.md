@@ -204,8 +204,7 @@ Les arbitrages sont suivis dans [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md#statis
 - **« Demandes d'AMO envoyées »** : compte aussi les demandeurs en autonomie (`sans_amo`), qui n'ont sollicité aucune AMO.
 - **Archivage par correction d'agent** : un dossier devenu inéligible est archivé avec un motif libre (« Non éligible (…) »), sans
   qualification. Il compte dans « Dossiers archivés » mais pas dans « Demandes inéligibles », et fragmente la ventilation des motifs.
-- **Top 5 communes** : le filtre département compare le code brut (`"03"` contre `"3"`) ; la liste serait vide si la simulation garde
-  le zéro. Le format réel stocké n'est pas établi ici. Côté Matomo, la clé est le nom de commune seul.
+- **Top 5 communes (Matomo)** : la clé est le nom de commune seul, d'où la fusion des homonymes de départements différents.
 - **Site vitrine** : une erreur Matomo affiche des zéros partout, sans « indisponible ».
 - **Délai de 1ère réponse** : une action écrite au nom du demandeur (simulation non éligible à l'inscription) compte comme réponse,
   d'où un délai proche de 0 h et une absence de « sans réponse ».
