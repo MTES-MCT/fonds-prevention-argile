@@ -127,7 +127,7 @@ describe("StructuresPanel", () => {
     await nomsAffiches();
     const creer = screen.getByRole("button", { name: "Créer la structure", hidden: true });
 
-    await userEvent.type(screen.getByLabelText("Nom"), "Adil 18");
+    await userEvent.type(screen.getByLabelText(/^Nom/), "Adil 18");
     await userEvent.click(screen.getByRole("radio", { name: "Aller-vers", hidden: true }));
     expect(creer).toBeDisabled();
     await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@adil18.test");
@@ -148,7 +148,7 @@ describe("StructuresPanel", () => {
     await nomsAffiches();
     const creer = screen.getByRole("button", { name: "Créer la structure", hidden: true });
 
-    await userEvent.type(screen.getByLabelText("Nom"), "Soliha Cher");
+    await userEvent.type(screen.getByLabelText(/^Nom/), "Soliha Cher");
     await userEvent.click(screen.getByRole("radio", { name: "AMO", hidden: true }));
     await choisir(screen.getByRole("combobox", { name: /^Départements/, hidden: true }), "Cher 18");
     await userEvent.type(screen.getByLabelText(/^Emails de l'équipe/), "contact@soliha18.test");

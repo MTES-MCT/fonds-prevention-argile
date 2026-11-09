@@ -55,6 +55,7 @@ export default function ChampsIdentite({
           <div className="fr-input-group">
             <label className="fr-label" htmlFor={`${idPrefix}-nom`}>
               Nom
+              <span className="fr-hint-text">Affiché aux demandeurs et aux agents. Obligatoire</span>
             </label>
             <input className="fr-input" type="text" required {...champ("nom")} />
           </div>

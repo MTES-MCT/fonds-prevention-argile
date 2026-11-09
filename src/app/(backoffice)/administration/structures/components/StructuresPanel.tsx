@@ -123,7 +123,9 @@ export default function StructuresPanel({ role, criteresInitiaux }: StructuresPa
               <h1 className="fr-h2 fr-mb-1v">Structures</h1>
               <p style={{ color: "var(--text-mention-grey)", marginBottom: 0 }}>
                 Une structure d&apos;accompagnement porte AMO, Aller-vers ou les deux, qui donnent leur rôle à ses
-                agents. Une structure expert ne porte que l&apos;expertise, qui n&apos;en donne aucun.
+                agents.
+                <br />
+                Une structure expert ne porte que l&apos;expertise, qui n&apos;en donne aucun.
               </p>
             </div>
             <div className="fr-col-auto">
