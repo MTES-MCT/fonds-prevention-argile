@@ -57,10 +57,9 @@ besoins de disponibilité, d'intégrité, de confidentialité et de traçabilit�
 **À produire** :
 
 - un schéma des flux tiré de ce tableau (sens, protocole, données) ;
-- une politique de confidentialité à jour. Elle ne cite que Démarches Numériques, Scalingo et OVH :
-  Brevo, Matomo, La Suite Messages et les API géographiques y manquent, et le code ne fait aucun
-  appel à OVH. Le statut de chaque service (sous-traitant ou simple destinataire) se tranche avec le
-  DPD.
+- une politique de confidentialité à jour. Elle ne cite que Démarches Numériques et Scalingo :
+  Brevo, Matomo, La Suite Messages et les API géographiques y manquent. Le statut de chaque service
+  (sous-traitant ou simple destinataire) se tranche avec le DPD.
 
 ## 3. Données personnelles
 
