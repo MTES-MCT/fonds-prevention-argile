@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/shared/database/client";
 import { parcoursAmoValidations, parcoursPrevention } from "@/shared/database/schema";
-import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
-import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { getServerEnv } from "@/shared/config/env.config";
 import { isUuid } from "@/shared/utils";
+import { cheminEspaceAgent } from "../domain/chemin-espace-agent";
 
 /**
  * Résout le chemin de suivi du dossier dans l'espace agent, pour le conseiller (AMO ou
@@ -41,16 +40,11 @@ export async function resolveEspaceAgentPath(parcoursId: string): Promise<string
     .where(eq(parcoursAmoValidations.parcoursId, parcoursId))
     .limit(1);
 
-  if (!validation) {
-    return ROUTES.backoffice.espaceAgent.prospect(parcours.id);
-  }
-
-  const isDemandeEnAttente =
-    validation.statut === StatutValidationAmo.EN_ATTENTE && !!validation.entrepriseAmoId && !parcours.archivedAt;
-
-  return isDemandeEnAttente
-    ? ROUTES.backoffice.espaceAgent.demande(validation.id)
-    : ROUTES.backoffice.espaceAgent.dossier(validation.id);
+  return cheminEspaceAgent({
+    parcoursId: parcours.id,
+    archivedAt: parcours.archivedAt,
+    validation: validation ?? null,
+  });
 }
 
 /** Même résolution que `resolveEspaceAgentPath`, en URL absolue (systèmes externes). */
