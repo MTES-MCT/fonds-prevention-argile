@@ -16,6 +16,10 @@ Un demandeur traverse 5 étapes en séquence :
 choix_amo → eligibilite → diagnostic → devis → factures
 ```
 
+Un dossier créé par un agent démarre à une étape préalable, `invitation`, placée avant
+`choix_amo` dans `STEP_ORDER` et non numérotée : elle tient jusqu'à ce que le demandeur réclame
+son compte (§2.3.5).
+
 Source de vérité : `src/shared/domain/value-objects/step.enum.ts`. Ordre canonique dans `STEP_ORDER` (`src/features/parcours/core/domain/value-objects/step.ts`).
 
 ### 1.2 Modèle d'état à deux niveaux
@@ -62,7 +66,7 @@ Chaque parcours a deux niveaux d'état complémentaires :
 
 - **`ds_status`** ∈ `null | EN_CONSTRUCTION | EN_INSTRUCTION | ACCEPTE | REFUSE | CLASSE_SANS_SUITE | NON_ACCESSIBLE` — c'est DS qui décide. `null` = dossier créé dans DS mais **pas encore déposé** ; `EN_CONSTRUCTION` = **déposé**, en attente d'instruction (et non « brouillon »). Voir [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`current_status`** ∈ `todo | en_instruction | valide` — dérivé via `DS_TO_INTERNAL_STATUS` (voir §3.2).
-- **`current_step`** ∈ les 5 étapes — change uniquement sur appel explicite à `moveToNextStep`.
+- **`current_step`** ∈ `invitation` et les 5 étapes — avance par `moveToNextStep` une fois l'étape validée par DS. Les décisions d'accompagnement l'écrivent aussi directement : `approveValidation` et `advanceToEligibiliteFromChoixAmo` (`choix_amo` → `eligibilite`), `validateInvitation` (claim, §2.3.5), `passerEnAutonomie` et `detacherAmo`.
 
 ### 1.3 Cycle de vie d'une étape
 
@@ -84,9 +88,10 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 
 | Transition                                              | Mécanisme                                                                                                                                                                                             | Code                                                                                                                                          |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Inscription → `choix_amo / todo`                        | À la création du parcours (`findOrCreateForUser`)                                                                                                                                                     | `parcours-prevention.repository.ts:206`                                                                                                       |
-| `choix_amo / todo` → `choix_amo / en_instruction`       | Demandeur choisit un AMO                                                                                                                                                                              | `selectAmoForUser`, `amo-selection.service.ts:266`                                                                                            |
-| `choix_amo / en_instruction` → `eligibilite / todo`     | **AMO valide** via lien email → `approveValidation` appelle `moveToNextStep` automatiquement                                                                                                          | `amo-validation.service.ts:66`                                                                                                                |
+| Inscription → `choix_amo / todo`                        | À la création du parcours (`findOrCreateForUser`) ; un dossier créé par un agent démarre à `invitation / todo`                                                                                        | `parcours-prevention.repository.ts` (`findOrCreateForUser`)                                                                                   |
+| `invitation` → `choix_amo` ou `eligibilite`             | Claim du compte par le demandeur, routé selon la validation AMO déjà posée (§2.3.5)                                                                                                                   | `parcours-prevention.repository.ts` (`validateInvitation`)                                                                                    |
+| `choix_amo / todo` → `choix_amo / en_instruction`       | Demandeur choisit un AMO                                                                                                                                                                              | `amo-selection.service.ts` (`selectAmoForUser`)                                                                                               |
+| `choix_amo / en_instruction` → `eligibilite / todo`     | **AMO valide** sur le détail de la demande (le lien email y redirige) → `approveValidation` passe l'étape par un UPDATE conditionné sur `choix_amo`, sans `moveToNextStep`                            | `amo-validation.service.ts` (`approveValidation`)                                                                                             |
 | `eligibilite / todo` → `eligibilite / en_instruction`   | Sync détecte `ds_status = en_instruction` (DDT prend la main) + `recomputeParcoursStatus`. La création du dossier (`createEligibiliteDossier`) garde `todo` (ADR-0009)                                | `ds-sync.service.ts`, `eligibilite.service.ts`                                                                                                |
 | `eligibilite / en_instruction` → `eligibilite / valide` | Sync détecte `ds_status = accepte` + `recomputeParcoursStatus`                                                                                                                                        | `ds-sync.service.ts` (voir §3)                                                                                                                |
 | `eligibilite / valide` → `diagnostic / todo`            | **CRON ou sync UI demandeur** appelle `moveToNextStep` automatiquement après recompute                                                                                                                | `parcours-sync-batch.service.ts` (§4), `dossier-sync.actions.ts` (§6.1)                                                                       |
@@ -101,7 +106,7 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 
 ### 2.2 Garde-fous existants
 
-- **`canPassToNextStep(state)`** (`parcours-permissions.service.ts:26`) : `status === VALIDE && !isLastStep(step)`.
+- **`canPassToNextStep(state)`** (`parcours-permissions.service.ts`) : `status === VALIDE && !isLastStep(step)`.
 - **`canCreateDossier(state)`** : `status === TODO`. Ne sert plus de verrou anti-doublon — la création de dossier est idempotente (`getDossierByStep`), cf. [ADR-0009](../adr/0009-semantique-statut-ds-depose-vs-brouillon.md).
 - **`canValidateDossier(state)`** : `status === EN_INSTRUCTION` — donc possible uniquement quand la DDT instruit réellement (le dossier seulement déposé reste `TODO`).
 - `moveToNextStep` re-fetche l'état avant d'écrire → idempotent, safe en concurrence.
@@ -109,7 +114,7 @@ TODO ──(dépôt usager, sync ds=en_construction)──► TODO* ──(sync 
 
 ### 2.3 Cas particulier `choix_amo`
 
-L'étape `choix_amo` **n'a pas de dossier DS**. La progression vers `eligibilite` est pilotée par la validation AMO via webhook email Brevo, pas par une sync DS. Conséquence pour le code de sync : `recomputeParcoursStatus` est no-op si `current_step = choix_amo` (pas de dossier de l'étape courante).
+L'étape `choix_amo` **n'a pas de dossier DS**. La progression vers `eligibilite` est pilotée par la réponse de l'AMO (`approveValidation`) ou par l'autonomie, pas par une sync DS ; le webhook Brevo ne trace que la remise de l'email à l'AMO. Conséquence pour le code de sync : `recomputeParcoursStatus` est no-op si `current_step = choix_amo` (pas de dossier de l'étape courante).
 
 #### 2.3.1 Deux règles départementales indépendantes (ADR-0038)
 
@@ -227,7 +232,8 @@ Gardes, toutes revérifiées côté serveur :
 
 - **Un choix déjà fait prime** : l'écriture est un `onConflictDoNothing`, jamais un upsert.
   Un demandeur ayant choisi, ou une AMO déjà sollicitée, ne sont pas défaits par l'agent.
-- **Dossier archivé** → refus.
+- **Dossier archivé** → refus, pour l'autonomie seulement (`passerEnAutonomie`) : la
+  sollicitation d'une AMO ne le vérifie pas.
 - **Gel DDT** : pas de garde dédiée, la garde d'étape suffit — `choix_amo` et `invitation`
   sont les seules étapes acceptées, et aucun formulaire d'éligibilité n'y existe encore.
 
@@ -284,8 +290,9 @@ Une attribution sans choix explicite n'aboutit qu'avec **une seule** AMO. Au-del
 | Qualification éligible par l'Aller-vers        | l'agent, dans le formulaire                 | `choix_agent` |
 | Rattachement super-admin / `fix:rattacher-amo` | personne : refusé, avec les AMO en présence | —             |
 
-Avec une seule AMO, rien ne change à l'écran ; le mode devient `auto_unique` là où l'AMO est
-facultative (`auto_obligatoire` / `auto_av_amo` inchangés ailleurs). Le choix est revérifié côté
+Avec une seule AMO, rien ne change à l'écran ; le mode tracé (`modeAttributionParDefaut`) est
+`auto_av_amo` là où l'aller-vers cumule l'AMO (Gers compris, où elle reste facultative),
+`auto_obligatoire` là où elle est seulement imposée, `auto_unique` ailleurs. Le choix est revérifié côté
 serveur contre la couverture : une AMO absente de la liste est refusée.
 
 > **Le département reste un niveau de repli.** Une AMO qui déclare « Nord 59 » en plus de ses
@@ -319,20 +326,21 @@ Permissions et audit : voir [ADR-0016](../adr/0016-reouverture-demande-refusee.m
 ### 2.5 Détachement de l'AMO (passage en « sans AMO »)
 
 Un demandeur avait choisi un AMO quand celui-ci était **obligatoire** ; depuis la
-modification de l'arrêté, l'AMO est facultatif et il veut poursuivre **seul**. Aucun
-écran ne permet d'annuler un accompagnement une fois l'AMO choisi (l'UI ne couvre que
-le « renoncer » avant choix, `skipAmoStepForUser`, qui exige `choix_amo / todo` + un
-département `FACULTATIF`). On **détache** donc l'AMO manuellement.
+modification de l'arrêté, l'AMO est facultatif et il veut poursuivre **seul**. Le script
+ci-dessous **détache** l'AMO à la main ; l'arrêt se fait aussi depuis l'UI, côté demandeur
+comme côté AMO, par le même service `detacherAmo` (§2.7). Le script reste l'échappatoire
+quand l'UI refuse.
 
 Script ops `pnpm fix:detacher-amo` (`scripts/ops/fix/detacher-amo.ts`, dry-run par
 défaut, `--apply`, ciblage `--parcours-id` ou `--nom`). Effet, en transaction :
 `parcours_amo_validations -> statut = sans_amo`, `attribution_mode = aucun`,
-`entreprise_amo_id = NULL` (purge commentaire / `validee_at` / tracking email) ; les
+`entreprise_amo_id = NULL` (purge commentaire / `validee_at` / `est_mandataire_financier` /
+`demande_arret_at` / tracking email), refusé sur un parcours archivé ou déjà `sans_amo` ; les
 tokens AMO encore actifs sont invalidés (`used_at = now`, sinon l'AMO pourrait valider
 via le vieux lien email). Étape : encore à `choix_amo` -> avance à `eligibilite / todo`
 (comme le « skip » UI) ; déjà au-delà -> étape **inchangée** (on ne fait que détacher).
-Le responsable bascule sur l'aller-vers du territoire (résolution par
-`rgaSimulationData`, cf. [RBAC-ROLES §6](../security/RBAC-ROLES.md)). Pas d'entrée
+Le responsable bascule sur l'aller-vers du territoire (résolution USER-first avec repli
+agent, `getDemandeurFirstSimulation`, cf. [RBAC-ROLES §6](../security/RBAC-ROLES.md)). Pas d'entrée
 d'audit `parcours_actions` (action ops). À distinguer de la ré-ouverture (§2.4), qui
 remet une demande **refusée** en attente de validation AMO — ici on **retire** l'AMO.
 
@@ -481,12 +489,12 @@ plusieurs avis, et une seule pièce illisible y rendait tout le contrôle non v�
 Le CRON compare ces données aux déclaratifs (« Revenu fiscal de référence », « Nombre de personnes
 composant le ménage ») selon ces critères :
 
-| Critère    | Règle                                                                                         |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| RFR        | égalité stricte avec la somme des avis retenus, dédoublonnés par référence ; écart en tranche |
-| Personnes  | fourchette estimée depuis parts et déclarants, jamais au-delà de « à vérifier »               |
-| Année      | revenus N-1, N étant l'année du dépôt                                                         |
-| Couverture | aucun avis lu → Non vérifiable ; un avis sur plusieurs non lu → À vérifier                    |
+| Critère    | Règle                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| RFR        | égalité stricte avec la somme des avis retenus, dédoublonnés par référence ; écart en tranche                                   |
+| Personnes  | fourchette estimée depuis parts et déclarants, jamais au-delà de « à vérifier »                                                 |
+| Année      | revenus N-1, N étant l'année du dépôt                                                                                           |
+| Couverture | aucun avis lu → Non vérifiable ; un avis sur plusieurs non lu → À vérifier au global, mais RFR (donc annotation) Non vérifiable |
 
 L'annotation « Contrôle avis d'imposition » ne reçoit qu'**une phrase**, choisie par le seul critère
 du RFR (`TEXTES_ANNOTATION_CONTROLE`, libellés validés par le métier). En cas d'écart, elle se
@@ -530,7 +538,8 @@ formulaire DN seul (`calculerTrancheDossier`, `domain/tranche-revenu/`) :
 
 - **Un nombre ne se vide pas par l'API** (`AnnotationValueInput` est `@oneOf`, `null` refusé) :
   un taux devenu incalculable reste en place, la tranche affichant « Non calculable ». Un taux
-  envoyé sous un mauvais type fait refuser toute la mutation, les trois annotations comprises.
+  envoyé sous un mauvais type fait refuser toute la mutation, et avec elle les autres annotations
+  du lot (jusqu'à cinq).
 
 - **RFR déclaré**, pas celui de l'avis : la DDT instruit sur le formulaire, et un écart est déjà
   signalé par l'annotation de l'avis.
@@ -599,23 +608,28 @@ autonomie. Voir [ADR-0018](../adr/0018-arret-accompagnement-amo.md).
 
 **Côté demandeur** (lien « Annuler » dans Ma liste) — arbre de décision :
 
-| Condition                                                    | Effet                                              |
-| ------------------------------------------------------------ | -------------------------------------------------- |
-| Département en mode AMO **obligatoire**                      | **bloqué** (l'autonomie n'y existe pas)            |
-| Dossier d'éligibilité DN déposé, décision non rendue         | **bloqué** (cf. §2.7.1)                            |
-| Parcours **archivé** (`archived_at`)                         | **bloqué** (cf. §2.11)                             |
-| `en_attente` (l'AMO n'a pas encore validé)                   | détachement immédiat + mail d'info à l'AMO         |
-| `logement_eligible` **et** `est_mandataire_financier ≠ true` | détachement immédiat + mail d'info à l'AMO         |
-| `logement_eligible` **et** `est_mandataire_financier = true` | `demande_arret_at` posé + mail de demande d'accord |
+| Condition                                                             | Effet                                              |
+| --------------------------------------------------------------------- | -------------------------------------------------- |
+| Département en mode AMO **obligatoire**                               | **bloqué** (l'autonomie n'y existe pas)            |
+| Dossier d'éligibilité DN déposé, décision non rendue                  | **bloqué** (cf. §2.7.1)                            |
+| Parcours **archivé** (`archived_at`)                                  | **bloqué** (cf. §2.11)                             |
+| Étape diagnostic, devis ou factures                                   | **bloqué** (cf. §2.13)                             |
+| Demande d'arrêt déjà en attente (`demande_arret_at`)                  | **bloqué**                                         |
+| Validation ni `en_attente` ni `logement_eligible` (`sans_amo`, refus) | **bloqué** (rien à annuler)                        |
+| `en_attente` (l'AMO n'a pas encore validé)                            | détachement immédiat + mail d'info à l'AMO         |
+| `logement_eligible` **et** `est_mandataire_financier ≠ true`          | détachement immédiat + mail d'info à l'AMO         |
+| `logement_eligible` **et** `est_mandataire_financier = true`          | `demande_arret_at` posé + mail de demande d'accord |
 
 `est_mandataire_financier = null` vaut **non-mandataire** (on ne bloque pas sur une donnée
 absente). Prédicats purs partagés UI ↔ service : `peutAnnulerAccompagnement`,
 `requiertAccordAmo` (`domain/value-objects/arretAccompagnement.ts`).
 
-> **L'autonomie n'existe qu'en mode FACULTATIF**, quel que soit le chemin emprunté (par
-> défaut 03/36/47/54/81 en obligatoire). Prédicat unique `peutPasserEnAutonomie(parcours)`
-> (`departements-amo.ts`), partagé par `skipAmoStepForUser`, l'annulation demandeur et
-> « Ne plus accompagner » côté AMO, pour qu'ils ne puissent pas diverger. Il résout le
+> **L'autonomie n'existe que là où l'AMO n'est pas imposée**, quel que soit le chemin emprunté (par
+> défaut 03, 04, 36, 47, 54, 63, 81 en obligatoire). Prédicat `peutPasserEnAutonomie(parcours)`
+> (`departements-amo.ts`), partagé par l'annulation demandeur et « Ne plus accompagner » côté
+> AMO, pour qu'ils ne puissent pas diverger. `passerEnAutonomie`, derrière `skipAmoStepForUser`,
+> recode la même règle (`estAmoObligatoire` sur la commune résolue de la même façon) au lieu de
+> l'appeler. Il résout le
 > département **USER-first avec repli agent** et **refuse quand la commune est introuvable** :
 > l'ancienne garde lisait `rgaSimulationData` seul et se sautait entièrement sur un dossier
 > créé par un Aller-vers. Voir [ADR-0037](../adr/0037-pas-d-autonomie-en-amo-obligatoire.md).
@@ -705,7 +719,7 @@ non éligible (`LOGEMENT_NON_ELIGIBLE`).
 Effet (service `declineAccompagnementEligible`, `amo-validation.service.ts`, en une transaction) :
 `parcours_amo_validations.statut = ACCOMPAGNEMENT_REFUSE` (`valideeAt` posé, token invalidé) **et**
 **archivage** du parcours (`situation_particulier = archive`, `archived_at`, `archive_reason`,
-`archived_by`). La raison est saisie via la modale « Archiver » (`ARCHIVE_REASONS`, jamais préfixée
+`archived_by`). La raison est saisie via la modale « Archiver » (`RAISONS_ARCHIVAGE`, jamais préfixée
 « Non éligible »). Le dossier bascule dans les **Archivés** (`archivedAt` prime dans `getDossierEtat`) ;
 l'aller-vers du territoire en devient responsable. Retour arrière : ré-ouverture (ADR-0016, qui gère
 déjà `accompagnement_refuse`) ou dé-archivage manuel — pas de routage automatique. Voir
@@ -755,20 +769,23 @@ libellés du formulaire — rattrapé au passage pour `accompagnement_arrete`,
 ### 2.9 Actions système : réponse AV, réponse AMO, (dés)archivage — ADR-0028
 
 Toute décision structurante d'un professionnel écrit une action dans `parcours_actions`,
-via le helper unique `logSystemAction` (`shared/services/action-audit.service.ts`, best-effort :
-un audit raté n'invalide jamais la mutation). C'est la seule source des indicateurs de délai
+via le helper `logSystemAction` (`shared/services/action-audit.service.ts`, best-effort :
+un audit raté n'invalide jamais la mutation). Seule exception : `demande_accompagnement` (§2.10),
+écrite par `parcoursActionsRepo.create`. C'est la seule source des indicateurs de délai
 de `/administration/activite` — ce qui n'est pas tracé n'est pas mesuré.
 
-| Évènement                                     | Type d'action                                                      | Écrit depuis                                                        |
-| --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| Décision d'éligibilité AMO (×3)               | `eligibilite_*`, `accompagnement_refuse_eligible`                  | `demandes/actions/demande-detail.actions.ts` (§2.8)                 |
-| **Qualification Aller-vers** (×3)             | `av_qualification_{eligible,a_qualifier,non_eligible}`             | `prospects/services/qualification.service.ts`                       |
-| **Archivage / dé-archivage manuel**           | `dossier_archive` / `dossier_desarchive`                           | `dossiers/actions/archive-dossier.actions.ts`                       |
-| Archivage / dé-archivage auto (correction)    | idem (+ `eligibilite_refusee_non_eligible` si décision AMO)        | `shared/actions/update-simulation-data.action.ts`                   |
-| Archivage à la création (mode `amo`)          | `dossier_archive`                                                  | `creation-dossier/services/creation-dossier.service.ts`             |
-| Arrêt d'accompagnement, ré-ouverture, relance | `accompagnement_arrete`, `dossier_reouvert`, `invitation_renvoyee` | cf. §2.4, §2.7                                                      |
-| Formulaire diagnostic initié par l'AMO        | `formulaire_initie_par_amo`                                        | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` (§2.13) |
-| Test de vulnérabilité fait avec le demandeur  | `vulnerabilite_realisee_par_agent`                                 | `shared/actions/test-vulnerabilite-agent.actions.ts`                |
+| Évènement                                          | Type d'action                                                      | Écrit depuis                                                                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Décision d'éligibilité AMO (×3)                    | `eligibilite_*`, `accompagnement_refuse_eligible`                  | `demandes/actions/demande-detail.actions.ts` (§2.8)                                                                        |
+| **Qualification Aller-vers** (×3)                  | `av_qualification_{eligible,a_qualifier,non_eligible}`             | `prospects/services/qualification.service.ts`                                                                              |
+| **Archivage / dé-archivage manuel**                | `dossier_archive` / `dossier_desarchive`                           | `dossiers/actions/archive-dossier.actions.ts`                                                                              |
+| Archivage / dé-archivage auto (correction)         | idem (+ `eligibilite_refusee_non_eligible` si décision AMO)        | `shared/actions/update-simulation-data.action.ts`                                                                          |
+| Archivage à la création (mode `amo`)               | `dossier_archive`                                                  | `creation-dossier/services/creation-dossier.service.ts`                                                                    |
+| Arrêt d'accompagnement, ré-ouverture, relance      | `accompagnement_arrete`, `dossier_reouvert`, `invitation_renvoyee` | cf. §2.4, §2.7                                                                                                             |
+| Rattachement d'une AMO (super-admin)               | `amo_rattachee`                                                    | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (§2.7)                                                     |
+| Rattachement / réinitialisation d'un formulaire DN | `dossier_dn_rattache` / `dossier_dn_reinitialise`                  | `dossiers/actions/{rattacher,reinitialiser}-dossier-dn.actions.ts`, `core/actions/recreation-formulaire.actions.ts` (§7.6) |
+| Formulaire diagnostic initié par l'AMO             | `formulaire_initie_par_amo`                                        | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` (§2.13)                                                        |
+| Test de vulnérabilité fait avec le demandeur       | `vulnerabilite_realisee_par_agent`                                 | `shared/actions/test-vulnerabilite-agent.actions.ts`                                                                       |
 
 Trois règles à connaître :
 
@@ -797,17 +814,17 @@ Trois règles à connaître :
 ### 2.10 Demande d'accompagnement après autonomie (changement d'avis inverse)
 
 Symétrique de l'arrêt d'accompagnement (§2.7) : un demandeur passé en autonomie
-(`statut = SANS_AMO`, mode FACULTATIF) peut changer d'avis et demander à être accompagné,
+(`statut = SANS_AMO`, là où l'AMO n'est pas imposé) peut changer d'avis et demander à être accompagné,
 depuis « Ma liste » sur `/mon-compte` (bouton « Demander à être accompagné », affiché à la
 place de « Annuler » sous l'item « Choix de l'accompagnement »).
 
-La demande suit exactement le « Oui » du choix initial en mode FACULTATIF : l'AMO du territoire
+La demande suit exactement le « Oui » du choix initial là où l'AMO est facultative : l'AMO du territoire
 si elle est seule, sinon celle que le demandeur choisit dans la modale (§2.3.6).
 
 Service `demanderAccompagnementDemandeur` (`amo-selection.service.ts`), symétrique de
 `skipAmoStepForUser` :
 
-- Garde : `parcours_amo_validations.statut === SANS_AMO`, département en mode `FACULTATIF`,
+- Garde : `parcours_amo_validations.statut === SANS_AMO`, département où `estAmoObligatoire` est faux,
   formulaire d'éligibilité DN hors de la fenêtre de gel (prédicat `peutDemanderAccompagnement`,
   miroir exact de `peutAnnulerAccompagnement` — cf. §2.7.1).
 - Délègue à `selectAmoForUser` avec deux options ajoutées à cette fonction pour ce cas
@@ -870,6 +887,9 @@ vient de corriger. Prédicat partagé,
 - `StepDetailEligibilite` (carte « 2. Éligibilité » en bas de `/mon-compte`) masque le bouton
   « Reprendre le formulaire » et tout contenu dérivé de `lastDSStatus`, au profit d'un message
   d'attente et d'un badge dédié (« En attente de l'AMO »).
+- Côté serveur, `createEligibiliteDossier` (`eligibilite.service.ts`) refuse de créer le
+  formulaire tant que le prédicat tient : la barrière derrière les trois écrans, qu'une requête
+  partie d'un écran périmé contournait.
 
 > **Le troisième paramètre n'est pas décoratif** : un dossier transmis n'a rien vu réinitialiser,
 > et le bloquer priverait le demandeur de l'accès à son dossier déposé — avec deux badges
@@ -906,7 +926,8 @@ Trois changements, dans l'ordre du flux :
   ni département. Les wrappers agent posent leur propre valeur au montage et ne changent pas.
 - **La simulation est commitée à l'arrivée sur l'écran de résultat**, éligible ou non
   (`SimulateurFormulaire`, effet gardé par un ref pour ne pas boucler sur `saveRGA`) — sauf
-  en `editMode`, qui couvre les deux surfaces agent.
+  en `editMode`, posé par les écrans d'édition : les deux surfaces agent et
+  `/mon-compte/simulation` (§2.12).
 - **Deux points d'écriture, selon que le demandeur est connecté ou non.** Anonyme : la
   simulation part dans le store Zustand (localStorage, TTL 7 jours) et n'atteint la base qu'à
   la migration, au prochain passage sur `/mon-compte`. **Déjà connecté** : le même effet
@@ -923,7 +944,9 @@ Trois changements, dans l'ordre du flux :
   (`author_structure_type = "DEMANDEUR"`). Redevenu éligible → dé-archivage, **uniquement**
   si l'archivage venait d'une inéligibilité (`isEligibiliteArchiveReason`).
 
-> **Le simulateur reste public et écrase `rgaSimulationData` à chaque migration.** Garde
+> **Le simulateur reste public, mais la migration n'écrase plus une simulation déjà en base**
+> (`enregistree: false`, arbitrage de §2.12) ; le verdict s'applique aussi à la correction
+> depuis `/mon-compte/simulation`. Garde
 > posée : ni archivage ni dé-archivage dès qu'un formulaire DN a été **déposé**
 > (`getSubmittedDatesByStep`) — l'état du dossier appartient alors à la DDT et aux
 > professionnels, pas à une nouvelle simulation. Même esprit que le gel de §2.7.1.
@@ -1282,8 +1305,8 @@ composant partagé `DossierTimeline`
 (`src/features/parcours/dossiers-ds/components/DossierTimeline.tsx`), qui n'affiche que les
 jalons franchis (date présente) :
 
-- **Côté demandeur** (`MonCompteClient`) : sous le callout de l'étape courante (étapes DS
-  uniquement ; `choix_amo` n'a pas de dossier DS donc pas de timeline).
+- **Côté demandeur** : dans « Ma liste » (`MaListe`), sous l'item de l'éligibilité, et dans le
+  callout du diagnostic géré par l'AMO (`CalloutDiagnosticParAmo`, §2.13).
 - **Côté agent** (`ParcoursDemandeur`, page détail dossier) : sous chaque étape DS du
   « Parcours du demandeur ». Les dates par étape sont assemblées dans
   `getDossierDetail` (`dossiersTimeline`).
@@ -1339,17 +1362,17 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 `runSyncBatch(triggeredBy)` :
 
-1. **Verrou** : check `findPendingRun()`. Si run en cours < 30 min → return `{ skipped: true }`. Si zombie ≥ 30 min → finalise en `ERROR` puis continue. Voir §6.7.
+1. **Verrou** : check `findPendingRun()`. Si run en cours < 30 min → return `{ skipped: true }`. Si zombie ≥ 30 min → finalise en `ERROR` puis continue. Voir §6.8.
 2. Crée une ligne `sync_runs` (status null = pending tant que `finished_at` est null).
 3. Récupère tous les parcours actifs via `parcoursRepo.findActiveForSync()` (`archived_at IS NULL AND completed_at IS NULL`).
 4. Pour chaque parcours, dans un `try/catch` indépendant :
    a. Lit l'état initial (`stepBefore`, `statusBefore`).
-   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Pour l'éligibilité, reporte le suivi Chorus (§ 2.6.4, best-effort). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
+   b. Synchronise tous ses dossiers (`syncDossierStatus` × N) — collecte les `ds_status_changes`. Complète le lien FPA de chaque dossier lu s'il est vide (§ 2.6.1, best-effort, hors erreurs du run). Pour l'éligibilité, reporte le suivi Chorus (§ 2.6.4, best-effort) et reprend un mandat financier encore inconnu (§ 2.6, best-effort). Après le dossier d'éligibilité, lance le contrôle de l'avis d'imposition s'il est dû (§ 2.6.3, best-effort : un échec est tracé en `avis-impot: …`).
    c. Appelle `recomputeParcoursStatus` une fois.
    d. Si `current_status === VALIDE`, que la synchro du dossier de l'étape courante n'a **pas échoué** (une étape sans dossier numéroté n'est pas un échec) et que l'étape n'a pas changé pendant la synchro, appelle `moveToNextStep` qui :
    - avance à l'étape suivante si non finale ;
    - sinon (étape `factures`) appelle `markAsCompleted` (set `completed_at`).
-     e. Si quelque chose a changé (changement DS, status, étape, ou erreur), écrit une `sync_run_entries`.
+     e. Si quelque chose a changé (changement DS, status, étape, ou erreur) ou s'il y a un bilan d'annotations DN (contrôle de l'avis lancé, lien FPA complété ou en échec, valeur Chorus reportée ou en échec), écrit une `sync_run_entries`.
      f. `sleep(150ms)` pour ne pas saturer l'API DS.
 5. Finalise le run : `finished_at = NOW()`, totaux, status final (`success` / `partial` / `error` / pas d'erreur).
 
@@ -1357,35 +1380,35 @@ Service : `src/features/parcours/dossiers-ds/services/parcours-sync-batch.servic
 
 **`sync_runs`** — un enregistrement par run.
 
-| Colonne                  | Type                                                                               |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| `id`                     | uuid                                                                               |
-| `started_at`             | timestamp                                                                          |
-| `finished_at`            | timestamp (null = en cours)                                                        |
-| `status`                 | `success` \| `partial` \| `error` \| `null`                                        |
-| `triggered_by`           | `cron` \| `manual`                                                                 |
-| `total_parcours_scanned` | int                                                                                |
-| `total_parcours_updated` | int                                                                                |
-| `total_errors`           | int                                                                                |
-| `error_summary`          | text (20 premières erreurs concat)                                                 |
-| `bilan_annotations_dn`   | jsonb : compteurs du contrôle et du lien FPA (§ 5) ; null pour les runs antérieurs |
+| Colonne                  | Type                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                     | uuid                                                                                                                                                                |
+| `started_at`             | timestamp                                                                                                                                                           |
+| `finished_at`            | timestamp (null = en cours)                                                                                                                                         |
+| `status`                 | `success` \| `partial` \| `error` \| `null`                                                                                                                         |
+| `triggered_by`           | `cron` \| `manual`                                                                                                                                                  |
+| `total_parcours_scanned` | int                                                                                                                                                                 |
+| `total_parcours_updated` | int                                                                                                                                                                 |
+| `total_errors`           | int                                                                                                                                                                 |
+| `error_summary`          | text (20 premières erreurs concat)                                                                                                                                  |
+| `bilan_annotations_dn`   | jsonb : compteurs du contrôle (issues, verdicts, annotations écrites, adresses non géocodées), du lien FPA et du suivi Chorus (§ 5) ; null pour les runs antérieurs |
 
-**`sync_run_entries`** — une entrée par parcours **modifié**, en erreur, dont l'avis d'imposition a été **contrôlé** ou dont un lien FPA a été complété durant un run. Les autres parcours ne génèrent **pas** d'entrée pour ne pas alourdir la table.
+**`sync_run_entries`** — une entrée par parcours **modifié**, en erreur, dont l'avis d'imposition a été **contrôlé**, dont un lien FPA a été complété (ou a échoué) ou dont une valeur Chorus a été reportée (ou a échoué) durant un run. Les autres parcours ne génèrent **pas** d'entrée pour ne pas alourdir la table.
 
-| Colonne             | Type                                                                   |
-| ------------------- | ---------------------------------------------------------------------- |
-| `id`                | uuid                                                                   |
-| `sync_run_id`       | FK → sync_runs (cascade)                                               |
-| `parcours_id`       | FK → parcours_prevention (cascade)                                     |
-| `step_before`       | step enum (nullable)                                                   |
-| `step_after`        | step enum (nullable)                                                   |
-| `status_before`     | status enum (nullable)                                                 |
-| `status_after`      | status enum (nullable)                                                 |
-| `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]`                         |
-| `step_advanced`     | boolean                                                                |
-| `error`             | text (nullable)                                                        |
-| `annotations_dn`    | jsonb : `{ issue, annotationsEcrites, echecLienFpa? }`, noms seulement |
-| `created_at`        | timestamp                                                              |
+| Colonne             | Type                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | uuid                                                                                                                      |
+| `sync_run_id`       | FK → sync_runs (cascade)                                                                                                  |
+| `parcours_id`       | FK → parcours_prevention (cascade)                                                                                        |
+| `step_before`       | step enum (nullable)                                                                                                      |
+| `step_after`        | step enum (nullable)                                                                                                      |
+| `status_before`     | status enum (nullable)                                                                                                    |
+| `status_after`      | status enum (nullable)                                                                                                    |
+| `ds_status_changes` | jsonb : `[{ step, oldDsStatus, newDsStatus }]`                                                                            |
+| `step_advanced`     | boolean                                                                                                                   |
+| `error`             | text (nullable)                                                                                                           |
+| `annotations_dn`    | jsonb : `{ issue, annotationsEcrites, echecLienFpa?, adresseNonGeocodee?, chorusReporte?, echecChorus? }`, noms seulement |
+| `created_at`        | timestamp                                                                                                                 |
 
 ### 4.3 Configuration GitHub Actions
 
@@ -1425,7 +1448,9 @@ Route : `src/app/api/cron/sync-parcours/route.ts`.
 
 - Method : `POST` uniquement.
 - Auth : `Authorization: Bearer $CRON_SECRET`. Sinon 401.
-- Réponse : `{ runId, status, totals: { scanned, updated, errors } }`.
+- Réponse : `202` immédiat (`{ success, accepted, message }`), sans attendre le run : le proxy
+  Scalingo coupe une requête vers 55 s. Le run se poursuit via `after()` ; son bilan (ou un run
+  ignoré par le verrou) part dans les logs serveur et se lit sur `/administration/synchronisations`.
 - `maxDuration = 300` (5 min).
 
 ---
@@ -1504,7 +1529,7 @@ partielle.
 
 ### 6.4 Pas de tables d'historique pour les parcours non-modifiés
 
-**Décision** : `sync_run_entries` n'est écrit que si quelque chose a changé pour le parcours (changement DS, transition d'étape ou de status, ou erreur). Les parcours scannés sans changement ne génèrent pas d'entrée.
+**Décision** : `sync_run_entries` n'est écrit que si quelque chose a changé pour le parcours (changement DS, transition d'étape ou de status, ou erreur), ou s'il porte un bilan d'annotations DN (§4.1). Les parcours scannés sans rien de tout cela ne génèrent pas d'entrée.
 
 **Justification** : volume. Avec un CRON 3×/jour sur N parcours actifs, on évite N×3 entrées par jour vides. La table `sync_runs` (qui agrège les totaux) suffit pour le monitoring. Le détail n'est utile qu'en cas de changement.
 
@@ -1542,7 +1567,7 @@ partielle.
 
 ### 6.7 Complétion automatique sur `factures/valide`
 
-**Décision** : `moveToNextStep` détecte `isParcoursComplete(state)` (= `step === FACTURES && status === VALIDE`) et appelle `parcoursRepo.markAsCompleted(id)` qui set `completed_at`. Le CRON appelle systématiquement `moveToNextStep` quand `current_status === VALIDE`, peu importe l'étape.
+**Décision** : `moveToNextStep` détecte `isParcoursComplete(state)` (= `step === FACTURES && status === VALIDE`) et appelle `parcoursRepo.markAsCompleted(id)` qui set `completed_at`. Le CRON appelle `moveToNextStep` quand `current_status === VALIDE`, peu importe l'étape, sauf si la synchro du dossier de l'étape a échoué ou si l'étape a changé pendant la synchro (§6.1).
 
 Côté repository, `markAsCompleted` est **idempotent** : le SQL est `UPDATE ... WHERE completed_at IS NULL`, donc un appel sur un parcours déjà complété est un no-op (le timestamp d'origine est préservé).
 
@@ -1554,7 +1579,7 @@ Côté repository, `markAsCompleted` est **idempotent** : le SQL est `UPDATE ...
 
 **Décision** : avant de créer un nouveau run, `runSyncBatch` vérifie qu'aucun run n'est en cours (`findPendingRun()` = ligne `sync_runs` sans `finished_at`).
 
-- Si un run est en cours **et** démarré il y a < 30 min → on **skip** : le résultat retourné est `{ skipped: true, reason, existingRunId }`. L'endpoint et l'UI affichent un message « run déjà en cours ».
+- Si un run est en cours **et** démarré il y a < 30 min → on **skip** : le résultat retourné est `{ skipped: true, reason, existingRunId }`. L'écran super-admin affiche « Une synchronisation est déjà en cours » ; l'endpoint CRON, qui a déjà répondu `202`, ne fait que le journaliser.
 - Si un run est en cours **et** démarré il y a ≥ 30 min → considéré comme **zombie** : on le finalise en `ERROR` avec `errorSummary = "Run zombie auto-expiré..."`, puis on lance un nouveau run normalement. Le système est ainsi self-healing après crash / timeout.
 
 Le seuil de 30 min est volontairement généreux par rapport au `maxDuration = 5 min` de la route HTTP CRON. Constante : `STALE_RUN_THRESHOLD_MS` dans `parcours-sync-batch.service.ts`.
@@ -1572,7 +1597,7 @@ type SyncRunResult =
 
 **Décision** : `await sleep(150)` entre chaque parcours dans `runSyncBatch`.
 
-**Justification** : l'API DS GraphQL n'a pas de rate limit documenté précisément, mais on évite de la marteler. À 150 ms × 10 000 parcours = 25 min, ce qui rentre dans le budget `maxDuration = 300s` côté endpoint si pas trop de parcours, et évite les pics de charge. À ajuster si la volumétrie grandit.
+**Justification** : l'API DS GraphQL n'a pas de rate limit documenté précisément, mais on évite de la marteler et d'en faire des pics de charge. Le prix est une durée de run : 150 ms × 1 000 parcours = 2 min 30 d'attente, hors appels DS. Le run tournant après la réponse HTTP (`after()`, §4.4), la borne qui compte est le seuil de 30 min du verrou (§6.8) : au-delà, un run encore en cours passe pour zombie et un second peut démarrer à côté. Les attentes seules l'atteignent vers 12 000 parcours, bien plus tôt avec les appels DS. À ajuster, délai ou seuil, si la volumétrie grandit.
 
 ### 6.10 Non-décisions / dette technique connue
 
@@ -1802,79 +1827,79 @@ retrouvé déposé.
 
 ## 8. Fichiers clés
 
-| Rôle                                           | Fichier                                                                                                     |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Schéma parcours                                | `src/shared/database/schema/parcours-prevention.ts`                                                         |
-| Schéma dossiers DS (pointeur courant)          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                                              |
-| Registre des tentatives (ADR-0027)             | `src/shared/database/schema/dossiers-ds-tentatives.ts`, `repositories/dossiers-ds-tentatives.repository.ts` |
-| Amorçage du registre                           | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)                           |
-| Réconciliation au dépôt (annotation FPA)       | `dossiers-ds/services/reconciliation.service.ts`, `dossiers-ds/utils/annotation-fpa.utils.ts`               |
-| Réconciliation (script ops)                    | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                                  |
-| Réinitialisation d'un formulaire DN            | `dossiers-ds/services/regeneration.service.ts` (`reinitialiserDossierEtape`)                                |
-| Secours « ce lien ne fonctionne plus »         | `core/services/recreation-formulaire.service.ts`, `core/actions/recreation-formulaire.actions.ts`           |
-| Modale de confirmation (demandeur)             | `core/components/formulaire-dn/` (`SecoursLienFormulaire`, `RecreerFormulaireModal`)                        |
-| Rattachement manuel par numéro (AMO/admin)     | `espace-agent/dossiers/actions/rattacher-dossier-dn.actions.ts` (`rattacherDossierManuel`)                  |
-| Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                            |
-| Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                        |
-| Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                                   |
-| Enums step / status                            | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`                       |
-| Mapping DS → interne                           | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                                       |
-| Permissions / garde-fous                       | `src/features/parcours/core/services/parcours-permissions.service.ts`                                       |
-| Progression d'étape                            | `src/features/parcours/core/services/parcours-progression.service.ts`                                       |
-| Service sync DS                                | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                             |
-| Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                                 |
-| Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                                      |
-| Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`                   |
-| Classement des pièces (ADR-0039)               | `dossiers-ds/domain/pieces-justificatives/pieces-regles.ts` (`classerPiece`)                                |
-| Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                                           |
-| Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts` (`buildModeleProxyUrl` / `getFreshModeleUrl`)                        |
-| Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                                    |
-| Reset dossier éligibilité (GELÉ, ADR-0026)     | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)              |
-| Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                                     |
-| Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                                 |
-| Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                                         |
-| Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                                      |
-| Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                              |
-| Écriture des actions système (helper unique)   | `backoffice/espace-agent/shared/services/action-audit.service.ts` (`logSystemAction`)                       |
-| Rattrapage des actions d'audit (script ops)    | `scripts/ops/fix/backfill-actions-audit.ts` (`pnpm fix:backfill-actions-audit`)                             |
-| Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                    |
-| Lien FPA complété par le CRON                  | `dossiers-ds/services/lien-fpa.service.ts` (`completerLienFpa`)                                             |
-| Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                |
-| Contrôle de l'avis d'imposition (ADR-0043)     | `dossiers-ds/domain/avis-impot/`, `services/controle-avis-impot.service.ts`, `mappers/avis-impot.mapper.ts` |
-| Lien Google Maps et zone d'aléa de la maison   | `dossiers-ds/domain/adresse-maison/`, `services/adresse-maison.service.ts` (`localiserMaison`)              |
-| Tranche de revenus et taux de subvention       | `dossiers-ds/domain/tranche-revenu/` (`calculerTrancheDossier`, `TAUX_SUBVENTION`)                          |
-| Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                   |
-| Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)      |
-| Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                     |
-| Promotion d'une correction agent complète      | `espace-agent/shared/actions/update-simulation-data.action.ts` (`champsPromotionSimulation`)                |
-| Verrous d'édition de simulation (ADR-0036)     | `parcours/core/domain/value-objects/edition-simulation.ts` (`peutModifierSaSimulation`)                     |
-| Entrées des verrous, point unique              | `parcours/core/services/etat-edition-simulation.service.ts` (`chargerEtatEditionSimulation`)                |
-| Miroir client des verrous                      | `parcours/core/hooks/useLectureSeuleSimulation.ts`                                                          |
-| Simulation du demandeur connecté (ADR-0036)    | `parcours/core/services/ma-simulation.service.ts`, `actions/enregistrer-simulation-demandeur.actions.ts`    |
-| Arbitrage des deux simulations (ADR-0036)      | `parcours/core/hooks/useMigrateRGAToDB.ts`, `components/ChoixSimulationModal.tsx`                           |
-| Comparaison de deux simulations (ADR-0036)     | `simulateur/domain/services/comparaison-simulations.service.ts`, `value-objects/simulation-fields.ts`       |
-| Correction d'agent opposable (complète)        | `parcours/core/services/rga-data.service.ts` (`estSimulationCorrigeeParAgent`)                              |
-| Inéligibilité affichée au demandeur            | `parcours/core/actions/eligibilite-query.actions.ts` (`estLogementDeclareNonEligible`)                      |
-| Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                             |
-| Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                 |
-| Garde « pas d'autonomie en AMO obligatoire »   | `amo/domain/value-objects/departements-amo.ts` (`peutPasserEnAutonomie`)                                    |
-| Rattachement AMO après détachement à tort      | `amo/services/rattachement-amo.service.ts`, `scripts/ops/fix/rattacher-amo.ts` (`pnpm fix:rattacher-amo`)   |
-| Règles départementales (2 axes, ADR-0038)      | `amo/domain/value-objects/departements-amo.ts` (`estAmoObligatoire`, `avCumuleAmo`)                         |
-| Suite donnée à une qualification éligible      | `espace-agent/prospects/services/suite-qualification.service.ts`                                            |
-| Sous-listes de raisons de fin de suivi         | `espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts` (`estRaisonPoursuiteAutonome`)              |
-| Autonomie décidée par un agent                 | `amo/services/amo-selection.service.ts` (`passerEnAutonomie`)                                               |
-| Ouverture d'étape après validation AMO         | `amo/services/ouverture-eligibilite.service.ts` (`ouvrirEligibiliteApresValidationAmo`, `aUneAmoValidee`)   |
-| Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)               |
-| Couverture territoriale des AMO (ADR-0042)     | `amo/domain/value-objects/couverture-amo.ts`, `amo/services/amo-couverture.service.ts`                      |
-| Choix de l'AMO parmi plusieurs (demandeur)     | `amo/components/steps/ChoixAmoListe.tsx`                                                                    |
-| Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                             |
-| Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                        |
-| Formulaire confié à l'AMO (règle, ADR-0044)    | `amo/domain/value-objects/formulaire-par-amo.ts` (`estFormulaireConfieAAmo`, `estFormulaireGereParAmo`)     |
-| Entrées de la règle, point unique              | `amo/services/formulaire-par-amo.service.ts` (`chargerEtatFormulaireParAmo`)                                |
-| Initiation du formulaire diagnostic par l'AMO  | `espace-agent/dossiers/actions/initier-formulaire-diagnostic.actions.ts`                                    |
-| Demande d'accompagnement après autonomie       | `amo-selection.service.ts` (`demanderAccompagnementDemandeur`), `demande-accompagnement.actions.ts`         |
-| Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                                   |
-| Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                                  |
-| Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`                      |
-| Page liste runs                                | `src/app/(backoffice)/administration/synchronisations/page.tsx`                                             |
-| Page détail run                                | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                                        |
+| Rôle                                           | Fichier                                                                                                                                      |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schéma parcours                                | `src/shared/database/schema/parcours-prevention.ts`                                                                                          |
+| Schéma dossiers DS (pointeur courant)          | `src/shared/database/schema/dossiers-demarches-simplifiees.ts`                                                                               |
+| Registre des tentatives (ADR-0027)             | `src/shared/database/schema/dossiers-ds-tentatives.ts`, `repositories/dossiers-ds-tentatives.repository.ts`                                  |
+| Amorçage du registre                           | `scripts/ops/sync-erreurs/backfill-tentatives.ts` (`pnpm ds:backfill-tentatives`)                                                            |
+| Réconciliation au dépôt (annotation FPA)       | `dossiers-ds/services/reconciliation.service.ts`, `dossiers-ds/utils/annotation-fpa.utils.ts`                                                |
+| Réconciliation (script ops)                    | `scripts/ops/sync-erreurs/reconcilier-dossiers.ts` (`pnpm ds:reconcilier`)                                                                   |
+| Réinitialisation d'un formulaire DN            | `dossiers-ds/services/regeneration.service.ts` (`reinitialiserDossierEtape`)                                                                 |
+| Secours « ce lien ne fonctionne plus »         | `core/services/recreation-formulaire.service.ts`, `core/actions/recreation-formulaire.actions.ts`                                            |
+| Modale de confirmation (demandeur)             | `core/components/formulaire-dn/` (`SecoursLienFormulaire`, `RecreerFormulaireModal`)                                                         |
+| Rattachement manuel par numéro (AMO/admin)     | `espace-agent/dossiers/actions/rattacher-dossier-dn.actions.ts`, `dossiers-ds/services/reconciliation.service.ts` (`rattacherDossierManuel`) |
+| Schéma historique CRON                         | `src/shared/database/schema/sync-runs.ts`, `sync-run-entries.ts`                                                                             |
+| Repository parcours                            | `src/shared/database/repositories/parcours-prevention.repository.ts`                                                                         |
+| Repository sync_runs                           | `src/shared/database/repositories/sync-run.repository.ts`                                                                                    |
+| Enums step / status                            | `src/shared/domain/value-objects/step.enum.ts`, `status.enum.ts`, `ds-status.enum.ts`                                                        |
+| Mapping DS → interne                           | `src/features/parcours/dossiers-ds/domain/value-objects/ds-status.ts`                                                                        |
+| Permissions / garde-fous                       | `src/features/parcours/core/services/parcours-permissions.service.ts`                                                                        |
+| Progression d'étape                            | `src/features/parcours/core/services/parcours-progression.service.ts`                                                                        |
+| Service sync DS                                | `src/features/parcours/dossiers-ds/services/ds-sync.service.ts`                                                                              |
+| Service sync batch (CRON)                      | `src/features/parcours/dossiers-ds/services/parcours-sync-batch.service.ts`                                                                  |
+| Vérif permissions / état démarches DS          | `scripts/ops/ds/check-ds-permissions.ts` (`pnpm ds:check-permissions`)                                                                       |
+| Pièces justificatives (service dynamique DN)   | `dossiers-ds/services/pieces-justificatives.service.ts`, `domain/pieces-justificatives/*`                                                    |
+| Classement des pièces (ADR-0039)               | `dossiers-ds/domain/pieces-justificatives/pieces-regles.ts` (`classerPiece`)                                                                 |
+| Composant PJ partagé (agent + demandeur)       | `dossiers-ds/components/PiecesJustificatives.tsx`                                                                                            |
+| Proxy modèle PJ (URL temporaire DN régénérée)  | `src/app/api/ds/piece-modele/route.ts`, `dossiers-ds/services/pieces-justificatives.service.ts` (`buildModeleProxyUrl`, `getFreshModeleUrl`) |
+| Probe pièces + modèles DN                      | `scripts/ops/ds/fetch-pieces-justificatives.ts` (`pnpm ds:fetch-pieces`)                                                                     |
+| Reset dossier éligibilité (GELÉ, ADR-0026)     | `scripts/ops/sync-erreurs/reset-eligibilite-sync-error.ts` (`pnpm fix:eligibilite-sync-error`)                                               |
+| Sonde lecture-seule dossiers DN                | `scripts/ops/sync-erreurs/probe-dossiers.ts` (`pnpm ds:probe-dossiers`)                                                                      |
+| Backfill processed_at depuis dateTraitement    | `scripts/ops/ds/backfill-processed-at.ts` (`pnpm ds:backfill-processed-at`)                                                                  |
+| Action UI sync                                 | `src/features/parcours/dossiers-ds/actions/dossier-sync.actions.ts`                                                                          |
+| Création dossier devis-travaux (3 annotations) | `src/features/parcours/core/services/devis.service.ts`                                                                                       |
+| Validation AMO (auto-progression CHOIX_AMO)    | `src/features/parcours/amo/services/amo-validation.service.ts`                                                                               |
+| Écriture des actions système (helper unique)   | `backoffice/espace-agent/shared/services/action-audit.service.ts` (`logSystemAction`)                                                        |
+| Rattrapage des actions d'audit (script ops)    | `scripts/ops/fix/backfill-actions-audit.ts` (`pnpm fix:backfill-actions-audit`)                                                              |
+| Annotation « lien FPA » (id par démarche)      | `dossiers-ds/domain/value-objects/ds-annotations.ts` (`getAnnotationLienFpaEligibilite`)                                                     |
+| Lien FPA complété par le CRON                  | `dossiers-ds/services/lien-fpa.service.ts` (`completerLienFpa`)                                                                              |
+| Champ « état de la maison » (id par démarche)  | `dossiers-ds/domain/value-objects/ds-champ-etat-maison.ts` (`getChampEtatMaisonEligibilite`)                                                 |
+| Contrôle de l'avis d'imposition (ADR-0043)     | `dossiers-ds/domain/avis-impot/`, `services/controle-avis-impot.service.ts`, `mappers/avis-impot.mapper.ts`                                  |
+| Lien Google Maps et zone d'aléa de la maison   | `dossiers-ds/domain/adresse-maison/`, `services/adresse-maison.service.ts` (`localiserMaison`)                                               |
+| Tranche de revenus et taux de subvention       | `dossiers-ds/domain/tranche-revenu/` (`calculerTrancheDossier`, `TAUX_SUBVENTION`)                                                           |
+| Résolution du permalien parcours espace agent  | `backoffice/espace-agent/dossiers/services/admin-url-resolver.service.ts`                                                                    |
+| Verdict d'éligibilité d'une simulation         | `src/features/simulateur/domain/services/eligibilite-archivage.service.ts` (partagé demandeur + agent)                                       |
+| Archivage sur simulation demandeur (ADR-0034)  | `src/features/parcours/core/services/simulation-eligibilite.service.ts`                                                                      |
+| Promotion d'une correction agent complète      | `espace-agent/shared/actions/update-simulation-data.action.ts` (`champsPromotionSimulation`)                                                 |
+| Verrous d'édition de simulation (ADR-0036)     | `parcours/core/domain/value-objects/edition-simulation.ts` (`peutModifierSaSimulation`)                                                      |
+| Entrées des verrous, point unique              | `parcours/core/services/etat-edition-simulation.service.ts` (`chargerEtatEditionSimulation`)                                                 |
+| Miroir client des verrous                      | `parcours/core/hooks/useLectureSeuleSimulation.ts`                                                                                           |
+| Simulation du demandeur connecté (ADR-0036)    | `parcours/core/services/ma-simulation.service.ts`, `actions/enregistrer-simulation-demandeur.actions.ts`                                     |
+| Arbitrage des deux simulations (ADR-0036)      | `parcours/core/hooks/useMigrateRGAToDB.ts`, `components/ChoixSimulationModal.tsx`                                                            |
+| Comparaison de deux simulations (ADR-0036)     | `simulateur/domain/services/comparaison-simulations.service.ts`, `value-objects/simulation-fields.ts`                                        |
+| Correction d'agent opposable (complète)        | `parcours/core/services/rga-data.service.ts` (`estSimulationCorrigeeParAgent`)                                                               |
+| Inéligibilité affichée au demandeur            | `parcours/core/actions/eligibilite-query.actions.ts` (`estLogementDeclareNonEligible`)                                                       |
+| Détachement AMO (service partagé UI + ops)     | `src/features/parcours/amo/services/detachement-amo.service.ts`                                                                              |
+| Détachement AMO (script ops)                   | `scripts/ops/fix/detacher-amo.ts` (`pnpm fix:detacher-amo`)                                                                                  |
+| Garde « pas d'autonomie en AMO obligatoire »   | `amo/domain/value-objects/departements-amo.ts` (`peutPasserEnAutonomie`)                                                                     |
+| Rattachement AMO après détachement à tort      | `amo/services/rattachement-amo.service.ts`, `scripts/ops/fix/rattacher-amo.ts` (`pnpm fix:rattacher-amo`)                                    |
+| Règles départementales (2 axes, ADR-0038)      | `amo/domain/value-objects/departements-amo.ts` (`estAmoObligatoire`, `avCumuleAmo`)                                                          |
+| Suite donnée à une qualification éligible      | `espace-agent/prospects/services/suite-qualification.service.ts`                                                                             |
+| Sous-listes de raisons de fin de suivi         | `espace-agent/shared/domain/value-objects/raisons-fin-suivi.ts` (`estRaisonPoursuiteAutonome`)                                               |
+| Autonomie décidée par un agent                 | `amo/services/amo-selection.service.ts` (`passerEnAutonomie`)                                                                                |
+| Ouverture d'étape après validation AMO         | `amo/services/ouverture-eligibilite.service.ts` (`ouvrirEligibiliteApresValidationAmo`, `aUneAmoValidee`)                                    |
+| Auto-attribution AMO (obligatoire / AV-AMO)    | `src/features/parcours/amo/services/amo-selection.service.ts` (`assignAmoAutomatiqueForUser`)                                                |
+| Couverture territoriale des AMO (ADR-0042)     | `amo/domain/value-objects/couverture-amo.ts`, `amo/services/amo-couverture.service.ts`                                                       |
+| Choix de l'AMO parmi plusieurs (demandeur)     | `amo/components/steps/ChoixAmoListe.tsx`                                                                                                     |
+| Rattrapage lien AMO obligatoire (script ops)   | `scripts/ops/fix/lier-amo-oblig.ts` (`pnpm fix:lier-amo-oblig`)                                                                              |
+| Arrêt d'accompagnement (règles demandeur)      | `src/features/parcours/amo/services/arret-accompagnement.service.ts`                                                                         |
+| Formulaire confié à l'AMO (règle, ADR-0044)    | `amo/domain/value-objects/formulaire-par-amo.ts` (`estFormulaireConfieAAmo`, `estFormulaireGereParAmo`)                                      |
+| Entrées de la règle, point unique              | `amo/services/formulaire-par-amo.service.ts` (`chargerEtatFormulaireParAmo`)                                                                 |
+| Initiation du formulaire diagnostic par l'AMO  | `espace-agent/dossiers/actions/initier-formulaire-diagnostic.actions.ts`                                                                     |
+| Demande d'accompagnement après autonomie       | `amo-selection.service.ts` (`demanderAccompagnementDemandeur`), `demande-accompagnement.actions.ts`                                          |
+| Endpoint CRON                                  | `src/app/api/cron/sync-parcours/route.ts`                                                                                                    |
+| Workflow CRON GitHub Actions                   | `.github/workflows/cron-sync-parcours.yml`                                                                                                   |
+| Server actions admin                           | `src/features/backoffice/administration/synchronisations/actions/sync-runs.actions.ts`                                                       |
+| Page liste runs                                | `src/app/(backoffice)/administration/synchronisations/page.tsx`                                                                              |
+| Page détail run                                | `src/app/(backoffice)/administration/synchronisations/[id]/page.tsx`                                                                         |

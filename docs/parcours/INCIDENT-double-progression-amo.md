@@ -8,18 +8,18 @@ Document de référence sur le bug constaté en prod en mai 2026 : certains parc
 
 ## 1. Symptômes observés
 
-En prod, 12 parcours étaient à `current_step = diagnostic, current_status = todo` mais sans aucune ligne dans `dossiers_demarches_simplifiees` pour l'étape `diagnostic`. Le script [`audit-parcours-ds-integrity.ts`](../../scripts/ops/audit-parcours-ds-integrity.ts) a permis de les lister.
+En prod, 12 parcours étaient à `current_step = diagnostic, current_status = todo` mais sans aucune ligne dans `dossiers_demarches_simplifiees` pour l'étape `diagnostic`. Le script [`audit-parcours-ds-integrity.ts`](../../scripts/ops/audit/audit-parcours-ds-integrity.ts) a permis de les lister.
 
 On a découpé en deux groupes :
 
 - **Groupe A — 9 parcours** : avaient bien une ligne BDD `step = eligibilite, ds_status = accepte`. Le CRON les a progressés normalement après acceptance de leur dossier éligibilité, mais l'utilisateur n'est jamais revenu pour cliquer sur "Créer mon dossier diagnostic". **Cas légitime, pas un bug**.
 - **Groupe B — 3 parcours** : aucune ligne DS, même pas pour `eligibilite`. Tous ont leur `parcours.updated_at` aligné à la milliseconde près sur `parcours_amo_validations.validee_at`. **Anomalie**.
 
-| ID anonymisé | Validation AMO | Phase code à l'époque |
-| --- | --- | --- |
-| #B-1 | 2026-04-02 | avant `ecbe35aa` (auto-progression côté sync) |
-| #B-2 | 2026-04-14 | avant `ecbe35aa` |
-| #B-3 | 2026-05-22 | après le CRON `d080e57e`, **bug encore actif** |
+| ID anonymisé | Validation AMO | Phase code à l'époque                          |
+| ------------ | -------------- | ---------------------------------------------- |
+| #B-1         | 2026-04-02     | avant `ecbe35aa` (auto-progression côté sync)  |
+| #B-2         | 2026-04-14     | avant `ecbe35aa`                               |
+| #B-3         | 2026-05-22     | après le CRON `d080e57e`, **bug encore actif** |
 
 ---
 
@@ -39,15 +39,15 @@ L'absence de logs HTTP (rétention Scalingo dépassée, pas de Sentry/Datadog en
 
 ### 2.2 Hypothèses écartées
 
-| Hypothèse | Écartée par |
-| --- | --- |
-| CRON de sync a fait sauter le step | Couche 3 (aucun sync_run dans la fenêtre) + couche 1 du script audit (aucun `sync_run_entries`) |
-| `skipAmoStep` a été appelé | `choisie_at` ne correspond pas à la date où le skip aurait écrasé le row |
-| Auto-progression `syncDossierStatus` (commit `ecbe35aa`, retiré dans `d080e57e`) | Fenêtre temporelle incompatible avec #B-3 (post-suppression) et avec #B-1/#B-2 (pré-introduction) |
-| Server action `passerEtapeSuivante` | Définie mais **importée nulle part** dans l'UI → Next.js ne l'expose pas comme endpoint client appelable |
-| Crash CRON entre la mutation et l'écriture de `sync_run_entries` | Couche 3 vide |
-| Trigger ou rule PG masqué(e) | Couche 7 vide |
-| Intervention manuelle SQL/Drizzle Studio | Ni prouvable ni réfutable sans audit log — exclue par pragmatisme |
+| Hypothèse                                                                        | Écartée par                                                                                              |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| CRON de sync a fait sauter le step                                               | Couche 3 (aucun sync_run dans la fenêtre) + couche 1 du script audit (aucun `sync_run_entries`)          |
+| `skipAmoStep` a été appelé                                                       | `choisie_at` ne correspond pas à la date où le skip aurait écrasé le row                                 |
+| Auto-progression `syncDossierStatus` (commit `ecbe35aa`, retiré dans `d080e57e`) | Fenêtre temporelle incompatible avec #B-3 (post-suppression) et avec #B-1/#B-2 (pré-introduction)        |
+| Server action `passerEtapeSuivante`                                              | Définie mais **importée nulle part** dans l'UI → Next.js ne l'expose pas comme endpoint client appelable |
+| Crash CRON entre la mutation et l'écriture de `sync_run_entries`                 | Couche 3 vide                                                                                            |
+| Trigger ou rule PG masqué(e)                                                     | Couche 7 vide                                                                                            |
+| Intervention manuelle SQL/Drizzle Studio                                         | Ni prouvable ni réfutable sans audit log — exclue par pragmatisme                                        |
 
 ---
 
@@ -76,7 +76,7 @@ R2 moveToNextStep      → relit l'état, voit VALIDE → DIAGNOSTIC / TODO
 
 État final : `DIAGNOSTIC / TODO`, sans aucun dossier DS créé.
 
-Le déclencheur le plus probable des deux appels concurrents : **double-clic sur le bouton "Valider" du backoffice espace-agent** ([`ReponseAccompagnement.tsx`](../../src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx)). Le bouton était bien protégé par un state `isSubmitting`, mais celui-ci n'est appliqué qu'au re-render React suivant le `onClick` — deux clics très rapprochés (latence réseau lente) passaient les deux la garde côté UI.
+Le déclencheur le plus probable des deux appels concurrents : **double-clic sur le bouton "Valider" du backoffice espace-agent** ([`ReponseAccompagnement.tsx`](<../../src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx>)). Le bouton était bien protégé par un state `isSubmitting`, mais celui-ci n'est appliqué qu'au re-render React suivant le `onClick` — deux clics très rapprochés (latence réseau lente) passaient les deux la garde côté UI.
 
 Brevo confirme indirectement : pour le cas étudié, `email_clicked_at` est antérieur de 38 jours à la validation. L'AMO a donc validé via le backoffice, pas via le lien email — donc deux appels veulent dire deux clics sur le **même** bouton.
 
@@ -94,10 +94,7 @@ Trois niveaux de défense, dans la même PR.
 const [validation] = await tx
   .update(parcoursAmoValidations)
   .set({ statut: LOGEMENT_ELIGIBLE, commentaire, valideeAt: new Date() })
-  .where(and(
-    eq(parcoursAmoValidations.id, validationId),
-    isNull(parcoursAmoValidations.valideeAt),
-  ))
+  .where(and(eq(parcoursAmoValidations.id, validationId), isNull(parcoursAmoValidations.valideeAt)))
   .returning({ id, parcoursId });
 
 if (!validation) {
@@ -116,10 +113,12 @@ La progression du parcours n'est plus `updateStatus(VALIDE) + moveToNextStep`. C
 const [moved] = await tx
   .update(parcoursPrevention)
   .set({ currentStep: Step.ELIGIBILITE, currentStatus: Status.TODO })
-  .where(and(
-    eq(parcoursPrevention.id, validation.parcoursId),
-    inArray(parcoursPrevention.currentStep, [Step.CHOIX_AMO, Step.INVITATION]),
-  ))
+  .where(
+    and(
+      eq(parcoursPrevention.id, validation.parcoursId),
+      inArray(parcoursPrevention.currentStep, [Step.CHOIX_AMO, Step.INVITATION])
+    )
+  )
   .returning({ id });
 
 if (!moved) {
@@ -131,7 +130,7 @@ Cela ferme **définitivement** la classe de bugs : même si une seconde mutation
 
 ### 4.3 Niveau UI — garde synchrone anti-double-clic
 
-Dans [`ReponseAccompagnement.tsx`](../../src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx), ajout d'un `useRef` qui bloque les clics avant que React n'ait re-rendu le bouton en `disabled` :
+Dans [`ReponseAccompagnement.tsx`](<../../src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx>), ajout d'un `useRef` qui bloque les clics avant que React n'ait re-rendu le bouton en `disabled` :
 
 ```ts
 const submitLockRef = useRef(false);
@@ -156,7 +155,11 @@ Et gestion explicite du cas `result.data?.alreadyProcessed === true` : on n'affi
 Le type de retour de `approveValidation` et `rejectEligibility` expose maintenant :
 
 ```ts
-{ message: string; alreadyProcessed: boolean; valideeAt: Date }
+{
+  message: string;
+  alreadyProcessed: boolean;
+  valideeAt: Date;
+}
 ```
 
 Permet à l'UI de distinguer "validé à l'instant" (succès normal, modale de confirmation) vs "validé il y a X (jours|secondes)" (lien rouvert, message d'info dédié).
@@ -165,20 +168,20 @@ Permet à l'UI de distinguer "validé à l'instant" (succès normal, modale de c
 
 ## 5. Correction du stock
 
-Le script [`fix-double-progression-amo.ts`](../../scripts/ops/fix-double-progression-amo.ts) détecte lui-même les parcours victimes du bug (même critère que l'audit) et les ramène à `eligibilite/todo`. Il les catégorise en trois :
+Le script [`fix-double-progression-amo.ts`](../../scripts/ops/fix/fix-double-progression-amo.ts) détecte lui-même les parcours victimes du bug (même critère que l'audit) et les ramène à `eligibilite/todo`. Il les catégorise en trois :
 
-| Catégorie | Critère | Traitement |
-|---|---|---|
-| **régressable** | aucun dossier DS | régression directe (`--apply`) |
+| Catégorie          | Critère                                                                                                                                     | Traitement                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **régressable**    | aucun dossier DS                                                                                                                            | régression directe (`--apply`)                                     |
 | **cleanup requis** | dossiers downstream uniquement `en_construction` (brouillons jamais soumis — ex. cas "Edouard" qui a cliqué "Créer mon dossier diagnostic") | suppression des brouillons + régression (`--apply --with-cleanup`) |
-| **à reviewer** | au moins un dossier downstream soumis | jamais touché automatiquement, listé |
+| **à reviewer**     | au moins un dossier downstream soumis                                                                                                       | jamais touché automatiquement, listé                               |
 
 Garanties : la régression est un UPDATE conditionnel sur `current_step IN (diagnostic,devis,factures)` (skip si l'état a changé depuis la détection) ; la suppression de brouillon est conditionnée sur `ds_status='en_construction'` ; tout passe en transaction par parcours.
 
 ```bash
-tsx scripts/ops/fix-double-progression-amo.ts                         # dry-run
-tsx scripts/ops/fix-double-progression-amo.ts --apply                 # régressables
-tsx scripts/ops/fix-double-progression-amo.ts --apply --with-cleanup  # + cas "Edouard"
+pnpm fix:double-progression                         # dry-run
+pnpm fix:double-progression --apply                 # régressables
+pnpm fix:double-progression --apply --with-cleanup  # + cas "Edouard"
 ```
 
 Ramener à `eligibilite/todo` est sûr : pour les cas "cleanup requis", on ne supprime que des brouillons DS jamais soumis. Le parcours reprend normalement via l'UI à la prochaine connexion de l'utilisateur, et un dossier diagnostic neuf (avec les bonnes annotations) sera créé le moment venu.
@@ -191,7 +194,7 @@ Ramener à `eligibilite/todo` est sûr : pour les cas "cleanup requis", on ne su
 
 ```bash
 # 0. Restore frais de la BDD prod en local
-bash .local/restore-db.sh <backup>.tar.gz
+pnpm db:restore <backup>.tar.gz
 
 # 1. Audit (read-only). Catégorise et affiche un résumé :
 #    légitimes (rien à corriger) / régressables / cleanup requis / à reviewer.
@@ -261,8 +264,8 @@ La rétention par défaut Scalingo couvre seulement quelques jours. Pour les inc
 
 ## 7. Références
 
-- Script d'audit (read-only) : [`scripts/ops/audit-parcours-ds-integrity.ts`](../../scripts/ops/audit-parcours-ds-integrity.ts)
-- Script de correction stock : [`scripts/ops/fix-double-progression-amo.ts`](../../scripts/ops/fix-double-progression-amo.ts)
+- Script d'audit (read-only) : [`scripts/ops/audit/audit-parcours-ds-integrity.ts`](../../scripts/ops/audit/audit-parcours-ds-integrity.ts)
+- Script de correction stock : [`scripts/ops/fix/fix-double-progression-amo.ts`](../../scripts/ops/fix/fix-double-progression-amo.ts)
 - Doc nominale du flow : [`FLOW-AND-SYNC.md`](./FLOW-AND-SYNC.md)
 - Service patché : [`src/features/parcours/amo/services/amo-validation.service.ts`](../../src/features/parcours/amo/services/amo-validation.service.ts)
-- UI patchée : [`src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx`](../../src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx)
+- UI patchée : [`src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx`](<../../src/app/(backoffice)/espace-agent/demandes/[id]/components/ReponseAccompagnement.tsx>)

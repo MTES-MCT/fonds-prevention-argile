@@ -212,7 +212,7 @@ Ne touche **ni** à la validation AMO (déjà `LOGEMENT_ELIGIBLE`), **ni** à
 > éventuel `EXISTE_SOUS_AUTRE_NUMERO` (que `getDossier` voit « not found » sur le mauvais
 > numéro). Pour ces cas-là, le reset créerait un doublon. **Toujours lancer
 > `ds:probe-dossiers --email-crosscheck` d'abord** : s'il existe des mismatches, les traiter
-> par relink (hors script pour l'instant) avant le reset en masse.
+> par relink (`pnpm fix:relink-eligibilite`, ci-dessous) avant le reset en masse.
 
 > **Bon à savoir (erreur obsolète auto-résolue)** : depuis le fix « erreur active », le
 > diagnostic ne compte plus une erreur de sync que si elle concerne encore le dossier courant
