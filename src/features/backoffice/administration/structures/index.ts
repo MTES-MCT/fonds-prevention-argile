@@ -1,3 +1,4 @@
 export * from "./actions/structures.actions";
-export * from "./domain/operations-structures";
-export type { AgentDeStructure, StructureAdministration } from "./services/structures-admin.service";
+export * from "./actions/import-structures.actions";
+export * from "./domain/regles-structures";
+export type { BilanImportStructures, LigneImportRefusee } from "./domain/import-structures";
