@@ -454,6 +454,20 @@ compte ou une invitation, et alertent sur un logement déjà connu. Mêmes garde
 existant n'est donné que s'il passe `verifyProspectTerritoryAccess`. Effet de bord assumé : un agent
 apprend qu'un email a déjà un compte, même hors de son périmètre, sans rien voir du dossier.
 
+### Responsable d'un dossier Aller-vers : l'Aller-vers retenu, pas tout le département
+
+Agir au titre du responsable (onglet « Mes dossiers », qualification, archivage, arrêt — tout ce
+qui passe par `assertCanActAsResponsable`) est réservé, pour un dossier sans AMO, aux Aller-vers
+**retenus pour le territoire du logement** : ceux de son EPCI, à défaut ceux de son département
+(`findByEpciWithDepartementFallback`, la règle qui nomme le responsable). Plusieurs Aller-vers
+retenus à égalité peuvent tous agir (`Responsable.allersVersIds`).
+
+> **Bug corrigé (novembre 2026).** `canActAsResponsable` laissait agir tout Aller-vers qui
+> **déclarait le département** du dossier. Or dans les départements découpés par EPCI (54, 59),
+> chaque Aller-vers déclare aussi le département : Alohé (Grand Nancy) voyait dans « Mes dossiers »
+> et pouvait qualifier ou archiver les dossiers relevant de Soliha 54, et inversement. L'onglet
+> « Tous les dossiers » reste la vue du territoire (départements ∪ EPCI), en lecture.
+
 ## 6.1 Ré-ouverture d'une demande refusée (garde élargie)
 
 L'action « Ré-ouvrir la demande » (demande refusée par l'AMO → `en_attente`, cf.

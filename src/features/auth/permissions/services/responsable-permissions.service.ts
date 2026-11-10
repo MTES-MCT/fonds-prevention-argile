@@ -1,4 +1,3 @@
-import { allersVersRepository } from "@/shared/database";
 import { resolveResponsableForParcours } from "@/features/backoffice/espace-agent/dossiers/services/responsable-resolver.service";
 import { RESPONSABLE_TYPE, type Responsable } from "@/features/parcours/core/domain/services/responsable.service";
 
@@ -9,8 +8,6 @@ import { RESPONSABLE_TYPE, type Responsable } from "@/features/parcours/core/dom
 export interface ActorContext {
   entrepriseAmoId: string | null;
   allersVersId: string | null;
-  /** Codes département couverts par la structure Aller-vers de l'agent. */
-  allersVersDepartements: string[];
 }
 
 /**
@@ -23,12 +20,8 @@ export function canActAsResponsable(actor: ActorContext, responsable: Responsabl
     case RESPONSABLE_TYPE.AMO:
       return actor.entrepriseAmoId !== null && actor.entrepriseAmoId === responsable.entrepriseId;
     case RESPONSABLE_TYPE.AV:
-      if (actor.allersVersId && responsable.structureId && actor.allersVersId === responsable.structureId) {
-        return true;
-      }
-      return (
-        responsable.codeDepartement !== null && actor.allersVersDepartements.includes(responsable.codeDepartement)
-      );
+      // Déclarer le département ne suffit pas : dans le 54, Alohé (Grand Nancy) agissait sur les dossiers de Soliha.
+      return actor.allersVersId !== null && responsable.allersVersIds.includes(actor.allersVersId);
     case RESPONSABLE_TYPE.INDETERMINE:
       // Pas d'AV rattaché au territoire et pas d'AMO accompagnant : personne
       // ne peut agir au titre du responsable. Ne devrait pas arriver en prod.
@@ -36,23 +29,9 @@ export function canActAsResponsable(actor: ActorContext, responsable: Responsabl
   }
 }
 
-/**
- * Charge le contexte « actor » d'un agent : son id AMO/AV et la liste des
- * départements couverts par sa structure Aller-vers.
- */
-export async function getActorContext(agent: {
-  entrepriseAmoId: string | null;
-  allersVersId: string | null;
-}): Promise<ActorContext> {
-  const allersVersDepartements = agent.allersVersId
-    ? await allersVersRepository.getDepartementsByAllersVersId(agent.allersVersId)
-    : [];
-
-  return {
-    entrepriseAmoId: agent.entrepriseAmoId,
-    allersVersId: agent.allersVersId,
-    allersVersDepartements,
-  };
+/** Contexte « actor » d'un agent : son entreprise AMO et son Aller-vers. */
+export function getActorContext(agent: { entrepriseAmoId: string | null; allersVersId: string | null }): ActorContext {
+  return { entrepriseAmoId: agent.entrepriseAmoId, allersVersId: agent.allersVersId };
 }
 
 /**
@@ -66,7 +45,7 @@ export async function assertCanActAsResponsable(
   const responsable = await resolveResponsableForParcours(parcoursId);
   if (!responsable) return { ok: false, error: "Dossier introuvable" };
 
-  const actor = await getActorContext(agent);
+  const actor = getActorContext(agent);
   if (!canActAsResponsable(actor, responsable)) {
     return { ok: false, error: "Action réservée au responsable du dossier" };
   }

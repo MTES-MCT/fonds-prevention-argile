@@ -12,6 +12,7 @@ import {
   ACTION_TYPE_COMMENTAIRE_LIBRE,
   ACTION_TYPE_ELIGIBILITE_ACCEPTEE,
   ACTION_TYPE_DOSSIER_ARCHIVE,
+  ACTION_TYPE_DEMANDE_ACCOMPAGNEMENT,
   type ActionDetail,
 } from "../domain/types/action.types";
 
@@ -367,19 +368,20 @@ describe("ActionsService", () => {
       expect(result.error).toContain("vos propres actions");
     });
 
-    it("refuse de modifier une action système, même à son auteur", async () => {
-      vi.mocked(hasPermission).mockReturnValue(true);
-      vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(
-        storedAction({ actionType: ACTION_TYPE_DOSSIER_ARCHIVE })
-      );
-      vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
+    it.each([ACTION_TYPE_DOSSIER_ARCHIVE, ACTION_TYPE_DEMANDE_ACCOMPAGNEMENT])(
+      "refuse de modifier une action système (%s), même à son auteur",
+      async (actionType) => {
+        vi.mocked(hasPermission).mockReturnValue(true);
+        vi.mocked(parcoursActionsRepo.findById).mockResolvedValue(storedAction({ actionType }));
+        vi.mocked(parcoursActionsRepo.canEditAction).mockResolvedValue(true);
 
-      const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Réécriture");
+        const result = await service.updateAction("action-1", "agent-1", UserRole.AMO, "Réécriture");
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("automatiquement");
-      expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
-    });
+        expect(result.success).toBe(false);
+        expect(result.error).toContain("automatiquement");
+        expect(parcoursActionsRepo.updateMessage).not.toHaveBeenCalled();
+      }
+    );
 
     it("met à jour une action valide", async () => {
       mockActionEditable();
