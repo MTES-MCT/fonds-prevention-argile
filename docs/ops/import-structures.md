@@ -49,6 +49,8 @@ rétablit.
   coordonnées des structures existantes »** remplace ces champs par les cellules remplies du fichier ;
   le bilan liste ce qui a été remplacé. Le SIRET n'est jamais remplacé.
 - **Rien n'est supprimé.** Retirer une habilitation ou supprimer une structure se fait dans sa fiche.
+- La **zone affichée au public** d'un Aller-vers (titre de son groupe sur « Trouver mon conseiller
+  local ») ne s'importe pas : elle se saisit dans la fiche, et un import la laisse inchangée.
 - Ajouter l'AMO ou l'Aller-vers à une structure **qui a des agents** leur donne ce rôle : réservé au
   super-administrateur. Pour un administrateur, la ligne est refusée et listée, les autres passent.
 

@@ -59,6 +59,11 @@ rôle, et les fichiers arrivent par rôle (liste des AMO, des Aller-vers, réfé
   une journée ; elle sert aussi à les nommer sur la fiche. Les départements de l'AMO restent stockés
   en texte, écrit au format « Indre 36, Allier 03 » que lit sa couverture. Le serveur et les imports,
   eux, acceptent encore tout département.
+- **Zone affichée au public** (`allers_vers.libelle_zone`), saisie sur l'habilitation Aller-vers :
+  titre de son groupe sur « Trouver mon conseiller local » quand plusieurs Aller-vers se partagent un
+  département (« Pour la métropole de Nancy »). Elle remplace les sous-groupes que la page codait sur
+  le **nom** de l'Aller-vers, qu'un renommage depuis la fiche cassait ; la migration `0062` reprend
+  ceux du 54 et du 59. La page place aussi un Aller-vers dans les départements de ses EPCI.
 - Droits : administrateur et super-administrateur. Ajouter ou retirer une habilitation AMO ou
   Aller-vers sur une structure **qui a des agents** change leurs rôles : réservé au
   super-administrateur, à l'écran comme à l'import. Tout ce qui touche aux experts reste au
