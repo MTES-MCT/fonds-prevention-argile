@@ -13,15 +13,33 @@ export interface ExpertFormulaire {
   contactInterneNom: string;
   contactInterneEmail: string;
   contactInterneTelephone: string;
-  departements: { code: string; email: string; telephone: string }[];
+  departements: DepartementFormulaire[];
 }
+
+interface DepartementFormulaire {
+  code: string;
+  email: string;
+  telephone: string;
+  expertNom: string;
+  expertEmail: string;
+  expertTelephone: string;
+}
+
+const DEPARTEMENT_VIDE: DepartementFormulaire = {
+  code: "",
+  email: "",
+  telephone: "",
+  expertNom: "",
+  expertEmail: "",
+  expertTelephone: "",
+};
 
 const VIDE: ExpertFormulaire = {
   dateValidationDhup: "",
   contactInterneNom: "",
   contactInterneEmail: "",
   contactInterneTelephone: "",
-  departements: [{ code: "", email: "", telephone: "" }],
+  departements: [DEPARTEMENT_VIDE],
 };
 
 export function expertDepuis(expert: ExpertGestion | null): ExpertFormulaire {
@@ -35,6 +53,9 @@ export function expertDepuis(expert: ExpertGestion | null): ExpertFormulaire {
       code: d.code,
       email: d.email ?? "",
       telephone: d.telephone ?? "",
+      expertNom: d.expertNom ?? "",
+      expertEmail: d.expertEmail ?? "",
+      expertTelephone: d.expertTelephone ?? "",
     })),
   };
 }
@@ -63,11 +84,35 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
     onChange: (e: ChangeEvent<HTMLInputElement>) => onChange({ ...valeur, [nom]: e.target.value }),
   });
 
-  const modifierDepartement = (index: number, cle: "code" | "email" | "telephone", texte: string) =>
+  const modifierDepartement = (index: number, cle: keyof DepartementFormulaire, texte: string) =>
     onChange({
       ...valeur,
       departements: valeur.departements.map((d, i) => (i === index ? { ...d, [cle]: texte } : d)),
     });
+
+  const champDepartement = (
+    index: number,
+    cle: Exclude<keyof DepartementFormulaire, "code">,
+    libelle: string,
+    type: "text" | "email" | "tel",
+    largeur: string
+  ) => (
+    <div className={`fr-col-12 ${largeur}`}>
+      <div className="fr-input-group">
+        <label className="fr-label" htmlFor={`${idPrefix}-dep-${cle}-${index}`}>
+          {libelle}
+        </label>
+        <input
+          className="fr-input"
+          type={type}
+          id={`${idPrefix}-dep-${cle}-${index}`}
+          value={valeur.departements[index][cle]}
+          disabled={isLoading}
+          onChange={(e) => modifierDepartement(index, cle, e.target.value)}
+        />
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -118,11 +163,14 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
         <legend className="fr-fieldset__legend">
           Départements d&apos;intervention
           <span className="fr-hint-text">
-            Le contact de réservation de chaque département est communiqué aux agents.
+            Le contact de réservation et l&apos;expert qui se déplace sont communiqués aux agents.
           </span>
         </legend>
         {valeur.departements.map((departement, index) => (
-          <div key={index} className="fr-fieldset__element">
+          <div
+            key={index}
+            className="fr-fieldset__element fr-p-2w fr-mb-2w"
+            style={{ border: "1px solid var(--border-default-grey)" }}>
             <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--bottom">
               <div className="fr-col-12 fr-col-md-4">
                 <div className="fr-select-group">
@@ -150,36 +198,8 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
                   </select>
                 </div>
               </div>
-              <div className="fr-col-12 fr-col-md-4">
-                <div className="fr-input-group">
-                  <label className="fr-label" htmlFor={`${idPrefix}-dep-email-${index}`}>
-                    Email de réservation
-                  </label>
-                  <input
-                    className="fr-input"
-                    type="email"
-                    id={`${idPrefix}-dep-email-${index}`}
-                    value={departement.email}
-                    disabled={isLoading}
-                    onChange={(e) => modifierDepartement(index, "email", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="fr-col-12 fr-col-md-3">
-                <div className="fr-input-group">
-                  <label className="fr-label" htmlFor={`${idPrefix}-dep-tel-${index}`}>
-                    Téléphone
-                  </label>
-                  <input
-                    className="fr-input"
-                    type="tel"
-                    id={`${idPrefix}-dep-tel-${index}`}
-                    value={departement.telephone}
-                    disabled={isLoading}
-                    onChange={(e) => modifierDepartement(index, "telephone", e.target.value)}
-                  />
-                </div>
-              </div>
+              {champDepartement(index, "email", "Email de réservation", "email", "fr-col-md-4")}
+              {champDepartement(index, "telephone", "Téléphone de réservation", "tel", "fr-col-md-3")}
               <div className="fr-col-12 fr-col-md-1">
                 <button
                   type="button"
@@ -193,6 +213,15 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
                 </button>
               </div>
             </div>
+            <p className="fr-text--sm fr-text--bold fr-mt-2w fr-mb-0">
+              Expert qui se déplace chez le demandeur
+              <span className="fr-hint-text">Facultatif, quand ce n&apos;est pas le contact de réservation.</span>
+            </p>
+            <div className="fr-grid-row fr-grid-row--gutters">
+              {champDepartement(index, "expertNom", "Nom", "text", "fr-col-md-4")}
+              {champDepartement(index, "expertEmail", "Email", "email", "fr-col-md-4")}
+              {champDepartement(index, "expertTelephone", "Téléphone", "tel", "fr-col-md-3")}
+            </div>
           </div>
         ))}
         <div className="fr-fieldset__element">
@@ -200,9 +229,7 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
             type="button"
             className="fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left fr-icon-add-line"
             disabled={isLoading}
-            onClick={() =>
-              onChange({ ...valeur, departements: [...valeur.departements, { code: "", email: "", telephone: "" }] })
-            }>
+            onClick={() => onChange({ ...valeur, departements: [...valeur.departements, DEPARTEMENT_VIDE] })}>
             Ajouter un département
           </button>
         </div>

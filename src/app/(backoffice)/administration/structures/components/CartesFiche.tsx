@@ -186,6 +186,16 @@ export function CarteAllersVers({
   );
 }
 
+function Coordonnees({ lignes }: { lignes: (string | null)[] }) {
+  const renseignees = lignes.filter((ligne): ligne is string => Boolean(ligne));
+  if (renseignees.length === 0) return <NonRenseigne />;
+  return renseignees.map((ligne) => (
+    <span key={ligne} className="block">
+      {ligne}
+    </span>
+  ));
+}
+
 export function CarteExpert({ expert, actions }: { expert: ExpertGestion | ExpertAnnuaire; actions?: ReactNode }) {
   const gestion = estExpertGestion(expert) ? expert : null;
   const desactivation = gestion?.desactivation ?? null;
@@ -224,12 +234,12 @@ export function CarteExpert({ expert, actions }: { expert: ExpertGestion | Exper
           <div className="fr-table__container">
             <div className="fr-table__content">
               <table>
-                <caption className="fr-text--sm fr-text--bold">Départements d&apos;intervention et réservation</caption>
+                <caption className="fr-text--sm fr-text--bold">Départements d&apos;intervention et contacts</caption>
                 <thead>
                   <tr>
                     <th scope="col">Département</th>
-                    <th scope="col">Email de réservation</th>
-                    <th scope="col">Téléphone de réservation</th>
+                    <th scope="col">Réservation</th>
+                    <th scope="col">Expert sur place</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,8 +248,14 @@ export function CarteExpert({ expert, actions }: { expert: ExpertGestion | Exper
                       <td>
                         {departement.code} - {departement.nom}
                       </td>
-                      <td className="break-all">{departement.email ?? <NonRenseigne />}</td>
-                      <td>{departement.telephone ?? <NonRenseigne />}</td>
+                      <td className="break-all">
+                        <Coordonnees lignes={[departement.email, departement.telephone]} />
+                      </td>
+                      <td className="break-all">
+                        <Coordonnees
+                          lignes={[departement.expertNom, departement.expertEmail, departement.expertTelephone]}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

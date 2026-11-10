@@ -6,7 +6,7 @@ describe("ChampsExpert", () => {
   it("ne propose que les départements du dispositif, sans masquer un département déjà enregistré ailleurs", () => {
     const valeur = {
       ...expertDepuis(null),
-      departements: [{ code: "18", email: "", telephone: "" }],
+      departements: [{ ...expertDepuis(null).departements[0], code: "18" }],
     };
     render(<ChampsExpert idPrefix="expert" valeur={valeur} onChange={vi.fn()} />);
 
