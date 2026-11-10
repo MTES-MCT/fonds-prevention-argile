@@ -27,6 +27,9 @@ export type ChampImport =
   | "expertDepartements"
   | "expertEmail"
   | "expertTelephone"
+  | "expertSurPlaceNom"
+  | "expertSurPlaceEmail"
+  | "expertSurPlaceTelephone"
   | "expertDateValidationDhup"
   | "expertContactInterneNom"
   | "expertContactInterneEmail"
@@ -65,6 +68,9 @@ const ENTETES_PAR_ROLE: Record<RoleImport, Record<string, ChampImport>> = {
     departements: "expertDepartements",
     "email reservation": "expertEmail",
     "telephone reservation": "expertTelephone",
+    "expert sur place nom": "expertSurPlaceNom",
+    "expert sur place email": "expertSurPlaceEmail",
+    "expert sur place telephone": "expertSurPlaceTelephone",
     "date validation dhup": "expertDateValidationDhup",
     "date de validation dhup": "expertDateValidationDhup",
     "contact interne nom": "expertContactInterneNom",
@@ -183,7 +189,8 @@ function lireAllersVers(v: LigneImport["valeurs"]): PartieLue<HabilitationAllers
 }
 
 function lireExpert(v: LigneImport["valeurs"]): PartieLue<HabilitationExpertSaisie> {
-  if (!remplie(v, ["expertDepartements", "expertEmail", "expertTelephone", "expertDateValidationDhup"])) {
+  const champs: ChampImport[] = ["expertDepartements", "expertEmail", "expertTelephone", "expertDateValidationDhup"];
+  if (!remplie(v, [...champs, "expertSurPlaceNom", "expertSurPlaceEmail", "expertSurPlaceTelephone"])) {
     return { saisie: null };
   }
   const { codes, inconnus } = lireDepartements(v.expertDepartements ?? "");
@@ -193,7 +200,14 @@ function lireExpert(v: LigneImport["valeurs"]): PartieLue<HabilitationExpertSais
     contactInterneNom: v.expertContactInterneNom,
     contactInterneEmail: v.expertContactInterneEmail,
     contactInterneTelephone: telephone(v.expertContactInterneTelephone),
-    departements: codes.map((code) => ({ code, email: v.expertEmail, telephone: telephone(v.expertTelephone) })),
+    departements: codes.map((code) => ({
+      code,
+      email: v.expertEmail,
+      telephone: telephone(v.expertTelephone),
+      expertNom: v.expertSurPlaceNom,
+      expertEmail: v.expertSurPlaceEmail,
+      expertTelephone: telephone(v.expertSurPlaceTelephone),
+    })),
   });
   return resultat.success ? { saisie: resultat.data } : { motif: `expert : ${premiereErreur(resultat.error.issues)}` };
 }

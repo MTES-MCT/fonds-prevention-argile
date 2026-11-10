@@ -15,12 +15,9 @@ describe("lireEntetes", () => {
       lireEntetes(["Nom", "SIRET", "Téléphone", "départements", "emails", "codes_insee", "inconnue"], "amo")
     ).toEqual(["nom", "siret", "telephone", "amoDepartements", "amoEmails", "amoCommunes", null]);
     expect(lireEntetes(["siret", "departements", "epci"], "allersVers")).toEqual(["siret", "avDepartements", "avEpci"]);
-    expect(lireEntetes(["siret", "departements", "email_reservation", "telephone"], "expert")).toEqual([
-      "siret",
-      "expertDepartements",
-      "expertEmail",
-      "telephone",
-    ]);
+    expect(
+      lireEntetes(["siret", "departements", "email_reservation", "telephone", "Expert sur place téléphone"], "expert")
+    ).toEqual(["siret", "expertDepartements", "expertEmail", "telephone", "expertSurPlaceTelephone"]);
   });
 
   it("lit le fichier de la DHUP tel quel : son téléphone et son email sont ceux de la réservation", () => {
@@ -38,7 +35,7 @@ describe("lireEntetes", () => {
 });
 
 describe("lireStructures", () => {
-  it("réunit sous un SIRET les lignes d'un expert, chaque département avec son contact", () => {
+  it("réunit sous un SIRET les lignes d'un expert, chaque département avec son contact et son expert sur place", () => {
     const { structures, refusees } = lireStructures(
       [
         ligne(2, {
@@ -47,6 +44,8 @@ describe("lireStructures", () => {
           telephone: "254000000",
           expertDepartements: "36",
           expertEmail: "i@g.fr",
+          expertSurPlaceNom: "Paul Martin",
+          expertSurPlaceTelephone: "611223344",
         }),
         ligne(3, { siret: SIRET_EXPERT, adresse: "1 rue", expertDepartements: "3", expertEmail: "a@g.fr" }),
       ],
@@ -64,8 +63,15 @@ describe("lireStructures", () => {
       allersVers: null,
     });
     expect(structures[0].expert?.departements).toEqual([
-      { code: "36", email: "i@g.fr", telephone: null },
-      { code: "03", email: "a@g.fr", telephone: null },
+      {
+        code: "36",
+        email: "i@g.fr",
+        telephone: null,
+        expertNom: "Paul Martin",
+        expertEmail: null,
+        expertTelephone: "0611223344",
+      },
+      { code: "03", email: "a@g.fr", telephone: null, expertNom: null, expertEmail: null, expertTelephone: null },
     ]);
   });
 

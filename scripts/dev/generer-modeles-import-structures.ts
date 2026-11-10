@@ -33,7 +33,10 @@ const MODELES: { fichier: string; colonnes: Colonne[]; regles: string[]; lignes:
       ["epci", "Non", "Codes EPCI (9 chiffres) couverts, séparés par , ou ;."],
       ["communes", "Non", "Codes INSEE des communes couvertes, séparés par , ou ;."],
     ],
-    regles: [...REGLES, "Ajouter l'AMO à une structure qui a des agents leur donne ce rôle : réservé au super-administrateur."],
+    regles: [
+      ...REGLES,
+      "Ajouter l'AMO à une structure qui a des agents leur donne ce rôle : réservé au super-administrateur.",
+    ],
     lignes: [
       {
         nom: "Structure exemple AMO",
@@ -75,9 +78,16 @@ const MODELES: { fichier: string; colonnes: Colonne[]; regles: string[]; lignes:
     fichier: "experts-exemple.xlsx",
     colonnes: [
       ...IDENTITE,
-      ["departements", "Oui", "Départements d'intervention ; une ligne par contact de réservation différent."],
+      [
+        "departements",
+        "Oui",
+        "Départements d'intervention ; une ligne par contact de réservation ou expert sur place différent.",
+      ],
       ["email_reservation", "Non", "Email de réservation pour les départements de la ligne."],
       ["telephone_reservation", "Non", "Téléphone de réservation pour les départements de la ligne."],
+      ["expert_sur_place_nom", "Non", "Expert qui se déplace chez le demandeur, pour les départements de la ligne."],
+      ["expert_sur_place_email", "Non", "Email de l'expert qui se déplace."],
+      ["expert_sur_place_telephone", "Non", "Téléphone de l'expert qui se déplace."],
       ["date_validation_dhup", "Non", "Date de validation par la DHUP, AAAA-MM-JJ ou JJ/MM/AAAA."],
       ["contact_interne_nom", "Non", "Contact interne, visible du seul super-administrateur."],
       ["contact_interne_email", "Non", "Email du contact interne."],
@@ -95,6 +105,9 @@ const MODELES: { fichier: string; colonnes: Colonne[]; regles: string[]; lignes:
         departements: "63",
         email_reservation: "reservation63@example.org",
         telephone_reservation: "04 73 00 00 00",
+        expert_sur_place_nom: "Dominique Exemple",
+        expert_sur_place_email: "dominique@example.org",
+        expert_sur_place_telephone: "06 00 00 00 00",
         date_validation_dhup: "2026-05-15",
         contact_interne_nom: "Camille Exemple",
         contact_interne_email: "camille@example.org",

@@ -190,7 +190,16 @@ describe("importerStructures", () => {
       "s-1",
       expect.objectContaining({
         contactInterneNom: "Camille",
-        departements: [{ code: "03", email: "contact@g.fr", telephone: "0612345678" }],
+        departements: [
+          {
+            code: "03",
+            email: "contact@g.fr",
+            telephone: "0612345678",
+            expertNom: null,
+            expertEmail: null,
+            expertTelephone: null,
+          },
+        ],
       }),
       "tx"
     );

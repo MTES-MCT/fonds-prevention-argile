@@ -21,18 +21,19 @@ Chaque ligne porte un SIRET, obligatoire. Il désigne la structure **du type du 
 - Le rapprochement par le nom ne sert qu'à passer le cap du premier import : aucun Aller-vers n'avait
   de SIRET. La structure retrouvée reçoit le SIRET du fichier, signalé dans le bilan. Un nom qui
   désigne plusieurs structures est refusé : renseigner le SIRET dans la bonne fiche, puis réimporter.
-- Un expert peut tenir sur plusieurs lignes de même SIRET, une par contact de réservation. Une AMO ou
+- Un expert peut tenir sur plusieurs lignes de même SIRET, une par contact de réservation ou expert
+  sur place. Une AMO ou
   un Aller-vers décrit deux fois, ou un département d'expert déclaré deux fois, refuse la ligne qui le
   répète.
 
 ## Colonnes
 
-| Import     | Colonnes                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------- |
-| tous       | `nom`, `siret`, `adresse`, `telephone`, `horaires`                                                        |
-| AMO        | `departements` (« Indre 36, Cher 18 »), `emails`, `epci`, `communes` (ou `codes_insee`)                   |
-| Aller-vers | `departements` (codes), `emails`, `epci`                                                                  |
-| Experts    | `departements`, `email_reservation`, `telephone_reservation`, `date_validation_dhup`, `contact_interne_*` |
+| Import     | Colonnes                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| tous       | `nom`, `siret`, `adresse`, `telephone`, `horaires`                                                                              |
+| AMO        | `departements` (« Indre 36, Cher 18 »), `emails`, `epci`, `communes` (ou `codes_insee`)                                         |
+| Aller-vers | `departements` (codes), `emails`, `epci`                                                                                        |
+| Experts    | `departements`, `email_reservation`, `telephone_reservation`, `expert_sur_place_*`, `date_validation_dhup`, `contact_interne_*` |
 
 Les en-têtes sont reconnus sans tenir compte de la casse, des accents ni des tirets bas ; ceux des
 anciens fichiers AMO et Aller-vers restent valables. Emails, départements, EPCI et codes INSEE
@@ -42,7 +43,7 @@ rétablit.
 ## Ce que le fichier peut écrire
 
 - **L'habilitation du rôle importé** : son territoire et ses emails sont remplacés par ceux du fichier ;
-  pour un expert, ses départements et contacts de réservation. Une date de validation ou un contact
+  pour un expert, ses départements, contacts de réservation et experts sur place. Une date de validation ou un contact
   interne absent du fichier ne retire pas celui de la fiche.
 - **L'identité d'une structure existante** (nom, adresse, téléphone, horaires) n'est que complétée.
   Une valeur différente est signalée dans le bilan, sans être reprise. Cocher **« Remplacer les
