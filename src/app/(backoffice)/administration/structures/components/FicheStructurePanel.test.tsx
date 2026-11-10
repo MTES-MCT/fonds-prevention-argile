@@ -48,7 +48,7 @@ const EXPERT_ANNUAIRE: ExpertAnnuaire = {
       expertNom: "Luc Morel",
       expertEmail: null,
       expertTelephone: null,
-      forfaitDiagnosticHt: null,
+      forfaitDiagnosticHt: 950,
       forfaitReseauHt: null,
     },
   ],
@@ -279,6 +279,7 @@ describe("FicheStructurePanel", () => {
     expect(within(carte).getByRole("cell", { name: "36 - Indre" })).toBeInTheDocument();
     expect(within(carte).getByRole("cell", { name: "rdv@expertise.test" })).toBeInTheDocument();
     expect(within(carte).getByRole("cell", { name: "Luc Morel" })).toBeInTheDocument();
+    expect(within(carte).getByRole("cell", { name: /^Diagnostic : 950\s€$/ })).toBeInTheDocument();
     expect(within(carte).queryByRole("button")).not.toBeInTheDocument();
     expect(within(carte).queryByText("Contact interne")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Gérer la structure" })).not.toBeInTheDocument();

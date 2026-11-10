@@ -64,3 +64,13 @@ export function formatMontant(montant: number): string {
     maximumFractionDigits: 0,
   }).format(montant);
 }
+
+// Un tarif garde ses centimes s'il en a : « 1 200 € », mais « 1 200,50 € ».
+export function formatMontantExact(montant: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: Number.isInteger(montant) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(montant);
+}

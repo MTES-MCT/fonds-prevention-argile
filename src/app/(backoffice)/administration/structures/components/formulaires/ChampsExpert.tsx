@@ -23,6 +23,8 @@ interface DepartementFormulaire {
   expertNom: string;
   expertEmail: string;
   expertTelephone: string;
+  forfaitDiagnosticHt: string;
+  forfaitReseauHt: string;
 }
 
 const DEPARTEMENT_VIDE: DepartementFormulaire = {
@@ -32,6 +34,8 @@ const DEPARTEMENT_VIDE: DepartementFormulaire = {
   expertNom: "",
   expertEmail: "",
   expertTelephone: "",
+  forfaitDiagnosticHt: "",
+  forfaitReseauHt: "",
 };
 
 const VIDE: ExpertFormulaire = {
@@ -41,6 +45,9 @@ const VIDE: ExpertFormulaire = {
   contactInterneTelephone: "",
   departements: [DEPARTEMENT_VIDE],
 };
+
+const montantSaisi = (montant: number | null) =>
+  montant === null ? "" : (Number.isInteger(montant) ? String(montant) : montant.toFixed(2)).replace(".", ",");
 
 export function expertDepuis(expert: ExpertGestion | null): ExpertFormulaire {
   if (!expert) return VIDE;
@@ -56,6 +63,8 @@ export function expertDepuis(expert: ExpertGestion | null): ExpertFormulaire {
       expertNom: d.expertNom ?? "",
       expertEmail: d.expertEmail ?? "",
       expertTelephone: d.expertTelephone ?? "",
+      forfaitDiagnosticHt: montantSaisi(d.forfaitDiagnosticHt),
+      forfaitReseauHt: montantSaisi(d.forfaitReseauHt),
     })),
   };
 }
@@ -94,7 +103,7 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
     index: number,
     cle: Exclude<keyof DepartementFormulaire, "code">,
     libelle: string,
-    type: "text" | "email" | "tel",
+    type: "text" | "email" | "tel" | "montant",
     largeur: string
   ) => (
     <div className={`fr-col-12 ${largeur}`}>
@@ -104,7 +113,8 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
         </label>
         <input
           className="fr-input"
-          type={type}
+          type={type === "montant" ? "text" : type}
+          inputMode={type === "montant" ? "decimal" : undefined}
           id={`${idPrefix}-dep-${cle}-${index}`}
           value={valeur.departements[index][cle]}
           disabled={isLoading}
@@ -163,7 +173,7 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
         <legend className="fr-fieldset__legend">
           Départements d&apos;intervention
           <span className="fr-hint-text">
-            Le contact de réservation et l&apos;expert qui se déplace sont communiqués aux agents.
+            Le contact de réservation, l&apos;expert qui se déplace et les forfaits sont communiqués aux agents.
           </span>
         </legend>
         {valeur.departements.map((departement, index) => (
@@ -221,6 +231,14 @@ export default function ChampsExpert({ idPrefix, valeur, onChange, isLoading = f
               {champDepartement(index, "expertNom", "Nom", "text", "fr-col-md-4")}
               {champDepartement(index, "expertEmail", "Email", "email", "fr-col-md-4")}
               {champDepartement(index, "expertTelephone", "Téléphone", "tel", "fr-col-md-3")}
+            </div>
+            <p className="fr-text--sm fr-text--bold fr-mt-2w fr-mb-0">
+              Forfaits de la prestation
+              <span className="fr-hint-text">En euros HT, facultatifs. Exemple : 1 200 ou 1 200,50.</span>
+            </p>
+            <div className="fr-grid-row fr-grid-row--gutters">
+              {champDepartement(index, "forfaitDiagnosticHt", "Forfait diagnostic", "montant", "fr-col-md-4")}
+              {champDepartement(index, "forfaitReseauHt", "Forfait réseaux", "montant", "fr-col-md-4")}
             </div>
           </div>
         ))}

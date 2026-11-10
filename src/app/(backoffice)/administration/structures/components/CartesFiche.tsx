@@ -12,6 +12,7 @@ import {
 } from "@/features/backoffice";
 import { getDepartementName, toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
 import { isDepartementEligible } from "@/shared/constants/rga.constants";
+import { formatMontantExact } from "@/shared/utils";
 import { BlocFiche, Champ, ListeChamps, NonRenseigne, Rubrique } from "./BlocFiche";
 
 interface BoutonModaleProps {
@@ -186,7 +187,7 @@ export function CarteAllersVers({
   );
 }
 
-function Coordonnees({ lignes }: { lignes: (string | null)[] }) {
+function Lignes({ lignes }: { lignes: (string | null)[] }) {
   const renseignees = lignes.filter((ligne): ligne is string => Boolean(ligne));
   if (renseignees.length === 0) return <NonRenseigne />;
   return renseignees.map((ligne) => (
@@ -195,6 +196,9 @@ function Coordonnees({ lignes }: { lignes: (string | null)[] }) {
     </span>
   ));
 }
+
+const forfait = (libelle: string, montant: number | null) =>
+  montant === null ? null : `${libelle} : ${formatMontantExact(montant)}`;
 
 export function CarteExpert({ expert, actions }: { expert: ExpertGestion | ExpertAnnuaire; actions?: ReactNode }) {
   const gestion = estExpertGestion(expert) ? expert : null;
@@ -240,6 +244,7 @@ export function CarteExpert({ expert, actions }: { expert: ExpertGestion | Exper
                     <th scope="col">Département</th>
                     <th scope="col">Réservation</th>
                     <th scope="col">Expert sur place</th>
+                    <th scope="col">Forfaits HT</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,11 +254,19 @@ export function CarteExpert({ expert, actions }: { expert: ExpertGestion | Exper
                         {departement.code} - {departement.nom}
                       </td>
                       <td className="break-all">
-                        <Coordonnees lignes={[departement.email, departement.telephone]} />
+                        <Lignes lignes={[departement.email, departement.telephone]} />
                       </td>
                       <td className="break-all">
-                        <Coordonnees
+                        <Lignes
                           lignes={[departement.expertNom, departement.expertEmail, departement.expertTelephone]}
+                        />
+                      </td>
+                      <td>
+                        <Lignes
+                          lignes={[
+                            forfait("Diagnostic", departement.forfaitDiagnosticHt),
+                            forfait("Réseaux", departement.forfaitReseauHt),
+                          ]}
                         />
                       </td>
                     </tr>

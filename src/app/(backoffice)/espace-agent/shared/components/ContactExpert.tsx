@@ -1,4 +1,5 @@
 import type { DepartementExpert, ExpertAnnuaire } from "@/features/backoffice";
+import { formatMontantExact } from "@/shared/utils";
 
 export function detailExpert(expert: Pick<ExpertAnnuaire, "dateValidationDhup">): string | null {
   if (!expert.dateValidationDhup) return null;
@@ -34,6 +35,28 @@ export function ContactExpert({ contact }: ContactExpertProps) {
           <LiensContact email={contact.expertEmail} telephone={contact.expertTelephone} />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Montants HT de la prestation dans le département ; rien tant qu'aucun n'est connu. */
+export function ForfaitsExpert({ departement }: { departement: DepartementExpert | undefined }) {
+  const forfaits = [
+    { libelle: "Diagnostic", montant: departement?.forfaitDiagnosticHt ?? null },
+    { libelle: "Réseaux", montant: departement?.forfaitReseauHt ?? null },
+  ].filter((forfait): forfait is { libelle: string; montant: number } => forfait.montant !== null);
+  if (forfaits.length === 0) return null;
+
+  return (
+    <div>
+      <p className="fr-text--xs fr-text-mention--grey fr-mb-1v">Forfaits HT</p>
+      <ul className="fr-raw-list flex flex-col gap-1">
+        {forfaits.map((forfait) => (
+          <li key={forfait.libelle} className="fr-text--sm fr-mb-0">
+            {forfait.libelle} : {formatMontantExact(forfait.montant)}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

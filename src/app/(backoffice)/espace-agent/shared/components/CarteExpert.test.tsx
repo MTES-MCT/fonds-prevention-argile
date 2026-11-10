@@ -83,6 +83,22 @@ describe("CarteExpert", () => {
     expect(screen.getByRole("link", { name: "06 11 22 33 44" })).toHaveAttribute("href", "tel:0611223344");
   });
 
+  it("affiche les forfaits HT du département, sans ligne pour un forfait inconnu", () => {
+    const avecForfait = {
+      ...expert,
+      departements: [{ ...expert.departements[0], forfaitDiagnosticHt: 1200.5, forfaitReseauHt: null }],
+    };
+    render(<CarteExpert expert={avecForfait} codeDepartement="36" />);
+    expect(screen.getByText("Forfaits HT")).toBeInTheDocument();
+    expect(screen.getByText(/^Diagnostic : 1\s200,50\s€$/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Réseaux/)).not.toBeInTheDocument();
+  });
+
+  it("n'annonce aucun forfait tant qu'aucun n'est connu", () => {
+    render(<CarteExpert expert={expert} codeDepartement="36" />);
+    expect(screen.queryByText("Forfaits HT")).not.toBeInTheDocument();
+  });
+
   it("annonce un expert sans contact pour le département", () => {
     render(<CarteExpert expert={{ ...expert, departements: [] }} codeDepartement="36" />);
     expect(screen.getByText("Contact non renseigné")).toBeInTheDocument();
