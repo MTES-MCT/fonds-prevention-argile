@@ -261,6 +261,19 @@ puis une recette des imports AMO et Aller-vers, déjà validés et donc à retes
 
 ## Sécurité et dépendances
 
+### Règle d'en-têtes des pages embarquées qui ne s'applique à aucune page
+
+- **Constat** : dans `next.config.ts`, la règle `source: "/embed/:path*"` (`frame-ancestors *`) ne
+  correspond à aucune route : les pages s'appellent `/embed-simulateur` et `/embed-vulnerabilite-rga`.
+  Elles s'affichent en iframe uniquement parce que l'expression de la règle par défaut exclut tout
+  chemin commençant par « embed », si bien qu'elles ne reçoivent aucun en-tête. Le résultat est le bon,
+  le commentaire est trompeur, et une nouvelle page `/embed…` serait encadrable sans le vouloir.
+- **Préalable** : choisir entre corriger le motif (une règle par page `/embed-*`) et figer le
+  comportement actuel par un test qui vérifie les en-têtes de chaque route. Toucher à ces en-têtes
+  change ce que les partenaires peuvent intégrer : à tester dans une iframe d'un autre site.
+- **Relevé** : correctif du renvoi vers le simulateur d'éligibilité depuis `/embed-vulnerabilite-rga`
+  (novembre 2026).
+
 ### Migration Next 16, ESLint 10, `@vitejs/plugin-react` 6, remplacement de `@react-email/components`
 
 - Détail dans la section « Prochaine revue » de

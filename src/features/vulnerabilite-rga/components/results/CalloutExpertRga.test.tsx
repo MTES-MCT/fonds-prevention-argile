@@ -37,6 +37,16 @@ describe("CalloutExpertRga : renvoi vers le simulateur d'éligibilité", () => {
     expect(trackEvent).not.toHaveBeenCalled();
   });
 
+  it("renvoie vers l'URL fournie par la page, comme la version embarquée en iframe", () => {
+    render(
+      <VulnerabiliteProvider urlSimulateurEligibilite="/embed-simulateur?partner=maif">
+        <CalloutExpertRga eligibleFonds />
+      </VulnerabiliteProvider>
+    );
+
+    expect(screen.getByRole("link", { name: CTA })).toHaveAttribute("href", "/embed-simulateur?partner=maif");
+  });
+
   it("n'affiche pas le renvoi si le logement ne peut pas prétendre au fonds", () => {
     render(<CalloutExpertRga eligibleFonds={false} />);
 

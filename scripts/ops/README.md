@@ -42,7 +42,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`audit-dossiers-bloques.ts`](#audit-dossiers-bloques)           | read-only | Parcours bloqués sur le dossier de l'étape courante (en_construction/en_instruction), cross-check DS optionnel                                                                                   | `pnpm audit:dossiers-bloques`                          |
 | [`analyser-ecarts-dn.ts`](#analyser-ecarts-dn)                   | read-only | Explique, dossier par dossier, l'écart entre une démarche DN et les compteurs de `/stats` (déposés, validés)                                                                                     | `pnpm ds:analyser-ecarts`                              |
 | [`audit-epci-fallback.ts`](#audit-epci-fallback)                 | read-only | Liste les EPCI des dossiers absents du référentiel SEO (affichés en code brut dans le filtre AMO) et les catégorise via geo.api                                                                  | `tsx scripts/ops/audit/audit-epci-fallback.ts`         |
-| [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                                                                                        | `tsx scripts/ops/fix/fix-double-progression-amo.ts`    |
+| [`fix-double-progression-amo.ts`](#fix-double-progression-amo)   | **écrit** | Détecte et corrige les parcours victimes du bug double-progression AMO (régression vers eligibilite/todo)                                                                                        | `pnpm fix:double-progression`                          |
 | [`verify-dashboard-stats.ts`](#verify-dashboard-stats)           | read-only | Vérifie que les stats du tableau de bord correspondent aux requêtes SQL équivalentes                                                                                                             | `tsx scripts/ops/audit/verify-dashboard-stats.ts`      |
 | [`fix-missing-epci.ts`](#fix-missing-epci)                       | **écrit** | Backfill du code EPCI sur les parcours qui en sont dépourvus (via `geo.api.gouv.fr`)                                                                                                             | `pnpm fix:epci`                                        |
 | [`normaliser-codes-geo.ts`](#normaliser-codes-geo)               | **écrit** | Remet au format officiel les codes géo stockés en nombres (département `3` → `03`), qui cachaient les dossiers 01 à 09 aux agents                                                                | `pnpm fix:codes-geo`                                   |
@@ -136,23 +136,23 @@ Détecte et corrige les parcours victimes du bug double-progression AMO (cf. [`.
 
 Trois catégories, traitées différemment :
 
-| Catégorie          | Critère                                                                                           | Traitement                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **régressable**    | aucun dossier DS                                                                                  | régression directe (`--apply`)                                     |
-| **cleanup requis** | dossiers downstream uniquement `en_construction` (brouillons DS jamais soumis, ex. cas "Edouard") | suppression des brouillons + régression (`--apply --with-cleanup`) |
-| **à reviewer**     | au moins un dossier downstream soumis (`en_instruction`/`accepte`/…)                              | jamais touché automatiquement — listé pour intervention humaine    |
+| Catégorie          | Critère                                                                                        | Traitement                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **régressable**    | aucun dossier DS                                                                               | régression directe (`--apply`)                                     |
+| **cleanup requis** | dossiers downstream uniquement sans `ds_status` (brouillons jamais déposés, ex. cas "Edouard") | suppression des brouillons + régression (`--apply --with-cleanup`) |
+| **à reviewer**     | au moins un dossier downstream déposé (`en_construction` depuis ADR-0009, `en_instruction`…)   | jamais touché automatiquement — listé pour intervention humaine    |
 
 Trois niveaux d'engagement croissants :
 
 ```bash
-tsx scripts/ops/fix/fix-double-progression-amo.ts                         # dry-run : affiche le plan
-tsx scripts/ops/fix/fix-double-progression-amo.ts --anonymize             # dry-run, PII masquées (partage)
-tsx scripts/ops/fix/fix-double-progression-amo.ts --apply                 # corrige les régressables (cat. 1)
-tsx scripts/ops/fix/fix-double-progression-amo.ts --apply --with-cleanup  # corrige aussi les cas "Edouard" (cat. 2)
-tsx scripts/ops/fix/fix-double-progression-amo.ts --parcours-id=<uuid>    # cible un seul parcours
+pnpm fix:double-progression                          # dry-run : affiche le plan
+pnpm fix:double-progression --anonymize              # dry-run, PII masquées (partage)
+pnpm fix:double-progression --apply                  # corrige les régressables (cat. 1)
+pnpm fix:double-progression --apply --with-cleanup   # corrige aussi les cas "Edouard" (cat. 2)
+pnpm fix:double-progression --parcours-id=<uuid>     # cible un seul parcours
 ```
 
-La régression est un UPDATE conditionnel sur `current_step IN (diagnostic,devis,factures)` (skip si l'état a changé entre la détection et l'apply). La suppression des brouillons est conditionnée sur `ds_status='en_construction'`. Tout passe en transaction par parcours.
+La régression est un UPDATE conditionnel sur `current_step IN (diagnostic,devis,factures)` (skip si l'état a changé entre la détection et l'apply). La suppression des brouillons est conditionnée sur `ds_status IS NULL`. Suppression et régression vont ensemble par parcours, en transaction : si un brouillon a été déposé ou l'étape modifiée depuis la détection, rien n'est écrit et le parcours est compté en skip.
 
 **Vérification post-fix** : relancer en dry-run doit afficher 0 régressable / 0 cleanup requis. Relancer à J+3 et J+7 pour confirmer qu'aucun nouveau cas n'apparaît (le fix serveur d'idempotence tient).
 
@@ -173,7 +173,8 @@ tsx scripts/ops/audit/verify-dashboard-stats.ts --periode 30j --departement 24
 Backfill du `logement.epci` sur ~10 parcours qui en sont dépourvus (problème historique). Utilise `geo.api.gouv.fr` pour résoudre commune → EPCI.
 
 ```bash
-pnpm fix:epci                   # mode par défaut (dry-run d'abord, à confirmer)
+pnpm fix:epci                   # dry-run : liste les EPCI trouvés, n'écrit rien
+pnpm fix:epci --apply           # écrit l'EPCI dans la simulation
 ```
 
 ### normaliser-codes-geo

@@ -3,12 +3,11 @@ import { canActAsResponsable, type ActorContext } from "./responsable-permission
 import type { Responsable } from "@/features/parcours/core/domain/services/responsable.service";
 
 function makeActor(overrides: Partial<ActorContext> = {}): ActorContext {
-  return {
-    entrepriseAmoId: null,
-    allersVersId: null,
-    allersVersDepartements: [],
-    ...overrides,
-  };
+  return { entrepriseAmoId: null, allersVersId: null, ...overrides };
+}
+
+function responsableAv(structureId: string, allersVersIds: string[], codeDepartement = "54"): Responsable {
+  return { type: "AV", structureId, structureNom: "Aller-vers", codeDepartement, allersVersIds };
 }
 
 describe("canActAsResponsable", () => {
@@ -34,27 +33,24 @@ describe("canActAsResponsable", () => {
   });
 
   describe("responsable AV", () => {
-    const responsable: Responsable = {
-      type: "AV",
-      structureId: "av-1",
-      structureNom: "ADIL 36",
-      codeDepartement: "36",
-    };
-
-    it("autorise un agent de la même structure AV", () => {
-      expect(canActAsResponsable(makeActor({ allersVersId: "av-1" }), responsable)).toBe(true);
+    it("autorise l'Aller-vers retenu pour le territoire du logement", () => {
+      expect(canActAsResponsable(makeActor({ allersVersId: "av-1" }), responsableAv("av-1", ["av-1"]))).toBe(true);
     });
 
-    it("autorise un agent d'une autre structure AV qui couvre le département", () => {
-      expect(
-        canActAsResponsable(makeActor({ allersVersId: "av-2", allersVersDepartements: ["36"] }), responsable)
-      ).toBe(true);
+    it("refuse un autre Aller-vers du même département quand l'EPCI désigne le responsable", () => {
+      // 54 : Soliha est retenu par l'EPCI du logement ; Alohé, qui déclare aussi le 54, n'agit pas.
+      const soliha = responsableAv("av-soliha", ["av-soliha"]);
+      expect(canActAsResponsable(makeActor({ allersVersId: "av-alohe" }), soliha)).toBe(false);
+      expect(canActAsResponsable(makeActor({ allersVersId: "av-soliha" }), soliha)).toBe(true);
     });
 
-    it("refuse un agent d'une structure AV hors département", () => {
-      expect(
-        canActAsResponsable(makeActor({ allersVersId: "av-2", allersVersDepartements: ["75"] }), responsable)
-      ).toBe(false);
+    it("laisse agir tous les Aller-vers retenus à égalité, même ceux qui ne sont pas nommés", () => {
+      const egalite = responsableAv("av-1", ["av-1", "av-2"]);
+      expect(canActAsResponsable(makeActor({ allersVersId: "av-2" }), egalite)).toBe(true);
+    });
+
+    it("refuse un agent sans Aller-vers", () => {
+      expect(canActAsResponsable(makeActor({ entrepriseAmoId: "amo-1" }), responsableAv("av-1", ["av-1"]))).toBe(false);
     });
   });
 
@@ -66,33 +62,20 @@ describe("canActAsResponsable", () => {
         entrepriseNom: "Entreprise A",
         codeDepartement: "36",
       };
-      const actor = makeActor({
-        entrepriseAmoId: "amo-1",
-        allersVersId: "av-1",
-        allersVersDepartements: ["36"],
-      });
-      expect(canActAsResponsable(actor, responsable)).toBe(true);
+      expect(canActAsResponsable(makeActor({ entrepriseAmoId: "amo-1", allersVersId: "av-1" }), responsable)).toBe(
+        true
+      );
     });
 
-    it("autorise un hybride dont la structure AV couvre le département (responsable AV)", () => {
-      const responsable: Responsable = {
-        type: "AV",
-        structureId: "av-2",
-        structureNom: "Autre AV",
-        codeDepartement: "36",
-      };
-      const actor = makeActor({
-        entrepriseAmoId: "amo-other",
-        allersVersId: "av-1",
-        allersVersDepartements: ["36"],
-      });
-      expect(canActAsResponsable(actor, responsable)).toBe(true);
+    it("refuse un hybride sur un dossier Aller-vers d'un autre territoire du département", () => {
+      const actor = makeActor({ entrepriseAmoId: "amo-alohe", allersVersId: "av-alohe" });
+      expect(canActAsResponsable(actor, responsableAv("av-soliha", ["av-soliha"]))).toBe(false);
     });
   });
 
   describe("responsable INDETERMINE", () => {
     it("refuse même un agent privilégié (pas d'AV ni d'AMO résolu)", () => {
-      const actor = makeActor({ entrepriseAmoId: "amo-1", allersVersId: "av-1", allersVersDepartements: ["36"] });
+      const actor = makeActor({ entrepriseAmoId: "amo-1", allersVersId: "av-1" });
       expect(canActAsResponsable(actor, { type: "INDETERMINE" })).toBe(false);
     });
   });

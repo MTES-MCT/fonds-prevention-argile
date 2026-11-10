@@ -1,3 +1,4 @@
+import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import type { CategorieAffichee } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
 
 export interface ReponseDistribution {
@@ -19,8 +20,20 @@ export interface CritereReponsesStats {
 /** Nombre moyen de réponses de chaque catégorie par simulation ; null si aucune simulation sur la période. */
 export type VulnerabilitePointsMoyens = Record<CategorieAffichee, number | null>;
 
+export interface PointEvolutionSimulations {
+  /** Premier jour du pas (jour, lundi ou 1er du mois), au format AAAA-MM-JJ. */
+  date: string;
+  simulations: number;
+}
+
+export interface EvolutionSimulations {
+  points: PointEvolutionSimulations[];
+  granularite: GranulariteVisites;
+}
+
 export interface VulnerabiliteStatsBdd {
   totalSimulations: number;
+  evolution: EvolutionSimulations;
   reponses: CritereReponsesStats[];
   pointsMoyens: VulnerabilitePointsMoyens;
 }

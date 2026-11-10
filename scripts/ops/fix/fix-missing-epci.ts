@@ -2,11 +2,16 @@
  * Script pour corriger les parcours prévention avec un EPCI manquant
  * en se basant sur l'API geo.gouv.fr
  * 10 parcours concernés au 14/01/2026
+ *
+ * Usage : pnpm fix:epci (dry-run, n'écrit rien) puis pnpm fix:epci --apply
  **/
 import { db } from "@/shared/database/client";
 import { parcoursPrevention } from "@/shared/database/schema/parcours-prevention";
 import { sql } from "drizzle-orm";
 import type { RGASimulationData } from "@/shared/domain/types/rga-simulation.types";
+import { hasFlag } from "../lib/args";
+
+const APPLY = hasFlag("apply");
 
 interface ParcoursWithoutEpci {
   id: string;
@@ -97,7 +102,7 @@ async function updateParcoursWithEpci(parcoursId: string, rgaData: RGASimulation
  * Script principal de correction
  */
 async function fixMissingEpci() {
-  console.log("🚀 Démarrage du script de correction des EPCI manquants\n");
+  console.log(`Correction des EPCI manquants — ${APPLY ? "APPLY" : "DRY-RUN (aucune écriture)"}\n`);
 
   // 1. Récupérer les parcours sans EPCI
   console.log("📊 Récupération des parcours sans EPCI...");
@@ -135,6 +140,13 @@ async function fixMissingEpci() {
 
     console.log(`   ✅ EPCI trouvé: ${epci}`);
 
+    if (!APPLY) {
+      console.log(`   [dry-run] serait mis à jour avec l'EPCI ${epci}`);
+      successCount++;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      continue;
+    }
+
     // Mettre à jour le parcours
     const updated = await updateParcoursWithEpci(p.id, p.rgaSimulationData, epci);
 
@@ -159,7 +171,7 @@ async function fixMissingEpci() {
   console.log("\n" + "=".repeat(60));
   console.log("📊 RÉSUMÉ DE LA CORRECTION");
   console.log("=".repeat(60));
-  console.log(`✅ Succès: ${successCount}`);
+  console.log(`✅ ${APPLY ? "Succès" : "À corriger (relancer avec --apply)"}: ${successCount}`);
   console.log(`❌ Erreurs: ${errorCount}`);
   console.log(`📝 Total traité: ${parcours.length}`);
 
