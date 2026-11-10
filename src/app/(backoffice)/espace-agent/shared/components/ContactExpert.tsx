@@ -1,9 +1,9 @@
 import type { DepartementExpert, ExpertAnnuaire } from "@/features/backoffice";
 
-export function detailExpert(expert: Pick<ExpertAnnuaire, "siret" | "dateValidationDhup">): string {
-  if (!expert.dateValidationDhup) return `SIRET ${expert.siret}`;
+export function detailExpert(expert: Pick<ExpertAnnuaire, "dateValidationDhup">): string | null {
+  if (!expert.dateValidationDhup) return null;
   const validation = new Date(expert.dateValidationDhup).toLocaleDateString("fr-FR", { timeZone: "UTC" });
-  return `SIRET ${expert.siret} · validé par la DHUP le ${validation}`;
+  return `Validé par la DHUP le ${validation}`;
 }
 
 interface ContactExpertProps {

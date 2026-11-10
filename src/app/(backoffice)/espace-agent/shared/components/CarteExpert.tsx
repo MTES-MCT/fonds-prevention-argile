@@ -14,6 +14,7 @@ interface CarteExpertProps {
 /** Carte d'un expert : aucune variante ne doit en distinguer un des autres. */
 export function CarteExpert({ expert, codeDepartement, compacte = false, niveauTitre }: CarteExpertProps) {
   const Titre = niveauTitre ?? (compacte ? "h4" : "h3");
+  const detail = detailExpert(expert);
   return (
     <div className={`fr-card fr-card--no-arrow${compacte ? " fr-card--sm fr-card--grey fr-card--no-border" : ""}`}>
       <div className="fr-card__body">
@@ -22,9 +23,11 @@ export function CarteExpert({ expert, codeDepartement, compacte = false, niveauT
           <div className="fr-card__desc">
             <ContactExpert contact={expert.departements.find((d) => d.code === codeDepartement)} />
           </div>
-          <div className="fr-card__start">
-            <p className="fr-card__detail">{detailExpert(expert)}</p>
-          </div>
+          {detail && (
+            <div className="fr-card__start">
+              <p className="fr-card__detail">{detail}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

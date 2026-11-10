@@ -29,7 +29,7 @@ describe("GrilleExperts", () => {
     expect(screen.getByText(/présentés sans ordre de préférence/)).toBeInTheDocument();
 
     const carte = screen.getAllByRole("listitem")[0];
-    expect(within(carte).getByText("SIRET 39248872200027")).toBeInTheDocument();
+    expect(within(carte).queryByText(/39248872200027/)).not.toBeInTheDocument();
     expect(within(carte).getByRole("link", { name: "a@exemple.fr" })).toHaveAttribute("href", "mailto:a@exemple.fr");
   });
 

@@ -21,10 +21,11 @@ const expert = {
 };
 
 describe("CarteExpert", () => {
-  it("affiche le SIRET et la date de validation DHUP", () => {
+  it("affiche la date de validation DHUP, sans le SIRET", () => {
     render(<CarteExpert expert={expert} codeDepartement="36" />);
     expect(screen.getByRole("heading", { level: 3, name: "Géotech" })).toBeInTheDocument();
-    expect(screen.getByText("SIRET 39248872200027 · validé par la DHUP le 15/05/2026")).toBeInTheDocument();
+    expect(screen.getByText("Validé par la DHUP le 15/05/2026")).toBeInTheDocument();
+    expect(screen.queryByText(/39248872200027/)).not.toBeInTheDocument();
   });
 
   it("met l'email et le téléphone chacun sur sa ligne", () => {
