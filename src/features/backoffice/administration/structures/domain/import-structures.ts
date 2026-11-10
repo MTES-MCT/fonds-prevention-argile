@@ -30,6 +30,8 @@ export type ChampImport =
   | "expertSurPlaceNom"
   | "expertSurPlaceEmail"
   | "expertSurPlaceTelephone"
+  | "expertForfaitDiagnostic"
+  | "expertForfaitReseau"
   | "expertDateValidationDhup"
   | "expertContactInterneNom"
   | "expertContactInterneEmail"
@@ -71,6 +73,12 @@ const ENTETES_PAR_ROLE: Record<RoleImport, Record<string, ChampImport>> = {
     "expert sur place nom": "expertSurPlaceNom",
     "expert sur place email": "expertSurPlaceEmail",
     "expert sur place telephone": "expertSurPlaceTelephone",
+    "forfait diag": "expertForfaitDiagnostic",
+    "forfait diagnostic": "expertForfaitDiagnostic",
+    "forfait diagnostic ht": "expertForfaitDiagnostic",
+    "forfait reseau": "expertForfaitReseau",
+    "forfait reseaux": "expertForfaitReseau",
+    "forfait reseau ht": "expertForfaitReseau",
     "date validation dhup": "expertDateValidationDhup",
     "date de validation dhup": "expertDateValidationDhup",
     "contact interne nom": "expertContactInterneNom",
@@ -190,7 +198,8 @@ function lireAllersVers(v: LigneImport["valeurs"]): PartieLue<HabilitationAllers
 
 function lireExpert(v: LigneImport["valeurs"]): PartieLue<HabilitationExpertSaisie> {
   const champs: ChampImport[] = ["expertDepartements", "expertEmail", "expertTelephone", "expertDateValidationDhup"];
-  if (!remplie(v, [...champs, "expertSurPlaceNom", "expertSurPlaceEmail", "expertSurPlaceTelephone"])) {
+  const surPlace: ChampImport[] = ["expertSurPlaceNom", "expertSurPlaceEmail", "expertSurPlaceTelephone"];
+  if (!remplie(v, [...champs, ...surPlace, "expertForfaitDiagnostic", "expertForfaitReseau"])) {
     return { saisie: null };
   }
   const { codes, inconnus } = lireDepartements(v.expertDepartements ?? "");
@@ -207,6 +216,8 @@ function lireExpert(v: LigneImport["valeurs"]): PartieLue<HabilitationExpertSais
       expertNom: v.expertSurPlaceNom,
       expertEmail: v.expertSurPlaceEmail,
       expertTelephone: telephone(v.expertSurPlaceTelephone),
+      forfaitDiagnosticHt: v.expertForfaitDiagnostic,
+      forfaitReseauHt: v.expertForfaitReseau,
     })),
   });
   return resultat.success ? { saisie: resultat.data } : { motif: `expert : ${premiereErreur(resultat.error.issues)}` };

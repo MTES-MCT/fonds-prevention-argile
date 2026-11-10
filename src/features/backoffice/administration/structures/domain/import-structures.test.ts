@@ -16,8 +16,27 @@ describe("lireEntetes", () => {
     ).toEqual(["nom", "siret", "telephone", "amoDepartements", "amoEmails", "amoCommunes", null]);
     expect(lireEntetes(["siret", "departements", "epci"], "allersVers")).toEqual(["siret", "avDepartements", "avEpci"]);
     expect(
-      lireEntetes(["siret", "departements", "email_reservation", "telephone", "Expert sur place téléphone"], "expert")
-    ).toEqual(["siret", "expertDepartements", "expertEmail", "telephone", "expertSurPlaceTelephone"]);
+      lireEntetes(
+        [
+          "siret",
+          "departements",
+          "email_reservation",
+          "telephone",
+          "Expert sur place téléphone",
+          "forfait_diag",
+          "Forfait réseaux",
+        ],
+        "expert"
+      )
+    ).toEqual([
+      "siret",
+      "expertDepartements",
+      "expertEmail",
+      "telephone",
+      "expertSurPlaceTelephone",
+      "expertForfaitDiagnostic",
+      "expertForfaitReseau",
+    ]);
   });
 
   it("lit le fichier de la DHUP tel quel : son téléphone et son email sont ceux de la réservation", () => {
@@ -46,6 +65,8 @@ describe("lireStructures", () => {
           expertEmail: "i@g.fr",
           expertSurPlaceNom: "Paul Martin",
           expertSurPlaceTelephone: "611223344",
+          expertForfaitDiagnostic: "1 200,50",
+          expertForfaitReseau: "450",
         }),
         ligne(3, { siret: SIRET_EXPERT, adresse: "1 rue", expertDepartements: "3", expertEmail: "a@g.fr" }),
       ],
@@ -70,8 +91,8 @@ describe("lireStructures", () => {
         expertNom: "Paul Martin",
         expertEmail: null,
         expertTelephone: "0611223344",
-        forfaitDiagnosticHt: null,
-        forfaitReseauHt: null,
+        forfaitDiagnosticHt: 1200.5,
+        forfaitReseauHt: 450,
       },
       {
         code: "03",
@@ -105,6 +126,14 @@ describe("lireStructures", () => {
     expect(refus("expert", { nom: "Expert", siret: "39248872200028", expertDepartements: "63" })).toEqual([
       { ligne: 2, motif: "SIRET invalide « 39248872200028 » pour un expert : la clé de contrôle ne correspond pas" },
     ]);
+    expect(
+      refus("expert", {
+        nom: "Géotech",
+        siret: SIRET_EXPERT,
+        expertDepartements: "36",
+        expertForfaitDiagnostic: "douze cents",
+      })
+    ).toEqual([{ ligne: 2, motif: "expert : Montant invalide : un nombre d'euros HT est attendu" }]);
   });
 
   it("refuse une AMO décrite deux fois, et un département d'expert déclaré deux fois", () => {
