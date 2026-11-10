@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getAllAllersVersWithRelationsAction } from "@/features/seo/allers-vers";
+import { getEpciBySiren } from "@/features/seo/services/territoires.service";
 import { ConseillersClient } from "./components/ConseillersClient";
+import { departementsDuConseiller } from "./components/regroupement-conseillers";
 import content from "./content/content.json";
 import Link from "next/link";
 
@@ -18,7 +20,15 @@ export const dynamic = "force-dynamic";
 
 export default async function TrouverConseillerPage() {
   const result = await getAllAllersVersWithRelationsAction();
-  const conseillers = result.success ? result.data : [];
+  // Un Aller-vers déclaré seulement par ses EPCI doit apparaître dans leurs départements.
+  const conseillers = (result.success ? result.data : []).map((conseiller) => ({
+    ...conseiller,
+    departements: departementsDuConseiller(
+      conseiller.departements.map((d) => d.codeDepartement),
+      conseiller.epci.map((e) => e.codeEpci),
+      (code) => getEpciBySiren(code)?.codesDepartements ?? []
+    ).map((codeDepartement) => ({ codeDepartement })),
+  }));
 
   return (
     <main>
