@@ -15,6 +15,7 @@ export type AllersVersWithRelations = {
   telephone: string;
   adresse: string;
   horaires: string | null;
+  libelleZone: string | null;
   departements: { codeDepartement: string }[];
   epci: { codeEpci: string }[];
 };
@@ -51,6 +52,7 @@ export class AllersVersRepository {
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
         horaires: allersVers.horaires,
+        libelleZone: allersVers.libelleZone,
         codeDepartement: allersVersDepartements.codeDepartement,
         codeEpci: allersVersEpci.codeEpci,
       })
@@ -71,6 +73,7 @@ export class AllersVersRepository {
           telephone: row.telephone,
           adresse: row.adresse,
           horaires: row.horaires,
+          libelleZone: row.libelleZone,
           departements: [],
           epci: [],
         });
@@ -118,9 +121,9 @@ export class AllersVersRepository {
   async findHabilitationParStructure(
     structureId: string,
     executor: StructuresExecutor = db
-  ): Promise<{ id: string; emails: string[] } | null> {
+  ): Promise<{ id: string; emails: string[]; libelleZone: string | null } | null> {
     const [ligne] = await executor
-      .select({ id: allersVers.id, emails: allersVers.emails })
+      .select({ id: allersVers.id, emails: allersVers.emails, libelleZone: allersVers.libelleZone })
       .from(allersVers)
       .where(eq(allersVers.structureId, structureId));
     return ligne ?? null;
@@ -135,7 +138,12 @@ export class AllersVersRepository {
   }
 
   /** Ajoute l'habilitation Aller-vers à une structure : la ligne reprend son identité. */
-  async ajouter(structureId: string, emails: string[], executor: StructuresExecutor): Promise<string> {
+  async ajouter(
+    structureId: string,
+    emails: string[],
+    executor: StructuresExecutor,
+    libelleZone: string | null = null
+  ): Promise<string> {
     const identite = await structuresRepository.findIdentite(structureId, executor);
     if (!identite) throw new Error("Structure introuvable");
     const [cree] = await executor
@@ -146,6 +154,7 @@ export class AllersVersRepository {
         telephone: identite.telephone,
         horaires: identite.horaires,
         emails,
+        libelleZone,
         structureId,
       })
       .returning({ id: allersVers.id });
@@ -153,6 +162,18 @@ export class AllersVersRepository {
   }
 
   /** L'équipe seulement : l'identité se modifie sur la structure, le territoire par ses relations. */
+  /** Saisie de la fiche ; l'import, qui ne connaît pas la zone, passe par `mettreAJourEmails`. */
+  async mettreAJourHabilitation(
+    id: string,
+    saisie: { emails: string[]; libelleZone: string | null },
+    executor: StructuresExecutor
+  ): Promise<void> {
+    await executor
+      .update(allersVers)
+      .set({ emails: saisie.emails, libelleZone: saisie.libelleZone })
+      .where(eq(allersVers.id, id));
+  }
+
   async mettreAJourEmails(id: string, emails: string[], executor: StructuresExecutor = db): Promise<boolean> {
     const lignes = await executor
       .update(allersVers)
@@ -295,6 +316,7 @@ export class AllersVersRepository {
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
         horaires: allersVers.horaires,
+        libelleZone: allersVers.libelleZone,
       })
       .from(allersVers)
       .innerJoin(allersVersDepartements, eq(allersVers.id, allersVersDepartements.allersVersId))
@@ -314,6 +336,7 @@ export class AllersVersRepository {
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
         horaires: allersVers.horaires,
+        libelleZone: allersVers.libelleZone,
       })
       .from(allersVers)
       .innerJoin(allersVersEpci, eq(allersVers.id, allersVersEpci.allersVersId))

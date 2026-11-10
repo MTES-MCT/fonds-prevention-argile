@@ -188,6 +188,7 @@ Les agents conservés (`@beta.gouv.fr`, `@yopmail.com`) ne sont pas touchés.
 | --------------------------------------------------- | ------------- | ------------------------------------------------------------ |
 | `nom`, `emails`, `telephone`, `adresse`, `horaires` | Professionnel | Conservées : coordonnées publiées aux demandeurs sur le site |
 | `id`, `structure_id`                                | Non personnel | Conservées                                                   |
+| `libelle_zone`                                      | Non personnel | Conservée : zone d'intervention publiée sur le site          |
 
 ### `allers_vers_departements`
 

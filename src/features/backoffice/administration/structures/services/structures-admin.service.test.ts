@@ -203,7 +203,7 @@ describe("structures-admin.service", () => {
         departements: "Indre 36",
         emails: "a@amo.fr",
       });
-      vi.mocked(allersVersRepository.findHabilitationParStructure).mockResolvedValue({ id: "av-1", emails: [] });
+      vi.mocked(allersVersRepository.findHabilitationParStructure).mockResolvedValue({ id: "av-1", emails: [], libelleZone: null });
 
       await supprimerStructure("s1");
 

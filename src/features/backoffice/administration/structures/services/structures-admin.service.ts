@@ -106,6 +106,7 @@ export async function chargerFiche(structureId: string, lecteurSuperAdmin: boole
       ? {
           id: allersVers.id,
           emails: allersVers.emails,
+          libelleZone: allersVers.libelleZone,
           departements: await allersVersRepository.getDepartementsByAllersVersId(allersVers.id),
           epci: await allersVersRepository.getEpcisByAllersVersId(allersVers.id),
         }
@@ -164,7 +165,7 @@ async function inscrireHabilitation(
     await entreprisesAmoRepository.updateCommunesRelations(id, demande.saisie.communes, tx);
     await entreprisesAmoRepository.updateEpciRelations(id, demande.saisie.epci, tx);
   } else if (demande.habilitation === "allersVers") {
-    const id = await allersVersRepository.ajouter(structureId, demande.saisie.emails, tx);
+    const id = await allersVersRepository.ajouter(structureId, demande.saisie.emails, tx, demande.saisie.libelleZone);
     await allersVersRepository.updateDepartementsRelations(id, demande.saisie.departements, tx);
     await allersVersRepository.updateEpciRelations(id, demande.saisie.epci, tx);
   } else {
@@ -249,7 +250,7 @@ export async function modifierHabilitation(structureId: string, demande: Habilit
     } else if (demande.habilitation === "allersVers") {
       const allersVers = await allersVersRepository.findHabilitationParStructure(structureId, tx);
       if (!allersVers) throw new RefusOperationStructure("La structure n'a pas d'habilitation Aller-vers");
-      await allersVersRepository.mettreAJourEmails(allersVers.id, demande.saisie.emails, tx);
+      await allersVersRepository.mettreAJourHabilitation(allersVers.id, demande.saisie, tx);
       await allersVersRepository.updateDepartementsRelations(allersVers.id, demande.saisie.departements, tx);
       await allersVersRepository.updateEpciRelations(allersVers.id, demande.saisie.epci, tx);
     } else {

@@ -10,6 +10,7 @@ export interface AllersVersFormulaire {
   emails: string;
   departements: string[];
   epci: string[];
+  libelleZone: string;
 }
 
 /** Forme attendue par `habilitationAllersVersSchema`. */
@@ -17,6 +18,7 @@ export interface SaisieAllersVers {
   emails: string;
   departements: string[];
   epci: string[];
+  libelleZone: string;
 }
 
 export function allersVersDepuis(allersVers: HabilitationAllersVersFiche | null): AllersVersFormulaire {
@@ -25,6 +27,7 @@ export function allersVersDepuis(allersVers: HabilitationAllersVersFiche | null)
     // Certaines couvertures stockent « 3 » pour l'Allier : la liste ne connaît que « 03 ».
     departements: [...new Set(allersVers?.departements.map(toOfficialCodeDepartement) ?? [])],
     epci: allersVers?.epci ?? [],
+    libelleZone: allersVers?.libelleZone ?? "",
   };
 }
 
@@ -96,6 +99,25 @@ export default function ChampsAllersVers({ idPrefix, valeur, onChange, isLoading
         disabled={isLoading}
         indisponible={erreur}
       />
+
+      <div className="fr-input-group">
+        <label className="fr-label" htmlFor={`${idPrefix}-zone`}>
+          Zone affichée au public
+          <span className="fr-hint-text">
+            Titre de son groupe sur « Trouver mon conseiller local » quand plusieurs Aller-vers se partagent un
+            département. Ex. : Pour la métropole de Nancy. Facultatif
+          </span>
+        </label>
+        <input
+          className="fr-input"
+          type="text"
+          id={`${idPrefix}-zone`}
+          maxLength={150}
+          value={valeur.libelleZone}
+          disabled={isLoading}
+          onChange={(e) => onChange({ ...valeur, libelleZone: e.target.value })}
+        />
+      </div>
     </>
   );
 }

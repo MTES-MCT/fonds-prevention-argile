@@ -141,7 +141,7 @@ describe("StructuresPanel", () => {
     expect(creerStructureAction).toHaveBeenCalledWith({
       identite: { nom: "Adil 03", siret: "", adresse: "", telephone: "", horaires: "" },
       habilitation: "allersVers",
-      saisie: { emails: "contact@adil03.test", departements: ["03", "36"], epci: ["243600236"] },
+      saisie: { emails: "contact@adil03.test", departements: ["03", "36"], epci: ["243600236"], libelleZone: "" },
     });
   });
 

@@ -75,6 +75,7 @@ export interface HabilitationAmoFiche {
 export interface HabilitationAllersVersFiche {
   id: string;
   emails: string[];
+  libelleZone: string | null;
   departements: string[];
   epci: string[];
 }
@@ -183,6 +184,12 @@ export const habilitationAllersVersSchema = z
       })
     ),
     epci: codesEpci.default([]),
+    libelleZone: z
+      .string()
+      .trim()
+      .max(150, "Zone trop longue")
+      .nullish()
+      .transform((valeur) => valeur || null),
   })
   .refine((saisie) => saisie.departements.length + saisie.epci.length > 0, "Au moins un département ou un EPCI");
 

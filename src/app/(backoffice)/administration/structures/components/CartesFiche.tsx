@@ -174,6 +174,7 @@ export function CarteAllersVers({
             <Champ libelle="EPCI">
               <ListeEpci codes={allersVers.epci} nomEpci={nomEpci} />
             </Champ>
+            <Champ libelle="Zone affichée">{allersVers.libelleZone || <NonRenseigne texte="Aucune" />}</Champ>
           </ListeChamps>
         </Rubrique>
         <Rubrique titre="Emails de l'équipe">
