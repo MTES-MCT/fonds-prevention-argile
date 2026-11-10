@@ -8,6 +8,9 @@ export interface DepartementExpertLu {
   codeDepartement: string;
   email: string | null;
   telephone: string | null;
+  expertNom: string | null;
+  expertEmail: string | null;
+  expertTelephone: string | null;
 }
 
 export interface ExpertLu {
@@ -30,7 +33,14 @@ export interface ExpertAEnregistrer {
   contactInterneNom: string | null;
   contactInterneEmail: string | null;
   contactInterneTelephone: string | null;
-  departements: { code: string; email: string | null; telephone: string | null }[];
+  departements: {
+    code: string;
+    email: string | null;
+    telephone: string | null;
+    expertNom: string | null;
+    expertEmail: string | null;
+    expertTelephone: string | null;
+  }[];
 }
 
 export class ExpertsRepository {
@@ -133,6 +143,9 @@ export class ExpertsRepository {
         codeDepartement: departement.code,
         email: departement.email,
         telephone: departement.telephone,
+        expertNom: departement.expertNom,
+        expertEmail: departement.expertEmail,
+        expertTelephone: departement.expertTelephone,
       }))
     );
   }
@@ -177,6 +190,9 @@ export class ExpertsRepository {
           codeDepartement: departement.codeDepartement,
           email: departement.email,
           telephone: departement.telephone,
+          expertNom: departement.expertNom,
+          expertEmail: departement.expertEmail,
+          expertTelephone: departement.expertTelephone,
         })),
     }));
   }

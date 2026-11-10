@@ -43,7 +43,16 @@ const EXPERT_INDRE = {
   desactiveAt: null,
   desactiveParNom: null,
   desactiveRaison: null,
-  departements: [{ codeDepartement: "36", email: "indre@exemple.fr", telephone: null }],
+  departements: [
+    {
+      codeDepartement: "36",
+      email: "indre@exemple.fr",
+      telephone: null,
+      expertNom: null,
+      expertEmail: null,
+      expertTelephone: null,
+    },
+  ],
 };
 
 const EXPERT_ALLIER = {
@@ -51,8 +60,22 @@ const EXPERT_ALLIER = {
   id: "e-2",
   nom: "Alpha Sols",
   departements: [
-    { codeDepartement: "03", email: "allier@exemple.fr", telephone: null },
-    { codeDepartement: "36", email: "alpha-indre@exemple.fr", telephone: null },
+    {
+      codeDepartement: "03",
+      email: "allier@exemple.fr",
+      telephone: null,
+      expertNom: null,
+      expertEmail: null,
+      expertTelephone: null,
+    },
+    {
+      codeDepartement: "36",
+      email: "alpha-indre@exemple.fr",
+      telephone: null,
+      expertNom: null,
+      expertEmail: null,
+      expertTelephone: null,
+    },
   ],
 };
 
@@ -86,7 +109,15 @@ describe("chargerAnnuaireExperts", () => {
     expect(parCode["36"]).toEqual(["Alpha Sols", "Géotech"]);
     expect(parCode["24"]).toEqual([]);
     expect(annuaire.sections.find((s) => s.code === "36")?.experts[0].departements).toEqual([
-      { code: "36", nom: "Indre", email: "alpha-indre@exemple.fr", telephone: null },
+      {
+        code: "36",
+        nom: "Indre",
+        email: "alpha-indre@exemple.fr",
+        telephone: null,
+        expertNom: null,
+        expertEmail: null,
+        expertTelephone: null,
+      },
     ]);
   });
 

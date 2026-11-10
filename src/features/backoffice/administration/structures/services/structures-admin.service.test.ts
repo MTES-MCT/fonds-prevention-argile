@@ -78,7 +78,9 @@ const EXPERT = {
   desactiveAt: new Date("2026-10-01"),
   desactiveParNom: null,
   desactiveRaison: "Départ",
-  departements: [{ codeDepartement: "63", email: null, telephone: null }],
+  departements: [
+    { codeDepartement: "63", email: null, telephone: null, expertNom: null, expertEmail: null, expertTelephone: null },
+  ],
 };
 
 describe("structures-admin.service", () => {
@@ -203,7 +205,11 @@ describe("structures-admin.service", () => {
         departements: "Indre 36",
         emails: "a@amo.fr",
       });
-      vi.mocked(allersVersRepository.findHabilitationParStructure).mockResolvedValue({ id: "av-1", emails: [], libelleZone: null });
+      vi.mocked(allersVersRepository.findHabilitationParStructure).mockResolvedValue({
+        id: "av-1",
+        emails: [],
+        libelleZone: null,
+      });
 
       await supprimerStructure("s1");
 

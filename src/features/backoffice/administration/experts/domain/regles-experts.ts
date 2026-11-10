@@ -167,6 +167,9 @@ export const departementExpertSchema = z.object({
   }),
   email: optionnel(email),
   telephone: optionnel(telephone),
+  expertNom: optionnel(z.string().trim().max(255)),
+  expertEmail: optionnel(email),
+  expertTelephone: optionnel(telephone),
 });
 
 export const expertSchema = z.object({

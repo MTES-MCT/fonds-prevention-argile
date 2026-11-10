@@ -146,13 +146,22 @@ describe("expertSchema", () => {
   const valide = {
     nom: "Géotech",
     siret: "392 488 722 00027",
-    departements: [{ code: "3", email: "", telephone: "04 00 00 00 00" }],
+    departements: [{ code: "3", email: "", telephone: "04 00 00 00 00", expertNom: "", expertEmail: "" }],
   };
 
   it("normalise SIRET et départements, et vide les champs laissés blancs", () => {
     const resultat = expertSchema.parse(valide);
     expect(resultat.siret).toBe("39248872200027");
-    expect(resultat.departements).toEqual([{ code: "03", email: null, telephone: "04 00 00 00 00" }]);
+    expect(resultat.departements).toEqual([
+      {
+        code: "03",
+        email: null,
+        telephone: "04 00 00 00 00",
+        expertNom: null,
+        expertEmail: null,
+        expertTelephone: null,
+      },
+    ]);
     expect(resultat.contactInterneEmail).toBeNull();
   });
 

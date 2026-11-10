@@ -633,7 +633,8 @@ une structure qui n'est qu'un expert n'est pas proposée dans le formulaire agen
   seulement**, aucun pour un analyste national).
 
 Le serveur ne renvoie à chacun que ses champs, par projection : `ExpertAnnuaire` (raison sociale, SIRET,
-date de validation DHUP, départements et contact de réservation) pour les agents et l'administrateur,
+date de validation DHUP, départements, contact de réservation et expert sur place) pour les agents et
+l'administrateur,
 `ExpertGestion` (plus le contact interne et la désactivation) pour le super-administrateur seul. Rien
 n'est masqué dans l'interface : un champ absent de la réponse ne peut pas fuiter.
 

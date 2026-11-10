@@ -216,10 +216,11 @@ Experts RGA validés par la DHUP, sans compte (ADR-0052). Absente d'un dump ant�
 
 ### `experts_departements`
 
-| Colonnes                        | Nature        | À la restauration                                                                       |
-| ------------------------------- | ------------- | --------------------------------------------------------------------------------------- |
-| `email`, `telephone`            | Professionnel | Conservées : contact de réservation communiqué aux agents, traité comme celui d'une AMO |
-| `expert_id`, `code_departement` | Non personnel | Conservées                                                                              |
+| Colonnes                                         | Nature             | À la restauration                                                                                                                |
+| ------------------------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `email`, `telephone`                             | Professionnel      | Conservées : contact de réservation communiqué aux agents, traité comme celui d'une AMO                                          |
+| `expert_nom`, `expert_email`, `expert_telephone` | Identifiant direct | Remplacées par `Expert anonymisé`, une adresse `@anonyme.invalid` et `0600000000` : la personne qui se déplace chez le demandeur |
+| `expert_id`, `code_departement`                  | Non personnel      | Conservées                                                                                                                       |
 
 ### `agent_permissions`
 

@@ -22,7 +22,9 @@ une liste d'entreprises privées, l'ordre d'affichage ne doit favoriser personne
 
 - Tables `experts` (`structure_id` unique, comme `entreprises_amo` et `allers_vers`) et
   `experts_departements` : un département en code officiel par ligne, avec le contact de réservation
-  propre à ce département.
+  propre à ce département et, facultatif, l'expert qui se déplace chez le demandeur (nom, email,
+  téléphone). Certaines sociétés réservent par une équipe administrative et envoient un expert nommé :
+  l'agent sait ainsi qui viendra.
 - Une entreprise à la fois AMO et experte a deux structures de même SIRET : une structure expert ne
   porte que l'expertise ([ADR-0053](0053-identite-portee-par-la-structure.md)). L'habilitation expert ne
   change le rôle d'aucun agent : `roleDepuisStructure` ne lit que AMO et Aller-vers.

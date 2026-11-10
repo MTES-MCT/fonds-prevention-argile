@@ -26,7 +26,8 @@ export const experts = pgTable("experts", {
     .$onUpdate(() => new Date()),
 });
 
-// Un département d'intervention, en code officiel, avec le contact de réservation propre à ce département.
+// Un département d'intervention, en code officiel : le contact de réservation (souvent une équipe administrative)
+// et l'expert qui se déplace chez le demandeur.
 export const expertsDepartements = pgTable(
   "experts_departements",
   {
@@ -36,6 +37,9 @@ export const expertsDepartements = pgTable(
     codeDepartement: text("code_departement").notNull(),
     email: varchar("email", { length: 255 }),
     telephone: varchar("telephone", { length: 20 }),
+    expertNom: varchar("expert_nom", { length: 255 }),
+    expertEmail: varchar("expert_email", { length: 255 }),
+    expertTelephone: varchar("expert_telephone", { length: 20 }),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.expertId, table.codeDepartement] }),
