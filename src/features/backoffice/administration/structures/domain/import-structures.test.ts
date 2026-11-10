@@ -70,8 +70,19 @@ describe("lireStructures", () => {
         expertNom: "Paul Martin",
         expertEmail: null,
         expertTelephone: "0611223344",
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
       },
-      { code: "03", email: "a@g.fr", telephone: null, expertNom: null, expertEmail: null, expertTelephone: null },
+      {
+        code: "03",
+        email: "a@g.fr",
+        telephone: null,
+        expertNom: null,
+        expertEmail: null,
+        expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
+      },
     ]);
   });
 

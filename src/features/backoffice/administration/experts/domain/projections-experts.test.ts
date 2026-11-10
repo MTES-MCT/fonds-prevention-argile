@@ -21,6 +21,8 @@ function expert(champs: Partial<ExpertComplet> & { nom: string }): ExpertComplet
         expertNom: null,
         expertEmail: null,
         expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
       },
     ],
     ...champs,
@@ -36,7 +38,13 @@ describe("versAnnuaire", () => {
   });
 
   it("donne aux agents l'expert qui se déplace dans chaque département", () => {
-    const surPlace = { expertNom: "Paul Martin", expertEmail: "paul@exemple.fr", expertTelephone: "0611223344" };
+    const surPlace = {
+      expertNom: "Paul Martin",
+      expertEmail: "paul@exemple.fr",
+      expertTelephone: "0611223344",
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
+    };
     const annuaire = versAnnuaire(
       expert({
         nom: "Géotech",
@@ -83,6 +91,8 @@ describe("annuaireDuDepartement", () => {
           expertNom: null,
           expertEmail: null,
           expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
         },
       ],
     }),
@@ -96,6 +106,8 @@ describe("annuaireDuDepartement", () => {
           expertNom: null,
           expertEmail: null,
           expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
         },
         {
           codeDepartement: "18",
@@ -104,6 +116,8 @@ describe("annuaireDuDepartement", () => {
           expertNom: null,
           expertEmail: null,
           expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
         },
       ],
     }),
@@ -128,6 +142,8 @@ describe("annuaireDuDepartement", () => {
         expertNom: null,
         expertEmail: null,
         expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
       },
     ]);
   });

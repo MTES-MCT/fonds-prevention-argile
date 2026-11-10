@@ -11,6 +11,8 @@ export interface DepartementExpertLu {
   expertNom: string | null;
   expertEmail: string | null;
   expertTelephone: string | null;
+  forfaitDiagnosticHt: number | null;
+  forfaitReseauHt: number | null;
 }
 
 export interface ExpertLu {
@@ -40,6 +42,8 @@ export interface ExpertAEnregistrer {
     expertNom: string | null;
     expertEmail: string | null;
     expertTelephone: string | null;
+    forfaitDiagnosticHt: number | null;
+    forfaitReseauHt: number | null;
   }[];
 }
 
@@ -146,6 +150,8 @@ export class ExpertsRepository {
         expertNom: departement.expertNom,
         expertEmail: departement.expertEmail,
         expertTelephone: departement.expertTelephone,
+        forfaitDiagnosticHt: departement.forfaitDiagnosticHt,
+        forfaitReseauHt: departement.forfaitReseauHt,
       }))
     );
   }
@@ -193,6 +199,8 @@ export class ExpertsRepository {
           expertNom: departement.expertNom,
           expertEmail: departement.expertEmail,
           expertTelephone: departement.expertTelephone,
+          forfaitDiagnosticHt: departement.forfaitDiagnosticHt,
+          forfaitReseauHt: departement.forfaitReseauHt,
         })),
     }));
   }

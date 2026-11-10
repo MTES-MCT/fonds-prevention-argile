@@ -16,6 +16,8 @@ const expert = {
       expertNom: null,
       expertEmail: null,
       expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
     },
   ],
 };
@@ -50,6 +52,8 @@ describe("CarteExpert", () => {
           expertNom: null,
           expertEmail: null,
           expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
         },
       ],
     };
@@ -67,6 +71,8 @@ describe("CarteExpert", () => {
           expertNom: "Paul Martin",
           expertEmail: "paul@exemple.fr",
           expertTelephone: "06 11 22 33 44",
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
         },
       ],
     };

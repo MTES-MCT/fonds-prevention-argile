@@ -1,4 +1,4 @@
-import { date, index, pgTable, primaryKey, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { date, index, numeric, pgTable, primaryKey, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { agents } from "./agents";
 import { structures } from "./structures";
 
@@ -40,6 +40,9 @@ export const expertsDepartements = pgTable(
     expertNom: varchar("expert_nom", { length: 255 }),
     expertEmail: varchar("expert_email", { length: 255 }),
     expertTelephone: varchar("expert_telephone", { length: 20 }),
+    // Montants HT de la prestation dans ce département, en euros.
+    forfaitDiagnosticHt: numeric("forfait_diagnostic_ht", { precision: 10, scale: 2, mode: "number" }),
+    forfaitReseauHt: numeric("forfait_reseau_ht", { precision: 10, scale: 2, mode: "number" }),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.expertId, table.codeDepartement] }),

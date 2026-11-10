@@ -51,6 +51,8 @@ const EXPERT_INDRE = {
       expertNom: null,
       expertEmail: null,
       expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
     },
   ],
 };
@@ -67,6 +69,8 @@ const EXPERT_ALLIER = {
       expertNom: null,
       expertEmail: null,
       expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
     },
     {
       codeDepartement: "36",
@@ -75,6 +79,8 @@ const EXPERT_ALLIER = {
       expertNom: null,
       expertEmail: null,
       expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
     },
   ],
 };
@@ -117,6 +123,8 @@ describe("chargerAnnuaireExperts", () => {
         expertNom: null,
         expertEmail: null,
         expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
       },
     ]);
   });

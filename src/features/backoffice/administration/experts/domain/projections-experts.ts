@@ -19,6 +19,8 @@ export function versAnnuaire(expert: ExpertComplet): ExpertAnnuaire {
         expertNom: departement.expertNom,
         expertEmail: departement.expertEmail,
         expertTelephone: departement.expertTelephone,
+        forfaitDiagnosticHt: departement.forfaitDiagnosticHt,
+        forfaitReseauHt: departement.forfaitReseauHt,
       })),
   };
 }

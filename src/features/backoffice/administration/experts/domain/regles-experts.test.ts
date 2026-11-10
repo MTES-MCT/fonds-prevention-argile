@@ -160,9 +160,29 @@ describe("expertSchema", () => {
         expertNom: null,
         expertEmail: null,
         expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
       },
     ]);
     expect(resultat.contactInterneEmail).toBeNull();
+  });
+
+  it("lit un forfait HT écrit à la française, avec ou sans symbole, ou déjà en nombre", () => {
+    const forfaits = (forfaitDiagnosticHt: unknown, forfaitReseauHt: unknown) =>
+      expertSchema.parse({ ...valide, departements: [{ code: "36", forfaitDiagnosticHt, forfaitReseauHt }] })
+        .departements[0];
+    expect(forfaits("1 200,50 € HT", 450)).toMatchObject({ forfaitDiagnosticHt: 1200.5, forfaitReseauHt: 450 });
+    expect(forfaits("1200.5", "")).toMatchObject({ forfaitDiagnosticHt: 1200.5, forfaitReseauHt: null });
+  });
+
+  it("refuse un forfait qui n'est pas un montant en euros", () => {
+    for (const montant of ["douze", "-50", "12,345", "1.200,50"]) {
+      const resultat = expertSchema.safeParse({
+        ...valide,
+        departements: [{ code: "36", forfaitDiagnosticHt: montant }],
+      });
+      expect(resultat.success, montant).toBe(false);
+    }
   });
 
   it("refuse un département déclaré deux fois, même écrit différemment", () => {

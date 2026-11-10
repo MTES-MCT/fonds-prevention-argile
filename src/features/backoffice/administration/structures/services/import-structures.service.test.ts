@@ -198,6 +198,8 @@ describe("importerStructures", () => {
             expertNom: null,
             expertEmail: null,
             expertTelephone: null,
+            forfaitDiagnosticHt: null,
+            forfaitReseauHt: null,
           },
         ],
       }),

@@ -48,6 +48,8 @@ const EXPERT_ANNUAIRE: ExpertAnnuaire = {
       expertNom: "Luc Morel",
       expertEmail: null,
       expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
     },
   ],
 };

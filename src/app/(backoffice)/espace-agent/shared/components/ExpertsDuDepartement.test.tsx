@@ -16,6 +16,8 @@ const expert = (id: string, nom: string) => ({
       expertNom: null,
       expertEmail: null,
       expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
     },
   ],
 });

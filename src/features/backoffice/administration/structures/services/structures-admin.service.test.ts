@@ -79,7 +79,16 @@ const EXPERT = {
   desactiveParNom: null,
   desactiveRaison: "Départ",
   departements: [
-    { codeDepartement: "63", email: null, telephone: null, expertNom: null, expertEmail: null, expertTelephone: null },
+    {
+      codeDepartement: "63",
+      email: null,
+      telephone: null,
+      expertNom: null,
+      expertEmail: null,
+      expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
+    },
   ],
 };
 

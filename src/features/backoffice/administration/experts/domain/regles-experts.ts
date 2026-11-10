@@ -153,6 +153,17 @@ const telephone = z
   .max(20, "Téléphone trop long")
   .regex(/^[0-9+().\s-]*$/, "Téléphone invalide");
 const email = z.string().trim().max(255).email("Email invalide");
+// Excel et la saisie donnent « 1 200,50 € », « 1200.5 » ou 1200 : tout se ramène à des euros.
+const montantHt = z
+  .union([
+    z.number(),
+    z
+      .string()
+      .transform((texte) => texte.replace(/[\s€]|HT/gi, "").replace(",", "."))
+      .refine((texte) => /^\d+(\.\d{1,2})?$/.test(texte), "Montant invalide : un nombre d'euros HT est attendu")
+      .transform(Number),
+  ])
+  .pipe(z.number().min(0, "Montant invalide").max(99_999_999.99, "Montant trop élevé"));
 const optionnel = <T extends z.ZodTypeAny>(schema: T) =>
   z
     .union([z.literal("").transform(() => null), schema])
@@ -170,6 +181,8 @@ export const departementExpertSchema = z.object({
   expertNom: optionnel(z.string().trim().max(255)),
   expertEmail: optionnel(email),
   expertTelephone: optionnel(telephone),
+  forfaitDiagnosticHt: optionnel(montantHt),
+  forfaitReseauHt: optionnel(montantHt),
 });
 
 export const expertSchema = z.object({

@@ -7,6 +7,8 @@ export interface DepartementExpert {
   expertNom: string | null;
   expertEmail: string | null;
   expertTelephone: string | null;
+  forfaitDiagnosticHt: number | null;
+  forfaitReseauHt: number | null;
 }
 
 /**
@@ -46,5 +48,7 @@ export interface ExpertComplet {
     expertNom: string | null;
     expertEmail: string | null;
     expertTelephone: string | null;
+    forfaitDiagnosticHt: number | null;
+    forfaitReseauHt: number | null;
   }[];
 }
