@@ -43,6 +43,7 @@ import {
   getDepartementName,
 } from "@/shared/constants/departements.constants";
 import { asString } from "@/shared/utils/object.utils";
+import { classerTopCommunes } from "../domain/top-communes";
 import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
@@ -1137,28 +1138,7 @@ async function getTopCommunesStats(
     .from(parcoursPrevention)
     .where(and(...conditions));
 
-  // Grouper par commune
-  const communeMap = new Map<string, { commune: string; codeDepartement: string; simulations: number }>();
-
-  for (const p of parcours) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const agentData = p.rgaSimulationDataAgent as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userData = p.rgaSimulationData as any;
-
-    const communeNom = asString(agentData?.logement?.commune_nom) ?? asString(userData?.logement?.commune_nom);
-    const codeDept = asString(agentData?.logement?.code_departement) ?? asString(userData?.logement?.code_departement);
-
-    if (!communeNom || !codeDept) continue;
-    if (codeDepartement && codeDept !== codeDepartement) continue;
-
-    const key = `${communeNom}_${codeDept}`;
-    const entry = communeMap.get(key) ?? { commune: communeNom, codeDepartement: codeDept, simulations: 0 };
-    entry.simulations += 1;
-    communeMap.set(key, entry);
-  }
-
-  return [...communeMap.values()].sort((a, b) => b.simulations - a.simulations).slice(0, 5);
+  return classerTopCommunes(parcours, codeDepartement);
 }
 
 /**
