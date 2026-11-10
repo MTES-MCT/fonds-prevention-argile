@@ -110,6 +110,13 @@ function debutDuPas(date: Date, granularite: GranulariteVisites): Date {
   return d;
 }
 
+// Boucle plutôt que Math.min(...dates) : l'étalement dépasse la pile au-delà de 100 000 lignes environ.
+function premiereDate(dates: Date[]): Date | null {
+  let premiere: Date | null = null;
+  for (const date of dates) if (premiere === null || date < premiere) premiere = date;
+  return premiere;
+}
+
 function pasSuivant(date: Date, granularite: GranulariteVisites): Date {
   const d = new Date(date);
   if (granularite === "month") d.setUTCMonth(d.getUTCMonth() + 1);
@@ -117,7 +124,7 @@ function pasSuivant(date: Date, granularite: GranulariteVisites): Date {
   return d;
 }
 
-/** Un point par pas de `debut` à `fin`, à zéro quand aucune simulation n'y tombe. */
+/** Un point par pas achevé, du pas qui contient `debut` au dernier terminé avant `fin`, à zéro sans simulation. */
 export function compterSimulationsParPas(
   dates: Date[],
   debut: Date,
@@ -125,7 +132,11 @@ export function compterSimulationsParPas(
   granularite: GranulariteVisites
 ): EvolutionSimulations {
   const compte = new Map<string, number>();
-  for (let pas = debutDuPas(debut, granularite); pas <= fin; pas = pasSuivant(pas, granularite)) {
+  for (
+    let pas = debutDuPas(debut, granularite);
+    pasSuivant(pas, granularite) <= fin;
+    pas = pasSuivant(pas, granularite)
+  ) {
     compte.set(pas.toISOString().slice(0, 10), 0);
   }
   for (const date of dates) {
@@ -142,17 +153,20 @@ export function compterSimulationsParPas(
  */
 export async function getVulnerabiliteStatsBdd(periodeId: PeriodeId): Promise<VulnerabiliteStatsBdd> {
   const { debut, fin } = getDateRange(periodeId);
-  const rows = await vulnerabiliteSimulationsRepo.findSince(debut);
-  const dates = rows.map((r) => r.createdAt);
+  const granularite = getGranulariteForPeriode(periodeId);
   // « Depuis le début » part de 1970 : la série commence à la première simulation.
-  const debutSerie =
-    debut.getTime() === 0 ? new Date(Math.min(fin.getTime(), ...dates.map((d) => d.getTime()))) : debut;
+  const depuisLeDebut = debut.getTime() === 0;
+  // Premier pas chargé en entier : tronqué, il creuserait le début de la courbe.
+  const rows = await vulnerabiliteSimulationsRepo.findSince(depuisLeDebut ? debut : debutDuPas(debut, granularite));
+  const rowsPeriode = rows.filter((r) => r.createdAt >= debut);
+  const dates = rows.map((r) => r.createdAt);
+  const debutSerie = depuisLeDebut ? (premiereDate(dates) ?? fin) : debut;
 
   return {
-    totalSimulations: rows.length,
-    evolution: compterSimulationsParPas(dates, debutSerie, fin, getGranulariteForPeriode(periodeId)),
-    reponses: computeReponsesStats(rows),
-    pointsMoyens: computePointsMoyens(rows),
+    totalSimulations: rowsPeriode.length,
+    evolution: compterSimulationsParPas(dates, debutSerie, fin, granularite),
+    reponses: computeReponsesStats(rowsPeriode),
+    pointsMoyens: computePointsMoyens(rowsPeriode),
   };
 }
 

@@ -32,7 +32,8 @@ vi.mock("@/shared/config/env.config", () => ({
 function makeRow(overrides: Partial<VulnerabiliteSimulation> = {}): VulnerabiliteSimulation {
   return {
     id: "id",
-    createdAt: new Date("2026-06-01"),
+    // Dans la période : le service écarte les lignes antérieures au début de la période.
+    createdAt: new Date(),
     codeDepartement: "36",
     aleaRga: "fort",
     penteTerrain: "vers_facade_drainee",
@@ -55,31 +56,76 @@ describe("getVulnerabiliteStatsBdd", () => {
     vi.clearAllMocks();
   });
 
-  it("choisit le pas selon la période, comme les graphes Matomo", async () => {
-    vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([]);
+  describe("évolution des simulations", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-10T09:00:00Z"));
+    });
 
-    expect((await getVulnerabiliteStatsBdd("30j")).evolution.granularite).toBe("day");
-    expect((await getVulnerabiliteStatsBdd("90j")).evolution.granularite).toBe("week");
-    expect((await getVulnerabiliteStatsBdd("12m")).evolution.granularite).toBe("month");
-  });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-  it("couvre toute la période choisie, jours sans simulation compris", async () => {
-    vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([]);
+    async function evolution(periode: Parameters<typeof getVulnerabiliteStatsBdd>[0]) {
+      return (await getVulnerabiliteStatsBdd(periode)).evolution;
+    }
 
-    const { evolution } = await getVulnerabiliteStatsBdd("7j");
+    it("choisit le pas selon la période, comme les graphes Matomo", async () => {
+      vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([]);
 
-    expect(evolution.points.length).toBeGreaterThanOrEqual(8);
-    expect(evolution.points.every((p) => p.simulations === 0)).toBe(true);
-  });
+      expect((await evolution("30j")).granularite).toBe("day");
+      expect((await evolution("90j")).granularite).toBe("week");
+      expect((await evolution("12m")).granularite).toBe("month");
+    });
 
-  it("fait commencer « Depuis le début » au mois de la première simulation", async () => {
-    vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
-      makeRow({ createdAt: new Date("2026-06-15T10:00:00Z") }),
-    ]);
+    it("trace autant de pas complets que la période en compte, jours sans simulation compris", async () => {
+      vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([]);
 
-    const { evolution } = await getVulnerabiliteStatsBdd("tout");
+      const bornes = async (periode: Parameters<typeof getVulnerabiliteStatsBdd>[0]) => {
+        const { points } = await evolution(periode);
+        return [points.length, points[0].date, points.at(-1)?.date];
+      };
 
-    expect(evolution.points[0]).toEqual({ date: "2026-06-01", simulations: 1 });
+      expect(await bornes("7j")).toEqual([7, "2026-11-03", "2026-11-09"]);
+      expect(await bornes("30j")).toEqual([30, "2026-10-11", "2026-11-09"]);
+      expect(await bornes("90j")).toEqual([13, "2026-08-10", "2026-11-02"]);
+      expect(await bornes("12m")).toEqual([12, "2025-11-01", "2026-10-01"]);
+      expect((await evolution("7j")).points.every((p) => p.simulations === 0)).toBe(true);
+    });
+
+    it("compte le premier pas en entier et laisse de côté le pas en cours", async () => {
+      vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
+        makeRow({ createdAt: new Date("2025-11-02T10:00:00Z") }),
+        makeRow({ createdAt: new Date("2025-11-20T10:00:00Z") }),
+        makeRow({ createdAt: new Date("2026-11-05T10:00:00Z") }),
+      ]);
+
+      const stats = await getVulnerabiliteStatsBdd("12m");
+
+      expect(vulnerabiliteSimulationsRepo.findSince).toHaveBeenCalledWith(new Date("2025-11-01T00:00:00Z"));
+      expect(stats.evolution.points[0]).toEqual({ date: "2025-11-01", simulations: 2 });
+      expect(stats.evolution.points.map((p) => p.date)).not.toContain("2026-11-01");
+      // Les cartes gardent la période exacte : la simulation du 2 novembre 2025 n'en fait pas partie.
+      expect(stats.totalSimulations).toBe(2);
+    });
+
+    it("fait commencer « Depuis le début » au mois de la première simulation", async () => {
+      vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([
+        makeRow({ createdAt: new Date("2026-08-03T10:00:00Z") }),
+        makeRow({ createdAt: new Date("2026-06-15T10:00:00Z") }),
+      ]);
+
+      const { points } = await evolution("tout");
+
+      expect(points[0]).toEqual({ date: "2026-06-01", simulations: 1 });
+      expect(points.map((p) => p.date)).toEqual(["2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01", "2026-10-01"]);
+    });
+
+    it("ne trace aucun point « Depuis le début » sans simulation", async () => {
+      vi.mocked(vulnerabiliteSimulationsRepo.findSince).mockResolvedValue([]);
+
+      expect((await evolution("tout")).points).toEqual([]);
+    });
   });
 
   it("renvoie des stats vides sans exploser quand aucune simulation", async () => {
@@ -164,7 +210,7 @@ describe("compterSimulationsParPas", () => {
   const dates = [new Date("2026-03-02T08:00:00Z"), new Date("2026-03-04T23:30:00Z"), new Date("2026-03-09T12:00:00Z")];
 
   it("compte par jour, en UTC", () => {
-    const { points } = compterSimulationsParPas(dates, new Date("2026-03-02"), new Date("2026-03-04T12:00:00Z"), "day");
+    const { points } = compterSimulationsParPas(dates, new Date("2026-03-02"), new Date("2026-03-05T00:00:00Z"), "day");
 
     expect(points).toEqual([
       { date: "2026-03-02", simulations: 1 },
@@ -173,8 +219,17 @@ describe("compterSimulationsParPas", () => {
     ]);
   });
 
+  it("laisse de côté le pas en cours, incomplet", () => {
+    const { points } = compterSimulationsParPas(dates, new Date("2026-03-02"), new Date("2026-03-04T12:00:00Z"), "day");
+
+    expect(points).toEqual([
+      { date: "2026-03-02", simulations: 1 },
+      { date: "2026-03-03", simulations: 0 },
+    ]);
+  });
+
   it("compte par semaine du lundi au dimanche", () => {
-    const { points } = compterSimulationsParPas(dates, new Date("2026-03-04"), new Date("2026-03-10"), "week");
+    const { points } = compterSimulationsParPas(dates, new Date("2026-03-04"), new Date("2026-03-16"), "week");
 
     expect(points).toEqual([
       { date: "2026-03-02", simulations: 2 },
@@ -183,7 +238,7 @@ describe("compterSimulationsParPas", () => {
   });
 
   it("compte par mois", () => {
-    const { points } = compterSimulationsParPas(dates, new Date("2026-02-20"), new Date("2026-03-31"), "month");
+    const { points } = compterSimulationsParPas(dates, new Date("2026-02-20"), new Date("2026-04-01"), "month");
 
     expect(points).toEqual([
       { date: "2026-02-01", simulations: 0 },
