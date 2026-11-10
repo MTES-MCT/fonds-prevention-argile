@@ -9,14 +9,18 @@ interface EvolutionSimulationsCardProps {
   loading: boolean;
 }
 
-const LIBELLES_PAS = { day: "par jour", week: "par semaine", month: "par mois" } as const;
+const PAS = {
+  day: { libelle: "par jour", enCours: "aujourd'hui exclu", complets: "jours complets" },
+  week: { libelle: "par semaine", enCours: "semaine en cours exclue", complets: "semaines complètes" },
+  month: { libelle: "par mois", enCours: "mois en cours exclu", complets: "mois complets" },
+} as const;
 
 /** Simulations de vulnérabilité enregistrées par jour, semaine ou mois selon la période choisie. */
 export function EvolutionSimulationsCard({ evolution, loading }: EvolutionSimulationsCardProps) {
   const chartLoaded = useDsfrChart("LineChart");
 
   const chartData = useMemo(() => {
-    if (!evolution || evolution.points.length === 0) return null;
+    if (!evolution || evolution.points.every((p) => p.simulations === 0)) return null;
 
     // Dates en UTC : un point "week" ou "month" est le premier jour de son pas.
     const labels = evolution.points.map((p) =>
@@ -29,12 +33,12 @@ export function EvolutionSimulationsCard({ evolution, loading }: EvolutionSimula
     );
 
     return {
-      x: `[[${labels.map((l) => `"${l}"`).join(", ")}]]`,
-      y: `[[${evolution.points.map((p) => p.simulations).join(", ")}]]`,
+      x: JSON.stringify([labels]),
+      y: JSON.stringify([evolution.points.map((p) => p.simulations)]),
     };
   }, [evolution]);
 
-  const libellePas = LIBELLES_PAS[evolution?.granularite ?? "day"];
+  const pas = PAS[evolution?.granularite ?? "day"];
 
   return (
     <div
@@ -45,7 +49,7 @@ export function EvolutionSimulationsCard({ evolution, loading }: EvolutionSimula
       }}>
       <h2 className="fr-h4 fr-mb-1v">Évolution des simulations</h2>
       <p className="fr-text--sm fr-mb-2w" style={{ color: "var(--text-mention-grey)" }}>
-        Nombre de simulations réalisées {libellePas}
+        Nombre de simulations réalisées {pas.libelle}, {pas.enCours}
       </p>
 
       {(loading || (chartData && !chartLoaded)) && (
@@ -55,7 +59,7 @@ export function EvolutionSimulationsCard({ evolution, loading }: EvolutionSimula
       )}
       {!loading && !chartData && (
         <p className="fr-text--sm fr-mb-0" style={{ color: "var(--text-mention-grey)" }}>
-          Aucune simulation sur la période.
+          Aucune simulation sur les {pas.complets} de la période.
         </p>
       )}
       {!loading && chartData && chartLoaded && (
