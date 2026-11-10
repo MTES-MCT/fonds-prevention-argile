@@ -45,8 +45,8 @@ export function categorizeDoubleProgression(dossiers: DossierForCategory[]): Dou
 export const CATEGORY_LABELS: Record<DoubleProgressionCategory, string> = {
   legitime: "LÉGITIME (utilisateur passif — a franchi l'éligibilité, rien à corriger)",
   regressable: "À CORRIGER — régressable (aucun dossier DS)",
-  cleanup_requis: "À CORRIGER — cleanup requis (brouillon downstream en_construction)",
-  a_reviewer: "À REVIEWER (dossier downstream soumis côté DS)",
+  cleanup_requis: "À CORRIGER — cleanup requis (brouillon downstream jamais déposé)",
+  a_reviewer: "À REVIEWER (dossier downstream déposé côté DS)",
 };
 
 /** True si la catégorie relève du bug (par opposition aux cas légitimes). */
