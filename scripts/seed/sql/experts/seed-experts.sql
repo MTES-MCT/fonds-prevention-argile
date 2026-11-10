@@ -31,13 +31,17 @@ INSERT INTO experts (id, nom, siret, date_validation_dhup, structure_id) VALUES
   ('55555555-5555-4555-8555-555555555504', 'AMO Maison Tranquille', '99999999900006', '2026-07-01',
    '66666666-6666-4666-8666-666666666604');
 
-INSERT INTO experts_departements (expert_id, code_departement, email, telephone) VALUES
-  ('55555555-5555-4555-8555-555555555501', '36', 'berry-indre@example.org', '02 54 00 00 01'),
-  ('55555555-5555-4555-8555-555555555501', '18', 'berry-cher@example.org', '02 48 00 00 01'),
-  ('55555555-5555-4555-8555-555555555502', '36', 'sols-centre@example.org', NULL),
-  ('55555555-5555-4555-8555-555555555502', '03', 'sols-allier@example.org', '04 70 00 00 01'),
-  ('55555555-5555-4555-8555-555555555502', '59', NULL, '03 27 00 00 01'),
-  ('55555555-5555-4555-8555-555555555503', '36', 'ancien@example.org', NULL)
+-- Géotechnique du Berry réserve par une équipe administrative et envoie un expert nommé sur place.
+INSERT INTO experts_departements
+  (expert_id, code_departement, email, telephone, expert_nom, expert_email, expert_telephone) VALUES
+  ('55555555-5555-4555-8555-555555555501', '36', 'berry-indre@example.org', '02 54 00 00 01',
+   'Claire Expert-Indre', 'claire.indre@example.org', '06 00 00 00 36'),
+  ('55555555-5555-4555-8555-555555555501', '18', 'berry-cher@example.org', '02 48 00 00 01',
+   'Marc Expert-Cher', NULL, '06 00 00 00 18'),
+  ('55555555-5555-4555-8555-555555555502', '36', 'sols-centre@example.org', NULL, NULL, NULL, NULL),
+  ('55555555-5555-4555-8555-555555555502', '03', 'sols-allier@example.org', '04 70 00 00 01', NULL, NULL, NULL),
+  ('55555555-5555-4555-8555-555555555502', '59', NULL, '03 27 00 00 01', NULL, NULL, NULL),
+  ('55555555-5555-4555-8555-555555555503', '36', 'ancien@example.org', NULL, NULL, NULL, NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO experts_departements (expert_id, code_departement, email)
