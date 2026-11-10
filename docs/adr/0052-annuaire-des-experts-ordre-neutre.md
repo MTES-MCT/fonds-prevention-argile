@@ -24,7 +24,10 @@ une liste d'entreprises privées, l'ordre d'affichage ne doit favoriser personne
   `experts_departements` : un département en code officiel par ligne, avec le contact de réservation
   propre à ce département et, facultatif, l'expert qui se déplace chez le demandeur (nom, email,
   téléphone). Certaines sociétés réservent par une équipe administrative et envoient un expert nommé :
-  l'agent sait ainsi qui viendra.
+  l'agent sait ainsi qui viendra. Chaque département porte aussi ses forfaits HT, diagnostic et
+  réseaux, facultatifs : un tarif varie d'un département à l'autre.
+- La carte d'un expert, côté agent, ne montre pas son SIRET : il ne sert pas à choisir un expert.
+  L'annuaire le reçoit toujours, comme l'administration.
 - Une entreprise à la fois AMO et experte a deux structures de même SIRET : une structure expert ne
   porte que l'expertise ([ADR-0053](0053-identite-portee-par-la-structure.md)). L'habilitation expert ne
   change le rôle d'aucun agent : `roleDepuisStructure` ne lit que AMO et Aller-vers.

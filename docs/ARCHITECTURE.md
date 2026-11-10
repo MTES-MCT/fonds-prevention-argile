@@ -100,7 +100,7 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
 agents ──N:1── structures             structures ──1:0..1── entreprises_amo (habilitation AMO)
                                       structures ──1:0..1── allers_vers     (habilitation Aller-vers)
                                       structures ──1:0..1── experts         (habilitation expert, sans rôle)
-                                      experts ──1:N── experts_departements  (code, réservation, expert sur place)
+                                      experts ──1:N── experts_departements  (code, réservation, expert sur place, forfaits)
                                       entreprises_amo ──1:N── entreprises_amo_communes
                                       allers_vers ──1:N── allers_vers_departements
 agent_permissions ──N:1── agents      allers_vers ──1:N── allers_vers_epci
