@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { StatutValidationAmo } from "@/shared/domain/value-objects/statut-validation-amo.enum";
 import { getResponsableDossier, type ResponsableInput } from "./responsable.service";
 
-const av = { id: "av-1", nom: "ADIL 36" };
+const av = { id: "av-1", nom: "ADIL 36", ids: ["av-1"] };
 const entreprise = { id: "amo-1", nom: "Entreprise A" };
 
 function makeInput(overrides: Partial<ResponsableInput> = {}): ResponsableInput {
@@ -35,7 +35,12 @@ describe("getResponsableDossier", () => {
         validation: { statut: StatutValidationAmo.EN_ATTENTE, entreprise },
       })
     );
-    expect(result).toMatchObject({ type: "AMO", entrepriseId: "amo-1", entrepriseNom: "Entreprise A", codeDepartement: "36" });
+    expect(result).toMatchObject({
+      type: "AMO",
+      entrepriseId: "amo-1",
+      entrepriseNom: "Entreprise A",
+      codeDepartement: "36",
+    });
   });
 
   it("AMO sticky pour une validation LOGEMENT_ELIGIBLE (reste responsable après validation)", () => {
