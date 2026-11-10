@@ -34,7 +34,11 @@ describe("resolveResponsables", () => {
       },
     ]);
 
-    expect(map.get("p1")?.responsable).toMatchObject({ type: "AMO", entrepriseId: "amo-1", entrepriseNom: "Entreprise A" });
+    expect(map.get("p1")?.responsable).toMatchObject({
+      type: "AMO",
+      entrepriseId: "amo-1",
+      entrepriseNom: "Entreprise A",
+    });
     expect(map.get("p1")?.etat).toBe("EN_ATTENTE_AMO");
     expect(entreprisesAmoRepo.findById).toHaveBeenCalledTimes(1);
     expect(allersVersRepository.findByEpciWithDepartementFallback).toHaveBeenCalledWith("36", "200000172");
@@ -57,6 +61,30 @@ describe("resolveResponsables", () => {
     expect(map.get("p1")?.responsable).toMatchObject({ type: "AV", structureId: "av-1", structureNom: "ADIL 36" });
     expect(map.get("p1")?.etat).toBe("AV_QUALIFICATION");
     expect(entreprisesAmoRepo.findById).not.toHaveBeenCalled();
+  });
+
+  it("garde tous les Aller-vers retenus à égalité, le premier nommé", async () => {
+    allersVersRepository.findByEpciWithDepartementFallback.mockResolvedValue([
+      { id: "av-1", nom: "ADIL 36" },
+      { id: "av-2", nom: "Soliha 36" },
+    ]);
+
+    const map = await resolveResponsables([
+      {
+        parcoursId: "p1",
+        archivedAt: null,
+        currentStatus: Status.TODO,
+        codeDepartement: "36",
+        codeEpci: null,
+        validation: null,
+      },
+    ]);
+
+    expect(map.get("p1")?.responsable).toMatchObject({
+      type: "AV",
+      structureId: "av-1",
+      allersVersIds: ["av-1", "av-2"],
+    });
   });
 
   it("appelle findByEpciWithDepartementFallback avec EPCI undefined si aucun EPCI fourni", async () => {

@@ -152,11 +152,11 @@ async function loadAmoMap(ids: string[]): Promise<Map<string, { id: string; nom:
  * Priorité EPCI (un AV rattaché spécifiquement à l'EPCI prend le pas), fallback
  * département (utile pour les départements où aucun AV n'a de rattachement EPCI fin).
  *
- * Si plusieurs AV couvrent le même territoire, on retient le premier (ordre `nom`).
+ * Si plusieurs AV couvrent le même territoire, le premier (ordre `nom`) est nommé ; tous peuvent agir.
  */
 async function loadAvParTerritoire(
   territoires: Array<{ codeEpci: string | null; codeDepartement: string | null }>
-): Promise<Map<string, { id: string; nom: string }>> {
+): Promise<Map<string, { id: string; nom: string; ids: string[] }>> {
   if (territoires.length === 0) return new Map();
   const lists = await Promise.all(
     territoires.map((t) =>
@@ -165,10 +165,11 @@ async function loadAvParTerritoire(
         : Promise.resolve([])
     )
   );
-  const map = new Map<string, { id: string; nom: string }>();
+  const map = new Map<string, { id: string; nom: string; ids: string[] }>();
   territoires.forEach((t, idx) => {
     const first = lists[idx][0];
-    if (first) map.set(territoireKey(t.codeEpci, t.codeDepartement), { id: first.id, nom: first.nom });
+    const ids = lists[idx].map((av) => av.id);
+    if (first) map.set(territoireKey(t.codeEpci, t.codeDepartement), { id: first.id, nom: first.nom, ids });
   });
   return map;
 }

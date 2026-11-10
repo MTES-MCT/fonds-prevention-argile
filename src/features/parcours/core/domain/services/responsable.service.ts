@@ -32,6 +32,8 @@ export type Responsable =
       structureId: string | null;
       structureNom: string;
       codeDepartement: string | null;
+      // Tous les Aller-vers retenus pour le territoire (EPCI, sinon département) : seuls eux agissent.
+      allersVersIds: string[];
     }
   | {
       type: typeof RESPONSABLE_TYPE.AMO;
@@ -52,7 +54,7 @@ export interface ResponsableInput {
    * Sert à nommer le responsable AV par défaut (parcours sans AMO ou avec
    * renonciation explicite SANS_AMO).
    */
-  allersVersTerritorial: { id: string; nom: string } | null;
+  allersVersTerritorial: { id: string; nom: string; ids: string[] } | null;
 }
 
 /**
@@ -82,6 +84,7 @@ export function getResponsableDossier(input: ResponsableInput): Responsable {
       structureId: allersVersTerritorial.id,
       structureNom: allersVersTerritorial.nom,
       codeDepartement,
+      allersVersIds: allersVersTerritorial.ids,
     };
   }
 
