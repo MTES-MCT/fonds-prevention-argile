@@ -153,17 +153,22 @@ const telephone = z
   .max(20, "Téléphone trop long")
   .regex(/^[0-9+().\s-]*$/, "Téléphone invalide");
 const email = z.string().trim().max(255).email("Email invalide");
-// Excel et la saisie donnent « 1 200,50 € », « 1200.5 » ou 1200 : tout se ramène à des euros.
+// Excel et la saisie donnent « 1 200,50 € », « 1200.5 » ou 1200 ; vide vaut inconnu.
+const MONTANT_INVALIDE = "Montant invalide : un nombre d'euros HT est attendu";
 const montantHt = z
-  .union([
-    z.number(),
-    z
-      .string()
-      .transform((texte) => texte.replace(/[\s€]|HT/gi, "").replace(",", "."))
-      .refine((texte) => /^\d+(\.\d{1,2})?$/.test(texte), "Montant invalide : un nombre d'euros HT est attendu")
-      .transform(Number),
-  ])
-  .pipe(z.number().min(0, "Montant invalide").max(99_999_999.99, "Montant trop élevé"));
+  .union([z.number(), z.string()])
+  .nullish()
+  .transform((valeur, ctx) => {
+    if (valeur === null || valeur === undefined) return null;
+    const texte = String(valeur).replace(/[\s€]|HT/gi, "").replace(",", ".");
+    if (texte === "") return null;
+    if (!/^\d+(\.\d{1,2})?$/.test(texte)) {
+      ctx.addIssue({ code: "custom", message: MONTANT_INVALIDE });
+      return z.NEVER;
+    }
+    return Number(texte);
+  })
+  .pipe(z.number().max(99_999_999.99, "Montant trop élevé").nullable());
 const optionnel = <T extends z.ZodTypeAny>(schema: T) =>
   z
     .union([z.literal("").transform(() => null), schema])
@@ -181,8 +186,8 @@ export const departementExpertSchema = z.object({
   expertNom: optionnel(z.string().trim().max(255)),
   expertEmail: optionnel(email),
   expertTelephone: optionnel(telephone),
-  forfaitDiagnosticHt: optionnel(montantHt),
-  forfaitReseauHt: optionnel(montantHt),
+  forfaitDiagnosticHt: montantHt,
+  forfaitReseauHt: montantHt,
 });
 
 export const expertSchema = z.object({
