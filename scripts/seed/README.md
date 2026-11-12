@@ -24,7 +24,7 @@ Le script `seed-staging.ts` enchaîne 7 étapes. Chacune est lançable séparém
 | 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`                                                                       | ✅ `ON CONFLICT (email) DO UPDATE`        |
 | 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) ; une entreprise AMO et Aller-vers partage une structure, comme en production               | ✅ `ON CONFLICT`                          |
 | 5   | `experts`  | Structures expert de test (`sql/experts/seed-experts.sql`). Ne touche rien d'autre : jouable seule sur une base restaurée (`pnpm db:restore`)                 | ✅ `DELETE FROM experts` en tête          |
-| 6   | `parcours` | Joue les 15 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `14-dossiers-amo-hybrides.sql`                                                                | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 6   | `parcours` | Joue les 16 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `15-demandeurs-proches.sql`                                                                   | ✅ via `00-init.sql` qui TRUNCATE en tête |
 | 7   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides, agents sans structure habilitée, hybrides sans leurs deux rôles) | —                                         |
 
 ## Pré-requis (étape `ref-data`)
@@ -228,6 +228,7 @@ sql/
     ├── 12-donnees-eligibilite.sql
     ├── 13-amo-av-arrete-2026.sql    # 4 modes AMO (OBLIGATOIRE, AV_AMO_FUSIONNES, FACULTATIF, FACULTATIF_SANS_AMO)
     ├── 14-dossiers-amo-hybrides.sql # 4 dossiers réattribués à l'AMO des agents hybrides
+    ├── 15-demandeurs-proches.sql    # Dossiers en autonomie et voisin d'une autre AMO (encart « Demandeurs proches »)
     └── 99-verification.sql          # Counts attendus
 ```
 

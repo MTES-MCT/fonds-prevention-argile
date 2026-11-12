@@ -12,7 +12,7 @@
  *   3. agents   — fixtures d'agents + SEED_AGENTS_SUPERADMINS + SEED_AGENTS_HYBRIDES
  *   4. amo-av   — fixtures AMO + Allers-vers (alias SEED_STRUCTURES_EMAIL posés après parcours)
  *   5. experts  — structures expert de test, seules : jouable sur une base restaurée
- *   6. parcours — joue les 13 SQL de sql/fake-parcours/00 → 13
+ *   6. parcours — joue les SQL de sql/fake-parcours/00 → 15
  *   7. verify   — joue 99-verification.sql
  *
  * Usage :
@@ -67,6 +67,7 @@ const FAKE_PARCOURS_FILES = [
   "12-donnees-eligibilite.sql",
   "13-amo-av-arrete-2026.sql",
   "14-dossiers-amo-hybrides.sql",
+  "15-demandeurs-proches.sql",
 ];
 
 // ============================================================================

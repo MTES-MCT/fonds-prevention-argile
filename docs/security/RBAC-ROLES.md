@@ -644,6 +644,22 @@ départements hors de son territoire. Un expert désactivé n'existe que pour le
 et l'encart du détail dossier ramènent l'analyste sur son territoire (`perimetreExperts`), quel que soit
 le département demandé dans l'URL ; sa vue « tous » se borne à ses départements.
 
+## 6.1.6 Demandeurs proches sur la fiche dossier
+
+La fiche d'un dossier suivi (`/espace-agent/dossiers/[id]`) montre sur une carte et dans une liste les cinq
+dossiers les plus proches, à la même étape ou à l'étape d'avant, pour regrouper les visites. **Aucun
+élargissement** : les voisins sont pris dans le listing de l'agent.
+
+- **AMO, Aller-vers, AMO + Aller-vers** : l'onglet « Mes dossiers », par le même calcul que le listing
+  (`filtrerMesDossiers`). Une AMO ne voit donc jamais un dossier d'une autre AMO du même territoire, ce que
+  « Tous les dossiers » lui montre, ni un Aller-vers un dossier suivi par une AMO.
+- **Analyste départemental, super-administrateur** : tout leur listing, territorial ou national, faute de
+  dossiers dont ils soient responsables.
+- Calculé dans la page, sous `exigerAccesEspaceAgent()` : aucune server action.
+- Le navigateur reçoit par voisin le nom, la commune, l'étape, la distance, le point GPS du logement et le
+  lien vers sa fiche, qui refait son propre contrôle d'accès. Ni email, ni téléphone, ni adresse. Un dossier
+  sans point GPS n'est pas proposé.
+
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
 Le bouton « Vérifier son éligibilité » (édition du formulaire de simulation, page
@@ -703,6 +719,7 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 | Aiguillage auth                             | `src/middleware.ts`                                                                                                                                            |
 | Double authentification ProConnect          | `auth/domain/value-objects/session-mfa.ts` (`estSessionConforme`) + `adapters/proconnect/proconnect-oidc.ts` + `session.service.ts` (`getSession`)             |
 | Rôle dérivé de la structure (ADR-0051)      | `shared/domain/value-objects/role-structure.ts` (`resoudreRoleAgent`) + `agents.repository.ts` (lecture résolue)                                               |
+| Demandeurs proches (fiche dossier)          | `espace-agent/demandeurs-proches/services/demandeurs-proches.service.ts` + `dossiers/services/dossiers-territoire.service.ts` (`filtrerMesDossiers`)           |
 | Annuaire des experts (ADR-0052)             | `administration/experts/actions/experts-admin.actions.ts` (`EXPERTS_WRITE`) + `espace-agent/experts/services/annuaire-experts.service.ts` (`perimetreExperts`) |
 | Structures et habilitations (ADR-0051/0053) | `administration/structures/actions/structures.actions.ts` (`checkRoleAccess` + permission) + `services/structures-admin.service.ts`                            |
 | Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                                     |

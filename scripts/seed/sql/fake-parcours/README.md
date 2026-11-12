@@ -29,6 +29,7 @@ psql -f 05-prospects-sans-amo.sql  # Nouveaux prospects pour Allers-Vers
 psql -f 07-commentaires.sql       # Agents fictifs + commentaires de test
 psql -f 13-amo-av-arrete-2026.sql # AMO/AV pour tester les modes de l'arrêté 2026
 psql -f 14-dossiers-amo-hybrides.sql # Dossiers de l'AMO des agents hybrides (après 13)
+psql -f 15-demandeurs-proches.sql # Cas de l'encart « Demandeurs proches » (après 14)
 psql -f 99-verification.sql
 ```
 

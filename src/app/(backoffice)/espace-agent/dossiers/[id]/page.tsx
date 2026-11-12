@@ -16,6 +16,8 @@ import {
   RenvoyerInvitationButton,
 } from "../../shared";
 import { expertsDuDepartementDuDossier } from "@/features/backoffice/espace-agent/experts/services/annuaire-experts.service";
+import { chargerDemandeursProches } from "@/features/backoffice/espace-agent/demandeurs-proches/services/demandeurs-proches.service";
+import { DemandeursProches } from "./components/demandeurs-proches/DemandeursProches";
 import { ActionsRealisees } from "../../shared";
 import { VulnerabiliteDossier } from "../../shared/components/VulnerabiliteDossier";
 import { Step } from "@/shared/domain/value-objects/step.enum";
@@ -80,6 +82,10 @@ export default async function DossierDetailPage({ params }: PageProps) {
   // Pièces à prévoir pour l'étape courante, tirées de la démarche DN correspondante.
   const piecesJustificatives = await getPiecesJustificativesForStep(dossier.currentStep);
   const expertsDuDepartement = await expertsDuDepartementDuDossier(agentAutorise, dossier.codeDepartementLogement);
+  const demandeursProches = await chargerDemandeursProches(agentAutorise, {
+    parcoursId: dossier.parcoursId,
+    validationStatut: dossier.validationStatut,
+  });
 
   // Bouton "Ré-ouvrir" : visible sur une demande refusée, pour les rôles habilités
   // (le périmètre fin entreprise/territoire est revérifié côté action).
@@ -276,7 +282,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
       <section className="fr-background-alt--blue-france fr-py-4w">
         <div className="fr-container">
           <div className="fr-grid-row fr-grid-row--gutters">
-            {/* Colonne gauche : PiecesJustificatives + InfoLogement + GagnezDuTempsTravaux */}
+            {/* Colonne gauche : PiecesJustificatives + InfoLogement */}
             <div className="fr-col-12 fr-col-md-8">
               {latestQualification && (
                 <div className="fr-mb-4w">
@@ -298,7 +304,7 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   stepLabel={DOSSIER_STEP_LABELS[dossier.currentStep]}
                 />
               </div>
-              <div className="fr-mb-4w">
+              <div>
                 <InfoLogement
                   logement={dossier.logement}
                   adresse={dossier.demandeur.adresse}
@@ -306,10 +312,6 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   editSimulationHref={ROUTES.backoffice.espaceAgent.editionDonneesSimulation(dossier.id)}
                   agentEditInfo={dossier.agentEditInfo}
                 />
-              </div>
-              <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
-              <div>
-                <GagnezDuTempsTravaux />
               </div>
             </div>
 
@@ -342,6 +344,25 @@ export default async function DossierDetailPage({ params }: PageProps) {
                   ]}
                 />
                 {expertsDuDepartement && <ExpertsDuDepartement departement={expertsDuDepartement} />}
+              </div>
+            </div>
+          </div>
+
+          {/* Pleine largeur, sous le logement : la carte a besoin de place pour être lue. */}
+          {demandeursProches && (
+            <div className="fr-mt-4w">
+              <DemandeursProches donnees={demandeursProches} />
+            </div>
+          )}
+
+          {/* L'écart part de la plus haute des deux colonnes au-dessus, quelle qu'elle soit. */}
+          <div className="fr-mt-4w">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-8">
+                <VulnerabiliteDossier id={dossier.id} vulnerabilite={dossier.vulnerabilite} />
+                <div>
+                  <GagnezDuTempsTravaux />
+                </div>
               </div>
             </div>
           </div>

@@ -40,7 +40,7 @@ Sous-modules notables :
   (`domain/`, `adapters/graphql` + `adapters/rest`, `services/`, `actions/`,
   `mappers/`, `utils/`).
 - `backoffice/administration/` (gestion AMO, agents, structures, allers-vers, experts, synchronisations,
-  stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté, annuaire des experts).
+  stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté, demandeurs proches, annuaire des experts).
 - `seo/catnat/` (import et recherche catastrophes naturelles) et
   `seo/allers-vers/` (structures de sensibilisation et leurs territoires).
 
