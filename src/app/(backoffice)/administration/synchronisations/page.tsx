@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { checkAgentAccess, ROUTES } from "@/features/auth";
-import { AccesNonAutoriseAdmin } from "@/shared/components";
+import { AccesNonAutoriseSuperAdmin } from "@/shared/components";
 import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 import SynchronisationsPanel from "./components/SynchronisationsPanel";
 
@@ -18,7 +18,7 @@ export default async function SynchronisationsPage() {
   }
 
   if (!access.hasAccess || !access.user?.role || !isSuperAdminRole(access.user.role)) {
-    return <AccesNonAutoriseAdmin />;
+    return <AccesNonAutoriseSuperAdmin />;
   }
 
   return <SynchronisationsPanel />;

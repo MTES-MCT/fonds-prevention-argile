@@ -90,6 +90,19 @@ export function AccesNonAutoriseAdmin() {
 }
 
 /**
+ * Accès réservé aux super-administrateurs
+ */
+export function AccesNonAutoriseSuperAdmin() {
+  return (
+    <AccesNonAutorise
+      title="Espace réservé aux super-administrateurs"
+      message="Vous devez être super-administrateur pour accéder à cette page."
+      reason="Rôle requis : Super-administrateur"
+    />
+  );
+}
+
+/**
  * Accès réservé aux agents AMO
  */
 export function AccesNonAutoriseAmo() {
