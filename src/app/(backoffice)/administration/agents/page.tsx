@@ -1,5 +1,5 @@
 import { checkAgentAccess, ROUTES } from "@/features/auth";
-import { AccesNonAutoriseAdmin } from "@/shared/components";
+import { AccesNonAutoriseSuperAdmin } from "@/shared/components";
 import { redirect } from "next/navigation";
 import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 import AgentsPanel from "./components/AgentsPanel";
@@ -20,7 +20,7 @@ export default async function GestionUtilisateursPage() {
   }
 
   if (!access.hasAccess || !access.user?.role || !isSuperAdminRole(access.user.role)) {
-    return <AccesNonAutoriseAdmin />;
+    return <AccesNonAutoriseSuperAdmin />;
   }
 
   return <AgentsPanel />;
