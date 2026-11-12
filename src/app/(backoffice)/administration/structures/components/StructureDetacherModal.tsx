@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LIBELLES_HABILITATION, type StructureAdministration, type TypeHabilitation } from "@/features/backoffice";
+import {
+  habilitationsDeLignes,
+  LIBELLES_HABILITATION,
+  ligneDeType,
+  refusDetachement,
+  roleApresDetachement,
+  TYPES_HABILITATION,
+  type StructureAdministration,
+  type TypeHabilitation,
+} from "@/features/backoffice";
+import { roleDepuisStructure } from "@/shared/domain/value-objects";
+import { libelleRoleDeStructure } from "./libelles-role";
 import { fermerModale } from "./fermer-modale";
 import ModaleStructure, { nommerAgents } from "./ModaleStructure";
 
@@ -12,8 +23,6 @@ interface StructureDetacherModalProps {
   erreur?: string | null;
   isLoading?: boolean;
 }
-
-const AUTRE: Record<TypeHabilitation, TypeHabilitation> = { amo: "allersVers", allersVers: "amo" };
 
 export default function StructureDetacherModal({
   modalId,
@@ -28,10 +37,11 @@ export default function StructureDetacherModal({
     setHabilitation(null);
   }, [structure]);
 
-  const lignes =
-    structure?.entrepriseAmo && structure.allersVers
-      ? { amo: structure.entrepriseAmo.nom, allersVers: structure.allersVers.nom }
-      : null;
+  const habilitations = structure ? habilitationsDeLignes(structure) : null;
+  const detachable = !!habilitations && !refusDetachement(habilitations);
+  const typesPresents = structure ? TYPES_HABILITATION.filter((type) => ligneDeType(structure, type)) : [];
+  const roleRestant = habilitations && habilitation ? roleApresDetachement(habilitations, habilitation) : null;
+  const roleAvant = habilitations ? roleDepuisStructure(habilitations) : null;
 
   const handleConfirm = async () => {
     if (habilitation && (await onConfirm(habilitation))) fermerModale(modalId);
@@ -44,11 +54,11 @@ export default function StructureDetacherModal({
       erreur={erreur}
       libelleConfirmation="Détacher"
       libelleEnCours="Détachement..."
-      confirmationPossible={!!lignes && !!habilitation}
+      confirmationPossible={detachable && !!habilitation}
       onConfirm={handleConfirm}
       isLoading={isLoading}
       large>
-      {structure && lignes && (
+      {structure && detachable && (
         <>
           <p>
             L&apos;habilitation détachée part dans une nouvelle structure à son nom, sans agent. Les agents restent dans
@@ -57,7 +67,7 @@ export default function StructureDetacherModal({
 
           <fieldset className="fr-fieldset">
             <legend className="fr-fieldset__legend">Habilitation à détacher</legend>
-            {(["amo", "allersVers"] as const).map((type) => (
+            {typesPresents.map((type) => (
               <div key={type} className="fr-fieldset__element">
                 <div className="fr-radio-group">
                   <input
@@ -69,19 +79,21 @@ export default function StructureDetacherModal({
                     disabled={isLoading}
                   />
                   <label className="fr-label" htmlFor={`${modalId}-${type}`}>
-                    {LIBELLES_HABILITATION[type]} : {lignes[type]}
+                    {LIBELLES_HABILITATION[type]} : {ligneDeType(structure, type)?.nom}
                   </label>
                 </div>
               </div>
             ))}
           </fieldset>
 
-          {habilitation && structure.agents.length > 0 && (
+          {habilitation && structure.agents.length > 0 && roleRestant !== roleAvant && (
             <div className="fr-alert fr-alert--warning fr-alert--sm">
               <p>
-                Ces agents perdent le rôle {LIBELLES_HABILITATION[habilitation]} et gardent le rôle{" "}
-                {LIBELLES_HABILITATION[AUTRE[habilitation]]}, dès la requête suivante : {nommerAgents(structure.agents)}
-                .
+                Ces agents perdent le rôle {LIBELLES_HABILITATION[habilitation]}
+                {roleRestant
+                  ? ` et gardent le rôle ${libelleRoleDeStructure(roleRestant)}`
+                  : " et n'ont plus aucun rôle"}
+                , dès la requête suivante : {nommerAgents(structure.agents)}.
               </p>
             </div>
           )}

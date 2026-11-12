@@ -247,6 +247,18 @@ la PR qui a posé l'inventaire ; chacune se corrige seule une fois la définitio
 
 ---
 
+## Administration
+
+### Un seul composant d'import Excel pour les AMO, les Aller-vers et les experts
+
+`AmoSeedUpload`, `AllersVersSeedUpload` et `ExpertsImport` sont trois copies du même écran (tuile du
+modèle, dépôt du fichier, résultat). La copie des experts corrige deux défauts que les deux autres
+gardent : elles annoncent le format `.xls`, qu'ExcelJS ne lit pas (l'import échoue), et colorent la zone
+de dépôt avec la palette Tailwind (`border-blue-500`, `bg-blue-50`) au lieu des tokens DSFR.
+
+**Préalable** : un composant partagé, paramétré par le modèle, le texte, l'action et la case de purge,
+puis une recette des imports AMO et Aller-vers, déjà validés et donc à retester.
+
 ## Sécurité et dépendances
 
 ### Règle d'en-têtes des pages embarquées qui ne s'applique à aucune page
@@ -278,3 +290,11 @@ les statistiques attendent un code. La restauration locale le neutralise déjà
 
 **Préalable** : recenser les appelants de `archiveDossierAction` et de `declineAccompagnementEligible`
 (les sous-listes de `raisons-fin-suivi.ts`), puis valider par `z.enum` en tête des deux actions.
+
+### Faire valider la mention de libre choix des experts par la DHUP
+
+L'annuaire des experts (ADR-0052) affiche « Liste des experts validés par la DHUP, présentés sans
+ordre de préférence. Vous êtes libre de faire appel à l'expert de votre choix. », texte proposé par
+l'équipe. Il est défini en un seul endroit, `MENTION_LIBRE_CHOIX` (`administration/experts/domain/regles-experts.ts`).
+
+**Préalable** : le retour de la DHUP sur le texte, et sur l'ordre alphabétique retenu.

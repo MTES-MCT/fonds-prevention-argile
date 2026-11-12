@@ -11,7 +11,7 @@ vi.mock("@/features/backoffice", async () => {
 
 function structure(
   nom: string,
-  habilitations: { amo?: boolean; av?: boolean },
+  habilitations: { amo?: boolean; av?: boolean; expert?: boolean },
   agents: string[] = []
 ): StructureAdministration {
   return {
@@ -19,6 +19,7 @@ function structure(
     nom,
     entrepriseAmo: habilitations.amo ? { id: `amo-${nom}`, nom } : null,
     allersVers: habilitations.av ? { id: `av-${nom}`, nom } : null,
+    expert: habilitations.expert ? { id: `expert-${nom}`, nom } : null,
     agents: agents.map((nomComplet, i) => ({ id: `${nom}-${i}`, nomComplet, email: "", desactive: false })),
   };
 }

@@ -41,13 +41,21 @@ const structures = {
     nom: "Maison Tranquille",
     entrepriseAmo: { id: "amo-1", nom: "AMO Maison Tranquille" },
     allersVers: null,
+    expert: null,
   },
-  [AV_SEUL]: { id: AV_SEUL, nom: "Adil 36", entrepriseAmo: null, allersVers: { id: "av-1", nom: "Adil 36" } },
+  [AV_SEUL]: {
+    id: AV_SEUL,
+    nom: "Adil 36",
+    entrepriseAmo: null,
+    allersVers: { id: "av-1", nom: "Adil 36" },
+    expert: null,
+  },
   paire: {
     id: "paire",
     nom: "Soliha 54",
     entrepriseAmo: { id: "amo-2", nom: "Soliha 54" },
     allersVers: { id: "av-2", nom: "Soliha Meurthe-et-Moselle" },
+    expert: null,
   },
 };
 

@@ -1,3 +1,4 @@
+import { asString } from "@/shared/utils";
 import { db } from "@/shared/database/client";
 import {
   parcoursAmoValidations,
@@ -107,6 +108,8 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
     // Construire l'objet InfoLogement à partir de RGASimulationData
     // Utiliser les données agent si disponibles, sinon les données initiales
     const rgaData = getEffectiveRGAData(dossier.parcours);
+    // Même convention que l'affichage du logement : la version de l'agent prime.
+    const codeDepartementLogement = asString(rgaData?.logement?.code_departement) || null;
 
     // Construire l'objet InfoDemandeur
     const demandeur: InfoDemandeur = {
@@ -204,6 +207,7 @@ export async function getDossierDetail(dossierId: string): Promise<ActionResult<
       parcoursId: dossier.parcours.id,
       demandeur,
       logement,
+      codeDepartementLogement,
       vulnerabilite,
       currentStep: dossier.parcours.currentStep as Step,
       currentStatus: dossier.parcours.currentStatus as Status,

@@ -4,8 +4,9 @@ import {
   structuresRepository,
   type StructureAvecHabilitations,
 } from "@/shared/database/repositories/structures.repository";
-import type { HabilitationsStructure } from "@/shared/domain/value-objects";
 import {
+  habilitationsDeLignes,
+  ligneDeType,
   refusDetachement,
   refusFusion,
   TYPES_HABILITATION,
@@ -27,15 +28,16 @@ export interface StructureAdministration {
   nom: string;
   entrepriseAmo: { id: string; nom: string } | null;
   allersVers: { id: string; nom: string } | null;
+  expert: { id: string; nom: string } | null;
   agents: AgentDeStructure[];
 }
 
-function habilitationsDe(structure: StructureAvecHabilitations): HabilitationsStructure {
-  return { amo: !!structure.entrepriseAmo, allersVers: !!structure.allersVers };
+function habilitationsDe(structure: StructureAvecHabilitations) {
+  return habilitationsDeLignes(structure);
 }
 
 function ligneDe(structure: StructureAvecHabilitations, type: TypeHabilitation) {
-  return type === "amo" ? structure.entrepriseAmo : structure.allersVers;
+  return ligneDeType(structure, type);
 }
 
 export async function listerStructures(): Promise<StructureAdministration[]> {

@@ -4,6 +4,7 @@ export * from "./amo";
 export * from "./allers-vers";
 export * from "./commentaires";
 export * from "./demandeurs";
+export * from "./experts";
 export * from "./structures";
 
 // Domain partagé

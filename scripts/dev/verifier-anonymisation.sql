@@ -12,7 +12,7 @@ BEGIN
     SELECT table_name, column_name FROM information_schema.columns
     WHERE table_schema = 'public'
       AND data_type IN ('text', 'character varying', 'jsonb', 'ARRAY')
-      AND table_name NOT IN ('entreprises_amo', 'allers_vers', 'spatial_ref_sys', 'rga_zones_import', 'catastrophes_naturelles')
+      AND table_name NOT IN ('entreprises_amo', 'allers_vers', 'experts_departements', 'spatial_ref_sys', 'rga_zones_import', 'catastrophes_naturelles')
     ORDER BY 1, 2
   LOOP
     EXECUTE format(
@@ -28,7 +28,7 @@ BEGIN
     END IF;
   END LOOP;
   IF NOT trouve THEN
-    RAISE NOTICE 'Aucun email ni téléphone en clair hors des structures AMO et Aller-vers et des agents conservés';
+    RAISE NOTICE 'Aucun email ni téléphone en clair hors des structures AMO et Aller-vers, des contacts de réservation des experts et des agents conservés';
   END IF;
 END $$;
 

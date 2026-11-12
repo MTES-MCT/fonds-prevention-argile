@@ -39,8 +39,8 @@ Sous-modules notables :
 - `parcours/dossiers-ds/` est la feature de référence pour la structure DDD-lite
   (`domain/`, `adapters/graphql` + `adapters/rest`, `services/`, `actions/`,
   `mappers/`, `utils/`).
-- `backoffice/administration/` (gestion AMO, agents, structures, allers-vers, synchronisations,
-  stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté).
+- `backoffice/administration/` (gestion AMO, agents, structures, allers-vers, experts, synchronisations,
+  stats) vs `backoffice/espace-agent/` (dossiers/prospects de l'agent connecté, annuaire des experts).
 - `seo/catnat/` (import et recherche catastrophes naturelles) et
   `seo/allers-vers/` (structures de sensibilisation et leurs territoires).
 
@@ -99,6 +99,8 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
 
 agents ──N:1── structures             structures ──1:0..1── entreprises_amo (habilitation AMO)
                                       structures ──1:0..1── allers_vers     (habilitation Aller-vers)
+                                      structures ──1:0..1── experts         (habilitation expert, sans rôle)
+                                      experts ──1:N── experts_departements  (code + contact de réservation)
                                       entreprises_amo ──1:N── entreprises_amo_communes
                                       allers_vers ──1:N── allers_vers_departements
 agent_permissions ──N:1── agents      allers_vers ──1:N── allers_vers_epci
@@ -115,6 +117,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | AMO               | `parcours_amo_validations`, `amo_validation_tokens`, `entreprises_amo`, `entreprises_amo_communes`                                                                                                                |
 | Agents            | `agents`, `agent_permissions`, `structures`                                                                                                                                                                       |
 | Allers-vers       | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                                                                                                                          |
+| Experts           | `experts`, `experts_departements` (habilitation de structure sans rôle, cf. ADR-0052)                                                                                                                             |
 | Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                                                                                                                                  |
 | Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                                                                                                                   |
 | Vulnérabilité RGA | `vulnerabilite_simulations` (table anonyme, sans FK `users` — cf. ADR-0031). Pointeur nullable `parcours_prevention.vulnerabilite_simulation_id` vers la dernière simulation connue d'un demandeur (cf. ADR-0032) |

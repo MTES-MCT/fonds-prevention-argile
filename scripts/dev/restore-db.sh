@@ -392,7 +392,11 @@ set +o pipefail
 
 if [ "$ANONYMISER" = true ]; then
     # Un UPDATE laisse l'ancienne ligne, en clair, dans les fichiers de la table et de ses index.
-    TABLES_REECRITES=$(grep -oE '^UPDATE [a-z_]+' "$SCRIPT_ANONYMISATION" | cut -d' ' -f2 | sort -u | paste -sd, -)
+    TABLES_TRAITEES=$(grep -oE '^[[:space:]]*UPDATE [a-z_]+' "$SCRIPT_ANONYMISATION" | awk '{print $2}' | sort -u | paste -sd, -)
+    # Une table plus récente que le dump (experts avant la migration 0060) n'y existe pas.
+    TABLES_REECRITES=$(docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_RESTAURATION" -At \
+        -v liste="$TABLES_TRAITEES" <<< "SELECT string_agg(relname, ',') FROM pg_class
+        WHERE relkind = 'r' AND relnamespace = 'public'::regnamespace AND relname = ANY (string_to_array(:'liste', ','));")
     docker exec -e PGOPTIONS="-c wal_skip_threshold=0" "$CONTAINER_NAME" \
         psql -U "$DB_USER" -d "$DB_RESTAURATION" -q -v ON_ERROR_STOP=1 -c "VACUUM FULL $TABLES_REECRITES"
     print_success "Dump restauré, pseudonymisé et contrôlé ; tables réécrites sans les anciennes valeurs"
