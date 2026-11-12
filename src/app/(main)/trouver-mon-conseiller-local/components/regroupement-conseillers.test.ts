@@ -33,4 +33,15 @@ describe("departementsDuConseiller", () => {
     expect(departementsDuConseiller([], ["200071082"], departementsDe)).toEqual(["03"]);
     expect(departementsDuConseiller(["3"], [], departementsDe)).toEqual(["03"]);
   });
+
+  it("ne garde d'un EPCI à cheval que son département du dispositif", () => {
+    // L'Indre (36) est dans le dispositif, le Cher (18) non : la page affichait un bloc pour chacun.
+    const departementsDe = () => ["36", "18"];
+    expect(departementsDuConseiller([], ["200000000"], departementsDe)).toEqual(["36"]);
+  });
+
+  it("écarte un département hors dispositif déclaré directement", () => {
+    expect(departementsDuConseiller(["18", "36"], [], () => [])).toEqual(["36"]);
+    expect(departementsDuConseiller(["75"], [], () => [])).toEqual([]);
+  });
 });

@@ -1,4 +1,5 @@
 import { toOfficialCodeDepartement } from "@/shared/constants/departements.constants";
+import { isDepartementEligible } from "@/shared/constants/rga.constants";
 
 export const LIBELLE_AUTRES_LOCALISATIONS = "Pour toute autre localisation";
 
@@ -23,12 +24,15 @@ export function regrouperParZone<T extends { libelleZone?: string | null }>(cons
   return sansZone.length > 0 ? [...groupes, { libelle: LIBELLE_AUTRES_LOCALISATIONS, conseillers: sansZone }] : groupes;
 }
 
-/** Départements où chercher un Aller-vers : ceux qu'il déclare, plus ceux de ses EPCI. */
+/** Départements où chercher un Aller-vers : ceux qu'il déclare, plus ceux de ses EPCI, parmi ceux du dispositif. */
 export function departementsDuConseiller(
   declares: string[],
   epcis: string[],
   departementsDeLEpci: (codeEpci: string) => string[]
 ): string[] {
-  const codes = [...declares, ...epcis.flatMap(departementsDeLEpci)].map(toOfficialCodeDepartement);
+  // Un EPCI à cheval sur deux départements ramène aussi celui qui est hors dispositif.
+  const codes = [...declares, ...epcis.flatMap(departementsDeLEpci)]
+    .map(toOfficialCodeDepartement)
+    .filter(isDepartementEligible);
   return [...new Set(codes)];
 }
