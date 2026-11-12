@@ -15,12 +15,10 @@ export interface ParcoursCreatorInfo {
  * - l'agent a été supprimé depuis,
  * - aucun id n'est fourni.
  */
-export async function getParcoursCreator(
-  agentId: string | null | undefined
-): Promise<ParcoursCreatorInfo | null> {
+export async function getParcoursCreator(agentId: string | null | undefined): Promise<ParcoursCreatorInfo | null> {
   if (!agentId) return null;
 
-  const agent = await agentsRepo.findByIdWithStructure(agentId);
+  const agent = await agentsRepo.findByIdAvecStructure(agentId);
   if (!agent) return null;
 
   const displayName = [agent.givenName, agent.usualName].filter(Boolean).join(" ").trim();

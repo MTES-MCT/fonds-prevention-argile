@@ -26,6 +26,8 @@
 
 INSERT INTO agents (sub, email, given_name, usual_name, role)
 VALUES ('pending_' || :'email', :'email', :'given', :'usual', 'super_administrateur')
-ON CONFLICT (email) DO UPDATE SET role = 'super_administrateur';
+-- Un compte membre d'une structure garderait ses rôles de structure (ADR-0051) : on l'en retire.
+ON CONFLICT (email) DO UPDATE SET role = 'super_administrateur',
+  structure_id = NULL, entreprise_amo_id = NULL, allers_vers_id = NULL;
 
 SELECT email, role, created_at FROM agents WHERE email = :'email';

@@ -2,6 +2,7 @@ import { pgTable, uuid, timestamp, varchar, text, unique } from "drizzle-orm/pg-
 import { relations } from "drizzle-orm";
 import { entreprisesAmoCommunes } from "./entreprises-amo-communes";
 import { entreprisesAmoEpci } from "./entreprises-amo-epci";
+import { structures } from "./structures";
 
 // Table des entreprises AMO (Assistance à Maîtrise d'Ouvrage)
 export const entreprisesAmo = pgTable(
@@ -16,6 +17,11 @@ export const entreprisesAmo = pgTable(
     adresse: varchar("adresse", { length: 500 }).notNull(),
     // Horaires d'ouverture en texte libre (1-2 lignes), ex: "Du mardi au vendredi 8h30 - 12h / 13h - 17h30"
     horaires: text("horaires"),
+    // Habilitation AMO d'une structure : une structure n'en porte qu'une.
+    structureId: uuid("structure_id")
+      .notNull()
+      .unique()
+      .references(() => structures.id, { onDelete: "restrict" }),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .notNull()

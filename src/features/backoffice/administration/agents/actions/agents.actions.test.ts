@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { AgentRole, UserRole } from "@/shared/domain/value-objects/user-role.enum";
+import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import { createMockAuthUser, createMockAgentWithPermissions, createEnvConfigMock } from "@/shared/testing/mocks";
 
 // Mock des dépendances AVANT les imports
@@ -168,7 +168,7 @@ describe("agents.actions", () => {
       email: "newagent@example.com",
       givenName: "Nouvel",
       usualName: "Agent",
-      role: UserRole.ADMINISTRATEUR as AgentRole,
+      compte: { type: "plateforme" as const, role: UserRole.ADMINISTRATEUR },
       departements: ["75"],
     };
 
@@ -236,28 +236,26 @@ describe("agents.actions", () => {
 
       const result = await createAgentAction({
         ...validAgentData,
-        role: UserRole.ANALYSTE,
+        compte: { type: "plateforme", role: UserRole.ANALYSTE },
       });
 
       expect(result.success).toBe(true);
     });
 
-    it("devrait exiger une entreprise AMO pour le rôle AMO", async () => {
+    it.each([
+      ["un rôle de structure donné comme rôle plateforme", { type: "plateforme", role: UserRole.AMO }],
+      ["un rattachement sans structure", { type: "structure" }],
+      ["un identifiant de structure invalide", { type: "structure", structureId: "pas-un-uuid" }],
+    ])("refuse %s, sans rien créer", async (_cas, compte) => {
       connecter(UserRole.SUPER_ADMINISTRATEUR);
 
-      const result = await createAgentAction({
-        ...validAgentData,
-        role: UserRole.AMO as AgentRole,
-        // pas d'entrepriseAmoId
-      });
+      const result = await createAgentAction({ ...validAgentData, compte });
 
       expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("entreprise AMO");
-      }
+      expect(agentsAdminService.createAgent).not.toHaveBeenCalled();
     });
 
-    it("devrait autoriser la création d'un AMO avec entreprise", async () => {
+    it("devrait autoriser le rattachement d'un agent à une structure", async () => {
       connecter(UserRole.SUPER_ADMINISTRATEUR);
 
       const mockAmoAgent = createMockAgentWithPermissions({
@@ -274,13 +272,11 @@ describe("agents.actions", () => {
       });
       vi.mocked(agentsAdminService.createAgent).mockResolvedValue(mockAmoAgent);
 
-      const result = await createAgentAction({
-        ...validAgentData,
-        role: UserRole.AMO as AgentRole,
-        entrepriseAmoId: "entreprise-123",
-      });
+      const compte = { type: "structure" as const, structureId: "7c9e6679-7425-40de-944b-e07fc1f90ae7" };
+      const result = await createAgentAction({ ...validAgentData, compte });
 
       expect(result.success).toBe(true);
+      expect(agentsAdminService.createAgent).toHaveBeenCalledWith(expect.objectContaining({ compte }));
     });
   });
 
@@ -288,7 +284,7 @@ describe("agents.actions", () => {
     const validUpdateData = {
       email: "updated@example.com",
       givenName: "Modifié",
-      role: UserRole.ADMINISTRATEUR as AgentRole,
+      compte: { type: "plateforme" as const, role: UserRole.ADMINISTRATEUR },
     };
 
     it("devrait autoriser la mise à jour pour SUPER_ADMINISTRATEUR", async () => {
@@ -339,18 +335,13 @@ describe("agents.actions", () => {
       }
     });
 
-    it("devrait exiger une entreprise AMO lors du passage au rôle AMO", async () => {
+    it("refuse le passage dans une structure sans structure désignée", async () => {
       connecter(UserRole.SUPER_ADMINISTRATEUR);
 
-      const result = await updateAgentAction("agent-123", {
-        role: UserRole.AMO as AgentRole,
-        entrepriseAmoId: null, // explicitement null
-      });
+      const result = await updateAgentAction("agent-123", { compte: { type: "structure" } });
 
       expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("entreprise AMO");
-      }
+      expect(agentsAdminService.updateAgent).not.toHaveBeenCalled();
     });
   });
 

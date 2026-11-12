@@ -45,20 +45,45 @@ Sans argument, la commande liste les dumps du dossier, du plus récent au plus a
 liste se filtre en tapant quelques lettres. On peut aussi nommer le fichier directement :
 `pnpm db:restore mon-dump.tar.gz`.
 
+Le dump est **pseudonymisé par défaut** : noms, contacts, adresses, textes libres et jetons sont
+remplacés par [`scripts/dev/anonymiser.sql`](../../scripts/dev/anonymiser.sql), colonne par colonne
+selon [l'inventaire des données personnelles](../security/DONNEES-PERSONNELLES.md). Les agents en
+`@beta.gouv.fr` et `@yopmail.com` sont conservés, pour se connecter en local avec son compte ou un
+compte du bac à sable. Des contrôles en fin de script annulent tout s'il reste une donnée à
+remplacer.
+
 Tout ce qui est réversible passe **avant** la confirmation : le script extrait l'archive dans
 un dossier jetable, vérifie qu'elle contient exactement un `.pgsql`, le copie dans le conteneur
 et le fait lire **en entier** par `pg_restore`, vers `/dev/null`. Un dump illisible ou tronqué
 est donc refusé sans que la base ait été touchée. Ce contrôle ne garantit pas que chaque
 instruction SQL passera à la restauration (une extension manquante, par exemple), seulement que
 le fichier est complet et lisible. Vient ensuite la **confirmation** : toute autre réponse que `o` abandonne sans
-rien modifier. Après accord seulement, la base est supprimée (clients déconnectés), recréée
-vide, puis restaurée. Les fichiers extraits sont effacés à toute sortie, erreur comprise.
+rien modifier. Après accord, le dump est restauré dans une base temporaire propre à l'exécution
+(`fpa_restauration_<pid>`), pseudonymisé et contrôlé. Ensuite seulement, la base locale est fermée
+aux connexions, ses clients déconnectés, et les deux bases échangent leur nom **dans une même
+transaction** : un échec à n'importe quelle étape laisse la base locale en place, et l'application
+ne lit jamais une base en clair. L'ancienne base est supprimée après l'échange. Les fichiers extraits
+et la base temporaire sont effacés à toute sortie, erreur comprise ; une base temporaire laissée par
+une restauration tuée (`kill -9`, terminal fermé) est supprimée au lancement suivant. Le bilan
+affiché en fin de pseudonymisation compte les lignes traitées et liste les clés de simulation
+retirées (inconnues ou de forme inattendue). Les tables pseudonymisées sont ensuite réécrites
+(`VACUUM FULL`), pour qu'aucune ancienne valeur ne reste dans leurs fichiers.
+
+**Le journal d'écriture de PostgreSQL ne garde aucune copie du dump**, à deux conditions que le
+script réunit : restauration et pseudonymisation dans une seule transaction, et `wal_level=minimal`
+(posé par `docker-compose.yml`). Une table créée dans la transaction n'entre alors pas dans le journal
+(`pg_wal`), et `wal_skip_threshold=0` évite qu'une petite table y soit recopiée à la validation. Un
+conteneur créé avant ce réglage tourne encore avec le journal complet : le script le signale, et
+`pnpm db:start` le recrée avec la configuration du dépôt. Le journal ne se vide pas pour autant des
+restaurations passées : pour en effacer la trace, `pnpm db:reset` (la base locale est perdue), puis
+restaurer à nouveau.
 Options :
 
 | Option         | Effet                                                            |
 | -------------- | ---------------------------------------------------------------- |
 | `-d <dossier>` | Dossier des dumps, prioritaire sur tout le reste                 |
 | `-k`           | Garde les fichiers temporaires après restauration                |
+| `-n`           | Garde les données nominatives : diagnostic exceptionnel justifié |
 | `-y`           | Pas de confirmation : pour un appel scripté, jamais par habitude |
 | `-h`           | Aide, avec le dossier effectivement retenu                       |
 
@@ -72,7 +97,9 @@ code pourrait la lire. Le `.gitignore` bloque aussi `/backups/`, `*.pgsql`, `*.d
 
 > **Données de développement.** Le développement et les tests se font sur des données
 > synthétiques (`pnpm seed:staging`) ou effectivement anonymisées **avant** leur transfert
-> sur le poste. Une extraction nominative pour un diagnostic exceptionnel demande une
+> sur le poste. La pseudonymisation de `db:restore` protège la base locale, pas le dump, qui reste
+> en clair dans le dossier des sauvegardes ; et une base pseudonymisée reste une donnée
+> personnelle (commune, année de construction et revenu suffisent parfois à retrouver un ménage). Une extraction nominative pour un diagnostic exceptionnel demande une
 > justification tracée, le périmètre minimal, et une échéance de suppression qui couvre le
 > dump, le volume Docker et les sauvegardes du poste. Neutraliser les intégrations sortantes
 > avant de lancer l'app dessus : emails vers Mailhog, pas de token Brevo ni DN de production
@@ -85,6 +112,13 @@ docker exec fonds-argile-postgres \
   psql -U fonds_argile_user -d fonds_argile -c "SELECT COUNT(*) FROM users;"
 ```
 
+Vérifier qu'aucun email ni téléphone n'est resté en clair (compteurs seulement, aucune valeur
+affichée ; un téléphone dans `agents.phone` vient d'un compte conservé) :
+
+```bash
+docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile -q < scripts/dev/verifier-anonymisation.sql
+```
+
 ## Changer de rôle agent (tester les espaces du backoffice)
 
 Pour parcourir les différents espaces sans repasser par ProConnect, on modifie directement
@@ -93,26 +127,28 @@ la ligne `agents` rattachée à l'email du compte. Le schéma est
 rôles et leurs périmètres sont décrits dans
 [`docs/security/RBAC-ROLES.md`](../security/RBAC-ROLES.md).
 
-Les 6 valeurs de l'enum `agent_role` :
+Depuis la migration `0059` ([ADR-0051](../adr/0051-roles-amo-aller-vers-portes-par-la-structure.md)),
+le rôle d'un agent vient de deux sources exclusives :
 
-`super_administrateur`, `administrateur`, `amo`, `allers_vers`, `amo_et_allers_vers`, `analyste`
+| Compte                 | Ce qui fait le rôle                                                      | `structure_id` |
+| ---------------------- | ------------------------------------------------------------------------ | -------------- |
+| Plateforme             | la colonne `role` : `super_administrateur`, `administrateur`, `analyste` | `NULL`         |
+| Membre d'une structure | les habilitations de la structure : sa ligne AMO, sa ligne Aller-vers    | obligatoire    |
 
-Cohérence métier à respecter, sinon l'espace agent se bloque
-([`AmoGuard`](<../../src/app/(backoffice)/components/AmoGuard.tsx>)) :
+Les colonnes `role`, `entreprise_amo_id` et `allers_vers_id` d'un membre de structure ne sont
+plus lues (elles ne servent qu'au retour arrière) : inutile de les modifier en local, et risqué
+(cinquième piège ci-dessous).
 
-| Rôle visé            | `entreprise_amo_id` | `allers_vers_id` |
-| -------------------- | ------------------- | ---------------- |
-| `amo`                | obligatoire         | `NULL`           |
-| `allers_vers`        | `NULL`              | obligatoire      |
-| `amo_et_allers_vers` | obligatoire         | obligatoire      |
-| tous les autres      | `NULL`              | `NULL`           |
-
-Piocher d'abord les UUID nécessaires :
+Piocher d'abord la structure, avec les rôles qu'elle donne :
 
 ```bash
-docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -c "SELECT id, nom FROM entreprises_amo ORDER BY nom;" \
-  -c "SELECT id, nom FROM allers_vers ORDER BY nom;"
+docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile <<'SQL'
+SELECT s.id, s.nom, ea.nom AS amo, av.nom AS allers_vers
+FROM structures s
+LEFT JOIN entreprises_amo ea ON ea.structure_id = s.id
+LEFT JOIN allers_vers av ON av.structure_id = s.id
+ORDER BY s.nom;
+SQL
 ```
 
 Puis basculer le compte. La requête passe par l'**entrée standard** : `psql` n'interpole ses
@@ -122,34 +158,22 @@ donc brutes, sans guillemets :
 ```bash
 EMAIL="prenom.nom@beta.gouv.fr"
 
-# Super-administrateur (ou administrateur / analyste : mêmes FK à NULL)
+# Super-administrateur (ou administrateur / analyste)
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
   -v ON_ERROR_STOP=1 -v email="$EMAIL" <<'SQL'
-UPDATE agents SET role = 'super_administrateur', entreprise_amo_id = NULL, allers_vers_id = NULL
+UPDATE agents SET role = 'super_administrateur', structure_id = NULL
 WHERE email = :'email';
 SQL
 ```
 
 ```bash
 EMAIL="prenom.nom@beta.gouv.fr"
-AMO_ID="<uuid-entreprise-amo>"
+STRUCTURE_ID="<uuid-structure>"
 
-# AMO
+# Membre d'une structure : AMO, Aller-vers ou les deux, selon ses habilitations
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v amo_id="$AMO_ID" <<'SQL'
-UPDATE agents SET role = 'amo', entreprise_amo_id = :'amo_id', allers_vers_id = NULL
-WHERE email = :'email';
-SQL
-```
-
-```bash
-EMAIL="prenom.nom@beta.gouv.fr"
-AV_ID="<uuid-allers-vers>"
-
-# Aller-vers
-docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
-  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v av_id="$AV_ID" <<'SQL'
-UPDATE agents SET role = 'allers_vers', entreprise_amo_id = NULL, allers_vers_id = :'av_id'
+  -v ON_ERROR_STOP=1 -v email="$EMAIL" -v structure_id="$STRUCTURE_ID" <<'SQL'
+UPDATE agents SET structure_id = :'structure_id'
 WHERE email = :'email';
 SQL
 ```
@@ -159,24 +183,30 @@ Vérification :
 ```bash
 docker exec -i fonds-argile-postgres psql -U fonds_argile_user -d fonds_argile \
   -v email="$EMAIL" <<'SQL'
-SELECT a.email, a.role, e.nom AS amo, av.nom AS allers_vers, a.desactive_at
+SELECT a.email, a.role AS role_plateforme, s.nom AS structure, ea.nom AS amo, av.nom AS allers_vers, a.desactive_at
 FROM agents a
-LEFT JOIN entreprises_amo e ON e.id = a.entreprise_amo_id
-LEFT JOIN allers_vers av    ON av.id = a.allers_vers_id
+LEFT JOIN structures s       ON s.id = a.structure_id
+LEFT JOIN entreprises_amo ea ON ea.structure_id = a.structure_id
+LEFT JOIN allers_vers av     ON av.structure_id = a.structure_id
 WHERE a.email = :'email';
 SQL
 ```
 
-Trois pièges qui font perdre du temps :
+Cinq pièges qui font perdre du temps :
 
+- **Une structure sans habilitation, ou un rôle `amo` / `allers_vers` sans structure, ne donne
+  aucun rôle** : le compte est refusé partout, comme un compte désactivé.
 - **`desactive_at` non nul coupe tout accès**, quel que soit le rôle
   ([RBAC §2.1](../security/RBAC-ROLES.md)) : un compte désactivé donne un espace agent vide
   et une redirection vers `/connexion/agent`. Le remettre à `NULL` pour tester.
 - **Un `analyste` sans département est « national »** et n'a accès qu'aux statistiques, pas
   aux dossiers. Le mode départemental (« suivi DDT ») vient de la table `agent_permissions`
   (une ligne par `departement_code`), pas du rôle.
+- **Modifier `role`, `entreprise_amo_id` ou `allers_vers_id` sans `structure_id` recalcule la
+  structure** depuis ces colonnes (trigger transitoire de l'ADR-0051) : `role = 'amo'` sans
+  `entreprise_amo_id` retire la structure, donc le rôle. Changer de structure par `structure_id`.
 - **Se reconnecter après le changement.** Les gardes de page relisent le rôle en base
-  (`getCurrentUser` utilise `agent.role`), mais le `middleware` aiguille sur le cookie
+  (`getCurrentUser`, rôle dérivé de la structure), mais le `middleware` aiguille sur le cookie
   `SESSION_ROLE` : sans reconnexion, les redirections restent celles de l'ancien rôle.
 
 > Ces requêtes sont à réserver au **local**. Sur un environnement déployé, changer un rôle

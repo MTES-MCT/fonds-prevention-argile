@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/features/auth/services/user.service";
 import { getSession } from "@/features/auth/services/session.service";
 import { AUTH_METHODS } from "@/features/auth/domain/value-objects/constants";
 import { getAgentById } from "../services/agent.service";
-import type { Agent } from "@/shared/database/schema/agents";
+import { aUnRole, type AgentAvecRole } from "@/shared/database/schema/agents";
 import type { ActionResult } from "@/shared/types";
 
 /**
@@ -16,7 +16,7 @@ import type { ActionResult } from "@/shared/types";
  * 2. Récupère l'agent en BDD via son ID (stocké dans session.userId)
  * 3. Retourne l'agent ou une erreur
  */
-export async function getCurrentAgent(): Promise<ActionResult<Agent>> {
+export async function getCurrentAgent(): Promise<ActionResult<AgentAvecRole>> {
   try {
     const user = await getCurrentUser();
 
@@ -51,6 +51,14 @@ export async function getCurrentAgent(): Promise<ActionResult<Agent>> {
       return {
         success: false,
         error: "Agent non enregistré dans le système",
+      };
+    }
+
+    // Structure sans habilitation, ou rôle de structure sans structure : aucun accès.
+    if (!aUnRole(agent)) {
+      return {
+        success: false,
+        error: "Agent sans rôle",
       };
     }
 

@@ -19,8 +19,10 @@ interface AgentsListProps {
 /**
  * Libellé du rôle pour l'affichage
  */
-function getRoleLabel(role: string): string {
+function getRoleLabel(role: string | null): string {
   switch (role) {
+    case null:
+      return "Sans rôle";
     case UserRole.SUPER_ADMINISTRATEUR:
       return "Super Admin";
     case UserRole.ADMINISTRATEUR:
@@ -41,8 +43,10 @@ function getRoleLabel(role: string): string {
 /**
  * Couleur du badge selon le rôle
  */
-function getRoleBadgeClass(role: string): string {
+function getRoleBadgeClass(role: string | null): string {
   switch (role) {
+    case null:
+      return "fr-badge--error";
     case UserRole.SUPER_ADMINISTRATEUR:
       return "fr-badge--purple-glycine";
     case UserRole.ADMINISTRATEUR:
@@ -97,7 +101,7 @@ export default function AgentsList({
         </thead>
         <tbody>
           {agents.map((agentData) => {
-            const { agent, departements, entrepriseAmo, allersVers } = agentData;
+            const { agent, departements, structure, entrepriseAmo, allersVers } = agentData;
             const fullName = [agent.givenName, agent.usualName].filter(Boolean).join(" ");
             const isPending = agent.sub.startsWith("pending_");
             const isDesactive = Boolean(agent.desactiveAt);
@@ -138,20 +142,23 @@ export default function AgentsList({
                 {/* Périmètre */}
                 <td>
                   <div className="flex flex-col gap-1">
-                    {/* Entreprise AMO */}
-                    {[UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(agent.role as UserRole) && entrepriseAmo && (
+                    {/* Structure, et les habilitations dont l'agent hérite */}
+                    {structure && (
                       <div className="text-sm">
-                        <span className="font-medium">AMO:</span> {entrepriseAmo.nom}
+                        <span className="font-medium">Structure :</span> {structure.nom}
                       </div>
                     )}
-
-                    {/* Territoire Allers-Vers */}
-                    {[UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(agent.role as UserRole) &&
-                      allersVers && (
-                        <div className="text-sm">
-                          <span className="font-medium">Territoire:</span> {allersVers.nom}
-                        </div>
-                      )}
+                    {entrepriseAmo && (
+                      <div className="text-sm text-(--text-mention-grey)">AMO : {entrepriseAmo.nom}</div>
+                    )}
+                    {allersVers && (
+                      <div className="text-sm text-(--text-mention-grey)">Aller-vers : {allersVers.nom}</div>
+                    )}
+                    {agent.role === null && (
+                      <span className="text-sm text-(--text-mention-grey)">
+                        {structure ? "Structure sans rôle : aucun accès" : "Aucune structure : aucun accès"}
+                      </span>
+                    )}
 
                     {/* Départements (pour Administrateur et Analyste) */}
                     {[UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(agent.role as UserRole) && (

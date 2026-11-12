@@ -1,4 +1,4 @@
-import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
+import type { CompteAgent } from "@/shared/domain/value-objects/role-structure";
 
 /**
  * Informations de l'entreprise AMO liée à un agent
@@ -18,7 +18,15 @@ export interface AgentAllersVersInfo {
 }
 
 /**
- * Agent avec ses permissions (départements), son entreprise AMO et son territoire Allers-Vers
+ * Structure de rattachement d'un agent
+ */
+export interface AgentStructureInfo {
+  id: string;
+  nom: string;
+}
+
+/**
+ * Agent avec ses permissions (départements), sa structure et les habilitations qu'il en hérite
  */
 export interface AgentWithPermissions {
   agent: {
@@ -31,7 +39,9 @@ export interface AgentWithPermissions {
     siret: string | null;
     phone: string | null;
     organizationalUnit: string | null;
-    role: string;
+    // Null : structure sans habilitation, ou rôle de structure sans structure. Aucun accès.
+    role: string | null;
+    structureId: string | null;
     entrepriseAmoId: string | null;
     allersVersId: string | null;
     // null = agent actif. `desactivePar` reste en base pour l'audit, l'UI n'en a pas besoin.
@@ -42,6 +52,7 @@ export interface AgentWithPermissions {
     updatedAt: Date;
   };
   departements: string[];
+  structure: AgentStructureInfo | null;
   entrepriseAmo: AgentEntrepriseAmoInfo | null;
   allersVers: AgentAllersVersInfo | null;
 }
@@ -53,10 +64,8 @@ export interface CreateAgentData {
   email: string;
   givenName: string;
   usualName?: string;
-  role: AGENT_ROLES;
+  compte: CompteAgent;
   departements?: string[];
-  entrepriseAmoId?: string;
-  allersVersId?: string;
 }
 
 /**
@@ -66,8 +75,6 @@ export interface UpdateAgentData {
   email?: string;
   givenName?: string;
   usualName?: string;
-  role?: AGENT_ROLES;
+  compte?: CompteAgent;
   departements?: string[];
-  entrepriseAmoId?: string | null;
-  allersVersId?: string | null;
 }

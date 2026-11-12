@@ -51,7 +51,7 @@ function agentEnBase(role: AgentRole, desactiveAt: Date | null = null): Agent {
 const NOUVEL_AGENT = {
   email: "nouvel.agent@exemple.fr",
   givenName: "Nouvel",
-  role: UserRole.ADMINISTRATEUR as AgentRole,
+  compte: { type: "plateforme", role: UserRole.ADMINISTRATEUR },
 };
 
 describe("Gardes admin — le rôle est relu en base, jamais dans le JWT", () => {

@@ -1,27 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserRole } from "@/shared/domain/value-objects";
-import type { AgentRole } from "@/shared/domain/value-objects";
+import { UserRole, type CompteAgent, type RolePlateforme } from "@/shared/domain/value-objects";
 import DepartementsSelect from "./DepartementsSelect";
 import { AgentWithPermissions } from "@/features/backoffice";
 
 /**
- * Entreprise AMO simplifiée pour le select
+ * Structure proposée au rattachement, avec les habilitations que l'agent en héritera
  */
-export interface EntrepriseAmoOption {
+export interface StructureOption {
   id: string;
   nom: string;
-  siret: string;
-}
-
-/**
- * Allers-Vers simplifié pour le select
- */
-export interface AllersVersOption {
-  id: string;
-  nom: string;
-  departements: string[];
+  amo: string | null;
+  allersVers: string | null;
 }
 
 interface AgentFormModalProps {
@@ -29,123 +20,127 @@ interface AgentFormModalProps {
   onSubmit: (data: AgentFormData) => Promise<void>;
   agent?: AgentWithPermissions | null;
   isLoading?: boolean;
-  entreprisesAmo: EntrepriseAmoOption[];
-  allersVersList: AllersVersOption[];
+  structures: StructureOption[];
 }
 
 export interface AgentFormData {
   email: string;
   givenName: string;
   usualName?: string;
-  role: AgentRole;
+  compte: CompteAgent;
   departements: string[];
-  entrepriseAmoId?: string;
-  allersVersId?: string;
 }
 
-const ROLE_OPTIONS: { value: AgentRole; label: string }[] = [
+type TypeCompte = RolePlateforme | "structure";
+
+interface FormState {
+  email: string;
+  givenName: string;
+  usualName: string;
+  typeCompte: TypeCompte;
+  structureId: string;
+  departements: string[];
+}
+
+const TYPE_COMPTE_OPTIONS: { value: TypeCompte; label: string }[] = [
   { value: UserRole.SUPER_ADMINISTRATEUR, label: "Super Administrateur" },
   { value: UserRole.ADMINISTRATEUR, label: "Administrateur" },
-  { value: UserRole.AMO, label: "AMO" },
   { value: UserRole.ANALYSTE, label: "Analyste" },
-  { value: UserRole.ALLERS_VERS, label: "Allers-Vers" },
-  { value: UserRole.AMO_ET_ALLERS_VERS, label: "AMO et Allers-Vers" },
+  { value: "structure", label: "Membre d'une structure (AMO, Aller-vers)" },
 ];
+
+const FORMULAIRE_VIDE: FormState = {
+  email: "",
+  givenName: "",
+  usualName: "",
+  typeCompte: UserRole.ADMINISTRATEUR,
+  structureId: "",
+  departements: [],
+};
+
+function rolesDeStructure(structure: StructureOption): string {
+  if (structure.amo && structure.allersVers) return "AMO et Aller-vers";
+  if (structure.amo) return "AMO";
+  if (structure.allersVers) return "Aller-vers";
+  return "aucun rôle";
+}
+
+function etatInitial(agent: AgentWithPermissions): FormState {
+  const { role, structureId } = agent.agent;
+  const plateforme = TYPE_COMPTE_OPTIONS.find((option) => option.value !== "structure" && option.value === role);
+  return {
+    email: agent.agent.email,
+    givenName: agent.agent.givenName,
+    usualName: agent.agent.usualName || "",
+    // Un compte orphelin (rôle de structure sans structure) doit en choisir une.
+    typeCompte: structureId || !plateforme ? "structure" : plateforme.value,
+    structureId: structureId ?? "",
+    departements: agent.departements,
+  };
+}
 
 export default function AgentFormModal({
   modalId,
   onSubmit,
   agent,
   isLoading = false,
-  entreprisesAmo,
-  allersVersList,
+  structures,
 }: AgentFormModalProps) {
   const isEditing = !!agent;
 
-  const [formData, setFormData] = useState<AgentFormData>({
-    email: "",
-    givenName: "",
-    usualName: "",
-    role: UserRole.ADMINISTRATEUR,
-    departements: [],
-    entrepriseAmoId: undefined,
-    allersVersId: undefined,
-  });
-
+  const [formData, setFormData] = useState<FormState>(FORMULAIRE_VIDE);
   const [error, setError] = useState<string | null>(null);
 
   // Initialiser le formulaire avec les données de l'agent en mode édition
   useEffect(() => {
-    if (agent) {
-      setFormData({
-        email: agent.agent.email,
-        givenName: agent.agent.givenName,
-        usualName: agent.agent.usualName || "",
-        role: agent.agent.role as AgentRole,
-        departements: agent.departements,
-        entrepriseAmoId: agent.agent.entrepriseAmoId || undefined,
-        allersVersId: agent.agent.allersVersId || undefined,
-      });
-    } else {
-      setFormData({
-        email: "",
-        givenName: "",
-        usualName: "",
-        role: UserRole.ADMINISTRATEUR,
-        departements: [],
-        entrepriseAmoId: undefined,
-        allersVersId: undefined,
-      });
-    }
+    setFormData(agent ? etatInitial(agent) : FORMULAIRE_VIDE);
     setError(null);
   }, [agent]);
 
-  // Reset des champs conditionnels quand on change de rôle
-  const handleRoleChange = (newRole: AgentRole) => {
+  const handleTypeCompteChange = (typeCompte: TypeCompte) => {
     setFormData((prev) => ({
       ...prev,
-      role: newRole,
-      // Reset l'entreprise AMO si le nouveau rôle ne nécessite pas d'AMO
-      entrepriseAmoId: [UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(newRole) ? prev.entrepriseAmoId : undefined,
-      // Reset le territoire Allers-Vers si le nouveau rôle ne nécessite pas d'Allers-Vers
-      allersVersId: [UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(newRole)
-        ? prev.allersVersId
-        : undefined,
-      // Garder les départements pour Administrateur et Analyste
-      departements: [UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(newRole) ? prev.departements : [],
+      typeCompte,
+      structureId: typeCompte === "structure" ? prev.structureId : "",
+      // Les départements ne valent que pour Administrateur et Analyste
+      departements: typeCompte === UserRole.ADMINISTRATEUR || typeCompte === UserRole.ANALYSTE ? prev.departements : [],
     }));
   };
+
+  const structureChoisie = structures.find((structure) => structure.id === formData.structureId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validation email
     if (!formData.email || !formData.email.includes("@")) {
       setError("Email invalide");
       return;
     }
 
-    // Validation prénom
     if (!formData.givenName.trim()) {
       setError("Le prénom est requis");
       return;
     }
 
-    // Validation entreprise AMO si rôle = AMO ou AMO_ET_ALLERS_VERS
-    if ([UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && !formData.entrepriseAmoId) {
-      setError("Une entreprise AMO doit être sélectionnée pour ce rôle");
+    if (formData.typeCompte === "structure" && !formData.structureId) {
+      setError("Une structure doit être sélectionnée");
       return;
     }
 
-    // Validation territoire Allers-Vers si rôle = ALLERS_VERS ou AMO_ET_ALLERS_VERS
-    if ([UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && !formData.allersVersId) {
-      setError("Un territoire Allers-Vers doit être sélectionné pour ce rôle");
-      return;
-    }
+    const compte: CompteAgent =
+      formData.typeCompte === "structure"
+        ? { type: "structure", structureId: formData.structureId }
+        : { type: "plateforme", role: formData.typeCompte };
 
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        email: formData.email,
+        givenName: formData.givenName,
+        usualName: formData.usualName,
+        compte,
+        departements: formData.departements,
+      });
 
       // Fermer la modale via l'API DSFR
       const modal = document.getElementById(modalId);
@@ -153,16 +148,7 @@ export default function AgentFormModal({
         window.dsfr(modal).modal.conceal();
       }
 
-      // Reset le formulaire après succès
-      setFormData({
-        email: "",
-        givenName: "",
-        usualName: "",
-        role: UserRole.ADMINISTRATEUR,
-        departements: [],
-        entrepriseAmoId: undefined,
-        allersVersId: undefined,
-      });
+      setFormData(FORMULAIRE_VIDE);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
@@ -247,19 +233,19 @@ export default function AgentFormModal({
                     />
                   </div>
 
-                  {/* Rôle */}
+                  {/* Type de compte : le rôle d'un membre de structure vient de sa structure */}
                   <div className="fr-select-group">
-                    <label className="fr-label" htmlFor={`${modalId}-role`}>
-                      Rôle *
+                    <label className="fr-label" htmlFor={`${modalId}-typeCompte`}>
+                      Type de compte *
                     </label>
                     <select
-                      id={`${modalId}-role`}
+                      id={`${modalId}-typeCompte`}
                       className="fr-select"
-                      value={formData.role}
-                      onChange={(e) => handleRoleChange(e.target.value as AgentRole)}
+                      value={formData.typeCompte}
+                      onChange={(e) => handleTypeCompteChange(e.target.value as TypeCompte)}
                       disabled={isLoading}
                       required>
-                      {ROLE_OPTIONS.map((option) => (
+                      {TYPE_COMPTE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -267,71 +253,48 @@ export default function AgentFormModal({
                     </select>
                   </div>
 
-                  {/* Entreprise AMO (pour les rôles AMO et AMO_ET_ALLERS_VERS) */}
-                  {[UserRole.AMO, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && (
+                  {formData.typeCompte === "structure" && (
                     <div className="fr-select-group">
-                      <label className="fr-label" htmlFor={`${modalId}-entrepriseAmo`}>
-                        Entreprise AMO *
+                      <label className="fr-label" htmlFor={`${modalId}-structure`}>
+                        Structure *
                       </label>
                       <select
-                        id={`${modalId}-entrepriseAmo`}
+                        id={`${modalId}-structure`}
                         className="fr-select"
-                        value={formData.entrepriseAmoId || ""}
-                        onChange={(e) => setFormData({ ...formData, entrepriseAmoId: e.target.value || undefined })}
+                        value={formData.structureId}
+                        onChange={(e) => setFormData({ ...formData, structureId: e.target.value })}
                         disabled={isLoading}
                         required>
-                        <option value="">Sélectionner une entreprise AMO</option>
-                        {entreprisesAmo.map((entreprise) => (
-                          <option key={entreprise.id} value={entreprise.id}>
-                            {entreprise.nom} ({entreprise.siret})
+                        <option value="">Sélectionner une structure</option>
+                        {structures.map((structure) => (
+                          <option
+                            key={structure.id}
+                            value={structure.id}
+                            disabled={!structure.amo && !structure.allersVers}>
+                            {structure.nom} ({rolesDeStructure(structure)})
                           </option>
                         ))}
                       </select>
-                      <p className="fr-hint-text">
-                        L&apos;agent AMO aura accès uniquement aux dossiers associés à cette entreprise
-                      </p>
-                      {entreprisesAmo.length === 0 && (
-                        <p className="fr-error-text">
-                          Aucune entreprise AMO disponible. Veuillez d&apos;abord créer une entreprise AMO.
+                      {structureChoisie ? (
+                        <p className="fr-hint-text">
+                          Rôle hérité : {rolesDeStructure(structureChoisie)}.
+                          {structureChoisie.amo && ` Dossiers de l'AMO « ${structureChoisie.amo} ».`}
+                          {structureChoisie.allersVers &&
+                            ` Prospects du territoire de l'Aller-vers « ${structureChoisie.allersVers} ».`}
                         </p>
+                      ) : (
+                        <p className="fr-hint-text">L&apos;agent obtient les rôles de sa structure.</p>
                       )}
-                    </div>
-                  )}
-
-                  {/* Territoire Allers-Vers (pour les rôles ALLERS_VERS et AMO_ET_ALLERS_VERS) */}
-                  {[UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS].includes(formData.role) && (
-                    <div className="fr-select-group">
-                      <label className="fr-label" htmlFor={`${modalId}-allersVers`}>
-                        Territoire Allers-Vers *
-                      </label>
-                      <select
-                        id={`${modalId}-allersVers`}
-                        className="fr-select"
-                        value={formData.allersVersId || ""}
-                        onChange={(e) => setFormData({ ...formData, allersVersId: e.target.value || undefined })}
-                        disabled={isLoading}
-                        required>
-                        <option value="">Sélectionner un territoire</option>
-                        {allersVersList.map((av) => (
-                          <option key={av.id} value={av.id}>
-                            {av.nom}
-                            {av.departements.length > 0 ? ` (${av.departements.join(", ")})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="fr-hint-text">
-                        L&apos;agent Allers-Vers aura accès aux prospects (particuliers sans AMO) de ce territoire
-                      </p>
-                      {allersVersList.length === 0 && (
+                      {structures.length === 0 && (
                         <p className="fr-error-text">
-                          Aucun territoire Allers-Vers disponible. Veuillez d&apos;abord créer un territoire.
+                          Aucune structure disponible. Importez d&apos;abord une AMO ou une structure Aller-vers.
                         </p>
                       )}
                     </div>
                   )}
 
                   {/* Départements (pour Administrateur et Analyste) */}
-                  {[UserRole.ADMINISTRATEUR, UserRole.ANALYSTE].includes(formData.role) && (
+                  {(formData.typeCompte === UserRole.ADMINISTRATEUR || formData.typeCompte === UserRole.ANALYSTE) && (
                     <div className="fr-input-group">
                       <label className="fr-label">Départements autorisés</label>
                       <DepartementsSelect
@@ -341,7 +304,7 @@ export default function AgentFormModal({
                         placeholder="Sélectionner les départements..."
                       />
                       <p className="fr-hint-text">
-                        {formData.role === UserRole.ANALYSTE
+                        {formData.typeCompte === UserRole.ANALYSTE
                           ? "Avec un ou plusieurs départements, l'analyste suit les dossiers de ces territoires (mode DDT). Laissez vide pour un accès national aux statistiques."
                           : "L'administrateur n'aura accès qu'aux données de ces départements. Laissez vide pour un accès à tous les départements."}
                       </p>

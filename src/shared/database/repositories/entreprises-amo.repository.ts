@@ -1,8 +1,17 @@
-import { and, eq, like, notExists, or, SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, notExists, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import { agents, entreprisesAmo, entreprisesAmoCommunes, entreprisesAmoEpci, parcoursAmoValidations } from "../schema";
+import {
+  agents,
+  entreprisesAmo,
+  entreprisesAmoCommunes,
+  entreprisesAmoEpci,
+  parcoursAmoValidations,
+  structures,
+} from "../schema";
 import type { NewEntrepriseAmo } from "../schema/entreprises-amo";
 import { BaseRepository } from "./base.repository";
+import { structuresRepository } from "./structures.repository";
+import { agentsRepository } from "./agents.repository";
 import type { Amo } from "@/features/parcours/amo/domain/entities";
 import { parseCodesDepartement } from "@/shared/utils/departements.utils";
 
@@ -96,18 +105,21 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
    * Crée une nouvelle AMO
    */
   async create(data: Partial<Amo>): Promise<Amo> {
-    const insertData: NewEntrepriseAmo = {
-      nom: data.nom!,
-      siret: data.siret || "",
-      departements: data.departements!,
-      emails: data.emails!,
-      telephone: data.telephone || "",
-      adresse: data.adresse || "",
-    };
+    return await db.transaction(async (tx) => {
+      const insertData: NewEntrepriseAmo = {
+        nom: data.nom!,
+        siret: data.siret || "",
+        departements: data.departements!,
+        emails: data.emails!,
+        telephone: data.telephone || "",
+        adresse: data.adresse || "",
+        // Une nouvelle AMO est sa propre structure, sans rôle Aller-vers.
+        structureId: await structuresRepository.creer(data.nom!, tx),
+      };
 
-    const [created] = await db.insert(entreprisesAmo).values(insertData).returning();
-
-    return created;
+      const [created] = await tx.insert(entreprisesAmo).values(insertData).returning();
+      return created;
+    });
   }
 
   /**
@@ -133,7 +145,32 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
    * Supprime une AMO et toutes ses relations
    */
   async delete(id: string): Promise<boolean> {
-    return await this.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
+      const [existante] = await tx
+        .select({ structureId: entreprisesAmo.structureId })
+        .from(entreprisesAmo)
+        .where(eq(entreprisesAmo.id, id))
+        .limit(1);
+      if (!existante) return false;
+      // Verrou exclusif : une autre suppression ou un rattachement d'agent sur la structure attend, puis voit l'état final.
+      await structuresRepository.verrouiller(existante.structureId, "exclusif", tx);
+      const [relue] = await tx
+        .select({ structureId: entreprisesAmo.structureId })
+        .from(entreprisesAmo)
+        .where(eq(entreprisesAmo.id, id))
+        .limit(1);
+      if (!relue) return false;
+      // Une fusion ou un détachement l'a déplacée avant le verrou : la garde porterait sur la mauvaise structure.
+      if (relue.structureId !== existante.structureId) {
+        throw new Error("Cette AMO vient de changer de structure : recommencez la suppression");
+      }
+      const structure = await structuresRepository.findAvecHabilitations(existante.structureId, tx);
+      if (!structure?.allersVers && (await agentsRepository.compterParStructure(existante.structureId, tx)) > 0) {
+        throw new Error(
+          "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer cette AMO"
+        );
+      }
+
       // Supprimer les relations communes
       await tx.delete(entreprisesAmoCommunes).where(eq(entreprisesAmoCommunes.entrepriseAmoId, id));
 
@@ -143,6 +180,8 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
       // Supprimer l'AMO
       const result = await tx.delete(entreprisesAmo).where(eq(entreprisesAmo.id, id)).returning();
 
+      await agentsRepository.resynchroniserColonnesHeritees(existante.structureId, tx);
+      await structuresRepository.supprimerVides(tx);
       return result.length > 0;
     });
   }
@@ -151,21 +190,42 @@ export class EntreprisesAmoRepository extends BaseRepository<Amo> {
    * Supprime les entreprises qu'aucun agent ni aucune validation AMO ne référence
    */
   async supprimerNonRattachees(): Promise<{ supprimees: string[]; conservees: string[] }> {
-    // Un seul DELETE : la FK restrict des validations ne peut pas lever, et aucun agent ne devient orphelin.
-    const supprimees = await db
-      .delete(entreprisesAmo)
-      .where(
-        and(
-          notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.entrepriseAmoId, entreprisesAmo.id))),
-          notExists(
-            db
-              .select({ id: parcoursAmoValidations.id })
-              .from(parcoursAmoValidations)
-              .where(eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
-          )
-        )
+    const sansAgentNiValidation = and(
+      notExists(db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, entreprisesAmo.structureId))),
+      notExists(
+        db
+          .select({ id: parcoursAmoValidations.id })
+          .from(parcoursAmoValidations)
+          .where(eq(parcoursAmoValidations.entrepriseAmoId, entreprisesAmo.id))
       )
-      .returning({ nom: entreprisesAmo.nom });
+    );
+    const supprimees = await db.transaction(async (tx) => {
+      // Un agent rattaché pendant la purge attend ces verrous ; le DELETE, relu après eux, épargne alors sa structure.
+      const verrouillees = await tx
+        .select({ id: structures.id })
+        .from(structures)
+        .innerJoin(entreprisesAmo, eq(entreprisesAmo.structureId, structures.id))
+        .where(sansAgentNiValidation)
+        .orderBy(structures.id)
+        .for("update", { of: structures });
+      // Une structure devenue candidate entre-temps n'est pas verrouillée : elle attend la prochaine purge.
+      const lignes = verrouillees.length
+        ? await tx
+            .delete(entreprisesAmo)
+            .where(
+              and(
+                inArray(
+                  entreprisesAmo.structureId,
+                  verrouillees.map((v) => v.id)
+                ),
+                sansAgentNiValidation
+              )
+            )
+            .returning({ nom: entreprisesAmo.nom })
+        : [];
+      await structuresRepository.supprimerVides(tx);
+      return lignes;
+    });
 
     const conservees = await db.select({ nom: entreprisesAmo.nom }).from(entreprisesAmo).orderBy(entreprisesAmo.nom);
 

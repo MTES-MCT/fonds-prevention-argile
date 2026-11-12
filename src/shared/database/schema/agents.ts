@@ -2,9 +2,11 @@ import { pgTable, varchar, timestamp, uuid, text, type AnyPgColumn } from "drizz
 import { relations } from "drizzle-orm";
 import { agentRolePgEnum } from "../enums/enums";
 import { AGENT_ROLES } from "@/shared/domain/value-objects/agent-role.enum";
+import type { AgentRole } from "@/shared/domain/value-objects/user-role.enum";
 import { entreprisesAmo } from "./entreprises-amo";
 import { allersVers } from "./allers-vers";
 import { parcoursActions } from "./parcours-actions";
+import { structures } from "./structures";
 
 /**
  * Table des agents ProConnect
@@ -27,16 +29,15 @@ export const agents = pgTable("agents", {
   phone: varchar("phone", { length: 50 }),
   organizationalUnit: varchar("organizational_unit", { length: 255 }),
 
-  // Rôle de l'agent
-  role: agentRolePgEnum("role").notNull().default(AGENT_ROLES.ADMINISTRATEUR),
+  // Structure de l'agent : ses rôles en découlent. Null pour un rôle plateforme (admin, analyste).
+  structureId: uuid("structure_id").references(() => structures.id, { onDelete: "restrict" }),
 
-  // Liaison avec une entreprise AMO (obligatoire si rôle = AMO ou AMO_ET_ALLERS_VERS)
-  entrepriseAmoId: uuid("entreprise_amo_id").references(() => entreprisesAmo.id, {
+  // Colonnes héritées, écrites seulement pour garder le retour arrière possible : ne jamais les lire.
+  legacyRole: agentRolePgEnum("role").notNull().default(AGENT_ROLES.ADMINISTRATEUR),
+  legacyEntrepriseAmoId: uuid("entreprise_amo_id").references(() => entreprisesAmo.id, {
     onDelete: "set null",
   }),
-
-  // Liaison avec une structure Allers-Vers (obligatoire si rôle = ALLERS_VERS ou AMO_ET_ALLERS_VERS)
-  allersVersId: uuid("allers_vers_id").references(() => allersVers.id, {
+  legacyAllersVersId: uuid("allers_vers_id").references(() => allersVers.id, {
     onDelete: "set null",
   }),
 
@@ -57,16 +58,27 @@ export const agents = pgTable("agents", {
 
 // Relations
 export const agentsRelations = relations(agents, ({ one, many }) => ({
-  entrepriseAmo: one(entreprisesAmo, {
-    fields: [agents.entrepriseAmoId],
-    references: [entreprisesAmo.id],
-  }),
-  allersVers: one(allersVers, {
-    fields: [agents.allersVersId],
-    references: [allersVers.id],
+  structure: one(structures, {
+    fields: [agents.structureId],
+    references: [structures.id],
   }),
   actions: many(parcoursActions),
 }));
 
-export type Agent = typeof agents.$inferSelect;
-export type NewAgent = typeof agents.$inferInsert;
+export type AgentLigne = typeof agents.$inferSelect;
+export type NewAgentLigne = typeof agents.$inferInsert;
+
+/** Agent tel que l'application le lit : rôle et rattachements dérivés de sa structure (agentsRepository). */
+export type Agent = Omit<AgentLigne, "legacyRole" | "legacyEntrepriseAmoId" | "legacyAllersVersId"> & {
+  // Null : agent de structure sans habilitation, ou rôle de structure sans structure. Aucun accès.
+  role: AgentRole | null;
+  entrepriseAmoId: string | null;
+  allersVersId: string | null;
+};
+
+/** Agent qui a un rôle : le seul que les gardes laissent passer. */
+export type AgentAvecRole = Agent & { role: AgentRole };
+
+export function aUnRole(agent: Agent): agent is AgentAvecRole {
+  return agent.role !== null;
+}

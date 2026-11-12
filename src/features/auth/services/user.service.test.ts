@@ -78,6 +78,7 @@ describe("user.service", () => {
           givenName: "Jean",
           usualName: "Dupont",
           role: ROLES.ADMINISTRATEUR,
+          structureId: null,
           entrepriseAmoId: null,
           allersVersId: null,
           desactiveAt: null,
@@ -126,6 +127,7 @@ describe("user.service", () => {
           givenName: "Marie",
           usualName: "Martin",
           role: ROLES.SUPER_ADMINISTRATEUR,
+          structureId: null,
           entrepriseAmoId: null,
           allersVersId: null,
           desactiveAt: null,
@@ -171,6 +173,7 @@ describe("user.service", () => {
           givenName: "Pierre",
           usualName: "Bernard",
           role: ROLES.AMO,
+          structureId: null,
           entrepriseAmoId: "entreprise-amo-123",
           allersVersId: null,
           desactiveAt: null,
@@ -217,6 +220,7 @@ describe("user.service", () => {
           givenName: "Lucas",
           usualName: "Petit",
           role: ROLES.AMO,
+          structureId: null,
           entrepriseAmoId: null,
           allersVersId: null,
           desactiveAt: null,
@@ -259,6 +263,39 @@ describe("user.service", () => {
         expect(await getCurrentUser()).toBeNull();
       });
 
+      it("devrait refuser un agent dont la structure n'a plus de rôle, session ouverte comprise", async () => {
+        vi.mocked(getSession).mockResolvedValue({
+          userId: "agent-sans-role",
+          role: ROLES.AMO,
+          authMethod: AUTH_METHODS.PROCONNECT,
+          exp: Date.now() + 3600000,
+          iat: Date.now(),
+        });
+        vi.mocked(agentsRepo.findById).mockResolvedValue({
+          id: "agent-sans-role",
+          sub: "sub-sans-role",
+          email: "agent@structure-fermee.fr",
+          givenName: "Agent",
+          usualName: null,
+          role: null,
+          structureId: "structure-sans-habilitation",
+          entrepriseAmoId: null,
+          allersVersId: null,
+          desactiveAt: null,
+          desactivePar: null,
+          desactiveRaison: null,
+          lastLogin: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          uid: null,
+          siret: null,
+          phone: null,
+          organizationalUnit: null,
+        });
+
+        expect(await getCurrentUser()).toBeNull();
+      });
+
       it("devrait refuser un agent désactivé, session ouverte comprise", async () => {
         const mockSession: JWTPayload = {
           userId: "agent-desactive",
@@ -278,6 +315,7 @@ describe("user.service", () => {
           givenName: "Partie",
           usualName: "Agent",
           role: ROLES.AMO,
+          structureId: null,
           entrepriseAmoId: "entreprise-amo-123",
           allersVersId: null,
           desactiveAt: new Date("2026-09-01T10:00:00Z"),
@@ -314,6 +352,7 @@ describe("user.service", () => {
           givenName: "Claire",
           usualName: "Durand",
           role: ROLES.ANALYSTE,
+          structureId: null,
           entrepriseAmoId: null,
           allersVersId: null,
           desactiveAt: null,
