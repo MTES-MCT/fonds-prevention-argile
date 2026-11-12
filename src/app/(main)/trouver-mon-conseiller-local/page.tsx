@@ -21,14 +21,17 @@ export const dynamic = "force-dynamic";
 export default async function TrouverConseillerPage() {
   const result = await getAllAllersVersWithRelationsAction();
   // Un Aller-vers déclaré seulement par ses EPCI doit apparaître dans leurs départements.
-  const conseillers = (result.success ? result.data : []).map((conseiller) => ({
-    ...conseiller,
-    departements: departementsDuConseiller(
-      conseiller.departements.map((d) => d.codeDepartement),
-      conseiller.epci.map((e) => e.codeEpci),
-      (code) => getEpciBySiren(code)?.codesDepartements ?? []
-    ).map((codeDepartement) => ({ codeDepartement })),
-  }));
+  const conseillers = (result.success ? result.data : [])
+    .map((conseiller) => ({
+      ...conseiller,
+      departements: departementsDuConseiller(
+        conseiller.departements.map((d) => d.codeDepartement),
+        conseiller.epci.map((e) => e.codeEpci),
+        (code) => getEpciBySiren(code)?.codesDepartements ?? []
+      ).map((codeDepartement) => ({ codeDepartement })),
+    }))
+    // Un Aller-vers qui ne couvre aucun département du dispositif n'a rien à faire sur la page.
+    .filter((conseiller) => conseiller.departements.length > 0);
 
   return (
     <main>
