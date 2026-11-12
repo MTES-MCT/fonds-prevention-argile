@@ -11,20 +11,21 @@ Outils pour bootstrap une base **de zéro** avec des données de test cohérente
 pnpm seed:staging
 ```
 
-Pipeline en 6 étapes, ~30s en local. Résultat : agents de test + AMO/AV de test + 70 users + parcours à tous les stades.
+Pipeline en 7 étapes, ~30s en local. Résultat : agents de test + AMO/AV de test + experts de test + 70 users + parcours à tous les stades.
 
 ## Pipeline
 
-Le script `seed-staging.ts` enchaîne 6 étapes. Chacune est lançable séparément via `--steps`, sauf `safety`, qui s'exécute **toujours** : l'exclure laissait les autres étapes écrire sans aucun contrôle.
+Le script `seed-staging.ts` enchaîne 7 étapes. Chacune est lançable séparément via `--steps`, sauf `safety`, qui s'exécute **toujours** : l'exclure laissait les autres étapes écrire sans aucun contrôle.
 
 | #   | Step       | Quoi                                                                                                                                                          | Idempotent                                |
 | --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 1   | `safety`   | Vérifie `NEXT_PUBLIC_APP_ENV` + heuristique `DATABASE_URL`                                                                                                    | —                                         |
 | 2   | `ref-data` | Vérifie que `rga_zones` et `catastrophes_naturelles` sont non-vides (sinon bail)                                                                              | —                                         |
 | 3   | `agents`   | Fixtures d'agents (`sql/agents/…`) + `SEED_AGENTS_SUPERADMINS` + `SEED_AGENTS_HYBRIDES`                                                                       | ✅ `ON CONFLICT (email) DO UPDATE`        |
-| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`)                                                                                             | ✅ `ON CONFLICT`                          |
-| 5   | `parcours` | Joue les 15 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `14-dossiers-amo-hybrides.sql`                                                                | ✅ via `00-init.sql` qui TRUNCATE en tête |
-| 6   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides, agents sans structure habilitée, hybrides sans leurs deux rôles) | —                                         |
+| 4   | `amo-av`   | AMO + Allers-vers de test (`sql/amo-av/seed-amo-av-fixtures.sql`) ; une entreprise AMO et Aller-vers partage une structure, comme en production               | ✅ `ON CONFLICT`                          |
+| 5   | `experts`  | Structures expert de test (`sql/experts/seed-experts.sql`). Ne touche rien d'autre : jouable seule sur une base restaurée (`pnpm db:restore`)                 | ✅ `DELETE FROM experts` en tête          |
+| 6   | `parcours` | Joue les 15 fichiers SQL dans `sql/fake-parcours/00-init.sql` → `14-dossiers-amo-hybrides.sql`                                                                | ✅ via `00-init.sql` qui TRUNCATE en tête |
+| 7   | `verify`   | Joue `sql/fake-parcours/99-verification.sql` (counts attendus, appariement 1:1 des hybrides, agents sans structure habilitée, hybrides sans leurs deux rôles) | —                                         |
 
 ## Pré-requis (étape `ref-data`)
 
@@ -50,6 +51,9 @@ pnpm seed:staging
 # Subset (utile pour itérer)
 pnpm seed:staging --steps=agents,amo-av
 pnpm seed:staging --steps=parcours
+
+# Experts de test sur une base restaurée de la production, qui n'en a aucun
+pnpm seed:staging --steps=experts
 
 # Mode dry-run (log les étapes sans exécuter le SQL)
 pnpm seed:staging --dry-run
@@ -203,7 +207,10 @@ sql/
 │   ├── structures-agents.sql           # structure de chaque agent, déduite de ses rattachements
 │   └── seed-agents-prod.sql            # amorçage du 1er super-admin, paramétré
 ├── amo-av/                          # Fixtures AMO + Allers-vers
-│   └── seed-amo-av-fixtures.sql        # 2-3 AMO + 2-3 AV de test
+│   ├── seed-amo-av-fixtures.sql        # 2-3 AMO + 2-3 AV de test
+│   └── aligner-identite-structures.sql # identité des structures reprise des lignes d'habilitation
+├── experts/                         # Structures expert (ADR-0052, ADR-0053)
+│   └── seed-experts.sql                # 4 experts de test, dont un désactivé
 └── fake-parcours/                   # 13 étapes pour peupler les parcours
     ├── 00-init.sql                  # TRUNCATE des tables touchées
     ├── 01-users.sql                 # 40 users (parcours AMO)

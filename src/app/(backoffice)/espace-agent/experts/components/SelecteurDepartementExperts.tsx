@@ -1,31 +1,39 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { VUE_TERRITOIRE, VUE_TOUS } from "@/features/backoffice";
 
 interface Departement {
   code: string;
   nom: string;
+  aDesExperts: boolean;
 }
 
 interface SelecteurDepartementExpertsProps {
-  departementActuel: string | null;
+  // Code d'un département, ou l'une des vues groupées.
+  valeurActuelle: string;
   departementsConsultables: readonly Departement[];
   departementsDuTerritoire: readonly string[];
+  libelleTous: string;
+  territoireRegroupable: boolean;
 }
 
 function Options({ departements }: { departements: readonly Departement[] }) {
   return departements.map((d) => (
     <option key={d.code} value={d.code}>
       {d.code} - {d.nom}
+      {d.aDesExperts ? "" : " (aucun expert)"}
     </option>
   ));
 }
 
-/** Change de département dès la sélection ; le département reste dans l'URL pour les liens de l'encart. */
+/** Change de vue dès la sélection ; elle reste dans l'URL pour les liens de l'encart. */
 export function SelecteurDepartementExperts({
-  departementActuel,
+  valeurActuelle,
   departementsConsultables,
   departementsDuTerritoire,
+  libelleTous,
+  territoireRegroupable,
 }: SelecteurDepartementExpertsProps) {
   const router = useRouter();
   const territoire = departementsConsultables.filter((d) => departementsDuTerritoire.includes(d.code));
@@ -41,14 +49,13 @@ export function SelecteurDepartementExperts({
       <select
         className="fr-select"
         id="departement-experts"
-        defaultValue={departementActuel ?? ""}
+        defaultValue={valeurActuelle}
         onChange={(e) =>
           router.replace(`/espace-agent/experts?departement=${encodeURIComponent(e.target.value)}`, { scroll: false })
         }>
-        {!departementActuel && (
-          <option value="" disabled>
-            Sélectionner un département
-          </option>
+        {departementsConsultables.length > 1 && <option value={VUE_TOUS}>{libelleTous}</option>}
+        {territoireRegroupable && (
+          <option value={VUE_TERRITOIRE}>Votre territoire ({departementsDuTerritoire.length} départements)</option>
         )}
         {avecGroupes ? (
           <>

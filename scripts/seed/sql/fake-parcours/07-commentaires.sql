@@ -21,7 +21,13 @@
   -- =============================================================================
   -- 1. Créer une entreprise AMO fictive
   -- =============================================================================
-  INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse)
+  -- Rattachée à la structure de la paire : sans structure_id, le trigger de la migration 0061 en
+  -- créerait une seconde au même SIRET, qui ferait échouer aligner-identite-structures.sql.
+  INSERT INTO structures (id, nom)
+  VALUES ('77777777-7777-4777-8777-777777777701', 'AMO du Berry Profond (seed test)')
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO entreprises_amo (id, nom, siret, departements, emails, telephone, adresse, structure_id)
   VALUES (
     '99999999-9999-4999-8999-999999999901',
     'AMO du Berry Profond',
@@ -29,20 +35,22 @@
     'Indre 36',
     'amo-berry@example.org',
     '02 54 00 00 00',
-    '42 rue de la Châtaigne, 36000 Châteauroux'
+    '42 rue de la Châtaigne, 36000 Châteauroux',
+    '77777777-7777-4777-8777-777777777701'
   )
   ON CONFLICT (siret) DO NOTHING;
 
   -- =============================================================================
   -- 2. Créer une structure Allers-Vers fictive
   -- =============================================================================
-  INSERT INTO allers_vers (id, nom, emails, telephone, adresse)
+  INSERT INTO allers_vers (id, nom, emails, telephone, adresse, structure_id)
   VALUES (
     '88888888-8888-8888-8888-888888888801',
     'Allers-Vers Centre Indre',
     ARRAY['av-centre-indre@example.org'],
     '02 54 11 11 11',
-    '7 place du Marché, 36100 Issoudun'
+    '7 place du Marché, 36100 Issoudun',
+    '77777777-7777-4777-8777-777777777701'
   )
   ON CONFLICT (id) DO NOTHING;
 

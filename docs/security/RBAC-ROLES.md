@@ -70,10 +70,16 @@ Groupes : `ADMIN_ROLES` (super-admin + admin), `AGENT_ROLES` (tous sauf
 > refusée sans écriture. Les anciennes colonnes `role` / `entreprise_amo_id` / `allers_vers_id`
 > d'un membre de structure ne sont plus lues.
 >
-> Les structures se gèrent sur `/administration/structures` (renommer, fusionner, détacher une
-> habilitation), réservée au `SUPER_ADMINISTRATEUR` : fusionner ou détacher change les droits de
-> tous les agents des structures touchées, à la requête suivante. Gardes : `ensureSuperAdmin`
-> (rôle relu en base) dans chaque action, validation Zod, verrou exclusif sur les structures.
+> Les structures se gèrent sur `/administration/structures` : une liste et une fiche par structure
+> (identité, habilitations, agents), ouvertes à l'`ADMINISTRATEUR` et au `SUPER_ADMINISTRATEUR`
+> (ADR-0053). Une structure est d'**accompagnement** (AMO et/ou Aller-vers, seule à recevoir des
+> agents) ou **expert** (expertise seule, aucun rôle) ; elle naît avec sa première habilitation et ne
+> s'en retrouve jamais dépourvue. Ajouter ou retirer une habilitation AMO ou Aller-vers à une structure **qui a des
+> agents** change leurs droits à la requête suivante : réservé au super-administrateur, à l'écran
+> comme à l'import. Gardes : `checkRoleAccess` (rôle relu en base) puis la permission de
+> l'habilitation (`AMO_*`, `ALLERS_VERS_*`, `EXPERTS_WRITE`) dans chaque action, validation Zod,
+> verrou exclusif sur la structure. Les noms et emails des agents ne sont renvoyés qu'au
+> super-administrateur ; l'administrateur n'en reçoit que le nombre.
 
 ### 2.1 Agent désactivé — accès révoqué, historique conservé (ADR-0029)
 
@@ -222,15 +228,15 @@ page / Server Actions.
 > par les stats **nationales** de la Rangée 1 (Tableau de bord / Acquisition / Demandeurs),
 > désormais ouvertes aux agents AMO / Allers-Vers.
 
-| Rôle                     | Rangée 1 — Pilotage                                                                                                                | Rangée 2 — Dossiers |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, Structures, AMO, Allers Vers, Experts, Notes, Activité, Synchros, Diagnostics DN | Dossiers, Experts   |
-| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, AMO, Allers Vers, Experts (lecture)                                                      | —                   |
-| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                                                           | —                   |
-| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                                                           | Dossiers, Experts   |
-| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                                                           | Dossiers, Experts   |
-| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                                                           | Dossiers, Experts   |
-| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                                                           | Dossiers, Experts   |
+| Rôle                     | Rangée 1 — Pilotage                                                                                     | Rangée 2 — Dossiers |
+| ------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------- |
+| `SUPER_ADMINISTRATEUR`   | Tableau de bord, Acquisition, Demandeurs, Agents, Structures, Notes, Activité, Synchros, Diagnostics DN | Dossiers, Experts   |
+| `ADMINISTRATEUR`         | Tableau de bord, Acquisition, Demandeurs, Structures (experts en lecture)                               | —                   |
+| `ANALYSTE` national      | Tableau de bord, Acquisition, Demandeurs                                                                | —                   |
+| `ANALYSTE` départemental | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
+| `AMO`                    | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
+| `ALLERS_VERS`            | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
+| `AMO_ET_ALLERS_VERS`     | Tableau de bord, Acquisition, Demandeurs                                                                | Dossiers, Experts   |
 
 - `canAccessAdministration` = `SUPER_ADMINISTRATEUR` / `ADMINISTRATEUR` / `ANALYSTE` /
   **`AMO` / `ALLERS_VERS` / `AMO_ET_ALLERS_VERS`** (ADR-0017). Le filtrage par onglet de
@@ -273,9 +279,8 @@ Repères de permissions par rôle :
   voir [§6.1.2](#612-commentairesactions-ouverts-au-super-admin-deuxième-exception-au-read-only).
   Le reste de l'espace agent reste en lecture seule (`assertNotSuperAdminReadOnly`), à
   l'exception de la ré-ouverture d'une demande refusée ([§6.1](#61-ré-ouverture-dune-demande-refusée-garde-élargie)).
-- **ADMINISTRATEUR** : stats, users, AMO (R/W/import/delete), allers-vers
-  (R/W/import/delete — la suppression préalable à un import exige `*_DELETE` en plus de
-  `*_IMPORT` et épargne les structures rattachées, cf. [import-structures](../ops/import-structures.md)), étapes (éligibilité/diagnostic/devis/factures en lecture),
+- **ADMINISTRATEUR** : stats, users, structures AMO et Aller-vers (R/W/import/delete — l'import
+  ne supprime rien, cf. [import-structures](../ops/import-structures.md)), étapes (éligibilité/diagnostic/devis/factures en lecture),
   commentaires (lecture globale). Pas la gestion des agents.
 - **ANALYSTE** : lecture stats (national ou départemental, voir §5). En mode
   départemental (suivi DDT), peut aussi ajouter/éditer ses propres messages
@@ -623,20 +628,21 @@ une structure qui n'est qu'un expert n'est pas proposée dans le formulaire agen
 
 - **`EXPERTS_WRITE`** (super-administrateur seulement) : créer, modifier, désactiver, réactiver, importer.
   Chaque action passe par `checkBackofficePermission(EXPERTS_WRITE)` et valide sa charge par Zod.
-- **`EXPERTS_READ`** : administrateur (onglet Experts de l'administration, en lecture), AMO, Aller-vers,
+- **`EXPERTS_READ`** : administrateur (fiche structure, en lecture), AMO, Aller-vers,
   AMO + Aller-vers (tous les départements, leur territoire par défaut), analyste (**son territoire
   seulement**, aucun pour un analyste national).
 
 Le serveur ne renvoie à chacun que ses champs, par projection : `ExpertAnnuaire` (raison sociale, SIRET,
-date de validation DHUP, départements et contact de réservation) pour les agents et l'administrateur,
-`ExpertGestion` (plus le contact interne et la désactivation) pour le super-administrateur seul. Rien
-n'est masqué dans l'interface : un champ absent de la réponse ne peut pas fuiter.
+date de validation DHUP, départements, contact de réservation, expert sur place et forfaits HT) pour les
+agents et l'administrateur, `ExpertGestion` (plus le contact interne et la désactivation) pour le
+super-administrateur seul. Rien n'est masqué dans l'interface : un champ absent de la réponse ne peut
+pas fuiter.
 
-L'annuaire complet de l'administration (`getExpertsAdministrationAction`) est réservé au
-super-administrateur et à l'administrateur par `checkRoleAccess` : un analyste, qui a `EXPERTS_READ`,
-n'y lirait sinon des départements hors de son territoire. Côté espace agent, la page `/espace-agent/experts`
+Les structures de l'administration, experts compris, sont réservées au super-administrateur et à
+l'administrateur par `checkRoleAccess` : un analyste, qui a `EXPERTS_READ`, n'y lirait sinon des
+départements hors de son territoire. Un expert désactivé n'existe que pour le super-administrateur. Côté espace agent, la page `/espace-agent/experts`
 et l'encart du détail dossier ramènent l'analyste sur son territoire (`perimetreExperts`), quel que soit
-le département demandé dans l'URL.
+le département demandé dans l'URL ; sa vue « tous » se borne à ses départements.
 
 ## 6.2 Édition des données de simulation alignée sur le détail dossier
 
@@ -684,36 +690,36 @@ autorisation que la lecture — ownership entreprise pour un dossier avec AMO, s
 
 ## 7. Fichiers clés
 
-| Rôle                                        | Fichier                                                                                                                                                                           |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enum des rôles                              | `src/shared/domain/value-objects/user-role.enum.ts`                                                                                                                               |
-| Service de permissions                      | `src/features/auth/permissions/services/permissions.service.ts`                                                                                                                   |
-| Matrice permissions / onglets               | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                                                                          |
-| Périmètre données agent                     | `src/features/auth/permissions/services/agent-scope.service.ts`                                                                                                                   |
-| Scope stats national (ADR-0017)             | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                                                                                         |
-| Projection stats anonymisée                 | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)                                                                      |
-| Service RBAC (onglets)                      | `src/features/auth/permissions/services/rbac.service.ts`                                                                                                                          |
-| Config des routes / redirections            | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                                                 |
-| Aiguillage auth                             | `src/middleware.ts`                                                                                                                                                               |
-| Double authentification ProConnect          | `auth/domain/value-objects/session-mfa.ts` (`estSessionConforme`) + `adapters/proconnect/proconnect-oidc.ts` + `session.service.ts` (`getSession`)                                |
-| Rôle dérivé de la structure (ADR-0051)      | `shared/domain/value-objects/role-structure.ts` (`resoudreRoleAgent`) + `agents.repository.ts` (lecture résolue)                                                                  |
-| Annuaire des experts (ADR-0052)             | `administration/experts/actions/experts-admin.actions.ts` (`EXPERTS_WRITE`, `checkRoleAccess`) + `espace-agent/experts/services/annuaire-experts.service.ts` (`perimetreExperts`) |
-| Gestion des structures (ADR-0051)           | `administration/structures/actions/structures.actions.ts` (`ensureSuperAdmin`) + `services/structures-admin.service.ts`                                                           |
-| Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                                                        |
-| Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                                                 |
-| Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                                                      |
-| Garde espace agent                          | `espace-agent/shared/services/acces-espace-agent.service.ts` (`exigerAccesEspaceAgent`, appelée par chaque page)                                                                  |
-| Garde administration                        | `src/app/(backoffice)/administration/page.tsx`                                                                                                                                    |
-| Garde entreprise AMO                        | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                                                                                    |
-| Garde ré-ouverture demande                  | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                                                                             |
-| Garde « qualification vaut validation AMO » | `prospects/services/suite-qualification.service.ts` (`peutValiderCommeAmo`) + rôle AMO dans `qualify-prospect.actions.ts`                                                         |
-| Garde rattachement d'une AMO                | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul, file des diagnostics comme entrée du menu Gérer                          |
-| Garde arrêt d'accompagnement                | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                                           |
-| Garde refus accompagnement (éligible)       | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                                             |
-| Garde refus menant à l'autonomie            | `demandes/actions/demande-detail.actions.ts` (`declinerVersAutonomie` → `peutPasserEnAutonomie` + `estDossierChezLaDdt`)                                                          |
-| Garde initiation du formulaire diagnostic   | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` + `parcours/core/services/diagnostic.service.ts` (`refusInitiateur`)                                                  |
-| Garde rattachement / réinit. DN             | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                                                       |
-| Garde édition simulation                    | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                                                 |
-| Test de vulnérabilité fait par l'agent      | `espace-agent/shared/actions/test-vulnerabilite-agent.actions.ts` + `services/test-vulnerabilite-agent.service.ts` (`resoudreDossierTestVulnerabilite`)                           |
-| Résultat de vulnérabilité du demandeur      | `parcours/core/services/ma-vulnerabilite.service.ts` + `actions/ma-vulnerabilite.actions.ts` (parcours résolu par la session)                                                     |
-| Résolution du permalien parcours            | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                                         |
+| Rôle                                        | Fichier                                                                                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enum des rôles                              | `src/shared/domain/value-objects/user-role.enum.ts`                                                                                                            |
+| Service de permissions                      | `src/features/auth/permissions/services/permissions.service.ts`                                                                                                |
+| Matrice permissions / onglets               | `src/features/auth/permissions/domain/value-objects/rbac-permissions.ts`                                                                                       |
+| Périmètre données agent                     | `src/features/auth/permissions/services/agent-scope.service.ts`                                                                                                |
+| Scope stats national (ADR-0017)             | `agent-scope.service.ts` (`getStatsScopeFilters`, `canViewNationalStats`)                                                                                      |
+| Projection stats anonymisée                 | `src/features/backoffice/administration/demandeurs/services/users-tracking.service.ts` (`toStatsProjection`)                                                   |
+| Service RBAC (onglets)                      | `src/features/auth/permissions/services/rbac.service.ts`                                                                                                       |
+| Config des routes / redirections            | `src/features/auth/domain/value-objects/configs/routes.config.ts`                                                                                              |
+| Aiguillage auth                             | `src/middleware.ts`                                                                                                                                            |
+| Double authentification ProConnect          | `auth/domain/value-objects/session-mfa.ts` (`estSessionConforme`) + `adapters/proconnect/proconnect-oidc.ts` + `session.service.ts` (`getSession`)             |
+| Rôle dérivé de la structure (ADR-0051)      | `shared/domain/value-objects/role-structure.ts` (`resoudreRoleAgent`) + `agents.repository.ts` (lecture résolue)                                               |
+| Annuaire des experts (ADR-0052)             | `administration/experts/actions/experts-admin.actions.ts` (`EXPERTS_WRITE`) + `espace-agent/experts/services/annuaire-experts.service.ts` (`perimetreExperts`) |
+| Structures et habilitations (ADR-0051/0053) | `administration/structures/actions/structures.actions.ts` (`checkRoleAccess` + permission) + `services/structures-admin.service.ts`                            |
+| Coupure d'accès agent désactivé             | `auth/services/user.service.ts` (`getCurrentUser`) + `agents.repository.ts` (`authenticateFromProConnect`)                                                     |
+| Garde-fou suppression d'agent               | `administration/agents/services/agents-admin.service.ts` (`deleteAgent`) + `agents.repository.ts` (`countTraces`)                                              |
+| Retrait des listes de diffusion             | `administration/agents/services/listes-diffusion.service.ts`                                                                                                   |
+| Garde espace agent                          | `espace-agent/shared/services/acces-espace-agent.service.ts` (`exigerAccesEspaceAgent`, appelée par chaque page)                                               |
+| Garde administration                        | `src/app/(backoffice)/administration/page.tsx`                                                                                                                 |
+| Garde entreprise AMO                        | `src/app/(backoffice)/components/AmoGuard.tsx`                                                                                                                 |
+| Garde ré-ouverture demande                  | `agent-scope.service.ts` (`canReopenRefusedDemande`) + `dossiers/actions/reouvrir-demande.actions.ts`                                                          |
+| Garde « qualification vaut validation AMO » | `prospects/services/suite-qualification.service.ts` (`peutValiderCommeAmo`) + rôle AMO dans `qualify-prospect.actions.ts`                                      |
+| Garde rattachement d'une AMO                | `administration/diagnostics/actions/amo-a-rattacher.actions.ts` (`ensureSuperAdmin`) — super-admin seul, file des diagnostics comme entrée du menu Gérer       |
+| Garde arrêt d'accompagnement                | `responsable-permissions.service.ts` (`assertCanActAsResponsable`) + `dossiers/actions/arret-accompagnement.actions.ts`                                        |
+| Garde refus accompagnement (éligible)       | `demandes/actions/demande-detail.actions.ts` (`refuserAccompagnementEligible` → `verifyAmoOwnership`)                                                          |
+| Garde refus menant à l'autonomie            | `demandes/actions/demande-detail.actions.ts` (`declinerVersAutonomie` → `peutPasserEnAutonomie` + `estDossierChezLaDdt`)                                       |
+| Garde initiation du formulaire diagnostic   | `dossiers/actions/initier-formulaire-diagnostic.actions.ts` + `parcours/core/services/diagnostic.service.ts` (`refusInitiateur`)                               |
+| Garde rattachement / réinit. DN             | `espace-agent/shared/services/dossier-dn-permissions.service.ts` (`verifierAccesDossierDn`)                                                                    |
+| Garde édition simulation                    | `src/features/backoffice/espace-agent/shared/services/edition-simulation.service.ts` (`getDossierSimulationData`)                                              |
+| Test de vulnérabilité fait par l'agent      | `espace-agent/shared/actions/test-vulnerabilite-agent.actions.ts` + `services/test-vulnerabilite-agent.service.ts` (`resoudreDossierTestVulnerabilite`)        |
+| Résultat de vulnérabilité du demandeur      | `parcours/core/services/ma-vulnerabilite.service.ts` + `actions/ma-vulnerabilite.actions.ts` (parcours résolu par la session)                                  |
+| Résolution du permalien parcours            | `dossiers/services/admin-url-resolver.service.ts` (`resolveEspaceAgentPath`) — chemin seul, aucune donnée                                                      |

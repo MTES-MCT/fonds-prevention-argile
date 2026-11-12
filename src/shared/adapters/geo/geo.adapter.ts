@@ -5,7 +5,7 @@
  * Documentation : https://geo.api.gouv.fr/decoupage-administratif
  */
 
-import type { GeoApiCommuneResponse, GeoCentreCommune, GeoContourDepartement, GeoEpciData } from "./geo.types";
+import type { GeoApiCommuneResponse, GeoCentreCommune, GeoContourDepartement, GeoEpci, GeoEpciData } from "./geo.types";
 
 /**
  * URL de base de l'API Geo
@@ -130,4 +130,20 @@ export async function fetchContoursDepartements(): Promise<Record<string, GeoCon
 
   const { features } = (await response.json()) as ContoursDepartementsResponse;
   return Object.fromEntries(features.map((f) => [f.properties.code, f.geometry]));
+}
+
+/**
+ * Tous les EPCI de France (≈ 1 250), avec leurs départements
+ *
+ * @throws Si l'API répond en erreur : l'appelant ne doit pas mettre l'échec en cache
+ */
+export async function fetchEpcis(): Promise<GeoEpci[]> {
+  const response = await fetch(`${GEO_API_BASE_URL}/epcis?fields=code,nom,codesDepartements`);
+
+  if (!response.ok) {
+    throw new Error(`Erreur API Geo: ${response.status} ${response.statusText}`);
+  }
+
+  const epcis = (await response.json()) as GeoEpci[];
+  return epcis.map(({ code, nom, codesDepartements }) => ({ code, nom, codesDepartements: codesDepartements ?? [] }));
 }

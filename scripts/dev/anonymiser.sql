@@ -284,6 +284,14 @@ BEGIN
       contact_interne_telephone = pg_temp.remplacer(contact_interne_telephone, '0600000000'),
       desactive_raison = pg_temp.remplacer(desactive_raison, 'Raison anonymisée');
   END IF;
+  -- L'expert qui se déplace : colonnes absentes d'un dump antérieur à la migration 0063.
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'experts_departements' AND column_name = 'expert_nom') THEN
+    UPDATE experts_departements SET
+      expert_nom = pg_temp.remplacer(expert_nom, 'Expert anonymisé'),
+      expert_email = pg_temp.remplacer(expert_email, pg_temp.email('expert-sur-place', expert_id::text || code_departement)),
+      expert_telephone = pg_temp.remplacer(expert_telephone, '0600000000');
+  END IF;
 END $$;
 
 -- Agents ----------------------------------------------------------------------
@@ -375,6 +383,13 @@ BEGIN
         OR contact_interne_email NOT LIKE '%@anonyme.invalid' OR contact_interne_telephone <> '0600000000'
         OR desactive_raison <> 'Raison anonymisée') THEN
       restes := restes || 'experts'::text;
+    END IF;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'experts_departements' AND column_name = 'expert_nom') THEN
+    IF EXISTS (SELECT 1 FROM experts_departements WHERE expert_nom <> 'Expert anonymisé'
+        OR expert_email NOT LIKE '%@anonyme.invalid' OR expert_telephone <> '0600000000') THEN
+      restes := restes || 'experts_departements'::text;
     END IF;
   END IF;
   IF cardinality(restes) > 0 THEN

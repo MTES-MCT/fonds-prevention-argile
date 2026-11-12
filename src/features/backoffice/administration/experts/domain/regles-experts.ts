@@ -6,6 +6,7 @@ import {
   normalizeCodeDepartement,
   toOfficialCodeDepartement,
 } from "@/shared/constants/departements.constants";
+import { DEPARTEMENTS_ELIGIBLES_RGA, isDepartementEligible } from "@/shared/constants/rga.constants";
 import { parseListe } from "@/shared/utils/liste.utils";
 
 /** Texte à faire valider par la DHUP : il accompagne chaque liste d'experts (ADR-0052). */
@@ -74,9 +75,14 @@ export type PerimetreExperts =
   | { type: "territoire"; departements: string[] }
   | { type: "aucun" };
 
-/** L'analyste départemental ne voit que son territoire ; AMO et Aller-vers consultent tout, leur territoire d'abord. */
+/**
+ * L'analyste départemental ne voit que son territoire ; AMO et Aller-vers consultent tout, leur territoire
+ * d'abord. « Tout », ce sont les départements du dispositif : un territoire qui déborde n'en sort pas.
+ */
 export function perimetreExperts(role: string, departementsDuScope: string[]): PerimetreExperts {
-  const departements = [...new Set(departementsDuScope.map((code) => toOfficialCodeDepartement(code)))];
+  const departements = [...new Set(departementsDuScope.map((code) => toOfficialCodeDepartement(code)))].filter(
+    isDepartementEligible
+  );
   switch (role) {
     case UserRole.SUPER_ADMINISTRATEUR:
     case UserRole.ADMINISTRATEUR:
@@ -93,18 +99,47 @@ export function perimetreExperts(role: string, departementsDuScope: string[]): P
 }
 
 export function peutConsulterDepartement(perimetre: PerimetreExperts, code: string): boolean {
-  if (perimetre.type === "tous") return true;
+  if (perimetre.type === "tous") return isDepartementEligible(toOfficialCodeDepartement(code));
   if (perimetre.type === "territoire") return perimetre.departements.includes(toOfficialCodeDepartement(code));
   return false;
 }
 
-/** Département affiché par défaut : celui demandé s'il est consultable, sinon le premier du territoire. */
-export function departementAffiche(perimetre: PerimetreExperts, demande: string | null | undefined): string | null {
+/** Ce que montre l'annuaire : un département, les départements du territoire de l'agent, ou tous. */
+export type VueAnnuaire = { type: "departement"; code: string } | { type: "territoire" } | { type: "tous" };
+
+/** Valeurs du paramètre `departement` de l'URL pour les deux vues groupées. */
+export const VUE_TOUS = "tous";
+export const VUE_TERRITOIRE = "territoire";
+
+function territoireDe(perimetre: PerimetreExperts): string[] {
+  if (perimetre.type === "territoire") return perimetre.departements;
+  if (perimetre.type === "tous") return perimetre.departementsParDefaut;
+  return [];
+}
+
+// « Votre territoire » n'a de sens que pour un agent qui en sort et qui couvre plusieurs départements.
+function territoireRegroupable(perimetre: PerimetreExperts): boolean {
+  return perimetre.type === "tous" && perimetre.departementsParDefaut.length > 1;
+}
+
+/** Vue demandée si elle est permise ; sinon le territoire de l'agent, ou tous les départements s'il n'en a pas. */
+export function vueAffichee(perimetre: PerimetreExperts, demande: string | null | undefined): VueAnnuaire | null {
+  if (perimetre.type === "aucun") return null;
+  if (demande === VUE_TOUS) return { type: "tous" };
+  if (demande === VUE_TERRITOIRE && territoireRegroupable(perimetre)) return { type: "territoire" };
   const code = demande ? codeDepartementConnu(demande) : null;
-  if (code && peutConsulterDepartement(perimetre, code)) return code;
-  if (perimetre.type === "territoire") return perimetre.departements[0] ?? null;
-  if (perimetre.type === "tous") return perimetre.departementsParDefaut[0] ?? null;
-  return null;
+  if (code && peutConsulterDepartement(perimetre, code)) return { type: "departement", code };
+
+  const territoire = territoireDe(perimetre);
+  if (territoire.length === 1) return { type: "departement", code: territoire[0] };
+  return territoireRegroupable(perimetre) ? { type: "territoire" } : { type: "tous" };
+}
+
+/** Départements montrés par la vue, ceux sans expert compris : l'agent doit savoir qu'il n'y en a pas. */
+export function departementsDeLaVue(perimetre: PerimetreExperts, vue: VueAnnuaire): string[] {
+  if (vue.type === "departement") return [vue.code];
+  if (vue.type === "territoire" || perimetre.type === "territoire") return territoireDe(perimetre);
+  return [...DEPARTEMENTS_ELIGIBLES_RGA];
 }
 
 /** Ordre neutre et stable : alphabétique sur la raison sociale, sans accent ni casse (ADR-0052). */
@@ -118,6 +153,22 @@ const telephone = z
   .max(20, "Téléphone trop long")
   .regex(/^[0-9+().\s-]*$/, "Téléphone invalide");
 const email = z.string().trim().max(255).email("Email invalide");
+// Excel et la saisie donnent « 1 200,50 € », « 1200.5 » ou 1200 ; vide vaut inconnu.
+const MONTANT_INVALIDE = "Montant invalide : un nombre d'euros HT est attendu";
+const montantHt = z
+  .union([z.number(), z.string()])
+  .nullish()
+  .transform((valeur, ctx) => {
+    if (valeur === null || valeur === undefined) return null;
+    const texte = String(valeur).replace(/[\s€]|HT/gi, "").replace(",", ".");
+    if (texte === "") return null;
+    if (!/^\d+(\.\d{1,2})?$/.test(texte)) {
+      ctx.addIssue({ code: "custom", message: MONTANT_INVALIDE });
+      return z.NEVER;
+    }
+    return Number(texte);
+  })
+  .pipe(z.number().max(99_999_999.99, "Montant trop élevé").nullable());
 const optionnel = <T extends z.ZodTypeAny>(schema: T) =>
   z
     .union([z.literal("").transform(() => null), schema])
@@ -132,6 +183,11 @@ export const departementExpertSchema = z.object({
   }),
   email: optionnel(email),
   telephone: optionnel(telephone),
+  expertNom: optionnel(z.string().trim().max(255)),
+  expertEmail: optionnel(email),
+  expertTelephone: optionnel(telephone),
+  forfaitDiagnosticHt: montantHt,
+  forfaitReseauHt: montantHt,
 });
 
 export const expertSchema = z.object({

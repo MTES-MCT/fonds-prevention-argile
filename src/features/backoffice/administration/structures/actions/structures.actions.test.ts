@@ -5,130 +5,211 @@ import { createMockAuthUser, createEnvConfigMock } from "@/shared/testing/mocks"
 // Le rôle est relu en base par getCurrentUser : c'est lui qu'on simule, pas le JWT.
 vi.mock("@/features/auth/services/user.service", () => ({ getCurrentUser: vi.fn() }));
 vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("../services/structures-admin.service", async (importOriginal) => {
   const original = await importOriginal<typeof import("../services/structures-admin.service")>();
   return {
     RefusOperationStructure: original.RefusOperationStructure,
     listerStructures: vi.fn(),
-    renommerStructure: vi.fn(),
-    fusionnerStructures: vi.fn(),
-    detacherHabilitation: vi.fn(),
+    chargerFiche: vi.fn(),
+    compterAgents: vi.fn(),
+    creerStructure: vi.fn(),
+    modifierIdentite: vi.fn(),
+    supprimerStructure: vi.fn(),
+    ajouterHabilitation: vi.fn(),
+    modifierHabilitation: vi.fn(),
+    retirerHabilitation: vi.fn(),
   };
 });
 
+vi.mock("../services/referentiel-epci.service", () => ({ listerEpcis: vi.fn() }));
+
 import {
-  detacherHabilitationAction,
-  fusionnerStructuresAction,
+  ajouterHabilitationAction,
+  creerStructureAction,
+  getFicheStructureAction,
+  getReferentielEpciAction,
   getStructuresAction,
-  renommerStructureAction,
+  modifierHabilitationAction,
+  modifierIdentiteAction,
+  retirerHabilitationAction,
+  supprimerStructureAction,
 } from "./structures.actions";
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import * as service from "../services/structures-admin.service";
+import { listerEpcis } from "../services/referentiel-epci.service";
 
-const CIBLE = "22222222-2222-4222-8222-222222222222";
-const SOURCE = "11111111-1111-4111-8111-111111111111";
+const ID = "22222222-2222-4222-8222-222222222222";
+const IDENTITE = { nom: "Soliha 36", siret: "39248872200027" };
+const AMO = { habilitation: "amo", structureId: ID, saisie: { departements: "Indre 36", emails: "a@amo.fr" } };
+const EXPERT = { habilitation: "expert", structureId: ID, saisie: { departements: [{ code: "36" }] } };
+const AMO_LUE = {
+  habilitation: "amo",
+  saisie: { departements: "Indre 36", emails: "a@amo.fr", communes: [], epci: [] },
+};
 
 function connecter(role: UserRole) {
   vi.mocked(getCurrentUser).mockResolvedValue(createMockAuthUser(role));
 }
 
-describe("structures.actions — réservées au super-administrateur", () => {
+describe("structures.actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, "info").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(service.compterAgents).mockResolvedValue(0);
   });
 
   const appels = [
-    ["getStructuresAction", () => getStructuresAction()],
-    ["renommerStructureAction", () => renommerStructureAction({ structureId: CIBLE, nom: "Soliha 54" })],
-    ["fusionnerStructuresAction", () => fusionnerStructuresAction({ cibleId: CIBLE, sourceId: SOURCE })],
-    ["detacherHabilitationAction", () => detacherHabilitationAction({ structureId: CIBLE, habilitation: "amo" })],
-  ] as const;
+    () => getStructuresAction(),
+    () => getFicheStructureAction(ID),
+    () => creerStructureAction({ identite: IDENTITE, ...AMO }),
+    () => modifierIdentiteAction({ structureId: ID, identite: IDENTITE }),
+    () => supprimerStructureAction(ID),
+    () => ajouterHabilitationAction(AMO),
+    () => modifierHabilitationAction(AMO),
+    () => retirerHabilitationAction({ structureId: ID, habilitation: "amo" }),
+    () => getReferentielEpciAction(),
+  ];
 
-  it.each(
-    [
-      UserRole.ADMINISTRATEUR,
-      UserRole.ANALYSTE,
-      UserRole.AMO,
-      UserRole.ALLERS_VERS,
-      UserRole.AMO_ET_ALLERS_VERS,
-    ].flatMap((role) => appels.map(([nom, appel]) => [role, nom, appel] as const))
-  )("%s → %s refusé, sans appel au service", async (role, _nom, appel) => {
-    connecter(role);
+  it.each([UserRole.ANALYSTE, UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS, UserRole.PARTICULIER])(
+    "%s : tout est refusé, sans appel au service",
+    async (role) => {
+      connecter(role);
 
-    const resultat = await appel();
+      const resultats = await Promise.all(appels.map((appel) => appel()));
 
-    expect(resultat).toEqual({ success: false, error: "Accès non autorisé. Réservé aux super administrateurs." });
-    expect(service.listerStructures).not.toHaveBeenCalled();
-    expect(service.renommerStructure).not.toHaveBeenCalled();
-    expect(service.fusionnerStructures).not.toHaveBeenCalled();
-    expect(service.detacherHabilitation).not.toHaveBeenCalled();
+      expect(resultats.every((resultat) => !resultat.success)).toBe(true);
+      for (const fonction of Object.values(service)) {
+        if (vi.isMockFunction(fonction)) expect(fonction).not.toHaveBeenCalled();
+      }
+      expect(listerEpcis).not.toHaveBeenCalled();
+    }
+  );
+
+  it("donne les EPCI à l'administrateur, et un message lisible quand l'API Géo est indisponible", async () => {
+    const epcis = [{ code: "243600236", nom: "CC du Pays d'Issoudun", codesDepartements: ["36"] }];
+    vi.mocked(listerEpcis).mockResolvedValueOnce(epcis).mockRejectedValueOnce(new Error("Erreur API Geo: 502"));
+    connecter(UserRole.ADMINISTRATEUR);
+
+    expect(await getReferentielEpciAction()).toEqual({ success: true, data: epcis });
+    expect(await getReferentielEpciAction()).toEqual({
+      success: false,
+      error: "La liste des EPCI est indisponible pour le moment",
+    });
   });
 
   it("refuse un visiteur non connecté", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null);
 
-    expect((await fusionnerStructuresAction({ cibleId: CIBLE, sourceId: SOURCE })).success).toBe(false);
-    expect(service.fusionnerStructures).not.toHaveBeenCalled();
+    expect((await getStructuresAction()).success).toBe(false);
+    expect(service.listerStructures).not.toHaveBeenCalled();
   });
-});
 
-describe("structures.actions — super-administrateur", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.spyOn(console, "info").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("ne donne les agents et les experts désactivés qu'au super-administrateur", async () => {
+    vi.mocked(service.chargerFiche).mockResolvedValue({ id: ID } as never);
+
+    connecter(UserRole.ADMINISTRATEUR);
+    await getStructuresAction();
+    await getFicheStructureAction(ID);
+    expect(service.listerStructures).toHaveBeenLastCalledWith(false);
+    expect(service.chargerFiche).toHaveBeenLastCalledWith(ID, false);
+
     connecter(UserRole.SUPER_ADMINISTRATEUR);
+    await getStructuresAction();
+    await getFicheStructureAction(ID);
+    expect(service.listerStructures).toHaveBeenLastCalledWith(true);
+    expect(service.chargerFiche).toHaveBeenLastCalledWith(ID, true);
   });
 
-  it("fusionne avec les identifiants validés", async () => {
-    expect(await fusionnerStructuresAction({ cibleId: CIBLE, sourceId: SOURCE })).toEqual({
+  it("laisse l'administrateur modifier l'identité, après validation", async () => {
+    connecter(UserRole.ADMINISTRATEUR);
+
+    expect((await modifierIdentiteAction({ structureId: ID, identite: IDENTITE })).success).toBe(true);
+    expect(service.modifierIdentite).toHaveBeenCalledWith(ID, {
+      nom: "Soliha 36",
+      siret: "39248872200027",
+      adresse: "",
+      telephone: "",
+      horaires: null,
+    });
+    expect((await modifierIdentiteAction({ structureId: "pas-un-uuid", identite: IDENTITE })).success).toBe(false);
+  });
+
+  describe("habilitations AMO et Aller-vers, qui font les rôles", () => {
+    it("réserve au super-administrateur l'ajout sur une structure qui a des agents", async () => {
+      vi.mocked(service.compterAgents).mockResolvedValue(2);
+
+      connecter(UserRole.ADMINISTRATEUR);
+      const refus = await ajouterHabilitationAction(AMO);
+      expect(refus).toMatchObject({ success: false, error: expect.stringContaining("super-administrateur") });
+      expect(service.ajouterHabilitation).not.toHaveBeenCalled();
+
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
+      expect((await ajouterHabilitationAction(AMO)).success).toBe(true);
+      expect(service.ajouterHabilitation).toHaveBeenCalledWith(ID, AMO_LUE);
+    });
+
+    it("laisse l'administrateur ajouter et retirer sur une structure sans agent", async () => {
+      connecter(UserRole.ADMINISTRATEUR);
+
+      expect((await ajouterHabilitationAction(AMO)).success).toBe(true);
+      expect((await retirerHabilitationAction({ structureId: ID, habilitation: "amo" })).success).toBe(true);
+      expect(service.retirerHabilitation).toHaveBeenCalledWith(ID, "amo");
+    });
+
+    it("réserve de même au super-administrateur le retrait sur une structure qui a des agents", async () => {
+      vi.mocked(service.compterAgents).mockResolvedValue(1);
+      connecter(UserRole.ADMINISTRATEUR);
+
+      expect((await retirerHabilitationAction({ structureId: ID, habilitation: "allersVers" })).success).toBe(false);
+      expect(service.retirerHabilitation).not.toHaveBeenCalled();
+    });
+  });
+
+  it("réserve l'habilitation expert au super-administrateur", async () => {
+    connecter(UserRole.ADMINISTRATEUR);
+    expect((await ajouterHabilitationAction(EXPERT)).success).toBe(false);
+    expect((await modifierHabilitationAction(EXPERT)).success).toBe(false);
+    expect(service.ajouterHabilitation).not.toHaveBeenCalled();
+
+    connecter(UserRole.SUPER_ADMINISTRATEUR);
+    expect((await ajouterHabilitationAction(EXPERT)).success).toBe(true);
+  });
+
+  it("crée une structure avec sa première habilitation, sous la permission de celle-ci", async () => {
+    connecter(UserRole.ADMINISTRATEUR);
+    vi.mocked(service.creerStructure).mockResolvedValue("s-neuve");
+
+    expect(await creerStructureAction({ identite: IDENTITE, ...AMO })).toEqual({
       success: true,
-      data: undefined,
+      data: { id: "s-neuve" },
     });
-    expect(service.fusionnerStructures).toHaveBeenCalledWith(CIBLE, SOURCE);
+    expect(service.creerStructure).toHaveBeenCalledWith(expect.objectContaining({ nom: "Soliha 36" }), AMO_LUE);
+    expect((await creerStructureAction({ identite: IDENTITE, ...EXPERT })).success).toBe(false);
   });
 
-  it("refuse un identifiant qui n'est pas un uuid, sans appel au service", async () => {
-    expect(await fusionnerStructuresAction({ cibleId: "1 OR 1=1", sourceId: SOURCE })).toEqual({
-      success: false,
-      error: "Structure invalide",
-    });
-    expect(service.fusionnerStructures).not.toHaveBeenCalled();
+  it("réserve la suppression d'une structure expert au super-administrateur", async () => {
+    vi.mocked(service.chargerFiche).mockResolvedValue({ id: ID, type: "expert" } as never);
+
+    connecter(UserRole.ADMINISTRATEUR);
+    expect((await supprimerStructureAction(ID)).success).toBe(false);
+    expect(service.supprimerStructure).not.toHaveBeenCalled();
+
+    connecter(UserRole.SUPER_ADMINISTRATEUR);
+    expect((await supprimerStructureAction(ID)).success).toBe(true);
   });
 
-  it("refuse une habilitation inconnue", async () => {
-    const resultat = await detacherHabilitationAction({ structureId: CIBLE, habilitation: "expert" });
+  it("montre tel quel un refus métier, et masque une erreur inattendue", async () => {
+    connecter(UserRole.SUPER_ADMINISTRATEUR);
+    vi.mocked(service.chargerFiche).mockResolvedValue({ id: ID, type: "accompagnement" } as never);
 
-    expect(resultat.success).toBe(false);
-    expect(service.detacherHabilitation).not.toHaveBeenCalled();
-  });
-
-  it("refuse un nom vide une fois les espaces retirés", async () => {
-    expect(await renommerStructureAction({ structureId: CIBLE, nom: "   " })).toEqual({
-      success: false,
-      error: "Le nom est requis",
-    });
-  });
-
-  it("renvoie le refus métier tel quel", async () => {
-    vi.mocked(service.fusionnerStructures).mockRejectedValue(
-      new service.RefusOperationStructure("Les deux structures ont déjà une habilitation AMO")
+    vi.mocked(service.supprimerStructure).mockRejectedValueOnce(
+      new service.RefusOperationStructure("Retirez d'abord ses habilitations")
     );
+    expect(await supprimerStructureAction(ID)).toEqual({ success: false, error: "Retirez d'abord ses habilitations" });
 
-    expect(await fusionnerStructuresAction({ cibleId: CIBLE, sourceId: SOURCE })).toEqual({
-      success: false,
-      error: "Les deux structures ont déjà une habilitation AMO",
-    });
-  });
-
-  it("masque le détail d'une erreur technique", async () => {
-    vi.mocked(service.fusionnerStructures).mockRejectedValue(
-      new Error('duplicate key value violates unique constraint "allers_vers_structure_id_unique"')
-    );
-
-    expect(await fusionnerStructuresAction({ cibleId: CIBLE, sourceId: SOURCE })).toEqual({
+    vi.mocked(service.supprimerStructure).mockRejectedValueOnce(new Error("connexion perdue"));
+    expect(await supprimerStructureAction(ID)).toEqual({
       success: false,
       error: "Erreur inattendue, l'opération n'a pas été enregistrée",
     });

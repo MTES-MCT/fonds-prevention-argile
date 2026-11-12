@@ -13,6 +13,8 @@ export const allersVers = pgTable("allers_vers", {
   adresse: text("adresse").notNull().default(""),
   // Horaires d'ouverture en texte libre (1-2 lignes), ex: "Du mardi au vendredi 8h30 - 12h / 13h - 17h30"
   horaires: text("horaires"),
+  // Titre de son groupe sur « Trouver mon conseiller local », quand plusieurs Aller-vers se partagent un département.
+  libelleZone: text("libelle_zone"),
   // Habilitation Aller-vers d'une structure : une structure n'en porte qu'une.
   structureId: uuid("structure_id")
     .notNull()

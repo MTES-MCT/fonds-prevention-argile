@@ -52,3 +52,12 @@ export interface GeoCentreCommune {
 export type GeoContourDepartement =
   | { type: "Polygon"; coordinates: [number, number][][] }
   | { type: "MultiPolygon"; coordinates: [number, number][][][] };
+
+/**
+ * EPCI du référentiel, avec les départements sur lesquels il s'étend
+ */
+export interface GeoEpci {
+  code: string;
+  nom: string;
+  codesDepartements: string[];
+}

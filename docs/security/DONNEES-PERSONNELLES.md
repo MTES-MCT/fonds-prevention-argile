@@ -155,9 +155,13 @@ Les agents conservés (`@beta.gouv.fr`, `@yopmail.com`) ne sont pas touchés.
 
 ### `structures`
 
-| Colonnes                                | Nature        | À la restauration |
-| --------------------------------------- | ------------- | ----------------- |
-| `id`, `nom`, `created_at`, `updated_at` | Professionnel | Conservées        |
+| Colonnes                                           | Nature        | À la restauration                                            |
+| -------------------------------------------------- | ------------- | ------------------------------------------------------------ |
+| `nom`, `siret`, `adresse`, `telephone`, `horaires` | Professionnel | Conservées : coordonnées publiées aux demandeurs sur le site |
+| `id`, `type`, `created_at`, `updated_at`           | Non personnel | Conservées                                                   |
+
+> Depuis ADR-0053, l'identité vit sur la structure et se recopie sur ses lignes `entreprises_amo`,
+> `allers_vers` et `experts` : les deux copies sont de même nature et conservées ensemble.
 
 ### `entreprises_amo`
 
@@ -184,6 +188,7 @@ Les agents conservés (`@beta.gouv.fr`, `@yopmail.com`) ne sont pas touchés.
 | --------------------------------------------------- | ------------- | ------------------------------------------------------------ |
 | `nom`, `emails`, `telephone`, `adresse`, `horaires` | Professionnel | Conservées : coordonnées publiées aux demandeurs sur le site |
 | `id`, `structure_id`                                | Non personnel | Conservées                                                   |
+| `libelle_zone`                                      | Non personnel | Conservée : zone d'intervention publiée sur le site          |
 
 ### `allers_vers_departements`
 
@@ -211,10 +216,11 @@ Experts RGA validés par la DHUP, sans compte (ADR-0052). Absente d'un dump ant�
 
 ### `experts_departements`
 
-| Colonnes                        | Nature        | À la restauration                                                                       |
-| ------------------------------- | ------------- | --------------------------------------------------------------------------------------- |
-| `email`, `telephone`            | Professionnel | Conservées : contact de réservation communiqué aux agents, traité comme celui d'une AMO |
-| `expert_id`, `code_departement` | Non personnel | Conservées                                                                              |
+| Colonnes                                                                      | Nature             | À la restauration                                                                                                                |
+| ----------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `email`, `telephone`                                                          | Professionnel      | Conservées : contact de réservation communiqué aux agents, traité comme celui d'une AMO                                          |
+| `expert_nom`, `expert_email`, `expert_telephone`                              | Identifiant direct | Remplacées par `Expert anonymisé`, une adresse `@anonyme.invalid` et `0600000000` : la personne qui se déplace chez le demandeur |
+| `expert_id`, `code_departement`, `forfait_diagnostic_ht`, `forfait_reseau_ht` | Non personnel      | Conservées : les forfaits sont des tarifs de société                                                                             |
 
 ### `agent_permissions`
 

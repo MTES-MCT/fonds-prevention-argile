@@ -11,3 +11,4 @@ export * from "./accompagnement-souhaite.enum";
 export * from "./rga-simulation.enum";
 export * from "./initiateur-formulaire.enum";
 export * from "./role-structure";
+export * from "./type-structure.enum";

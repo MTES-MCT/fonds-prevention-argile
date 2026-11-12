@@ -8,6 +8,11 @@ export interface DepartementExpertLu {
   codeDepartement: string;
   email: string | null;
   telephone: string | null;
+  expertNom: string | null;
+  expertEmail: string | null;
+  expertTelephone: string | null;
+  forfaitDiagnosticHt: number | null;
+  forfaitReseauHt: number | null;
 }
 
 export interface ExpertLu {
@@ -24,14 +29,22 @@ export interface ExpertLu {
   departements: DepartementExpertLu[];
 }
 
+/** Ce que porte l'habilitation expert en propre ; nom et SIRET sont ceux de la structure. */
 export interface ExpertAEnregistrer {
-  nom: string;
-  siret: string;
   dateValidationDhup: string | null;
   contactInterneNom: string | null;
   contactInterneEmail: string | null;
   contactInterneTelephone: string | null;
-  departements: { code: string; email: string | null; telephone: string | null }[];
+  departements: {
+    code: string;
+    email: string | null;
+    telephone: string | null;
+    expertNom: string | null;
+    expertEmail: string | null;
+    expertTelephone: string | null;
+    forfaitDiagnosticHt: number | null;
+    forfaitReseauHt: number | null;
+  }[];
 }
 
 export class ExpertsRepository {
@@ -44,12 +57,22 @@ export class ExpertsRepository {
     return expert ?? null;
   }
 
+  async findByStructure(structureId: string, executor: StructuresExecutor = db): Promise<ExpertLu | null> {
+    const [expert] = await this.lire(eq(experts.structureId, structureId), executor);
+    return expert ?? null;
+  }
+
   async findIdBySiret(siret: string, executor: StructuresExecutor = db): Promise<string | null> {
     const [ligne] = await executor.select({ id: experts.id }).from(experts).where(eq(experts.siret, siret));
     return ligne?.id ?? null;
   }
 
   /** Experts actifs ayant déclaré ce département (code officiel). */
+  /** Tous les experts actifs : l'annuaire « tous les départements » les répartit lui-même. */
+  async findActifs(): Promise<ExpertLu[]> {
+    return this.lire(isNull(experts.desactiveAt));
+  }
+
   async findActifsDuDepartement(codeDepartement: string): Promise<ExpertLu[]> {
     const ids = await db
       .select({ id: expertsDepartements.expertId })
@@ -65,12 +88,15 @@ export class ExpertsRepository {
     );
   }
 
-  /** Crée l'expert et sa structure, à son nom. */
-  async creer(saisie: ExpertAEnregistrer, executor: StructuresExecutor): Promise<string> {
-    const structureId = await structuresRepository.creer(saisie.nom, executor);
+  /** Ajoute l'habilitation expert à une structure, qui doit avoir un SIRET : la ligne reprend son identité. */
+  async ajouter(structureId: string, saisie: ExpertAEnregistrer, executor: StructuresExecutor): Promise<string> {
+    const identite = await structuresRepository.findIdentite(structureId, executor);
+    if (!identite) throw new Error("Structure introuvable");
+    if (!identite.siret)
+      throw new Error("Renseignez le SIRET de la structure avant de lui ajouter l'habilitation expert");
     const [cree] = await executor
       .insert(experts)
-      .values({ ...colonnesExpert(saisie), structureId })
+      .values({ ...colonnesExpert(saisie), nom: identite.nom, siret: identite.siret, structureId })
       .returning({ id: experts.id });
     await this.remplacerDepartements(cree.id, saisie.departements, executor);
     return cree.id;
@@ -83,6 +109,11 @@ export class ExpertsRepository {
       .set({ ...colonnesExpert(saisie), updatedAt: new Date() })
       .where(eq(experts.id, id));
     await this.remplacerDepartements(id, saisie.departements, executor);
+  }
+
+  /** Ses départements partent avec lui, par cascade. */
+  async supprimer(id: string, executor: StructuresExecutor): Promise<void> {
+    await executor.delete(experts).where(eq(experts.id, id));
   }
 
   async desactiver(id: string, agentId: string | null, raison: string): Promise<boolean> {
@@ -116,6 +147,11 @@ export class ExpertsRepository {
         codeDepartement: departement.code,
         email: departement.email,
         telephone: departement.telephone,
+        expertNom: departement.expertNom,
+        expertEmail: departement.expertEmail,
+        expertTelephone: departement.expertTelephone,
+        forfaitDiagnosticHt: departement.forfaitDiagnosticHt,
+        forfaitReseauHt: departement.forfaitReseauHt,
       }))
     );
   }
@@ -160,6 +196,11 @@ export class ExpertsRepository {
           codeDepartement: departement.codeDepartement,
           email: departement.email,
           telephone: departement.telephone,
+          expertNom: departement.expertNom,
+          expertEmail: departement.expertEmail,
+          expertTelephone: departement.expertTelephone,
+          forfaitDiagnosticHt: departement.forfaitDiagnosticHt,
+          forfaitReseauHt: departement.forfaitReseauHt,
         })),
     }));
   }
@@ -167,8 +208,6 @@ export class ExpertsRepository {
 
 function colonnesExpert(saisie: ExpertAEnregistrer) {
   return {
-    nom: saisie.nom,
-    siret: saisie.siret,
     dateValidationDhup: saisie.dateValidationDhup,
     contactInterneNom: saisie.contactInterneNom,
     contactInterneEmail: saisie.contactInterneEmail,

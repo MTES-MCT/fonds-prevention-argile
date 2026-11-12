@@ -1,9 +1,14 @@
-/** Un département d'intervention et son contact de réservation. */
+/** Un département d'intervention : le contact de réservation, puis l'expert qui se déplace. */
 export interface DepartementExpert {
   code: string;
   nom: string;
   email: string | null;
   telephone: string | null;
+  expertNom: string | null;
+  expertEmail: string | null;
+  expertTelephone: string | null;
+  forfaitDiagnosticHt: number | null;
+  forfaitReseauHt: number | null;
 }
 
 /**
@@ -36,16 +41,14 @@ export interface ExpertComplet {
   desactiveAt: Date | null;
   desactiveParNom: string | null;
   desactiveRaison: string | null;
-  departements: { codeDepartement: string; email: string | null; telephone: string | null }[];
-}
-
-export interface LigneImportRefusee {
-  ligne: number;
-  motif: string;
-}
-
-export interface BilanImportExperts {
-  crees: number;
-  misAJour: number;
-  lignesRefusees: LigneImportRefusee[];
+  departements: {
+    codeDepartement: string;
+    email: string | null;
+    telephone: string | null;
+    expertNom: string | null;
+    expertEmail: string | null;
+    expertTelephone: string | null;
+    forfaitDiagnosticHt: number | null;
+    forfaitReseauHt: number | null;
+  }[];
 }

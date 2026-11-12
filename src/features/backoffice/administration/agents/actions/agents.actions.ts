@@ -121,9 +121,9 @@ export async function getStructuresOptionsAction(): Promise<ActionResult<Structu
     const structures = await structuresRepository.findAllAvecHabilitations();
     return {
       success: true,
-      // Une structure qui n'est qu'un expert ne donnerait aucun rôle à l'agent.
+      // Une structure expert ne donne aucun rôle : pas de compte expert pour l'instant (ADR-0053).
       data: structures
-        .filter((structure) => structure.entrepriseAmo || structure.allersVers || !structure.expert)
+        .filter((structure) => structure.type === "accompagnement")
         .map((structure) => ({
           id: structure.id,
           nom: structure.nom,

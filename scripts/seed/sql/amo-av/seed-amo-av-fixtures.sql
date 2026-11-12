@@ -115,6 +115,31 @@ INSERT INTO allers_vers (id, nom, emails, telephone, adresse) VALUES ('ae9cb9ec-
 INSERT INTO allers_vers (id, nom, emails, telephone, adresse) VALUES ('5c9da89c-456c-4efd-ab39-77a06e84bf2a'::uuid, 'Soliha Hauts-de-France', '{soliha-nord@example.org}'::text[], '03 20 00 00 00', '1 rue de Lille, 59000 Lille');
 INSERT INTO allers_vers (id, nom, emails, telephone, adresse) VALUES ('bb984000-bf97-4284-b62d-c58485c134fa'::uuid, 'Soliha Sambre Avesnois', '{soliha-nord@example.org}'::text[], '03 27 00 00 00', '1 rue de Maubeuge, 59600 Maubeuge');
 
+-- Une entreprise à la fois AMO et Aller-vers n'a qu'une structure, comme en production (ADR-0051) :
+-- séparées, ses agents n'auraient que l'un des deux rôles, et leur qualification ne vaudrait plus validation AMO.
+UPDATE allers_vers v
+   SET structure_id = a.structure_id
+  FROM (VALUES
+    ('665c22f2-1027-4b01-aaec-a4d3e1b02a8f'::uuid, '3fe0b9e7-4371-40b4-b03f-da6d560b71ea'::uuid), -- Alohé (54)
+    ('87fa62a7-8250-4656-86a5-9235a88e12b4'::uuid, 'a83baa10-9522-4f05-a604-8ecd5e9f6038'::uuid), -- ALTE (04)
+    ('c1381ec2-a499-475a-91a0-ed1486c5234a'::uuid, '9bf88991-f647-4661-8096-19c62d223186'::uuid), -- Soliha (54)
+    ('795697ef-c9f6-4a0d-8028-60096072309e'::uuid, '066731d8-a0f7-4c2e-97b3-1bf4ef598d87'::uuid)  -- Soliha (24)
+  ) AS paires(av_id, amo_id)
+  JOIN entreprises_amo a ON a.id = paires.amo_id
+ WHERE v.id = paires.av_id;
+
+-- Zones publiées sur « Trouver mon conseiller local » (54 et 59), comme la migration 0062 en production.
+UPDATE allers_vers v
+   SET libelle_zone = z.libelle
+  FROM (VALUES
+    ('665c22f2-1027-4b01-aaec-a4d3e1b02a8f'::uuid, 'Pour la métropole de Nancy'),
+    ('5c9da89c-456c-4efd-ab39-77a06e84bf2a'::uuid, 'Pour les arrondissements de Dunkerque'),
+    ('86e60959-8a55-4d20-bff5-3c601981facd'::uuid, 'Pour la CC Pévèle-Carembault et les CA du Douaisis et Coeur d''Ostrevent'),
+    ('ae9cb9ec-ee5e-48b6-8d06-91c053759ff7'::uuid, 'Pour les arrondissements de Valenciennes et de Cambrai'),
+    ('bb984000-bf97-4284-b62d-c58485c134fa'::uuid, 'Pour l''arrondissement d''Avesnes-sur-Helpe')
+  ) AS z(av_id, libelle)
+ WHERE v.id = z.av_id;
+
 -- =============================================================================
 -- 3. Liaisons AV ↔ département (13 lignes)
 -- =============================================================================

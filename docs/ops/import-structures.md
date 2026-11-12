@@ -1,88 +1,73 @@
-# Import Excel des structures AMO, Allers-Vers et experts
+# Import Excel des structures
 
-Les pages `/administration/amo` et `/administration/allers-vers` importent un fichier Excel
-(modèle téléchargeable sur chaque page). Tout ce qui suit vaut pour les deux, sauf mention. Les
-experts ont leurs propres règles, en fin de page.
+La page `/administration/structures` a trois onglets d'import, un par rôle : **Import AMO**, **Import
+Aller-vers** et **Import experts** (ce dernier pour le super-administrateur seulement). Chacun propose
+son modèle (`public/templates/{amo,allers-vers,experts}-exemple.xlsx`), dont la seconde feuille,
+« Mode d'emploi », décrit chaque colonne
+([ADR-0053](../adr/0053-identite-portee-par-la-structure.md)).
 
-## Réimporter met à jour, sans dupliquer
+## Le SIRET désigne la structure
 
-Chaque ligne est rapprochée d'une structure existante par une **clé naturelle** :
+Chaque ligne porte un SIRET, obligatoire. Il désigne la structure **du type du rôle** :
 
-| Structure   | Clé                                                    | Si elle existe déjà                       |
-| ----------- | ------------------------------------------------------ | ----------------------------------------- |
-| AMO         | SIRET                                                  | mise à jour                               |
-| Allers-Vers | nom normalisé **et** au moins un département en commun | mise à jour                               |
-| Allers-Vers | plusieurs structures correspondent                     | ligne ignorée, à corriger depuis la liste |
-| Allers-Vers | deux lignes du fichier désignent la même structure     | la seconde est ignorée                    |
+| Import     | Type de structure | Si aucune structure de ce SIRET n'existe                                             |
+| ---------- | ----------------- | ------------------------------------------------------------------------------------ |
+| AMO        | accompagnement    | un Aller-vers encore sans SIRET, de même nom sur un département commun ; sinon créée |
+| Aller-vers | accompagnement    | idem                                                                                 |
+| Experts    | expert            | créée                                                                                |
 
-Le nom normalisé ignore la casse, les accents et la ponctuation : « Allers-Vers Héraut » et
-« allers vers heraut » sont la même structure. Le département est nécessaire parce que des
-structures distinctes portent le même nom (« Soliha » en Dordogne et en Meurthe-et-Moselle).
-Une structure qui gagne un département reste reconnue.
+- Une structure expert ne fait que de l'expertise : une société aussi AMO a une seconde structure, de
+  type expert, du même SIRET.
+- Le rapprochement par le nom ne sert qu'à passer le cap du premier import : aucun Aller-vers n'avait
+  de SIRET. La structure retrouvée reçoit le SIRET du fichier, signalé dans le bilan. Un nom qui
+  désigne plusieurs structures est refusé : renseigner le SIRET dans la bonne fiche, puis réimporter.
+- Un expert peut tenir sur plusieurs lignes de même SIRET, une par contact de réservation, expert sur
+  place ou forfait différent. Une AMO ou un Aller-vers décrit deux fois, ou un département d'expert
+  déclaré deux fois, refuse la ligne qui le répète.
 
-> **Renommer une structure dans le fichier en crée une nouvelle** (Allers-Vers). Pour un
-> renommage, modifier d'abord le nom depuis la liste, puis réimporter.
+## Colonnes
 
-Sur une structure mise à jour, le fichier fait foi : départements, EPCI et communes absents
-du fichier sont retirés.
+| Import     | Colonnes                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tous       | `nom`, `siret`, `adresse`, `telephone`, `horaires`                                                                                                                |
+| AMO        | `departements` (« Indre 36, Cher 18 »), `emails`, `epci`, `communes` (ou `codes_insee`)                                                                           |
+| Aller-vers | `departements` (codes), `emails`, `epci`                                                                                                                          |
+| Experts    | `departements`, `email_reservation`, `telephone_reservation`, `expert_sur_place_*`, `forfait_diag`, `forfait_reseau`, `date_validation_dhup`, `contact_interne_*` |
 
-## « Supprimer les structures non rattachées avant l'import »
+Les en-têtes sont reconnus sans tenir compte de la casse, des accents ni des tirets bas ; ceux des
+anciens fichiers AMO et Aller-vers restent valables. Emails, départements, EPCI et codes INSEE
+acceptent `,` et `;`. Excel lit `03` et `0612345678` comme des nombres et retire le zéro : l'import le
+rétablit.
 
-La case ne vide plus tout. Elle supprime seulement les structures qu'aucune donnée ne
-référence, et le résultat de l'import nomme celles conservées.
+## Ce que le fichier peut écrire
 
-| Structure   | Conservée si…                                                      |
-| ----------- | ------------------------------------------------------------------ |
-| AMO         | un agent y est rattaché, ou un dossier (validation AMO) la désigne |
-| Allers-Vers | un agent y est rattaché (désactivé compris)                        |
+- **L'habilitation du rôle importé** : son territoire et ses emails sont remplacés par ceux du fichier ;
+  pour un expert, ses départements, contacts de réservation, experts sur place et forfaits. Une date
+  de validation ou un contact interne absent du fichier ne retire pas celui de la fiche.
+- **L'identité d'une structure existante** (nom, adresse, téléphone, horaires) n'est que complétée.
+  Une valeur différente est signalée dans le bilan, sans être reprise. Cocher **« Remplacer les
+  coordonnées des structures existantes »** remplace ces champs par les cellules remplies du fichier ;
+  le bilan liste ce qui a été remplacé. Le SIRET n'est jamais remplacé.
+- **Rien n'est supprimé.** Retirer une habilitation ou supprimer une structure se fait dans sa fiche.
+- La **zone affichée au public** d'un Aller-vers (titre de son groupe sur « Trouver mon conseiller
+  local ») ne s'importe pas : elle se saisit dans la fiche, et un import la laisse inchangée.
+- Ajouter l'AMO ou l'Aller-vers à une structure **qui a des agents** leur donne ce rôle : réservé au
+  super-administrateur. Pour un administrateur, la ligne est refusée et listée, les autres passent.
 
-Supprimer ces structures rendait les agents concernés inexploitables (`calculateAgentScope`
-lève faute de structure) et, côté AMO, échouait sur la contrainte des validations. Les
-structures conservées sont ensuite mises à jour par l'import si elles figurent dans le fichier.
+## Bilan
 
-La case exige en plus la permission de suppression (`AMO_DELETE` / `ALLERS_VERS_DELETE`).
+Structures créées et déjà connues, habilitations ajoutées et mises à jour, puis les lignes refusées
+avec leur motif et les avertissements. Chaque structure s'enregistre dans sa propre transaction : une
+erreur n'arrête pas les autres.
 
-## Structure de rattachement
+## Fichier de la DHUP
 
-Une AMO ou un Aller-vers créé par l'import devient sa propre structure, avec ce seul rôle
-([ADR-0051](../adr/0051-roles-amo-aller-vers-portes-par-la-structure.md)). Quand une même
-organisation est AMO et Aller-vers, fusionner ses deux structures sur
-`/administration/structures` : ses agents en recevront les deux rôles.
+Dans l'import experts, ses en-têtes (`Société`, `SIRET/SIREN`, `départements d'intervention`, `Contact`,
+`adresse mail`, `n° téléphone`, `adresse postale`) sont lus tels quels. Son email et son téléphone sont
+ceux de la **réservation**, rattachés aux départements de la ligne ; `Contact` devient le contact
+interne. La raison sociale ne remplace pas le nom d'une structure existante, sauf sur demande.
 
-## Colonnes à plusieurs valeurs
+## Modèles
 
-Emails, départements, EPCI et codes INSEE acceptent indifféremment `,` et `;`, dans le
-fichier comme dans les modales d'édition. Les emails AMO sont stockés séparés par `;`
-quelle que soit la saisie.
-
-## Experts (`/administration/experts`, super-administrateur)
-
-L'onglet « Import » de la page reprend l'écran des AMO et des Aller-vers, sans la case de purge.
-L'import lit le référencement transmis par la DHUP tel quel (`Société`, `SIRET/SIREN`,
-`départements d'intervention`, `Contact`, `adresse mail`, `n° téléphone`), ou le modèle de la page,
-qui ajoute la date de validation DHUP et le contact interne. Les en-têtes sont reconnus sans tenir
-compte de la casse ni des accents ; `adresse postale` est ignorée, l'application ne la stocke pas.
-
-| Colonne                                          | Devient                                                         |
-| ------------------------------------------------ | --------------------------------------------------------------- |
-| `Société`                                        | raison sociale                                                  |
-| `SIRET/SIREN`                                    | SIRET : 14 chiffres et clé valide, sinon la ligne est refusée   |
-| `départements d'intervention`                    | codes, séparés par `,` ou `;` ; un code inconnu refuse la ligne |
-| `adresse mail`, `n° téléphone`                   | contact de réservation de chacun des départements de la ligne   |
-| `Contact`, `Contact interne email` / `téléphone` | contact interne, visible du seul super-administrateur           |
-| `Date de validation DHUP`                        | date, au format `AAAA-MM-JJ` ou `JJ/MM/AAAA`                    |
-
-- **Une ligne par expert, ou par département** quand le contact change d'un département à l'autre :
-  les lignes d'un même SIRET sont réunies. Un département déjà déclaré plus haut pour ce SIRET refuse
-  la ligne qui le répète.
-- **Rapprochement par SIRET.** Un expert existant est mis à jour : ses départements sont remplacés par
-  ceux du fichier ; sa date et son contact interne ne sont remplacés que si le fichier en donne. Son
-  statut (actif ou désactivé) ne change pas.
-- **Aucune suppression** : un expert absent du fichier reste tel quel. Un départ se traite par la
-  désactivation, depuis la liste.
-- Excel lit `03` et `0612345678` comme des nombres et retire le zéro : l'import le rétablit.
-- Chaque ligne refusée est listée avec son numéro et son motif ; les autres sont enregistrées.
-
-Un expert créé, par l'import ou à la main, devient sa propre structure. Une AMO qui est aussi expert
-se fusionne avec sa fiche expert sur `/administration/structures` : cette habilitation ne change le
-rôle d'aucun agent ([ADR-0052](../adr/0052-annuaire-des-experts-ordre-neutre.md)).
+`npx tsx scripts/dev/generer-modeles-import-structures.ts` régénère les trois modèles. Un test
+(`import-structures.test.ts`) vérifie que chacun s'importe sans refus.

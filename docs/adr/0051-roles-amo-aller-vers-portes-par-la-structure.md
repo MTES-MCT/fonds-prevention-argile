@@ -108,6 +108,10 @@ Retour arrière : redéployer la version précédente suffit, rien n'étant supp
 
 ## Page « Structures » (même PR)
 
+> **Amendé par [ADR-0053](0053-identite-portee-par-la-structure.md)** : l'identité passe sur la
+> structure, les imports rattachent par SIRET et la page devient une fiche par structure. Renommer,
+> fusionner et détacher, décrits ci-dessous, sont retirés.
+
 Livrée avec le changement de modèle : sans elle, une AMO et un Aller-vers importés séparément ne
 pourraient plus partager d'agents, alors que le formulaire agent le permettait avant.
 

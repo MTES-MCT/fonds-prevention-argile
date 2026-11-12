@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { BackofficeNavigation } from "./BackofficeNavigation";
 import { UserRole } from "@/shared/domain/value-objects/user-role.enum";
 import * as authHooks from "@/features/auth/hooks";
@@ -42,6 +42,11 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     expect(screen.getByText("Agents")).toBeInTheDocument();
     expect(screen.getByText("Structures")).toBeInTheDocument();
     expect(screen.getByText("Diagnostics DN")).toBeInTheDocument();
+    // AMO, Aller-vers et experts se gèrent depuis la fiche de leur structure : plus d'onglet à part.
+    const pilotage = within(screen.getByRole("navigation", { name: "Menu administration" }));
+    expect(pilotage.queryByText("AMO")).not.toBeInTheDocument();
+    expect(pilotage.queryByText("Allers Vers")).not.toBeInTheDocument();
+    expect(pilotage.queryByText("Experts")).not.toBeInTheDocument();
     // Rangée dossiers : onglet unique (l'ancienne page Statistiques a été retirée, ADR-0017)
     expect(screen.getByText("Dossiers")).toBeInTheDocument();
     expect(screen.queryByText("Statistiques")).not.toBeInTheDocument();
@@ -51,9 +56,8 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     setup({ role: UserRole.ADMINISTRATEUR, admin: true, agent: false });
     render(<BackofficeNavigation />);
     expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
-    expect(screen.getByText("AMO")).toBeInTheDocument();
+    expect(screen.getByText("Structures")).toBeInTheDocument();
     expect(screen.queryByText("Agents")).not.toBeInTheDocument();
-    expect(screen.queryByText("Structures")).not.toBeInTheDocument();
     expect(screen.queryByText("Diagnostics DN")).not.toBeInTheDocument();
     expect(screen.queryByText("Dossiers")).not.toBeInTheDocument();
   });
@@ -63,7 +67,7 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     render(<BackofficeNavigation />);
     expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
     expect(screen.getByText("Demandeurs")).toBeInTheDocument();
-    expect(screen.queryByText("AMO")).not.toBeInTheDocument();
+    expect(screen.queryByText("Structures")).not.toBeInTheDocument();
     expect(screen.queryByText("Dossiers")).not.toBeInTheDocument();
   });
 
@@ -84,9 +88,8 @@ describe("BackofficeNavigation — matrice d'affichage par rôle (ADR-0015)", ()
     expect(screen.getByText("Tableau de bord")).toBeInTheDocument();
     expect(screen.getByText("Acquisition")).toBeInTheDocument();
     expect(screen.getByText("Demandeurs")).toBeInTheDocument();
-    expect(screen.queryByText("AMO")).not.toBeInTheDocument();
+    expect(screen.queryByText("Structures")).not.toBeInTheDocument();
     expect(screen.queryByText("Agents")).not.toBeInTheDocument();
-    expect(screen.queryByText("Allers Vers")).not.toBeInTheDocument();
     // Rangée dossiers : onglet unique, plus de Statistiques
     expect(screen.getByText("Dossiers")).toBeInTheDocument();
     expect(screen.queryByText("Statistiques")).not.toBeInTheDocument();

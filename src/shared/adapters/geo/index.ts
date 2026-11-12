@@ -7,7 +7,8 @@ export {
   fetchCommuneByCode,
   fetchCentresCommunesDepartement,
   fetchContoursDepartements,
+  fetchEpcis,
   getEpciByCommune,
   getEpciDataByCommune,
 } from "./geo.adapter";
-export type { GeoApiCommuneResponse, GeoCentreCommune, GeoContourDepartement, GeoEpciData } from "./geo.types";
+export type { GeoApiCommuneResponse, GeoCentreCommune, GeoContourDepartement, GeoEpci, GeoEpciData } from "./geo.types";

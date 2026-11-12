@@ -13,7 +13,18 @@ function expert(champs: Partial<ExpertComplet> & { nom: string }): ExpertComplet
     desactiveAt: null,
     desactiveParNom: null,
     desactiveRaison: null,
-    departements: [{ codeDepartement: "36", email: "indre@exemple.fr", telephone: "0200000000" }],
+    departements: [
+      {
+        codeDepartement: "36",
+        email: "indre@exemple.fr",
+        telephone: "0200000000",
+        expertNom: null,
+        expertEmail: null,
+        expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
+      },
+    ],
     ...champs,
   };
 }
@@ -24,6 +35,25 @@ describe("versAnnuaire", () => {
     expect(Object.keys(annuaire).sort()).toEqual(["dateValidationDhup", "departements", "id", "nom", "siret"]);
     expect(JSON.stringify(annuaire)).not.toContain("interne@exemple.fr");
     expect(JSON.stringify(annuaire)).not.toContain("Camille Interne");
+  });
+
+  it("donne aux agents l'expert qui se déplace dans chaque département", () => {
+    const surPlace = {
+      expertNom: "Paul Martin",
+      expertEmail: "paul@exemple.fr",
+      expertTelephone: "0611223344",
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
+    };
+    const annuaire = versAnnuaire(
+      expert({
+        nom: "Géotech",
+        departements: [{ codeDepartement: "36", email: "indre@exemple.fr", telephone: null, ...surPlace }],
+      })
+    );
+    expect(annuaire.departements).toEqual([
+      { code: "36", nom: "Indre", email: "indre@exemple.fr", telephone: null, ...surPlace },
+    ]);
   });
 });
 
@@ -51,12 +81,44 @@ describe("annuaireDuDepartement", () => {
     expert({ nom: "Zeta Sols" }),
     expert({ nom: "Alpha Expertise" }),
     expert({ nom: "Désactivé", desactiveAt: new Date() }),
-    expert({ nom: "Ailleurs", departements: [{ codeDepartement: "63", email: null, telephone: null }] }),
+    expert({
+      nom: "Ailleurs",
+      departements: [
+        {
+          codeDepartement: "63",
+          email: null,
+          telephone: null,
+          expertNom: null,
+          expertEmail: null,
+          expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
+        },
+      ],
+    }),
     expert({
       nom: "Deux départements",
       departements: [
-        { codeDepartement: "36", email: "36@exemple.fr", telephone: null },
-        { codeDepartement: "18", email: "18@exemple.fr", telephone: null },
+        {
+          codeDepartement: "36",
+          email: "36@exemple.fr",
+          telephone: null,
+          expertNom: null,
+          expertEmail: null,
+          expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
+        },
+        {
+          codeDepartement: "18",
+          email: "18@exemple.fr",
+          telephone: null,
+          expertNom: null,
+          expertEmail: null,
+          expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
+        },
       ],
     }),
   ];
@@ -72,7 +134,17 @@ describe("annuaireDuDepartement", () => {
   it("ne garde que le contact du département demandé", () => {
     const deuxDepartements = annuaireDuDepartement(experts, "36").find((e) => e.nom === "Deux départements");
     expect(deuxDepartements?.departements).toEqual([
-      { code: "36", nom: "Indre", email: "36@exemple.fr", telephone: null },
+      {
+        code: "36",
+        nom: "Indre",
+        email: "36@exemple.fr",
+        telephone: null,
+        expertNom: null,
+        expertEmail: null,
+        expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
+      },
     ]);
   });
 

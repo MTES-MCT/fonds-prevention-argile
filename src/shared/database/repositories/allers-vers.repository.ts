@@ -1,9 +1,7 @@
-import { and, eq, inArray, notExists, SQL, sql } from "drizzle-orm";
+import { eq, inArray, isNull, SQL, sql } from "drizzle-orm";
 import { db } from "../client";
-import { agents, allersVers, allersVersDepartements, allersVersEpci, structures } from "../schema";
-import type { NewAllersVers } from "../schema/allers-vers";
-import { BaseRepository } from "./base.repository";
-import { structuresRepository } from "./structures.repository";
+import { allersVers, allersVersDepartements, allersVersEpci, structures } from "../schema";
+import { structuresRepository, type StructuresExecutor } from "./structures.repository";
 import { agentsRepository } from "./agents.repository";
 import { variantesCodeDepartement } from "@/shared/constants/departements.constants";
 
@@ -17,6 +15,7 @@ export type AllersVersWithRelations = {
   telephone: string;
   adresse: string;
   horaires: string | null;
+  libelleZone: string | null;
   departements: { codeDepartement: string }[];
   epci: { codeEpci: string }[];
 };
@@ -24,7 +23,7 @@ export type AllersVersWithRelations = {
 /**
  * Repository pour les structures "Allers Vers"
  */
-export class AllersVersRepository extends BaseRepository<typeof allersVers.$inferSelect> {
+export class AllersVersRepository {
   /**
    * Trouve un Allers Vers par ID
    */
@@ -53,6 +52,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
         horaires: allersVers.horaires,
+        libelleZone: allersVers.libelleZone,
         codeDepartement: allersVersDepartements.codeDepartement,
         codeEpci: allersVersEpci.codeEpci,
       })
@@ -73,6 +73,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
           telephone: row.telephone,
           adresse: row.adresse,
           horaires: row.horaires,
+          libelleZone: row.libelleZone,
           departements: [],
           epci: [],
         });
@@ -92,49 +93,104 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
     return Array.from(avMap.values());
   }
 
-  /**
-   * Crée un nouvel Allers Vers
-   */
-  async create(data: Partial<typeof allersVers.$inferSelect>): Promise<typeof allersVers.$inferSelect> {
-    return await db.transaction(async (tx) => {
-      const insertData: NewAllersVers = {
-        nom: data.nom!,
-        emails: data.emails!,
-        telephone: data.telephone || "",
-        adresse: data.adresse || "",
-        horaires: data.horaires ?? null,
-        // Une nouvelle structure Aller-vers est sa propre structure, sans rôle AMO.
-        structureId: await structuresRepository.creer(data.nom!, tx),
-      };
-
-      const [created] = await tx.insert(allersVers).values(insertData).returning();
-      return created;
-    });
+  /** Aller-vers dont la structure n'a pas encore de SIRET : un import les rapproche par leur nom. */
+  async findSansSiretPourRapprochement(): Promise<
+    { id: string; nom: string; structureId: string; departements: string[] }[]
+  > {
+    const lignes = await db
+      .select({ id: allersVers.id, nom: allersVers.nom, structureId: allersVers.structureId })
+      .from(allersVers)
+      .innerJoin(structures, eq(structures.id, allersVers.structureId))
+      .where(isNull(structures.siret));
+    if (lignes.length === 0) return [];
+    const departements = await db
+      .select({ id: allersVersDepartements.allersVersId, code: allersVersDepartements.codeDepartement })
+      .from(allersVersDepartements)
+      .where(
+        inArray(
+          allersVersDepartements.allersVersId,
+          lignes.map((ligne) => ligne.id)
+        )
+      );
+    return lignes.map((ligne) => ({
+      ...ligne,
+      departements: departements.filter((d) => d.id === ligne.id).map((d) => d.code),
+    }));
   }
 
-  /**
-   * Met à jour un Allers Vers
-   */
-  async update(
+  async findHabilitationParStructure(
+    structureId: string,
+    executor: StructuresExecutor = db
+  ): Promise<{ id: string; emails: string[]; libelleZone: string | null } | null> {
+    const [ligne] = await executor
+      .select({ id: allersVers.id, emails: allersVers.emails, libelleZone: allersVers.libelleZone })
+      .from(allersVers)
+      .where(eq(allersVers.structureId, structureId));
+    return ligne ?? null;
+  }
+
+  async findStructureId(id: string, executor: StructuresExecutor = db): Promise<string | null> {
+    const [ligne] = await executor
+      .select({ structureId: allersVers.structureId })
+      .from(allersVers)
+      .where(eq(allersVers.id, id));
+    return ligne?.structureId ?? null;
+  }
+
+  /** Ajoute l'habilitation Aller-vers à une structure : la ligne reprend son identité. */
+  async ajouter(
+    structureId: string,
+    emails: string[],
+    executor: StructuresExecutor,
+    libelleZone: string | null = null
+  ): Promise<string> {
+    const identite = await structuresRepository.findIdentite(structureId, executor);
+    if (!identite) throw new Error("Structure introuvable");
+    const [cree] = await executor
+      .insert(allersVers)
+      .values({
+        nom: identite.nom,
+        adresse: identite.adresse,
+        telephone: identite.telephone,
+        horaires: identite.horaires,
+        emails,
+        libelleZone,
+        structureId,
+      })
+      .returning({ id: allersVers.id });
+    return cree.id;
+  }
+
+  /** L'équipe seulement : l'identité se modifie sur la structure, le territoire par ses relations. */
+  /** Saisie de la fiche ; l'import, qui ne connaît pas la zone, passe par `mettreAJourEmails`. */
+  async mettreAJourHabilitation(
     id: string,
-    data: Partial<typeof allersVers.$inferSelect>
-  ): Promise<typeof allersVers.$inferSelect | null> {
-    const updateData: Partial<NewAllersVers> = {};
-
-    if (data.nom !== undefined) updateData.nom = data.nom;
-    if (data.emails !== undefined) updateData.emails = data.emails;
-    if (data.telephone !== undefined) updateData.telephone = data.telephone || "";
-    if (data.adresse !== undefined) updateData.adresse = data.adresse || "";
-    if (data.horaires !== undefined) updateData.horaires = data.horaires;
-
-    const [updated] = await db.update(allersVers).set(updateData).where(eq(allersVers.id, id)).returning();
-
-    return updated || null;
+    saisie: { emails: string[]; libelleZone: string | null },
+    executor: StructuresExecutor
+  ): Promise<void> {
+    await executor
+      .update(allersVers)
+      .set({ emails: saisie.emails, libelleZone: saisie.libelleZone })
+      .where(eq(allersVers.id, id));
   }
 
-  /**
-   * Supprime un Allers Vers et toutes ses relations
-   */
+  async mettreAJourEmails(id: string, emails: string[], executor: StructuresExecutor = db): Promise<boolean> {
+    const lignes = await executor
+      .update(allersVers)
+      .set({ emails })
+      .where(eq(allersVers.id, id))
+      .returning({ id: allersVers.id });
+    return lignes.length > 0;
+  }
+
+  /** Avec la structure qui la porte : l'appelant a vérifié qu'aucun agent n'en dépend. */
+  async supprimerAvecStructure(id: string, executor: StructuresExecutor): Promise<void> {
+    await executor.delete(allersVersDepartements).where(eq(allersVersDepartements.allersVersId, id));
+    await executor.delete(allersVersEpci).where(eq(allersVersEpci.allersVersId, id));
+    await executor.delete(allersVers).where(eq(allersVers.id, id));
+  }
+
+  /** Retire l'habilitation Aller-vers d'une structure qui en garde une autre. */
   async delete(id: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
       const [existant] = await tx
@@ -145,76 +201,20 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
       if (!existant) return false;
       // Verrou exclusif : une autre suppression ou un rattachement d'agent sur la structure attend, puis voit l'état final.
       await structuresRepository.verrouiller(existant.structureId, "exclusif", tx);
-      const [relu] = await tx
-        .select({ structureId: allersVers.structureId })
-        .from(allersVers)
-        .where(eq(allersVers.id, id))
-        .limit(1);
-      if (!relu) return false;
-      // Une fusion ou un détachement l'a déplacé avant le verrou : la garde porterait sur la mauvaise structure.
-      if (relu.structureId !== existant.structureId) {
-        throw new Error("Cet Aller-vers vient de changer de structure : recommencez la suppression");
-      }
       const structure = await structuresRepository.findAvecHabilitations(existant.structureId, tx);
       if (!structure?.entrepriseAmo && (await agentsRepository.compterParStructure(existant.structureId, tx)) > 0) {
         throw new Error(
-          "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de supprimer celle-ci"
+          "Des agents perdraient leur seul rôle : rattachez-les à une autre structure avant de retirer l'habilitation Aller-vers"
         );
       }
 
-      // Supprimer les relations départements
       await tx.delete(allersVersDepartements).where(eq(allersVersDepartements.allersVersId, id));
-
-      // Supprimer les relations EPCI
       await tx.delete(allersVersEpci).where(eq(allersVersEpci.allersVersId, id));
-
-      // Supprimer l'Allers Vers
       const result = await tx.delete(allersVers).where(eq(allersVers.id, id)).returning();
 
       await agentsRepository.resynchroniserColonnesHeritees(existant.structureId, tx);
-      await structuresRepository.supprimerVides(tx);
       return result.length > 0;
     });
-  }
-
-  /**
-   * Supprime les structures dont aucun agent ne relève (désactivés compris)
-   */
-  async supprimerNonRattaches(): Promise<{ supprimees: string[]; conservees: string[] }> {
-    const sansAgent = notExists(
-      db.select({ id: agents.id }).from(agents).where(eq(agents.structureId, allersVers.structureId))
-    );
-    const supprimees = await db.transaction(async (tx) => {
-      // Un agent rattaché pendant la purge attend ces verrous ; le DELETE, relu après eux, épargne alors sa structure.
-      const verrouillees = await tx
-        .select({ id: structures.id })
-        .from(structures)
-        .innerJoin(allersVers, eq(allersVers.structureId, structures.id))
-        .where(sansAgent)
-        .orderBy(structures.id)
-        .for("update", { of: structures });
-      // Une structure devenue candidate entre-temps n'est pas verrouillée : elle attend la prochaine purge.
-      const lignes = verrouillees.length
-        ? await tx
-            .delete(allersVers)
-            .where(
-              and(
-                inArray(
-                  allersVers.structureId,
-                  verrouillees.map((v) => v.id)
-                ),
-                sansAgent
-              )
-            )
-            .returning({ nom: allersVers.nom })
-        : [];
-      await structuresRepository.supprimerVides(tx);
-      return lignes;
-    });
-
-    const conservees = await db.select({ nom: allersVers.nom }).from(allersVers).orderBy(allersVers.nom);
-
-    return { supprimees: supprimees.map((s) => s.nom), conservees: conservees.map((s) => s.nom) };
   }
 
   /**
@@ -243,41 +243,41 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
   /**
    * Met à jour les relations départements d'un Allers Vers
    */
-  async updateDepartementsRelations(avId: string, codeDepartements: string[]): Promise<void> {
-    await this.transaction(async (tx) => {
-      // Supprimer les anciennes relations
-      await tx.delete(allersVersDepartements).where(eq(allersVersDepartements.allersVersId, avId));
+  async updateDepartementsRelations(
+    avId: string,
+    codeDepartements: string[],
+    tx: StructuresExecutor = db
+  ): Promise<void> {
+    // Supprimer les anciennes relations
+    await tx.delete(allersVersDepartements).where(eq(allersVersDepartements.allersVersId, avId));
 
-      // Insérer les nouvelles relations si présentes
-      if (codeDepartements.length > 0) {
-        await tx.insert(allersVersDepartements).values(
-          codeDepartements.map((codeDepartement) => ({
-            allersVersId: avId,
-            codeDepartement: codeDepartement,
-          }))
-        );
-      }
-    });
+    // Insérer les nouvelles relations si présentes
+    if (codeDepartements.length > 0) {
+      await tx.insert(allersVersDepartements).values(
+        codeDepartements.map((codeDepartement) => ({
+          allersVersId: avId,
+          codeDepartement: codeDepartement,
+        }))
+      );
+    }
   }
 
   /**
    * Met à jour les relations EPCI d'un Allers Vers
    */
-  async updateEpciRelations(avId: string, codeEpcis: string[]): Promise<void> {
-    await this.transaction(async (tx) => {
-      // Supprimer les anciennes relations
-      await tx.delete(allersVersEpci).where(eq(allersVersEpci.allersVersId, avId));
+  async updateEpciRelations(avId: string, codeEpcis: string[], tx: StructuresExecutor = db): Promise<void> {
+    // Supprimer les anciennes relations
+    await tx.delete(allersVersEpci).where(eq(allersVersEpci.allersVersId, avId));
 
-      // Insérer les nouvelles relations si présentes
-      if (codeEpcis.length > 0) {
-        await tx.insert(allersVersEpci).values(
-          codeEpcis.map((codeEpci) => ({
-            allersVersId: avId,
-            codeEpci: codeEpci,
-          }))
-        );
-      }
-    });
+    // Insérer les nouvelles relations si présentes
+    if (codeEpcis.length > 0) {
+      await tx.insert(allersVersEpci).values(
+        codeEpcis.map((codeEpci) => ({
+          allersVersId: avId,
+          codeEpci: codeEpci,
+        }))
+      );
+    }
   }
 
   /**
@@ -316,6 +316,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
         horaires: allersVers.horaires,
+        libelleZone: allersVers.libelleZone,
       })
       .from(allersVers)
       .innerJoin(allersVersDepartements, eq(allersVers.id, allersVersDepartements.allersVersId))
@@ -335,6 +336,7 @@ export class AllersVersRepository extends BaseRepository<typeof allersVers.$infe
         telephone: allersVers.telephone,
         adresse: allersVers.adresse,
         horaires: allersVers.horaires,
+        libelleZone: allersVers.libelleZone,
       })
       .from(allersVers)
       .innerJoin(allersVersEpci, eq(allersVers.id, allersVersEpci.allersVersId))

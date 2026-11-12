@@ -1,14 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { UserRole } from "@/shared/domain/value-objects";
 import {
-  departementAffiche,
   DEPARTEMENTS_OFFICIELS,
+  departementsDeLaVue,
   estSiretValide,
   expertSchema,
   lireDepartements,
   perimetreExperts,
   peutConsulterDepartement,
   trierExperts,
+  vueAffichee,
 } from "./regles-experts";
 
 describe("estSiretValide", () => {
@@ -62,16 +63,65 @@ describe("perimetreExperts", () => {
   });
 });
 
-describe("departementAffiche", () => {
-  it("ramène l'analyste sur son territoire quand il demande un autre département", () => {
-    expect(departementAffiche(perimetreExperts(UserRole.ANALYSTE, ["36"]), "63")).toBe("36");
+describe("vueAffichee", () => {
+  it("ouvre tous les départements au super-administrateur, qui n'a pas de territoire", () => {
+    expect(vueAffichee(perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []), undefined)).toEqual({ type: "tous" });
   });
 
-  it("affiche le département demandé à un agent AMO, son territoire sinon", () => {
+  it("ouvre l'agent sur son département, ou sur son territoire regroupé s'il en couvre plusieurs", () => {
+    expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36"]), undefined)).toEqual({ type: "departement", code: "36" });
+    expect(vueAffichee(perimetreExperts(UserRole.AMO, ["36", "24"]), undefined)).toEqual({ type: "territoire" });
+    // Un Aller-vers couvert seulement par des EPCI n'a aucun département : il voit tout plutôt qu'une page vide.
+    expect(vueAffichee(perimetreExperts(UserRole.ALLERS_VERS, []), undefined)).toEqual({ type: "tous" });
+  });
+
+  it("affiche la vue demandée si elle est permise, le territoire sinon", () => {
     const perimetre = perimetreExperts(UserRole.AMO, ["36"]);
-    expect(departementAffiche(perimetre, "63")).toBe("63");
-    expect(departementAffiche(perimetre, undefined)).toBe("36");
-    expect(departementAffiche(perimetre, "inconnu")).toBe("36");
+    expect(vueAffichee(perimetre, "63")).toEqual({ type: "departement", code: "63" });
+    expect(vueAffichee(perimetre, "tous")).toEqual({ type: "tous" });
+    // Un seul département : pas de vue « territoire », il est affiché seul.
+    expect(vueAffichee(perimetre, "territoire")).toEqual({ type: "departement", code: "36" });
+    expect(vueAffichee(perimetre, "inconnu")).toEqual({ type: "departement", code: "36" });
+  });
+
+  it("ramène l'analyste sur son territoire quand il demande un autre département", () => {
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36"]), "63")).toEqual({ type: "departement", code: "36" });
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, ["36", "24"]), undefined)).toEqual({ type: "tous" });
+    expect(vueAffichee(perimetreExperts(UserRole.ANALYSTE, []), "tous")).toBeNull();
+  });
+});
+
+describe("departementsDeLaVue", () => {
+  it("donne au périmètre national les 11 départements du dispositif, même sans expert", () => {
+    const tous = departementsDeLaVue(perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []), { type: "tous" });
+    expect(tous).toEqual(["03", "04", "24", "32", "36", "47", "54", "59", "63", "81", "82"]);
+  });
+
+  it("garde les départements du territoire, même sans expert, pour le dire", () => {
+    expect(departementsDeLaVue(perimetreExperts(UserRole.AMO, ["36", "18"]), { type: "territoire" })).toEqual(["36"]);
+    expect(departementsDeLaVue(perimetreExperts(UserRole.AMO, ["36", "24"]), { type: "territoire" })).toEqual([
+      "36",
+      "24",
+    ]);
+    expect(departementsDeLaVue(perimetreExperts(UserRole.ANALYSTE, ["24"]), { type: "tous" })).toEqual(["24"]);
+  });
+});
+
+describe("départements du dispositif", () => {
+  it("ne laisse consulter aucun département hors des 11, même au super-administrateur", () => {
+    const national = perimetreExperts(UserRole.SUPER_ADMINISTRATEUR, []);
+    expect(peutConsulterDepartement(national, "36")).toBe(true);
+    expect(peutConsulterDepartement(national, "75")).toBe(false);
+    expect(vueAffichee(national, "75")).toEqual({ type: "tous" });
+  });
+
+  it("retire d'un territoire les départements hors du dispositif", () => {
+    // Une AMO de production déclare aussi la Haute-Corse, les Alpes-Maritimes et l'Ardèche.
+    expect(perimetreExperts(UserRole.AMO, ["2B", "04", "06", "07"])).toEqual({
+      type: "tous",
+      departementsParDefaut: ["04"],
+    });
+    expect(perimetreExperts(UserRole.ANALYSTE, ["75"])).toEqual({ type: "aucun" });
   });
 });
 
@@ -96,14 +146,43 @@ describe("expertSchema", () => {
   const valide = {
     nom: "Géotech",
     siret: "392 488 722 00027",
-    departements: [{ code: "3", email: "", telephone: "04 00 00 00 00" }],
+    departements: [{ code: "3", email: "", telephone: "04 00 00 00 00", expertNom: "", expertEmail: "" }],
   };
 
   it("normalise SIRET et départements, et vide les champs laissés blancs", () => {
     const resultat = expertSchema.parse(valide);
     expect(resultat.siret).toBe("39248872200027");
-    expect(resultat.departements).toEqual([{ code: "03", email: null, telephone: "04 00 00 00 00" }]);
+    expect(resultat.departements).toEqual([
+      {
+        code: "03",
+        email: null,
+        telephone: "04 00 00 00 00",
+        expertNom: null,
+        expertEmail: null,
+        expertTelephone: null,
+        forfaitDiagnosticHt: null,
+        forfaitReseauHt: null,
+      },
+    ]);
     expect(resultat.contactInterneEmail).toBeNull();
+  });
+
+  it("lit un forfait HT écrit à la française, avec ou sans symbole, ou déjà en nombre", () => {
+    const forfaits = (forfaitDiagnosticHt: unknown, forfaitReseauHt: unknown) =>
+      expertSchema.parse({ ...valide, departements: [{ code: "36", forfaitDiagnosticHt, forfaitReseauHt }] })
+        .departements[0];
+    expect(forfaits("1 200,50 € HT", 450)).toMatchObject({ forfaitDiagnosticHt: 1200.5, forfaitReseauHt: 450 });
+    expect(forfaits("1200.5", "")).toMatchObject({ forfaitDiagnosticHt: 1200.5, forfaitReseauHt: null });
+  });
+
+  it("refuse un forfait qui n'est pas un montant en euros", () => {
+    for (const montant of ["douze", "-50", "12,345", "1.200,50"]) {
+      const resultat = expertSchema.safeParse({
+        ...valide,
+        departements: [{ code: "36", forfaitDiagnosticHt: montant }],
+      });
+      expect(resultat.success, montant).toBe(false);
+    }
   });
 
   it("refuse un département déclaré deux fois, même écrit différemment", () => {

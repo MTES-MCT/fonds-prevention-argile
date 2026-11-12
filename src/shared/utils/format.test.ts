@@ -1,7 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { formatNomComplet, formatCommune } from "./format.utils";
+import { formatNomComplet, formatCommune, formatMontantExact } from "./format.utils";
 
 describe("format.utils", () => {
+  describe("formatMontantExact", () => {
+    // Intl sépare les milliers et l'euro par des espaces insécables.
+    const lisible = (texte: string) => texte.replace(/[\u00a0\u202f]/g, " ");
+
+    it("n'affiche les centimes que s'il y en a", () => {
+      expect(lisible(formatMontantExact(1200))).toBe("1 200 €");
+      expect(lisible(formatMontantExact(1200.5))).toBe("1 200,50 €");
+    });
+  });
+
   describe("formatNomComplet", () => {
     it("devrait retourner le prénom et nom concaténés", () => {
       expect(formatNomComplet("Jean", "Dupont")).toBe("Jean Dupont");

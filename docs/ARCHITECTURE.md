@@ -100,7 +100,7 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
 agents ──N:1── structures             structures ──1:0..1── entreprises_amo (habilitation AMO)
                                       structures ──1:0..1── allers_vers     (habilitation Aller-vers)
                                       structures ──1:0..1── experts         (habilitation expert, sans rôle)
-                                      experts ──1:N── experts_departements  (code + contact de réservation)
+                                      experts ──1:N── experts_departements  (code, réservation, expert sur place, forfaits)
                                       entreprises_amo ──1:N── entreprises_amo_communes
                                       allers_vers ──1:N── allers_vers_departements
 agent_permissions ──N:1── agents      allers_vers ──1:N── allers_vers_epci
@@ -130,6 +130,12 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 > le rôle cumulé. Contacts et territoires restent sur chaque ligne. Les colonnes `role`,
 > `entreprise_amo_id` et `allers_vers_id` de `agents` ne servent plus qu'au retour arrière. Voir
 > [ADR-0051](adr/0051-roles-amo-aller-vers-portes-par-la-structure.md).
+
+> Une structure a un **type** : `accompagnement` (AMO et/ou Aller-vers) ou `expert` (expertise seule).
+> Son **identité** (nom, SIRET, adresse, téléphone, horaires) est portée par la structure et recopiée
+> sur ses lignes d'habilitation par une seule écriture (`structuresRepository.mettreAJourIdentite`) ;
+> chaque ligne garde son territoire et ses contacts. Les imports se font par rôle et rattachent par
+> SIRET. Voir [ADR-0053](adr/0053-identite-portee-par-la-structure.md).
 
 > Un agent qui quitte ses fonctions est **désactivé** (`agents.desactive_at`), pas supprimé :
 > son nom doit survivre sur les actions, qualifications, archivages et dossiers créés qu'il a
@@ -167,6 +173,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Brevo Contacts        | Synchro contacts + évènements (cycle de vie)                    | `src/shared/email/brevo/` (voir `docs/emails/BREVO-LIFECYCLE.md`) |
 | Matomo                | Analytics                                                       | `@socialgouv/matomo-next`                                         |
 | Géorisques / RGA      | Données risque                                                  | `src/features/seo/`, `scripts/import/rga-zones/`                  |
+| API Géo               | Communes et EPCI (code, nom, départements)                      | `src/shared/adapters/geo/`                                        |
 
 > Démarches Simplifiées = `demarche.numerique.gouv.fr` (nouveau nom de
 > `demarches-simplifiees.fr`, même backend). Une seule instance : les 3 URLs de

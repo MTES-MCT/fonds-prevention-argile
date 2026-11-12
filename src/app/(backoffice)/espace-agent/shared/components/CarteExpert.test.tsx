@@ -7,14 +7,27 @@ const expert = {
   nom: "Géotech",
   siret: "39248872200027",
   dateValidationDhup: "2026-05-15",
-  departements: [{ code: "36", nom: "Indre", email: "indre@exemple.fr", telephone: "02 00 00 00 00" }],
+  departements: [
+    {
+      code: "36",
+      nom: "Indre",
+      email: "indre@exemple.fr",
+      telephone: "02 00 00 00 00",
+      expertNom: null,
+      expertEmail: null,
+      expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
+    },
+  ],
 };
 
 describe("CarteExpert", () => {
-  it("affiche le SIRET et la date de validation DHUP", () => {
+  it("affiche la date de validation DHUP, sans le SIRET", () => {
     render(<CarteExpert expert={expert} codeDepartement="36" />);
     expect(screen.getByRole("heading", { level: 3, name: "Géotech" })).toBeInTheDocument();
-    expect(screen.getByText("SIRET 39248872200027 · validé par la DHUP le 15/05/2026")).toBeInTheDocument();
+    expect(screen.getByText("Validé par la DHUP le 15/05/2026")).toBeInTheDocument();
+    expect(screen.queryByText(/39248872200027/)).not.toBeInTheDocument();
   });
 
   it("met l'email et le téléphone chacun sur sa ligne", () => {
@@ -29,11 +42,61 @@ describe("CarteExpert", () => {
   it("affiche le contact du département demandé, pas celui d'un autre", () => {
     const deuxDepartements = {
       ...expert,
-      departements: [...expert.departements, { code: "18", nom: "Cher", email: "cher@exemple.fr", telephone: null }],
+      departements: [
+        ...expert.departements,
+        {
+          code: "18",
+          nom: "Cher",
+          email: "cher@exemple.fr",
+          telephone: null,
+          expertNom: null,
+          expertEmail: null,
+          expertTelephone: null,
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
+        },
+      ],
     };
     render(<CarteExpert expert={deuxDepartements} codeDepartement="18" />);
     expect(screen.getByRole("link", { name: "cher@exemple.fr" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "indre@exemple.fr" })).not.toBeInTheDocument();
+  });
+
+  it("distingue l'expert qui se déplace du contact de réservation", () => {
+    const avecExpertSurPlace = {
+      ...expert,
+      departements: [
+        {
+          ...expert.departements[0],
+          expertNom: "Paul Martin",
+          expertEmail: "paul@exemple.fr",
+          expertTelephone: "06 11 22 33 44",
+          forfaitDiagnosticHt: null,
+          forfaitReseauHt: null,
+        },
+      ],
+    };
+    render(<CarteExpert expert={avecExpertSurPlace} codeDepartement="36" />);
+    expect(screen.getByText("Réservation")).toBeInTheDocument();
+    expect(screen.getByText("Expert sur place : Paul Martin")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "paul@exemple.fr" })).toHaveAttribute("href", "mailto:paul@exemple.fr");
+    expect(screen.getByRole("link", { name: "06 11 22 33 44" })).toHaveAttribute("href", "tel:0611223344");
+  });
+
+  it("affiche les forfaits HT du département, sans ligne pour un forfait inconnu", () => {
+    const avecForfait = {
+      ...expert,
+      departements: [{ ...expert.departements[0], forfaitDiagnosticHt: 1200.5, forfaitReseauHt: null }],
+    };
+    render(<CarteExpert expert={avecForfait} codeDepartement="36" />);
+    expect(screen.getByText("Forfaits HT")).toBeInTheDocument();
+    expect(screen.getByText(/^Diagnostic : 1\s200,50\s€$/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Réseaux/)).not.toBeInTheDocument();
+  });
+
+  it("n'annonce aucun forfait tant qu'aucun n'est connu", () => {
+    render(<CarteExpert expert={expert} codeDepartement="36" />);
+    expect(screen.queryByText("Forfaits HT")).not.toBeInTheDocument();
   });
 
   it("annonce un expert sans contact pour le département", () => {

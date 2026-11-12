@@ -7,6 +7,7 @@ export {
   agentRolePgEnum,
   syncRunStatusPgEnum,
   syncRunTriggerPgEnum,
+  typeStructurePgEnum,
 } from "../enums/enums";
 
 // Exporter les tables

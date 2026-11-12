@@ -7,7 +7,19 @@ const expert = (id: string, nom: string) => ({
   nom,
   siret: "39248872200027",
   dateValidationDhup: null,
-  departements: [{ code: "36", nom: "Indre", email: `${id}@exemple.fr`, telephone: null }],
+  departements: [
+    {
+      code: "36",
+      nom: "Indre",
+      email: `${id}@exemple.fr`,
+      telephone: null,
+      expertNom: null,
+      expertEmail: null,
+      expertTelephone: null,
+      forfaitDiagnosticHt: null,
+      forfaitReseauHt: null,
+    },
+  ],
 });
 
 describe("ExpertsDuDepartement", () => {

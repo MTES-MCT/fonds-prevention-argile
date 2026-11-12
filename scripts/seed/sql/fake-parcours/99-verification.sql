@@ -150,3 +150,24 @@ BEGIN
     RAISE EXCEPTION 'Agents hybrides du seed sans les deux rôles : %', incomplets;
   END IF;
 END $$;
+
+-- Comme en production, une entreprise AMO et Aller-vers n'a qu'une structure : scindée, elle perd le cumul des rôles.
+DO $$
+DECLARE
+  scindees text;
+BEGIN
+  SELECT string_agg(a.nom, ', ') INTO scindees
+  FROM (VALUES
+    ('665c22f2-1027-4b01-aaec-a4d3e1b02a8f'::uuid, '3fe0b9e7-4371-40b4-b03f-da6d560b71ea'::uuid),
+    ('87fa62a7-8250-4656-86a5-9235a88e12b4'::uuid, 'a83baa10-9522-4f05-a604-8ecd5e9f6038'::uuid),
+    ('c1381ec2-a499-475a-91a0-ed1486c5234a'::uuid, '9bf88991-f647-4661-8096-19c62d223186'::uuid),
+    ('795697ef-c9f6-4a0d-8028-60096072309e'::uuid, '066731d8-a0f7-4c2e-97b3-1bf4ef598d87'::uuid)
+  ) AS paires(av_id, amo_id)
+  JOIN entreprises_amo a ON a.id = paires.amo_id
+  JOIN allers_vers v ON v.id = paires.av_id
+  WHERE v.structure_id <> a.structure_id;
+
+  IF scindees IS NOT NULL THEN
+    RAISE EXCEPTION 'Entreprises AMO et Aller-vers scindées en deux structures : %', scindees;
+  END IF;
+END $$;
