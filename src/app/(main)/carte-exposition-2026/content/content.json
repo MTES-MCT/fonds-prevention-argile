@@ -29,8 +29,13 @@
           "external": true
         },
         {
-          "label": "La nouvelle carte des zones exposées au RGA (dernière page du document)",
-          "url": "https://www.legifrance.gouv.fr/download/pdf?id=YW9XvMEhn_0kPoh_Wtm5c-mnznRWseQCeDltxJUlX6o=&_ope=eyJndWlkIjoiY2FkODkyNTlhMWU5MjAyYmYwNzM5Yjk2YWY1NDAwYTA2YTYxZmJiYzY1Nzk1NWIxNTE3NDYwZWM4MjM3NWExZiJ9",
+          "label": "La nouvelle carte des zones exposées au RGA",
+          "url": "https://www.georisques.gouv.fr/cartes-interactives#/",
+          "external": true
+        },
+        {
+          "label": "Télécharger la carte d'aléas",
+          "url": "https://www.georisques.gouv.fr/donnees/bases-de-donnees/retrait-gonflement-des-argiles-version-2026",
           "external": true
         }
       ]
