@@ -23,14 +23,6 @@ export default function Home() {
 
   return (
     <>
-      <Notice
-        className="fr-notice--info"
-        description={`${content.notice.description}`}
-        title={content.notice.title}
-        more={content.notice.more}
-        more_link={content.notice.more_link}
-        buttonClose={true}
-      />
 
       {/* Message de déconnexion */}
       <div>

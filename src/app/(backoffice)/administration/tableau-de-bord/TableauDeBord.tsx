@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { FiltresTableauDeBord } from "./FiltresTableauDeBord";
 import { DashboardStatCard } from "./shared/DashboardStatCard";
 import { formatMatomoValue } from "./shared/format-matomo-value.utils";
-import { AlertesTendances } from "./alertes/AlertesTendances";
 import { DemandesArchiveesCard } from "./demandes-archivees/DemandesArchiveesCard";
 import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligiblesCard";
 import { TopDepartementsCard } from "./top-departements/TopDepartementsCard";
@@ -158,7 +157,6 @@ export function TableauDeBord() {
       </section>
 
       {/* Alerte tendances */}
-      {stats && stats.alertes.length > 0 && <AlertesTendances alertes={stats.alertes} />}
 
       {/* Stats + détails + top départements — fond bleu */}
       <section className="fr-container-fluid fr-py-4w bg-(--background-alt-blue-france)">
