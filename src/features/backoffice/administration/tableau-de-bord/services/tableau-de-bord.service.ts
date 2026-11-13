@@ -21,7 +21,6 @@ import type {
   TableauDeBordStats,
   MatomoSimulationsStats,
   PeriodeId,
-  AlerteTendance,
   DemandesArchiveesStats,
   DemandesIneligiblesStats,
   DemandeArchiveeDetail,
@@ -577,28 +576,19 @@ function calculerVariation(valeurActuelle: number, valeurPrecedente: number): nu
 }
 
 /**
- * Seuil de variation (%) au-delà duquel un motif est considéré "en hausse".
- * Modifiable pour ajuster la sensibilité de l'alerte.
- */
-const SEUIL_HAUSSE_MOTIFS = 10;
-
-/**
  * Récupère le nombre d'archivages par motif sur une période donnée
  */
 async function getArchiveReasonsDistribution(
   debut: Date,
   fin: Date,
   codeDepartement?: string,
-  partner?: PartnerKey | null,
-  // Les alertes de hausse ne portent que sur des motifs ; le tableau, lui, doit retomber sur « Dossiers archivés ».
-  inclureSansMotif = false
+  partner?: PartnerKey | null
 ): Promise<Map<string, number>> {
   const conditions = [
     isNotNull(parcoursPrevention.archivedAt),
     gte(parcoursPrevention.archivedAt, debut),
     lt(parcoursPrevention.archivedAt, fin),
   ];
-  if (!inclureSansMotif) conditions.push(isNotNull(parcoursPrevention.archiveReason));
 
   if (codeDepartement) {
     conditions.push(isNotNull(parcoursPrevention.rgaSimulationData));
@@ -616,7 +606,7 @@ async function getArchiveReasonsDistribution(
     .where(and(...conditions))
     .groupBy(parcoursPrevention.archiveReason);
 
-  return repartirParMotif(rows, inclureSansMotif);
+  return repartirParMotif(rows);
 }
 
 /** Nombre de motifs affichés dans le tableau principal (hors ligne "Autre") */
@@ -632,9 +622,9 @@ async function getDemandesArchiveesDetail(
   codeDepartement?: string,
   partner?: PartnerKey | null
 ): Promise<DemandesArchiveesStats> {
-  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner, true);
+  const distributionActuelle = await getArchiveReasonsDistribution(debut, fin, codeDepartement, partner);
   const distributionPrecedente = previousRange
-    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner, true)
+    ? await getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner)
     : new Map<string, number>();
 
   // Total archivées sur la période
@@ -881,54 +871,6 @@ async function getDemandesIneligiblesDetail(
     motifs: tousMotifs.slice(0, TOP_MOTIFS_COUNT),
     autresMotifs: tousMotifs.slice(TOP_MOTIFS_COUNT),
   };
-}
-
-/**
- * Détecte les motifs d'archivage dont la variation dépasse le seuil
- * entre la période courante et la période précédente.
- *
- * Règle de gestion par défaut : un motif est signalé si sa variation > SEUIL_HAUSSE_MOTIFS %.
- */
-async function detecterMotifsEnHausse(
-  debut: Date,
-  fin: Date,
-  previousRange: { debut: Date; fin: Date } | null,
-  codeDepartement?: string,
-  partner?: PartnerKey | null
-): Promise<AlerteTendance[]> {
-  if (!previousRange) {
-    return [];
-  }
-
-  const [distributionActuelle, distributionPrecedente] = await Promise.all([
-    getArchiveReasonsDistribution(debut, fin, codeDepartement, partner),
-    getArchiveReasonsDistribution(previousRange.debut, previousRange.fin, codeDepartement, partner),
-  ]);
-
-  const motifsEnHausse: string[] = [];
-
-  for (const [motif, countActuel] of distributionActuelle) {
-    const countPrecedent = distributionPrecedente.get(motif) ?? 0;
-    const variation = calculerVariation(countActuel, countPrecedent);
-
-    if (variation !== null && variation > SEUIL_HAUSSE_MOTIFS) {
-      motifsEnHausse.push(motif);
-    }
-  }
-
-  if (motifsEnHausse.length === 0) {
-    return [];
-  }
-
-  const motifsFormates = motifsEnHausse.map((m) => `\u00AB${m}\u00BB`).join(" - ");
-
-  return [
-    {
-      type: "hausse",
-      motifs: motifsEnHausse,
-      message: `Les motifs suivants sont en hausse : ${motifsFormates}`,
-    },
-  ];
 }
 
 /**
@@ -1213,7 +1155,6 @@ export async function getTableauDeBordStats(
     dossiersDeposesDN,
     dossiersInstruitsValides,
     archivees,
-    alertes,
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
     topDepartements,
@@ -1229,7 +1170,6 @@ export async function getTableauDeBordStats(
     countDossiersDeposesDN(debut, fin, codeDepartement, partner),
     countDossiersInstruitsValides(debut, fin, codeDepartement, partner),
     countDemandesArchivees(debut, fin, codeDepartement, partner),
-    detecterMotifsEnHausse(debut, fin, previousRange, codeDepartement, partner),
     getDemandesArchiveesDetail(debut, fin, previousRange, codeDepartement, partner),
     getDemandesIneligiblesDetail(debut, fin, previousRange, codeDepartement, partner),
     getTopDepartementsStats(debut, fin, partner),
@@ -1314,7 +1254,6 @@ export async function getTableauDeBordStats(
     dossiersDeposesDN: { valeur: dossiersDeposesDN, variation: variations.dossiersDeposesDN },
     dossiersInstruitsValides: { valeur: dossiersInstruitsValides, variation: variations.dossiersInstruitsValides },
     demandesArchivees: { valeur: archivees, variation: variations.archivees },
-    alertes,
     demandesArchiveesDetail,
     demandesIneligiblesDetail,
     topDepartements,

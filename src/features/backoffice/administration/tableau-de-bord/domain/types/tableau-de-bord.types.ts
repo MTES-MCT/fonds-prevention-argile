@@ -3,15 +3,6 @@ export interface StatAvecVariation {
   variation: number | null;
 }
 
-export interface AlerteTendance {
-  /** Texte complet à afficher dans l'alerte */
-  message: string;
-  /** Liste des motifs individuels détectés */
-  motifs: string[];
-  /** Type de tendance (extensible) */
-  type: "hausse";
-}
-
 export interface MotifArchivage {
   raison: string;
   count: number;
@@ -79,11 +70,7 @@ export interface DepartementStats {
 }
 
 export type TopDepartementsTriColumn =
-  | "simulations"
-  | "simulationsEligibles"
-  | "comptesCrees"
-  | "dossiersDN"
-  | "transformationGlobale";
+  "simulations" | "simulationsEligibles" | "comptesCrees" | "dossiersDN" | "transformationGlobale";
 
 export interface CommuneSimulationsStats {
   /** Nom de la commune (ex: "Chateauroux") */
@@ -113,7 +100,6 @@ export interface TableauDeBordStats {
   /** Dossiers instruits et validés par la DDT (ds_status = ACCEPTE), tous steps */
   dossiersInstruitsValides: StatAvecVariation;
   demandesArchivees: StatAvecVariation;
-  alertes: AlerteTendance[];
   demandesArchiveesDetail: DemandesArchiveesStats;
   demandesIneligiblesDetail: DemandesIneligiblesStats;
   topDepartements: DepartementStats[];
