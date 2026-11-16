@@ -33,6 +33,7 @@ import {
   fetchMatomoUniqueVisitorsSeries,
   fetchMatomoUniqueVisitorsStrict,
 } from "./matomo-api.adapter";
+import { reinitialiserAppelsPatients } from "./appel-patient";
 import { formaterDateMatomo } from "../domain/decoupage-periode";
 
 const originalFetch = global.fetch;
@@ -40,6 +41,7 @@ const originalFetch = global.fetch;
 // Chaque appel réel écrit une ligne de journal : on la capte pour ne pas noyer la sortie des tests.
 beforeEach(() => {
   cache.appels.length = 0;
+  reinitialiserAppelsPatients();
   vi.spyOn(console, "info").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
 });
@@ -209,40 +211,37 @@ describe("fetchMatomoSimulationsGroupedByDimension", () => {
 });
 
 describe("appels identiques en cours", () => {
+  const JANVIER = { period: "month", date: "2026-01-01,2026-01-31" };
+
   afterEach(() => {
     global.fetch = originalFetch;
   });
 
   it("partage un seul appel Matomo entre deux demandes simultanées", async () => {
-    mockFetchResponse({ nb_uniq_visitors: 42 });
+    mockFetchResponse([{ label: "simulateur_result_eligible", nb_visits: 42 }]);
 
-    const [a, b] = await Promise.all([
-      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
-      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
-    ]);
+    const [a, b] = await Promise.all([fetchMatomoEvents(JANVIER), fetchMatomoEvents(JANVIER)]);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect([a, b]).toEqual([42, 42]);
+    expect(a.get("simulateur_result_eligible")).toBe(42);
+    expect(b.get("simulateur_result_eligible")).toBe(42);
   });
 
   it("ne partage pas deux demandes dont le segment diffère", async () => {
-    mockFetchResponse({ nb_uniq_visitors: 42 });
+    mockFetchResponse([]);
 
-    await Promise.all([
-      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
-      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31", "dimension1==36"),
-    ]);
+    await Promise.all([fetchMatomoEvents(JANVIER), fetchMatomoEvents({ ...JANVIER, segment: "dimension1==36" })]);
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("ne retient pas un échec : la demande suivante repart vers Matomo", async () => {
     global.fetch = vi.fn().mockRejectedValueOnce(new DOMException("delai", "TimeoutError"));
-    await expect(fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31")).rejects.toThrow();
+    await expect(fetchMatomoEvents(JANVIER)).rejects.toThrow();
 
-    mockFetchResponse({ nb_uniq_visitors: 42 });
+    mockFetchResponse([{ label: "simulateur_result_eligible", nb_visits: 42 }]);
 
-    await expect(fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31")).resolves.toBe(42);
+    await expect(fetchMatomoEvents(JANVIER)).resolves.toEqual(new Map([["simulateur_result_eligible", 42]]));
   });
 });
 
@@ -518,6 +517,38 @@ describe("visiteurs uniques", () => {
     mockFetchResponse({ nb_visits: 120 });
 
     await expect(fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08")).rejects.toThrow(/nb_uniq_visitors/);
+  });
+
+  it("laisse 60 s à l'appel et le tient hors du cache de Next, qui attendrait son recalcul", async () => {
+    const delai = vi.spyOn(AbortSignal, "timeout");
+    mockFetchResponse({ nb_uniq_visitors: 42 });
+
+    await fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08");
+
+    expect(delai).toHaveBeenCalledWith(60_000);
+    expect(cache.appels).toHaveLength(0);
+    expect(corpsEnvoye().get("token_auth")).toBe("token-test");
+  });
+
+  it("rend le résultat gardé à la demande suivante, sans nouvel appel", async () => {
+    mockFetchResponse({ nb_uniq_visitors: 42 });
+
+    await fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08");
+    await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toBe(42);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("rend la main après 4 s quand Matomo calcule encore, pour afficher « Indisponible »", async () => {
+    vi.useFakeTimers();
+    global.fetch = vi.fn(() => new Promise<Response>(() => {}));
+
+    const demande = fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08", "dimension1==36");
+    const issue = expect(demande).rejects.toThrow(/se poursuit en arriere-plan/);
+    await vi.advanceTimersByTimeAsync(4_000);
+
+    await issue;
+    vi.useRealTimers();
   });
 
   it("convertit les valeurs de serie serialisees en string", async () => {

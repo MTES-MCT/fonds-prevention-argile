@@ -6,6 +6,7 @@ import { PARTNER_REFERRERS, type PartnerKey } from "@/shared/domain/partners";
 import { estPlageStable } from "../domain/plage-matomo";
 import type { CompteurSimulations } from "../domain/simulations-departement";
 import { classerEchecReseau, formaterJournalAppel, type IssueAppelMatomo } from "../domain/journal-appel-matomo";
+import { appelerAvecPatience } from "./appel-patient";
 
 /**
  * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
@@ -84,6 +85,9 @@ function getMatomoConfig(): MatomoConfig {
 }
 
 const MATOMO_TIMEOUT_MS = 10_000;
+// Un `range` non archivé met jusqu'à une minute : l'appel va au bout, l'appelant n'attend que 4 s.
+const MATOMO_TIMEOUT_LONG_MS = 60_000;
+const MATOMO_ATTENTE_APPEL_LONG_MS = 4_000;
 const TTL_PLAGE_OUVERTE_SECONDES = 3600;
 const TTL_PLAGE_STABLE_SECONDES = 24 * 3600;
 export const MATOMO_CACHE_TAG = "matomo-api";
@@ -93,7 +97,11 @@ let appelsEnCours = 0;
 /**
  * Appel HTTP brut vers l'API Matomo, sans cache. Journalise chaque appel (duree, issue).
  */
-async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
+async function requestMatomoApi<T>(
+  params: MatomoRequestParams,
+  apiUrl: string,
+  delaiMs: number = MATOMO_TIMEOUT_MS
+): Promise<T> {
   const filteredParams = Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined)
   ) as Record<string, string>;
@@ -112,7 +120,7 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: searchParams.toString(),
-      signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
+      signal: AbortSignal.timeout(delaiMs),
       // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs — volontaire :
       // un premier timeout n'empeche pas Matomo de terminer l'archive en tache de fond ; un nouvel
       // essai un peu plus tard (l'archive etant alors prete) doit pouvoir reussir immediatement,
@@ -387,21 +395,28 @@ export async function fetchMatomoUniqueVisitorsStrict(
   return uniques;
 }
 
+// Hors du cache de Next : il attend le recalcul d'une entrée périmée avant de rendre l'action.
 function requestVisitsSummary(period: string, date: string, segment?: string): Promise<MatomoVisitsSummaryResponse> {
   const config = getMatomoConfig();
+  const params: MatomoRequestParams = {
+    module: "API",
+    method: "VisitsSummary.get",
+    idSite: config.siteId,
+    period,
+    date,
+    format: "JSON",
+    token_auth: config.apiToken,
+    segment,
+  };
+  const cle = JSON.stringify([{ ...params, token_auth: undefined }, config.apiUrl]);
 
-  return fetchMatomoApi<MatomoVisitsSummaryResponse>(
+  return appelerAvecPatience(
+    cle,
+    () => requestMatomoApi<MatomoVisitsSummaryResponse>(params, config.apiUrl, MATOMO_TIMEOUT_LONG_MS),
     {
-      module: "API",
-      method: "VisitsSummary.get",
-      idSite: config.siteId,
-      period,
-      date,
-      format: "JSON",
-      token_auth: config.apiToken,
-      segment,
-    },
-    config.apiUrl
+      attenteMs: MATOMO_ATTENTE_APPEL_LONG_MS,
+      fraicheurMs: (estPlageStable(date) ? TTL_PLAGE_STABLE_SECONDES : TTL_PLAGE_OUVERTE_SECONDES) * 1000,
+    }
   );
 }
 
