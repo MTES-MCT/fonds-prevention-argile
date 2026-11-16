@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SEUIL_REPONSES, calculerStatsSatisfaction } from "./satisfaction";
+import { calculerStatsSatisfaction } from "./satisfaction";
 
 const notes = (sujet: string, ...valeurs: number[]) => valeurs.map((note) => ({ sujet, note }));
 
@@ -18,20 +18,6 @@ describe("calculerStatsSatisfaction", () => {
 
     expect(stat.reponses).toBe(4);
     expect(stat.repartition).toEqual({ 1: 2, 2: 0, 3: 0, 4: 1, 5: 1 });
-  });
-
-  it("ne donne ni moyenne ni pourcentage sous le seuil de réponses", () => {
-    const [stat] = calculerStatsSatisfaction(notes("devis", ...Array(SEUIL_REPONSES - 1).fill(5)), ["devis"]);
-
-    expect(stat.noteMoyenne).toBeNull();
-    expect(stat.partFacile).toBeNull();
-  });
-
-  it("calcule la moyenne et la part de réponses faciles à partir du seuil", () => {
-    const [stat] = calculerStatsSatisfaction(notes("devis", 1, 2, 3, 3, 4, 4, 4, 5, 5, 5), ["devis"]);
-
-    expect(stat.noteMoyenne).toBe(3.6);
-    expect(stat.partFacile).toBe(60);
   });
 
   it("ignore un sujet ou une note inconnus, et un sujet non demandé", () => {

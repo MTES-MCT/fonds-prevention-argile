@@ -65,7 +65,8 @@ pour un champ libre, et laissait les réponses hors de l'application, sans lien 
 - La page est en `noindex` et `no-referrer` : son URL porte l'identifiant du parcours.
 - Le taux de réponse se lit dans les statistiques d'envoi de Brevo, pas dans l'application.
 - La restitution (`/administration/satisfaction`) montre les agrégats à tout agent et les commentaires
-  aux seuls administrateurs. Moyenne et pourcentage ne s'affichent qu'à partir de 10 réponses.
+  aux seuls administrateurs. Elle s'en tient à la répartition des réponses : ni moyenne ni pourcentage,
+  peu parlants sur une échelle de libellés et des volumes faibles.
 - L'avis sur un simulateur s'affiche sous son résultat, sur notre site seulement : ni dans l'iframe des
   partenaires, ni sur les écrans d'édition, ni quand un agent fait le test de vulnérabilité pour le
   demandeur. Celui du simulateur de vulnérabilité est refusé tant que ce simulateur n'est pas servi. Étant anonyme, il n'est pas dédoublonné en base :

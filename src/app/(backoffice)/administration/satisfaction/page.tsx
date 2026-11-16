@@ -3,7 +3,6 @@ import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
 import { isAdminRole } from "@/shared/domain/value-objects";
 import { LIBELLES_NOTE, NOTES_AVIS, estNoteAvis } from "@/features/avis/domain/value-objects/avis";
-import { SEUIL_REPONSES } from "@/features/backoffice/administration/satisfaction/domain/satisfaction";
 import { getSatisfaction } from "@/features/backoffice/administration/satisfaction/services/satisfaction.service";
 import { AdminBreadcrumb } from "../shared/components/AdminBreadcrumb";
 
@@ -44,13 +43,7 @@ export default async function SatisfactionPage() {
             <div className="fr-table__container">
               <div className="fr-table__content">
                 <table>
-                  <caption>
-                    Avis par sujet
-                    <div className="fr-table__caption__desc">
-                      Note moyenne sur 5 et part des réponses « Facile » ou « Très facile », affichées à partir de{" "}
-                      {SEUIL_REPONSES} réponses.
-                    </div>
-                  </caption>
+                  <caption>Avis par sujet</caption>
                   <thead>
                     <tr>
                       <th scope="col">Sujet</th>
@@ -60,8 +53,6 @@ export default async function SatisfactionPage() {
                           {LIBELLES_NOTE[note]}
                         </th>
                       ))}
-                      <th scope="col">Note moyenne</th>
-                      <th scope="col">Faciles</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -72,8 +63,6 @@ export default async function SatisfactionPage() {
                         {NOTES_AVIS.map((note) => (
                           <td key={note}>{stat.repartition[note].toLocaleString("fr-FR")}</td>
                         ))}
-                        <td>{stat.noteMoyenne === null ? "—" : stat.noteMoyenne.toLocaleString("fr-FR")}</td>
-                        <td>{stat.partFacile === null ? "—" : `${stat.partFacile} %`}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -172,8 +172,6 @@ l'ancienne) ; les avis sur les simulateurs sont anonymes et non dédoublonnés (
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | Réponses             | Avis enregistrés pour le sujet : six étapes du parcours et les deux simulateurs (celui de vulnérabilité seulement là où il est servi).                   | BDD `avis` |
 | Répartition par note | Avis par réponse, de « Très difficile » (1) à « Très facile » (5).                                                                                       | BDD `avis` |
-| Note moyenne         | Moyenne des notes sur 5, arrondie au dixième. Affichée à partir de 10 réponses.                                                                          | BDD `avis` |
-| Faciles              | Part des réponses « Facile » ou « Très facile ». Affichée à partir de 10 réponses.                                                                       | BDD `avis` |
 | Commentaires         | Les 200 commentaires les plus récents, saisis après une réponse « Difficile » ou « Très difficile ». Administrateurs et super-administrateurs seulement. | BDD `avis` |
 
 Le taux de réponse n'est pas calculé ici : le nombre de mails envoyés se lit dans Brevo.
