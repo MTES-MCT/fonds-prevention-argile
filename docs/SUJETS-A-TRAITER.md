@@ -155,14 +155,16 @@ produit : le code est simple une fois la définition choisie.
 
 - **Constat** (mesuré le 2026-11-16, amendements d'ADR-0033) : `VisitsSummary.get` en `period=range`, qui
   donne les visiteurs uniques, met de 13 à 20 s sur 30 jours au national et dépasse 40 s sur la période
-  précédente, sur 12 mois ou avec un segment département, tant que Matomo n'a pas fini l'archive. Le
-  délai de 10 s tombe donc avant : la carte affiche « Indisponible » (tableau de bord, Site vitrine,
-  `/stats`). Les fenêtres glissent chaque jour : chaque matin, tout est à recalculer.
+  précédente, sur 12 mois ou avec un segment département, tant que Matomo n'a pas fini l'archive. La
+  carte affiche donc « Indisponible » au premier affichage, après 4 s d'attente, et le nombre au suivant
+  si l'appel a fini. Sur `/stats`, la plage depuis le lancement dépasse 60 s : le nombre n'arrive que si
+  Matomo termine son archive entre deux appels. Les fenêtres glissent chaque jour : chaque matin, tout
+  est à recalculer.
 - **Pistes**, de la moins à la plus lourde :
-  1. lectures en routes GET appelées en parallèle, avec annulation au changement de filtre : les server
+  1. réessai côté client d'une carte « Indisponible », qui aujourd'hui demande un rechargement ;
+  2. lectures en routes GET appelées en parallèle, avec annulation au changement de filtre : les server
      actions s'exécutent une par une et attendent le recalcul d'une entrée de cache périmée. L'onglet
      Site vitrine attend en plus le tunnel, lu dans la même action (`getStatistiques`) ;
-  2. laisser l'appel `range` finir au-delà de 10 s pour remplir le cache, et réessayer côté client ;
   3. comptages journaliers par département rangés en base par un cron, `/stats` compris (option D
      d'ADR-0033, à rouvrir) ;
   4. segments pré-archivés côté Matomo (option C d'ADR-0033, état non vérifié).

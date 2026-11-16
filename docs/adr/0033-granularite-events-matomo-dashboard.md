@@ -196,6 +196,30 @@ puis le service divise les sommes et arrondit à l'entier, comme le `bounce_rate
 `null`, affiché « Indisponible », et la courbe reste. Les visiteurs uniques, toujours en `range`,
 passent par la variante stricte : une métrique absente n'est plus lue comme 0.
 
+### Visiteurs uniques : l'appel va au bout, l'appelant n'attend pas
+
+Relevé le même jour sur la page Acquisition en local : les visiteurs uniques échouaient après 10 s
+dans deux actions serveur successives, pour la même requête, soit 20 s d'attente sur une trentaine.
+L'échec n'étant pas gardé (option D bis), le second écran repartait de zéro.
+
+`requestVisitsSummary` passe par `appelerAvecPatience` (`adapters/appel-patient.ts`) :
+
+- l'appel à Matomo dispose de 60 s, au-delà desquelles Matomo coupe lui-même la connexion ;
+- l'appelant n'attend que 4 s, comptées depuis le début de l'appel, puis affiche « Indisponible » ;
+- qui redemande la même plage rejoint l'appel en cours, sans attendre une seconde fois ;
+- le résultat est gardé en mémoire du processus, 24 h pour une plage close et 1 h sinon ; périmé, il
+  reste servi pendant qu'un nouvel appel le remplace. Un échec n'est toujours pas gardé.
+
+Ce résultat ne passe plus par `unstable_cache` : dans une action serveur, Next attend le recalcul d'une
+entrée périmée avant de rendre la réponse (`pendingRevalidates`), si bien qu'un appel de 60 s aurait
+bloqué la page au-delà des 30 s du routeur. L'état vit sur `globalThis`, pages et actions étant
+compilées à part. Il est propre à chaque conteneur et perdu au redémarrage : le premier appel le refait.
+
+Vérifié sur une plage de 52 jours : main rendue en 4 s, demandes suivantes en 0 ms, nombre reçu dès la
+fin de l'appel (21,8 s) puis servi sans nouvel appel. Limite : la plage de `/stats`, depuis le lancement
+(397 jours), a dépassé 60 s deux fois de suite ; la carte y reste « Indisponible » tant que Matomo n'a
+pas fini son archive.
+
 ## Liens
 
 - `src/features/backoffice/administration/acquisition/domain/decoupage-periode.ts` —

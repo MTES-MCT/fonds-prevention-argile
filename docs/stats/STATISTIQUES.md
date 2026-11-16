@@ -38,7 +38,8 @@ réellement (portée de la dimension département, effet d'un segment, durée d'
   unité (parcours, dossiers).
 - **Matomo** : les comptages d'évènements de l'entonnoir et les rapports par dimension (département, commune) sont découpés en
   jours, semaines ou mois puis sommés (`decouperPeriodeMatomo`, ADR-0033), comme les visites et les rebonds du taux de rebond ; les
-  visiteurs uniques et les tunnels restent en `period=range`. Les rapports par dimension sont lus sans `flat`, toutes valeurs comprises : mêmes totaux par valeur
+  visiteurs uniques et les tunnels restent en `period=range`. Les visiteurs uniques sont attendus 4 s au plus : au-delà la carte affiche
+  « Indisponible », l'appel continue jusqu'à 60 s et son résultat sert les affichages suivants, 1 h (24 h pour une plage close). Les rapports par dimension sont lus sans `flat`, toutes valeurs comprises : mêmes totaux par valeur
   (vérifié le 2026-11-16), et le Top 5 communes n'est plus limité aux 100 premières lignes commune × page. Les dates envoyées sont celles du
   serveur : autour de minuit, un décalage d'un jour est possible avec le fuseau du site Matomo (non vérifié).
 
@@ -220,7 +221,7 @@ Les arbitrages sont suivis dans [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md#statis
 - **Diagnostics réalisés ou en cours** : compte aussi les parcours dont le diagnostic n'est pas commencé.
 - **Carte « Demandes d'accompagnement »** : dans la liste des dossiers, elle compte tout le territoire ; sur l'accueil AMO, seulement
   l'entreprise de l'agent.
-- **Visiteurs uniques** : 0 au Tableau de bord, « Indisponible » en public, filtre département retiré en Acquisition quand la
-  métrique ou la dimension manque.
+- **Visiteurs uniques** : 0 au Tableau de bord, « Indisponible » en public et dans l'onglet Site vitrine, filtre département retiré
+  en Acquisition quand la métrique ou la dimension manque.
 - **Top 5 départements du Tableau de bord** : classé par défaut sur dossiers DN ÷ visites, donc un département à 1 visite et 1 dossier
   passe premier à 100 %.
