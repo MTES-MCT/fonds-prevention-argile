@@ -326,3 +326,30 @@ ordre de préférence. Vous êtes libre de faire appel à l'expert de votre choi
 l'équipe. Il est défini en un seul endroit, `MENTION_LIBRE_CHOIX` (`administration/experts/domain/regles-experts.ts`).
 
 **Préalable** : le retour de la DHUP sur le texte, et sur l'ordre alphabétique retenu.
+
+## Exploitation
+
+### Mémoire du serveur : trouver ce qui grossit, puis décider du préchargement
+
+Le 15 novembre 2026, le conteneur web du staging s'est figé au bout de trois jours, swap plein : plus
+aucune connexion PostgreSQL n'aboutissait et le cron de synchronisation a échoué. Le serveur ne pèse
+pourtant que 188 Mo à froid ([`scalingo.md`](ops/scalingo.md), « Mémoire du conteneur ») : quelque
+chose grossit, et rien ne dit quoi. Aucun cache maison non borné n'a été trouvé dans le code ; le
+déploiement du 29 octobre avait tenu quatre jours, 18 PR sont entrées depuis, dont le passage à
+next 15.5.28.
+
+**Préalable** : poser `MEMORY_LOG_INTERVAL_MINUTES` et `MEMORY_LOG_TOP_ALLOCATIONS` sur le staging,
+laisser tourner trois jours sans redéployer, puis lire les lignes `[memoire]`. Selon la colonne qui
+monte : corriger le code désigné par les lignes `alloc`, ou traiter la mémoire native. Couper le
+préchargement des pages (`experimental.preloadEntriesOnStart: false`, 83 Mo de moins à froid) ne se
+décide qu'ensuite : il donne de la marge sans traiter la croissance.
+
+### Cron de synchronisation : des créneaux servis avec cinq à huit heures de retard
+
+Relevé le 16 novembre 2026 sur les runs GitHub Actions : le créneau de 06:15 UTC part vers 14 h UTC,
+celui de 16:15 vers 21 h. [`FLOW-AND-SYNC.md` §6.5](parcours/FLOW-AND-SYNC.md) annonce quinze minutes
+de retard au plus et vise le matin, l'après-déjeuner et la fin de journée.
+
+**Préalable** : mesurer le retard sur un mois de runs, puis choisir entre décaler les créneaux,
+changer de déclencheur (Scalingo Scheduler, écarté au §6.5 pour un retard alors jugé sans effet) ou
+corriger seulement la doc.
