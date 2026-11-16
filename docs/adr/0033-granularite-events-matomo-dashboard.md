@@ -177,6 +177,25 @@ un segment département, tant que Matomo n'a pas fini l'archive. Un plafond d'ap
 écarté faute de mesure : derrière le délai de 10 s par appel, il allongerait le pire cas au-delà des
 30 s du routeur. Suivi dans [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md#statistiques).
 
+## Amendement du 2026-11-16 (suite) : taux de rebond et pannes isolées
+
+Le taux de rebond de l'onglet Site vitrine quitte `range`. Un taux ne s'additionne pas, mais ses deux
+termes si : `VisitsSummary.get` est lu par sous-périodes avec `showColumns=nb_visits,bounce_count`,
+puis le service divise les sommes et arrondit à l'entier, comme le `bounce_rate` de Matomo.
+
+| Fenêtre                         | `range`      | Sous-périodes | Visites et rebonds   |
+| ------------------------------- | ------------ | ------------- | -------------------- |
+| 30 jours, national              | 19,8 s       | 0,4 s         | identiques           |
+| 30 jours précédents, national   | 32,7 s       | 0,4 s         | identiques           |
+| 90 jours, national              | 55,5 s       | 0,3 s         | identiques           |
+| 12 mois, national               | plus de 60 s | 0,7 s         | `range` sans réponse |
+| 12 mois, un département (trois) | non mesuré   | 0,3 à 0,9 s   | non comparés         |
+
+`getMatomoStatistiques` perd son `catch` global, qui remettait cartes et courbe à 0 dès qu'un appel
+échouait. Chaque lecture échoue seule (`logMatomoFailure`) : `visiteursUniques` et `tauxRebond` valent
+`null`, affiché « Indisponible », et la courbe reste. Les visiteurs uniques, toujours en `range`,
+passent par la variante stricte : une métrique absente n'est plus lue comme 0.
+
 ## Liens
 
 - `src/features/backoffice/administration/acquisition/domain/decoupage-periode.ts` —
