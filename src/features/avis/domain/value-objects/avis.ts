@@ -36,6 +36,22 @@ const LIBELLES_SUJET_ANONYME: Record<SujetAnonyme, { nom: string; titre: string 
   vulnerabilite: { nom: "Le simulateur de vulnérabilité", titre: "Votre avis sur le simulateur de vulnérabilité" },
 };
 
+// Libellés courts pour les tableaux de restitution.
+export const LIBELLES_SUJET: Record<SujetAvis, string> = {
+  simulateur: "Simulateur d'éligibilité",
+  vulnerabilite: "Simulateur de vulnérabilité",
+  compte: "Création du compte",
+  choix_amo: "Choix de l'AMO",
+  eligibilite: "Formulaire d'éligibilité",
+  diagnostic: "Diagnostic",
+  devis: "Devis",
+  factures: "Travaux et paiement",
+};
+
+export function estSujetAvis(valeur: string): valeur is SujetAvis {
+  return SUJETS_AVIS.some((sujet) => sujet === valeur);
+}
+
 export const LONGUEUR_MAX_COMMENTAIRE = 1000;
 const NOTE_MAX_AVEC_COMMENTAIRE = 2;
 

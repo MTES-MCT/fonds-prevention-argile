@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "../client";
 import { avis, type Avis, type NewAvis } from "../schema/avis";
 
@@ -41,6 +41,25 @@ export class AvisRepository {
       .where(and(eq(avis.id, id), eq(avis.sujet, sujet), isNull(avis.parcoursId)))
       .returning();
     return row ?? null;
+  }
+
+  async findNotes(): Promise<Pick<Avis, "sujet" | "note">[]> {
+    return db.select({ sujet: avis.sujet, note: avis.note }).from(avis);
+  }
+
+  async findCommentaires(limite: number): Promise<Pick<Avis, "id" | "sujet" | "note" | "commentaire" | "createdAt">[]> {
+    return db
+      .select({
+        id: avis.id,
+        sujet: avis.sujet,
+        note: avis.note,
+        commentaire: avis.commentaire,
+        createdAt: avis.createdAt,
+      })
+      .from(avis)
+      .where(isNotNull(avis.commentaire))
+      .orderBy(desc(avis.createdAt))
+      .limit(limite);
   }
 }
 

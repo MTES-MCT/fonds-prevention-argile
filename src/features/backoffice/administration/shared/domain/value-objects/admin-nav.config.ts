@@ -69,6 +69,12 @@ export const ADMIN_NAV_TABS: AdminNavTab[] = [
     icon: "fr-icon-pulse-line",
   },
   {
+    id: "satisfaction",
+    label: "Satisfaction",
+    href: "/administration/satisfaction",
+    icon: "fr-icon-thumb-up-line",
+  },
+  {
     id: "synchronisations",
     label: "Synchros",
     href: "/administration/synchronisations",
