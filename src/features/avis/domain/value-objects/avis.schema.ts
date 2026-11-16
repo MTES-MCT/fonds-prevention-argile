@@ -14,6 +14,8 @@ const communSchema = z.object({
   note: noteSchema,
   commentaire: commentaireSchema,
   origine: z.enum(ORIGINES_AVIS),
+  // Champ piège, invisible : seul un robot le remplit.
+  site: z.string().max(200).optional(),
 });
 
 const avisEtapeSchema = communSchema.extend({

@@ -26,6 +26,7 @@ import {
 
 // Results
 import { ResultEdition, ResultEligible, ResultNonEligible } from "./results";
+import { AvisSimulateur } from "@/features/avis/components/AvisSimulateur";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { SIMULATEUR_STEP_EVENTS } from "../domain";
 import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
@@ -293,12 +294,20 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
         return <ResultEdition checks={checks} isEligible={isEligible} onBack={goBack} onRestart={reset} />;
       }
 
-      if (isEligible && checks) {
-        return <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} onBack={goBack} />;
-      }
-
-      if (!isEligible && checks) {
-        return <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} />;
+      if (checks) {
+        return (
+          <>
+            {isEligible ? (
+              <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} onBack={goBack} />
+            ) : (
+              <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} />
+            )}
+            {/* `onSave` marque un écran d'édition : l'avis ne concerne que la simulation publique. */}
+            {!onSave && (
+              <AvisSimulateur simulationEligible={isEligible} codeDepartement={answers.logement?.code_departement} />
+            )}
+          </>
+        );
       }
 
       console.error("[SimulateurFormulaire] État incohérent à l'étape RESULTAT", {

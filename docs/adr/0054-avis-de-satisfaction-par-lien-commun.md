@@ -63,3 +63,7 @@ pour un champ libre, et laissait les réponses hors de l'application, sans lien 
   restauration d'un dump. Le formulaire demande de ne pas y mettre d'information personnelle.
 - La page est en `noindex` et `no-referrer` : son URL porte l'identifiant du parcours.
 - Le taux de réponse se lit dans les statistiques d'envoi de Brevo, pas dans l'application.
+- L'avis sur le simulateur s'affiche sous le résultat, éligible ou non, sur notre site seulement : ni dans
+  l'iframe des partenaires, ni sur les écrans d'édition. Étant anonyme, il n'est pas dédoublonné en base :
+  un marqueur dans le navigateur évite de reposer la question, et un champ piège écarte les robots de
+  formulaire. Il n'y a pas de limitation de débit.

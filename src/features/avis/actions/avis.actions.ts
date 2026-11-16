@@ -11,8 +11,12 @@ export async function enregistrerAvisAction(payload: unknown): Promise<ActionRes
   const parsed = avisPayloadSchema.safeParse(payload);
   if (!parsed.success) return { success: false, error: ERREUR };
 
+  const { site, ...avis } = parsed.data;
+  // Réponse d'apparence normale : un robot n'apprend pas qu'il a été écarté.
+  if (site) return { success: true, data: { avisId: null } };
+
   try {
-    const resultat = await enregistrerAvis(parsed.data);
+    const resultat = await enregistrerAvis(avis);
     if (!resultat.enregistre) return { success: false, error: ERREUR };
     return { success: true, data: { avisId: resultat.avisId } };
   } catch (error) {

@@ -3,11 +3,11 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { enregistrerAvisAction } from "../actions/avis.actions";
 import {
-  LIBELLES_NOTE,
   LONGUEUR_MAX_COMMENTAIRE,
   NOTES_AVIS,
   SUJET_SIMULATEUR,
   demandeUnCommentaire,
+  libelleNote,
   questionAvis,
   type EtapeAvis,
   type NoteAvis,
@@ -23,14 +23,16 @@ interface FormulaireAvisProps {
   origine: OrigineAvis;
   // Note cliquée dans le mail : enregistrée dès l'affichage, pour compter même si la page est refermée.
   noteInitiale?: NoteAvis;
+  onTermine?: () => void;
 }
 
 type Etat = "saisie" | "envoi" | "termine";
 
-export function FormulaireAvis({ cible, origine, noteInitiale }: FormulaireAvisProps) {
+export function FormulaireAvis({ cible, origine, noteInitiale, onTermine }: FormulaireAvisProps) {
   const id = useId();
   const [note, setNote] = useState<NoteAvis | null>(noteInitiale ?? null);
   const [commentaire, setCommentaire] = useState("");
+  const [piege, setPiege] = useState("");
   const [etat, setEtat] = useState<Etat>("saisie");
   const [noteEnregistree, setNoteEnregistree] = useState<NoteAvis | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export function FormulaireAvis({ cible, origine, noteInitiale }: FormulaireAvisP
       note: valeur,
       commentaire: texte,
       origine,
+      ...(piege ? { site: piege } : {}),
     });
     if (!resultat.success) {
       setErreur(resultat.error);
@@ -69,6 +72,7 @@ export function FormulaireAvis({ cible, origine, noteInitiale }: FormulaireAvisP
     setEtat("envoi");
     const ok = await enregistrer(note, demandeUnCommentaire(note) ? commentaire : undefined);
     setEtat(ok ? "termine" : "saisie");
+    if (ok) onTermine?.();
   }
 
   if (etat === "termine") {
@@ -87,8 +91,8 @@ export function FormulaireAvis({ cible, origine, noteInitiale }: FormulaireAvisP
       {noteEnregistree && (
         <div className="fr-alert fr-alert--success fr-alert--sm fr-mb-3w" role="status">
           <p>
-            Votre réponse « {LIBELLES_NOTE[noteEnregistree]} » est enregistrée. Vous pouvez la modifier ou la préciser
-            ci-dessous.
+            Votre réponse « {libelleNote(noteEnregistree, cible.sujet)} » est enregistrée. Vous pouvez la modifier ou la
+            préciser ci-dessous.
           </p>
         </div>
       )}
@@ -109,7 +113,7 @@ export function FormulaireAvis({ cible, origine, noteInitiale }: FormulaireAvisP
                 disabled={envoiEnCours}
               />
               <label className="fr-label" htmlFor={`${id}-note-${valeur}`}>
-                {LIBELLES_NOTE[valeur]}
+                {libelleNote(valeur, cible.sujet)}
               </label>
             </div>
           </div>
@@ -135,6 +139,18 @@ export function FormulaireAvis({ cible, origine, noteInitiale }: FormulaireAvisP
           />
         </div>
       )}
+
+      <div className="fr-sr-only" aria-hidden="true">
+        <label htmlFor={`${id}-site`}>Ne pas remplir ce champ</label>
+        <input
+          type="text"
+          id={`${id}-site`}
+          tabIndex={-1}
+          autoComplete="off"
+          value={piege}
+          onChange={(event) => setPiege(event.target.value)}
+        />
+      </div>
 
       {erreur && (
         <div className="fr-alert fr-alert--error fr-alert--sm fr-mb-3w" role="alert">

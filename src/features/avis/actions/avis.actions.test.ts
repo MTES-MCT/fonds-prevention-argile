@@ -46,6 +46,13 @@ describe("enregistrerAvisAction", () => {
     expect(service.mock.calls[0][0].commentaire).toBeUndefined();
   });
 
+  it("écarte un robot qui remplit le champ piège, sans le lui dire", async () => {
+    const reponse = await enregistrerAvisAction({ ...valide, site: "https://spam.example" });
+
+    expect(reponse).toEqual({ success: true, data: { avisId: null } });
+    expect(service).not.toHaveBeenCalled();
+  });
+
   it("répond par une erreur quand le service refuse", async () => {
     service.mockResolvedValue({ enregistre: false });
 

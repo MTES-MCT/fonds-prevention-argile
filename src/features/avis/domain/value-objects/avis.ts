@@ -44,6 +44,11 @@ export function estNoteAvis(valeur: number): valeur is NoteAvis {
   return NOTES_AVIS.some((note) => note === valeur);
 }
 
+// « L'étape était correcte », « le simulateur était correct » : seul ce libellé s'accorde.
+export function libelleNote(note: NoteAvis, sujet: SujetAvis): string {
+  return note === 3 && !estEtapeAvis(sujet) ? "Correct" : LIBELLES_NOTE[note];
+}
+
 export function questionAvis(sujet: SujetAvis): string {
   return estEtapeAvis(sujet) ? `L'étape ${LIBELLES_ETAPE[sujet]} était :` : "Le simulateur était :";
 }
