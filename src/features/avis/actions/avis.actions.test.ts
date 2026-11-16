@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { enregistrerAvis } from "../services/avis.service";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { enregistrerAvisAction } from "./avis.actions";
 
 vi.mock("../services/avis.service", () => ({ enregistrerAvis: vi.fn() }));
+vi.mock("@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite", () => ({
+  isVulnerabiliteRgaActive: vi.fn(() => true),
+}));
 
 const service = vi.mocked(enregistrerAvis);
 const PARCOURS_ID = "5b2f6f0e-8a57-4c59-9d0b-0f3c1c7d2a11";
@@ -12,6 +16,7 @@ describe("enregistrerAvisAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service.mockResolvedValue({ enregistre: true, avisId: null });
+    vi.mocked(isVulnerabiliteRgaActive).mockReturnValue(true);
   });
 
   it("enregistre une charge utile valide", async () => {
@@ -44,6 +49,17 @@ describe("enregistrerAvisAction", () => {
     await enregistrerAvisAction({ ...valide, note: 1, commentaire: "   " });
 
     expect(service.mock.calls[0][0].commentaire).toBeUndefined();
+  });
+
+  it("refuse un avis sur le simulateur de vulnérabilité tant qu'il n'est pas servi", async () => {
+    const avisVulnerabilite = { sujet: "vulnerabilite", note: 4, origine: "en_direct" };
+    expect((await enregistrerAvisAction(avisVulnerabilite)).success).toBe(true);
+
+    vi.mocked(isVulnerabiliteRgaActive).mockReturnValue(false);
+    service.mockClear();
+
+    expect((await enregistrerAvisAction(avisVulnerabilite)).success).toBe(false);
+    expect(service).not.toHaveBeenCalled();
   });
 
   it("écarte un robot qui remplit le champ piège, sans le lui dire", async () => {

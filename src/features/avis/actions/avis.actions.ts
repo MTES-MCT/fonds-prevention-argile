@@ -3,6 +3,7 @@
 import type { ActionResult } from "@/shared/types";
 import { avisPayloadSchema } from "../domain/value-objects/avis.schema";
 import { enregistrerAvis } from "../services/avis.service";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 
 const ERREUR = "Votre réponse n'a pas pu être enregistrée.";
 
@@ -10,6 +11,9 @@ const ERREUR = "Votre réponse n'a pas pu être enregistrée.";
 export async function enregistrerAvisAction(payload: unknown): Promise<ActionResult<{ avisId: string | null }>> {
   const parsed = avisPayloadSchema.safeParse(payload);
   if (!parsed.success) return { success: false, error: ERREUR };
+
+  // Une action reste appelable même quand le simulateur de vulnérabilité n'est pas servi.
+  if (parsed.data.sujet === "vulnerabilite" && !isVulnerabiliteRgaActive()) return { success: false, error: ERREUR };
 
   const { site, ...avis } = parsed.data;
   // Réponse d'apparence normale : un robot n'apprend pas qu'il a été écarté.

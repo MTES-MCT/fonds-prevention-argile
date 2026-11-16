@@ -18,9 +18,10 @@ pour un champ libre, et laissait les réponses hors de l'application, sans lien 
 > « Qu'est-ce qui a posé problème ? » pour les notes 1 et 2. Le mail Brevo ne porte que des **liens**,
 > les mêmes pour tous : `/avis?etape=<étape>&note=<1-5>&p={{ contact.PARCOURS_ID }}`.
 
-- Une table `avis` pour sept sujets : six étapes (`compte`, `choix_amo`, `eligibilite`, `diagnostic`,
-  `devis`, `factures`) et le simulateur. Un avis d'étape est rattaché au parcours, un avis sur le
-  simulateur est anonyme (résultat et département seulement).
+- Une table `avis` pour huit sujets : six étapes (`compte`, `choix_amo`, `eligibilite`, `diagnostic`,
+  `devis`, `factures`) et les deux simulateurs (`simulateur`, `vulnerabilite`). Un avis d'étape est
+  rattaché au parcours, un avis sur un simulateur est anonyme : département seulement, et résultat
+  d'éligibilité pour le premier.
 - Un avis par parcours et par étape : une nouvelle réponse remplace la précédente.
 - La note cliquée dans le mail est enregistrée à l'ouverture de la page, par le navigateur : elle compte
   même si la page est refermée, et un antivirus de messagerie qui précharge le lien sans exécuter le
@@ -63,7 +64,8 @@ pour un champ libre, et laissait les réponses hors de l'application, sans lien 
   restauration d'un dump. Le formulaire demande de ne pas y mettre d'information personnelle.
 - La page est en `noindex` et `no-referrer` : son URL porte l'identifiant du parcours.
 - Le taux de réponse se lit dans les statistiques d'envoi de Brevo, pas dans l'application.
-- L'avis sur le simulateur s'affiche sous le résultat, éligible ou non, sur notre site seulement : ni dans
-  l'iframe des partenaires, ni sur les écrans d'édition. Étant anonyme, il n'est pas dédoublonné en base :
+- L'avis sur un simulateur s'affiche sous son résultat, sur notre site seulement : ni dans l'iframe des
+  partenaires, ni sur les écrans d'édition, ni quand un agent fait le test de vulnérabilité pour le
+  demandeur. Celui du simulateur de vulnérabilité est refusé tant que ce simulateur n'est pas servi. Étant anonyme, il n'est pas dédoublonné en base :
   un marqueur dans le navigateur évite de reposer la question, et un champ piège écarte les robots de
   formulaire. Il n'y a pas de limitation de débit.

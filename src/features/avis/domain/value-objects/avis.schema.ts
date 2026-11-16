@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ETAPES_AVIS, LONGUEUR_MAX_COMMENTAIRE, ORIGINES_AVIS, SUJET_SIMULATEUR, estNoteAvis } from "./avis";
+import { ETAPES_AVIS, LONGUEUR_MAX_COMMENTAIRE, ORIGINES_AVIS, SUJETS_ANONYMES, estNoteAvis } from "./avis";
 
 const noteSchema = z.number().int().refine(estNoteAvis, "Note hors échelle");
 
@@ -23,8 +23,8 @@ const avisEtapeSchema = communSchema.extend({
   parcoursId: z.uuid(),
 });
 
-const avisSimulateurSchema = communSchema.extend({
-  sujet: z.literal(SUJET_SIMULATEUR),
+const avisAnonymeSchema = communSchema.extend({
+  sujet: z.enum(SUJETS_ANONYMES),
   // Présent pour compléter un avis déjà créé dans la même visite.
   avisId: z.uuid().optional(),
   simulationEligible: z.boolean().optional(),
@@ -34,7 +34,7 @@ const avisSimulateurSchema = communSchema.extend({
     .optional(),
 });
 
-export const avisPayloadSchema = z.discriminatedUnion("sujet", [avisEtapeSchema, avisSimulateurSchema]);
+export const avisPayloadSchema = z.discriminatedUnion("sujet", [avisEtapeSchema, avisAnonymeSchema]);
 export type AvisPayload = z.infer<typeof avisPayloadSchema>;
 
 // Paramètres du lien envoyé par mail : /avis?etape=…&note=…&p=…

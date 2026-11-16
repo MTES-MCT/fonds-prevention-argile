@@ -1,5 +1,5 @@
 import { avisRepo, parcoursRepo } from "@/shared/database/repositories";
-import { SUJET_SIMULATEUR, demandeUnCommentaire, type NoteAvis } from "../domain/value-objects/avis";
+import { demandeUnCommentaire, type NoteAvis } from "../domain/value-objects/avis";
 import type { AvisPayload } from "../domain/value-objects/avis.schema";
 
 export type ResultatAvis = { enregistre: true; avisId: string | null } | { enregistre: false };
@@ -12,16 +12,16 @@ function commentaireAEcrire(note: NoteAvis, commentaire: string | undefined): st
 export async function enregistrerAvis(payload: AvisPayload): Promise<ResultatAvis> {
   const commentaire = commentaireAEcrire(payload.note, payload.commentaire);
 
-  if (payload.sujet === SUJET_SIMULATEUR) {
+  if (!("parcoursId" in payload)) {
     if (payload.avisId) {
-      const modifie = await avisRepo.updateAnonyme(payload.avisId, SUJET_SIMULATEUR, {
+      const modifie = await avisRepo.updateAnonyme(payload.avisId, payload.sujet, {
         note: payload.note,
         commentaire,
       });
       return modifie ? { enregistre: true, avisId: modifie.id } : { enregistre: false };
     }
     const cree = await avisRepo.create({
-      sujet: SUJET_SIMULATEUR,
+      sujet: payload.sujet,
       note: payload.note,
       commentaire: commentaire ?? null,
       origine: payload.origine,

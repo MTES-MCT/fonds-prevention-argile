@@ -26,7 +26,7 @@ import {
 
 // Results
 import { ResultEdition, ResultEligible, ResultNonEligible } from "./results";
-import { AvisSimulateur } from "@/features/avis/components/AvisSimulateur";
+import { AvisEnDirect } from "@/features/avis/components/AvisEnDirect";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { SIMULATEUR_STEP_EVENTS } from "../domain";
 import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
@@ -304,7 +304,11 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
             )}
             {/* `onSave` marque un écran d'édition : l'avis ne concerne que la simulation publique. */}
             {!onSave && (
-              <AvisSimulateur simulationEligible={isEligible} codeDepartement={answers.logement?.code_departement} />
+              <AvisEnDirect
+                sujet="simulateur"
+                simulationEligible={isEligible}
+                codeDepartement={answers.logement?.code_departement}
+              />
             )}
           </>
         );

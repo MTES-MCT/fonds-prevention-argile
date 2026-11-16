@@ -238,7 +238,7 @@ Table anonyme par construction : aucun lien vers un compte, seul le département
 
 ### `avis`
 
-Avis de satisfaction : rattaché à un parcours pour une étape, anonyme pour le simulateur. Le commentaire est un texte
+Avis de satisfaction : rattaché à un parcours pour une étape, anonyme pour un simulateur. Le commentaire est un texte
 libre saisi par le demandeur.
 
 | Colonnes                                                                                                               | Nature        | À la restauration                     |

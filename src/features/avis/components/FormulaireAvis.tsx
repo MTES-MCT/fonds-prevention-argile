@@ -5,18 +5,18 @@ import { enregistrerAvisAction } from "../actions/avis.actions";
 import {
   LONGUEUR_MAX_COMMENTAIRE,
   NOTES_AVIS,
-  SUJET_SIMULATEUR,
   demandeUnCommentaire,
   libelleNote,
   questionAvis,
   type EtapeAvis,
   type NoteAvis,
   type OrigineAvis,
+  type SujetAnonyme,
 } from "../domain/value-objects/avis";
 
 export type CibleAvis =
   | { sujet: EtapeAvis; parcoursId: string }
-  | { sujet: typeof SUJET_SIMULATEUR; simulationEligible?: boolean; codeDepartement?: string };
+  | { sujet: SujetAnonyme; simulationEligible?: boolean; codeDepartement?: string };
 
 interface FormulaireAvisProps {
   cible: CibleAvis;
@@ -42,7 +42,7 @@ export function FormulaireAvis({ cible, origine, noteInitiale, onTermine }: Form
   async function enregistrer(valeur: NoteAvis, texte?: string): Promise<boolean> {
     const resultat = await enregistrerAvisAction({
       ...cible,
-      ...(cible.sujet === SUJET_SIMULATEUR && avisId.current ? { avisId: avisId.current } : {}),
+      ...(!("parcoursId" in cible) && avisId.current ? { avisId: avisId.current } : {}),
       note: valeur,
       commentaire: texte,
       origine,
