@@ -36,8 +36,10 @@ réellement (portée de la dimension département, effet d'un segment, durée d'
 - **Simulations Matomo** (libellé « Visites avec un résultat », ex-« Simulations terminées ») : comptées en visites (entonnoir, `/stats`, tops, tableau), ADR-0046. Les écrans de correction et le
   réaffichage d'un résultat émettent aussi des évènements ; leur effet sur ce compte en visites n'est pas quantifié (voir § 9). Les statistiques BDD ont leur propre
   unité (parcours, dossiers).
-- **Matomo** : les comptages d'évènements de l'entonnoir sont découpés en jours, semaines ou mois (`decouperPeriodeMatomo`,
-  ADR-0033) ; les rapports par dimension (département, commune) et les tunnels restent en `period=range`. Les dates envoyées sont celles du
+- **Matomo** : les comptages d'évènements de l'entonnoir et les rapports par dimension (département, commune) sont découpés en
+  jours, semaines ou mois puis sommés (`decouperPeriodeMatomo`, ADR-0033) ; les visiteurs uniques, le taux de rebond et les tunnels
+  restent en `period=range`. Les rapports par dimension sont lus sans `flat`, toutes valeurs comprises : mêmes totaux par valeur
+  (vérifié le 2026-11-16), et le Top 5 communes n'est plus limité aux 100 premières lignes commune × page. Les dates envoyées sont celles du
   serveur : autour de minuit, un décalage d'un jour est possible avec le fuseau du site Matomo (non vérifié).
 
 ---
