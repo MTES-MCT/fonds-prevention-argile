@@ -200,9 +200,14 @@ scalingo --app fonds-argile-staging --region osc-fr1 stats
 
 Le pourcentage affiché **compte le cache de fichiers** : mesuré le 16 novembre 2026, 300 Mo écrits
 sur disque dans un one-off s'affichent 311 MiB pour 2 Mo de mémoire réelle. Un conteneur à 95 % peut
-donc aller bien. Le signal fiable est le **swap**, à 0 en temps normal.
+donc aller bien.
 
-Swap plein, le processus Node se fige : plus aucune connexion PostgreSQL n'aboutit
+Le **swap** seul ne dit pas davantage que le conteneur sature : le même jour, une heure après un
+démarrage, `web-1` en utilisait 30 MiB à 48 % de sa limite, mémoire réelle stable (cause non
+établie). La saturation, c'est mémoire **et** swap pleins ensemble ; la mesure à suivre est la colonne
+`anon` du relevé ci-dessous.
+
+Mémoire et swap pleins, le processus Node se fige : plus aucune connexion PostgreSQL n'aboutit
 (`CONNECT_TIMEOUT` dans les logs), les pages expirent et le cron de synchronisation échoue. C'est
 la panne du staging du 15 novembre 2026, levée par un `restart`. Repère pris ce jour-là : le serveur
 pèse 188 Mo à froid et 220 Mo après douze pages.
@@ -234,17 +239,22 @@ La colonne qui monte d'un relevé à l'autre désigne la piste :
 
 | Colonne qui monte              | Ce que ça désigne                                                   |
 | ------------------------------ | ------------------------------------------------------------------- |
+| `anon`                         | Mémoire réelle du conteneur : c'est elle qui finit par saturer      |
 | `tas`, `vieux`, `grands`       | Objets JavaScript retenus : le coupable est dans les lignes `alloc` |
 | `buffers`, `externe`           | Tampons binaires (réponses HTTP, fichiers) gardés en mémoire        |
 | `horsTas` seul, `tas` stable   | Mémoire native : traitement d'images (`sharp`), fragmentation       |
 | `ressources` (`TCPSocketWrap`) | Connexions ou minuteurs jamais fermés                               |
 | `cache` seul                   | Cache de fichiers, que le noyau reprend au besoin : rien à corriger |
+| `swap` seul, `anon` stable     | Pas un signal à lui seul, cf. plus haut                             |
 
 Une ligne `alloc` se lit `+12.3 Mo (41.0 Mo) fonction (fichier:ligne:colonne) < appelant` :
 croissance depuis le premier relevé, taille actuelle, puis la fonction applicative la plus proche de
 l'allocation. Le fichier est relatif à `.next/server/` (`nm/` pour `node_modules`) ; le code y est
 minifié, la colonne se retrouve dans le fichier du même build. `MEMORY_LOG_TOP_ALLOCATIONS` absente
 ou à 0 : seule la ligne de synthèse est écrite, sans échantillonnage des allocations.
+
+Le relevé recoupe `scalingo stats` : même swap, et `anon` + `cache` à une dizaine de Mo de la
+mémoire affichée (vérifié le 16 novembre 2026 ; l'écart est probablement la mémoire du noyau, non lue).
 
 Limites : les allocations sont échantillonnées (une tous les 128 Kio), et rien n'y explique une
 hausse de `horsTas`. Retirer les deux variables (`env-unset`) une fois la cause trouvée.
