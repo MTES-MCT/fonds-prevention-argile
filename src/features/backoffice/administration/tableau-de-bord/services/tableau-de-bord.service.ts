@@ -61,6 +61,7 @@ import {
   cumulerCompteurs,
   cumulerSimulations,
 } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import { logMatomoFailure } from "@/features/backoffice/administration/acquisition/domain/panne-matomo";
 import {
   regrouperSimulationsParDepartement,
   type CompteurSimulations,
@@ -90,18 +91,6 @@ interface SimulationsMatomoResult {
   eligible: number;
   nonEligible: number;
   total: number;
-}
-
-/**
- * Trace une panne Matomo et renvoie null, pour la distinguer d'un vrai zero cote UI.
- */
-async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promise<T | null> {
-  try {
-    return await promise;
-  } catch (error) {
-    console.error(`[matomo] echec ${contexte}:`, error instanceof Error ? error.message : error);
-    return null;
-  }
 }
 
 /**
