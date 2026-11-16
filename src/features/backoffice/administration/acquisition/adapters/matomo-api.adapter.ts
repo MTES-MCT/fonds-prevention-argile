@@ -3,6 +3,9 @@ import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
 import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
 import { PARTNER_REFERRERS, type PartnerKey } from "@/shared/domain/partners";
+import { estPlageStable } from "../domain/plage-matomo";
+import type { CompteurSimulations } from "../domain/simulations-departement";
+import { classerEchecReseau, formaterJournalAppel, type IssueAppelMatomo } from "../domain/journal-appel-matomo";
 
 /**
  * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
@@ -81,11 +84,14 @@ function getMatomoConfig(): MatomoConfig {
 }
 
 const MATOMO_TIMEOUT_MS = 10_000;
-const MATOMO_CACHE_TTL_SECONDS = 3600;
+const TTL_PLAGE_OUVERTE_SECONDES = 3600;
+const TTL_PLAGE_STABLE_SECONDES = 24 * 3600;
 export const MATOMO_CACHE_TAG = "matomo-api";
 
+let appelsEnCours = 0;
+
 /**
- * Appel HTTP brut vers l'API Matomo, sans cache.
+ * Appel HTTP brut vers l'API Matomo, sans cache. Journalise chaque appel (duree, issue).
  */
 async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
   const filteredParams = Object.fromEntries(
@@ -94,56 +100,122 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
 
   const searchParams = new URLSearchParams(filteredParams);
 
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: searchParams.toString(),
-    signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
-    // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs — volontaire :
-    // un premier timeout n'empeche pas Matomo de terminer l'archive en tache de fond ; un nouvel
-    // essai un peu plus tard (l'archive etant alors prete) doit pouvoir reussir immediatement,
-    // pas etre bloque par un echec mis en cache.
-    cache: "no-store",
-  });
+  appelsEnCours += 1;
+  const simultanes = appelsEnCours;
+  const debut = performance.now();
+  let issue: IssueAppelMatomo = "ok";
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Erreur API Matomo (${params.method}):`, errorText);
-    throw new Error(`Erreur API Matomo: ${response.status} ${response.statusText}`);
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: searchParams.toString(),
+      signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
+      // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs — volontaire :
+      // un premier timeout n'empeche pas Matomo de terminer l'archive en tache de fond ; un nouvel
+      // essai un peu plus tard (l'archive etant alors prete) doit pouvoir reussir immediatement,
+      // pas etre bloque par un echec mis en cache.
+      cache: "no-store",
+    }).catch((error: unknown) => {
+      issue = classerEchecReseau(error);
+      throw error;
+    });
+
+    if (!response.ok) {
+      issue = "erreur_http";
+      const errorText = await response.text();
+      console.error(`Erreur API Matomo (${params.method}):`, errorText);
+      throw new Error(`Erreur API Matomo: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Matomo repond HTTP 200 meme sur erreur d'authentification : le verdict est dans le corps.
+    if (data?.result === "error") {
+      issue = "erreur_matomo";
+      console.error(`Erreur API Matomo (${params.method}):`, data.message);
+      throw new Error(`Erreur API Matomo: ${data.message}`);
+    }
+
+    return data as T;
+  } finally {
+    appelsEnCours -= 1;
+    const ligne = formaterJournalAppel({
+      methode: params.method,
+      period: params.period,
+      date: params.date,
+      segment: params.segment,
+      simultanes,
+      dureeMs: performance.now() - debut,
+      issue,
+    });
+    if (issue === "ok") console.info(ligne);
+    else console.warn(ligne);
   }
+}
 
-  const data = await response.json();
+/** Reduction appliquee avant mise en cache : Next n'ecrit pas une entree de plus de 2 Mo. */
+type ReductionReponse = "label-visites";
 
-  // Matomo repond HTTP 200 meme sur erreur d'authentification : le verdict est dans le corps.
-  if (data?.result === "error") {
-    console.error(`Erreur API Matomo (${params.method}):`, data.message);
-    throw new Error(`Erreur API Matomo: ${data.message}`);
-  }
+function reduireLignes(lignes: unknown): unknown {
+  if (!Array.isArray(lignes)) return lignes;
+  return (lignes as { label?: unknown; nb_visits?: unknown }[]).map((ligne) => ({
+    label: ligne?.label,
+    nb_visits: ligne?.nb_visits,
+  }));
+}
 
-  return data as T;
+/** Ne garde que `label` et `nb_visits` de chaque ligne, sur un tableau ou un objet de sous-periodes. */
+function reduireReponse(data: unknown): unknown {
+  if (Array.isArray(data) || data === null || typeof data !== "object") return reduireLignes(data);
+  return Object.fromEntries(Object.entries(data).map(([cle, lignes]) => [cle, reduireLignes(lignes)]));
 }
 
 // Le token est relu ici plutot que passe en argument pour ne pas finir dans la cle de cache.
-const fetchMatomoApiCached = unstable_cache(
-  async (params: Record<string, string | undefined>, apiUrl: string): Promise<unknown> => {
-    const { apiToken } = getMatomoConfig();
-    return requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
-  },
-  ["matomo-api"],
-  { revalidate: MATOMO_CACHE_TTL_SECONDS, tags: [MATOMO_CACHE_TAG] }
-);
+async function appelerMatomo(
+  params: Record<string, string | undefined>,
+  apiUrl: string,
+  reduction?: ReductionReponse
+): Promise<unknown> {
+  const { apiToken } = getMatomoConfig();
+  const data = await requestMatomoApi({ ...params, token_auth: apiToken } as MatomoRequestParams, apiUrl);
+  return reduction === "label-visites" ? reduireReponse(data) : data;
+}
+
+const fetchMatomoApiCached = unstable_cache(appelerMatomo, ["matomo-api"], {
+  revalidate: TTL_PLAGE_OUVERTE_SECONDES,
+  tags: [MATOMO_CACHE_TAG],
+});
+
+// Cle distincte : une reponse prise quand la plage etait encore ouverte ne doit pas heriter des 24 h.
+const fetchMatomoApiCachedStable = unstable_cache(appelerMatomo, ["matomo-api", "plage-stable"], {
+  revalidate: TTL_PLAGE_STABLE_SECONDES,
+  tags: [MATOMO_CACHE_TAG],
+});
+
+const appelsEnVol = new Map<string, Promise<unknown>>();
 
 /**
- * Requete générique vers l'API Matomo, avec cache 1 h des seules reponses valides.
- * @param params
- * @param apiUrl
- * @returns
+ * Requete vers l'API Matomo : reponses valides en cache 24 h si la plage est close, 1 h sinon.
+ * Deux demandes identiques en cours partagent le meme appel.
  */
-async function fetchMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
+async function fetchMatomoApi<T>(
+  params: MatomoRequestParams,
+  apiUrl: string,
+  reduction?: ReductionReponse
+): Promise<T> {
   const cacheableParams: Record<string, string | undefined> = { ...params, token_auth: undefined };
-  return (await fetchMatomoApiCached(cacheableParams, apiUrl)) as T;
+  const cle = JSON.stringify([cacheableParams, apiUrl, reduction ?? null]);
+
+  const enVol = appelsEnVol.get(cle);
+  if (enVol) return enVol as Promise<T>;
+
+  const appelCache = estPlageStable(params.date) ? fetchMatomoApiCachedStable : fetchMatomoApiCached;
+  const appel = appelCache(cacheableParams, apiUrl, reduction).finally(() => appelsEnVol.delete(cle));
+  appelsEnVol.set(cle, appel);
+  return appel as Promise<T>;
 }
 
 /**
@@ -451,14 +523,17 @@ export async function fetchMatomoEventsByDepartment(
 // ---------------------------------------------------------------------------
 
 interface MatomoCustomDimensionRow {
-  label: string; // valeur composite "valeur - url" pour dimensions de scope action
-  nb_visits: number;
+  label: string;
+  nb_visits: number | string;
 }
 
+/** Tableau en `period=range`, objet indexé par sous-période en `day`/`week`/`month` sur une plage. */
+type MatomoDimensionApiResponse = MatomoCustomDimensionRow[] | Record<string, MatomoCustomDimensionRow[]>;
+
+const METHODE_DIMENSION = "CustomDimensions.getCustomDimension";
+
 /**
- * Extrait la valeur de dimension depuis un label Matomo CustomDimension.
- * Les dimensions de scope "action" retournent des labels comme "63 - fonds-prevention-argile.beta.gouv.fr/simulateur".
- * On extrait la partie avant " - " qui est la valeur de la dimension.
+ * Extrait la valeur de dimension d'un label. Tolère l'ancien format à plat « valeur - url ».
  */
 function extractDimensionValueFromLabel(label: string): string | null {
   if (!label || label === "-") return null;
@@ -471,112 +546,86 @@ interface OptionsRapportDimension {
   period?: string;
   date?: string;
   extraSegment?: string;
-  /** Matomo s'arrête à 100 lignes par défaut : à demander pour toute liste affichée en entier (départements). */
-  toutesLesLignes?: boolean;
-}
-
-/** Un seul appel `CustomDimensions.getCustomDimension`, segmenté par `eventActionSegment`. */
-async function fetchMatomoDimensionRows(
-  dimensionId: number,
-  eventActionSegment: string,
-  options?: OptionsRapportDimension
-): Promise<MatomoCustomDimensionRow[]> {
-  const config = getMatomoConfig();
-
-  const data = await fetchMatomoApi<MatomoCustomDimensionRow[]>(
-    {
-      module: "API",
-      method: "CustomDimensions.getCustomDimension",
-      idDimension: String(dimensionId),
-      idSite: config.siteId,
-      period: options?.period ?? "range",
-      date: options?.date ?? "2025-01-01,today",
-      format: "JSON",
-      token_auth: config.apiToken,
-      flat: "1",
-      // Une ligne par couple valeur × URL : la limite par défaut (100) tronquait les départements.
-      filter_limit: options?.toutesLesLignes ? "-1" : undefined,
-      segment: combineSegments(eventActionSegment, options?.extraSegment) ?? "",
-    },
-    config.apiUrl
-  );
-
-  return Array.isArray(data) ? data : [];
 }
 
 /**
- * Récupère les simulations Matomo ventilées par une Custom Dimension (département, commune, etc.).
- * Fait 2 appels segmentés (éligible + non éligible) et fusionne les résultats.
- *
- * @param dimensionId - ID de la Custom Dimension dans Matomo
- * @param options - Période et date optionnelles
- * @returns Map<dimensionValue, { total, eligible, nonEligible }>
+ * Cumule `nb_visits` par valeur de dimension, sur une ou plusieurs sous-périodes disjointes.
+ * Toute anomalie lève : un total amputé d'une sous-période se lirait comme une vraie baisse.
  */
-export async function fetchMatomoSimulationsGroupedByDimension(
-  dimensionId: number,
-  options?: OptionsRapportDimension
-): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
-  const [eligibleData, nonEligibleData] = await Promise.all([
-    fetchMatomoDimensionRows(dimensionId, "eventAction==simulateur_result_eligible", options),
-    fetchMatomoDimensionRows(dimensionId, "eventAction==simulateur_result_non_eligible", options),
-  ]);
+function sumDimensionCounts(data: MatomoDimensionApiResponse): Map<string, number> {
+  const cumul = new Map<string, number>();
+  const lignesParPeriode = Array.isArray(data) ? [data] : Object.values(data ?? {});
 
-  const result = new Map<string, { total: number; eligible: number; nonEligible: number }>();
-
-  // Number(...) comme dans sumEventCounts : le type annonce un number que le JSON ne garantit pas.
-  for (const row of eligibleData) {
-    const value = extractDimensionValueFromLabel(row.label);
-    if (!value) continue;
-    const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    entry.eligible += Number(row.nb_visits) || 0;
-    entry.total += Number(row.nb_visits) || 0;
-    result.set(value, entry);
+  for (const lignes of lignesParPeriode) {
+    if (!Array.isArray(lignes)) {
+      throw new Error(`Reponse Matomo inattendue (${METHODE_DIMENSION}): sous-periode non tabulaire`);
+    }
+    for (const ligne of lignes) {
+      const valeur = extractDimensionValueFromLabel(ligne.label);
+      if (!valeur) continue;
+      const visites = Number(ligne.nb_visits);
+      if (!Number.isFinite(visites)) {
+        throw new Error(`Reponse Matomo inattendue (${METHODE_DIMENSION}): compteur non numerique`);
+      }
+      cumul.set(valeur, (cumul.get(valeur) ?? 0) + visites);
+    }
   }
 
-  for (const row of nonEligibleData) {
-    const value = extractDimensionValueFromLabel(row.label);
-    if (!value) continue;
-    const entry = result.get(value) ?? { total: 0, eligible: 0, nonEligible: 0 };
-    entry.nonEligible += Number(row.nb_visits) || 0;
-    entry.total += Number(row.nb_visits) || 0;
-    result.set(value, entry);
-  }
-
-  return result;
+  return cumul;
 }
 
 /**
- * Récupère un comptage Matomo ventilé par Custom Dimension, pour un seul event (pas de
- * distinction éligible/non-éligible) — utilisé par le simulateur de vulnérabilité, qui n'a
- * qu'un seul type de résultat (`vulnerabilite_result`).
- *
- * @param dimensionId - ID de la Custom Dimension dans Matomo (réutilise la même dimension
- *   département que le simulateur d'éligibilité : le filtre `eventActionSegment` garantit
- *   qu'aucune visite de l'autre simulateur ne s'y mélange).
- * @param eventActionSegment - ex: "eventAction==vulnerabilite_result"
+ * Comptage Matomo ventilé par Custom Dimension pour un event (`eventActionSegment`), toutes
+ * valeurs comprises. En `day`/`week`/`month` sur une plage, les sous-périodes sont sommées.
  */
 export async function fetchMatomoCountByDimension(
   dimensionId: number,
   eventActionSegment: string,
   options?: OptionsRapportDimension
 ): Promise<Map<string, number>> {
-  const rows = await fetchMatomoDimensionRows(dimensionId, eventActionSegment, options);
+  const config = getMatomoConfig();
 
-  const result = new Map<string, number>();
-  for (const row of rows) {
-    const value = extractDimensionValueFromLabel(row.label);
-    if (!value) continue;
-    result.set(value, (result.get(value) ?? 0) + (Number(row.nb_visits) || 0));
-  }
-  return result;
+  const data = await fetchMatomoApi<MatomoDimensionApiResponse>(
+    {
+      module: "API",
+      method: METHODE_DIMENSION,
+      idDimension: String(dimensionId),
+      idSite: config.siteId,
+      period: options?.period ?? "range",
+      date: options?.date ?? "2025-01-01,today",
+      format: "JSON",
+      token_auth: config.apiToken,
+      // Sans `flat` : mêmes totaux par valeur, sans la sous-table d'URL que Matomo chargeait pour chacune.
+      showColumns: "nb_visits",
+      // Matomo s'arrête à 100 lignes par défaut : les communes en comptent des milliers.
+      filter_limit: "-1",
+      segment: combineSegments(eventActionSegment, options?.extraSegment) ?? "",
+    },
+    config.apiUrl,
+    "label-visites"
+  );
+
+  return sumDimensionCounts(data);
 }
 
 /**
- * Simulations groupées par département, liste complète (le tableau affiche tous les départements).
+ * Simulations Matomo ventilées par une Custom Dimension (département, commune) : deux appels
+ * segmentés, éligible et non éligible, fusionnés par valeur.
  */
-export async function fetchMatomoSimulationsGroupedByDepartment(
+export async function fetchMatomoSimulationsGroupedByDimension(
   dimensionId: number,
-  options?: Omit<OptionsRapportDimension, "toutesLesLignes">
-): Promise<Map<string, { total: number; eligible: number; nonEligible: number }>> {
-  return fetchMatomoSimulationsGroupedByDimension(dimensionId, { ...options, toutesLesLignes: true });
+  options?: OptionsRapportDimension
+): Promise<Map<string, CompteurSimulations>> {
+  const [eligibles, nonEligibles] = await Promise.all([
+    fetchMatomoCountByDimension(dimensionId, "eventAction==simulateur_result_eligible", options),
+    fetchMatomoCountByDimension(dimensionId, "eventAction==simulateur_result_non_eligible", options),
+  ]);
+
+  const result = new Map<string, CompteurSimulations>();
+  for (const valeur of new Set([...eligibles.keys(), ...nonEligibles.keys()])) {
+    const eligible = eligibles.get(valeur) ?? 0;
+    const nonEligible = nonEligibles.get(valeur) ?? 0;
+    result.set(valeur, { total: eligible + nonEligible, eligible, nonEligible });
+  }
+  return result;
 }
