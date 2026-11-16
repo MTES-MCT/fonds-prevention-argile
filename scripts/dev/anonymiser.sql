@@ -268,6 +268,8 @@ UPDATE dossiers_demarches_simplifiees SET
   chorus_numero_ej = pg_temp.remplacer(chorus_numero_ej, '0000000000')
 WHERE ds_url ~ 'prefill_token=' OR chorus_tiers_fournisseur IS NOT NULL OR chorus_numero_ej IS NOT NULL;
 
+UPDATE avis SET commentaire = pg_temp.remplacer(commentaire, 'Commentaire anonymisé');
+
 UPDATE ds_reconciliation_observations SET candidats = pg_temp.candidats(candidats) WHERE candidats IS NOT NULL;
 
 UPDATE sync_run_entries SET error = pg_temp.remplacer(error, 'Erreur anonymisée') WHERE error IS NOT NULL;
@@ -368,6 +370,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM dossiers_demarches_simplifiees WHERE ds_url ~ 'prefill_token=(?!anonymise(&|#|$))'
       OR chorus_tiers_fournisseur <> '0000000000' OR chorus_numero_ej <> '0000000000') THEN
     restes := restes || 'dossiers_demarches_simplifiees'::text;
+  END IF;
+  IF EXISTS (SELECT 1 FROM avis WHERE commentaire <> 'Commentaire anonymisé') THEN
+    restes := restes || 'avis'::text;
   END IF;
   IF EXISTS (SELECT 1 FROM ds_reconciliation_observations WHERE NOT pg_temp.candidats_propres(candidats)) THEN
     restes := restes || 'ds_reconciliation_observations'::text;

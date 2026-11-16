@@ -35,3 +35,4 @@ export * from "./rga-zones";
 export * from "./sync-runs";
 export * from "./sync-run-entries";
 export * from "./vulnerabilite-simulations";
+export * from "./avis";

@@ -236,6 +236,16 @@ Table anonyme par construction : aucun lien vers un compte, seul le département
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------- |
 | `id`, `created_at`, `code_departement`, `alea_rga`, `pente_terrain`, `reseaux_enterres`, `gravier_proprete`, `gouttieres`, `recuperateur_eau`, `arbre_proximite`, `arbre_essence`, `haies`, `vegetation_pied_facade`, `mitoyennete`, `ensoleillement` | Non personnel | Conservées        |
 
+### `avis`
+
+Avis de satisfaction : rattaché à un parcours pour une étape, anonyme pour le simulateur. Le commentaire est un texte
+libre saisi par le demandeur.
+
+| Colonnes                                                                                                               | Nature        | À la restauration                     |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------- |
+| `commentaire`                                                                                                          | Texte libre   | Remplacée par `Commentaire anonymisé` |
+| `id`, `sujet`, `note`, `origine`, `parcours_id`, `simulation_eligible`, `code_departement`, `created_at`, `updated_at` | Non personnel | Conservées                            |
+
 ### `sync_runs`
 
 | Colonnes                                                                                                                                                | Nature        | À la restauration                                                                                                                                          |
