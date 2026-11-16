@@ -135,6 +135,10 @@ const serverSchema = z.object({
   // Secret partagé pour authentifier les déclenchements du CRON (Scalingo Scheduler)
   CRON_SECRET: z.string().min(32, "CRON_SECRET doit faire au moins 32 caractères"),
 
+  // Relevé mémoire dans les logs (diagnostic). Absente : aucun relevé. Cf. docs/ops/scalingo.md.
+  MEMORY_LOG_INTERVAL_MINUTES: z.coerce.number().int().positive().optional(),
+  MEMORY_LOG_TOP_ALLOCATIONS: z.coerce.number().int().min(0).max(20).optional(),
+
   // URL de la page Notion du kit de communication (route /kit). Surchargeable si le lien change.
   KIT_COMMUNICATION_URL: z
     .string()

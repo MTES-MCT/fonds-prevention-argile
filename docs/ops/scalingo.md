@@ -192,6 +192,63 @@ avoir corrigé alors que rien n'est écrit.
 
 Inventaire des scripts et de leurs flags : [`scripts/ops/README.md`](../../scripts/ops/README.md).
 
+## Mémoire du conteneur
+
+```bash
+scalingo --app fonds-argile-staging --region osc-fr1 stats
+```
+
+Le pourcentage affiché **compte le cache de fichiers** : mesuré le 16 novembre 2026, 300 Mo écrits
+sur disque dans un one-off s'affichent 311 MiB pour 2 Mo de mémoire réelle. Un conteneur à 95 % peut
+donc aller bien. Le signal fiable est le **swap**, à 0 en temps normal.
+
+Swap plein, le processus Node se fige : plus aucune connexion PostgreSQL n'aboutit
+(`CONNECT_TIMEOUT` dans les logs), les pages expirent et le cron de synchronisation échoue. C'est
+la panne du staging du 15 novembre 2026, levée par un `restart`. Repère pris ce jour-là : le serveur
+pèse 188 Mo à froid et 220 Mo après douze pages.
+
+### Relevé mémoire dans les logs
+
+Pour savoir ce qui grossit, deux variables activent un relevé périodique, lu au démarrage du
+serveur : les poser, puis redémarrer.
+
+```bash
+scalingo --app fonds-argile-staging --region osc-fr1 env-set MEMORY_LOG_INTERVAL_MINUTES=10 MEMORY_LOG_TOP_ALLOCATIONS=8
+```
+
+```bash
+scalingo --app fonds-argile-staging --region osc-fr1 restart
+```
+
+```bash
+# L'évolution, une ligne par relevé (valeurs en Mo)
+scalingo --app fonds-argile-staging --region osc-fr1 logs --lines 5000 | grep "\[memoire\] actif" | sort
+```
+
+```bash
+# Les fonctions dont la mémoire retenue a le plus grossi depuis le premier relevé
+scalingo --app fonds-argile-staging --region osc-fr1 logs --lines 5000 | grep "\[memoire\] alloc" | sort | tail -8
+```
+
+La colonne qui monte d'un relevé à l'autre désigne la piste :
+
+| Colonne qui monte              | Ce que ça désigne                                                   |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `tas`, `vieux`, `grands`       | Objets JavaScript retenus : le coupable est dans les lignes `alloc` |
+| `buffers`, `externe`           | Tampons binaires (réponses HTTP, fichiers) gardés en mémoire        |
+| `horsTas` seul, `tas` stable   | Mémoire native : traitement d'images (`sharp`), fragmentation       |
+| `ressources` (`TCPSocketWrap`) | Connexions ou minuteurs jamais fermés                               |
+| `cache` seul                   | Cache de fichiers, que le noyau reprend au besoin : rien à corriger |
+
+Une ligne `alloc` se lit `+12.3 Mo (41.0 Mo) fonction (fichier:ligne:colonne) < appelant` :
+croissance depuis le premier relevé, taille actuelle, puis la fonction applicative la plus proche de
+l'allocation. Le fichier est relatif à `.next/server/` (`nm/` pour `node_modules`) ; le code y est
+minifié, la colonne se retrouve dans le fichier du même build. `MEMORY_LOG_TOP_ALLOCATIONS` absente
+ou à 0 : seule la ligne de synthèse est écrite, sans échantillonnage des allocations.
+
+Limites : les allocations sont échantillonnées (une tous les 128 Kio), et rien n'y explique une
+hausse de `horsTas`. Retirer les deux variables (`env-unset`) une fois la cause trouvée.
+
 ## Divers
 
 ```bash
