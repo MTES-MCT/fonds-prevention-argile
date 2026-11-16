@@ -1,6 +1,16 @@
-import { fetchMatomoVisits, fetchMatomoBounceRate, fetchMatomoUniqueVisitors } from "../adapters/matomo-api.adapter";
-import type { MatomoStatistiques, VisiteParJour, GranulariteVisites } from "../domain/types/matomo.types";
-import { formaterDateMatomo } from "../domain/decoupage-periode";
+import {
+  fetchMatomoVisits,
+  fetchMatomoBounceCounts,
+  fetchMatomoUniqueVisitorsStrict,
+} from "../adapters/matomo-api.adapter";
+import type {
+  MatomoStatistiques,
+  MatomoVisitsResponse,
+  VisiteParJour,
+  GranulariteVisites,
+} from "../domain/types/matomo.types";
+import { decouperPeriodeMatomo, formaterDateMatomo } from "../domain/decoupage-periode";
+import { logMatomoFailure } from "../domain/panne-matomo";
 import {
   getFenetrePeriode,
   getFenetrePeriodePrecedente,
@@ -23,7 +33,7 @@ function computeVariation(current: number, previous: number): number | null {
  * pré-archivé par Matomo — recalculé en live à chaque appel, pire cas quand un segment
  * (département) est appliqué. `day`/`week`/`month` sur une plage lisent des archives
  * pré-calculées, sommables sans perte pour un comptage (contrairement aux visiteurs uniques,
- * qui nécessitent une vraie déduplication et restent donc en `range`, cf. `getUniqueVisitors`).
+ * qui nécessitent une vraie déduplication et restent donc en `range`).
  * On élargit la granularité sur les longues périodes pour limiter le nombre de sous-archives
  * demandées en un seul appel (même cause que le timeout déjà connu sur les Funnels).
  */
@@ -44,86 +54,83 @@ function extractDateDebut(matomoDateKey: string): string {
   return matomoDateKey.split(",")[0];
 }
 
+// Number(...) : Matomo sérialise parfois la valeur en string (cf. gotcha CLAUDE.md).
+function lireVisites(valeur: unknown): number {
+  const nombre = Number(valeur);
+  return Number.isFinite(nombre) ? nombre : 0;
+}
+
+function totalVisites(visites: MatomoVisitsResponse): number {
+  return Object.values(visites).reduce((total: number, valeur) => total + lireVisites(valeur), 0);
+}
+
+/** Taux recomposé : visites et rebonds s'additionnent entre sous-périodes, pas le taux. */
+async function getTauxRebond(
+  fenetre: FenetrePeriode,
+  granularite: GranulariteVisites,
+  segment?: string
+): Promise<number> {
+  const sousPeriodes = decouperPeriodeMatomo(fenetre.debut, fenetre.dernierJour, granularite);
+  const compteurs = await Promise.all(
+    sousPeriodes.map(({ period, date }) => fetchMatomoBounceCounts(period, date, segment))
+  );
+  const visites = compteurs.reduce((total, compteur) => total + compteur.visites, 0);
+  const rebonds = compteurs.reduce((total, compteur) => total + compteur.rebonds, 0);
+
+  // Arrondi à l'entier, comme le `bounce_rate` que Matomo renvoyait en `range`.
+  return visites > 0 ? Math.round((rebonds / visites) * 100) : 0;
+}
+
 /**
- * Récupère les statistiques Matomo pour une période donnée, avec variations
+ * Récupère les statistiques Matomo pour une période donnée, avec variations.
+ * Chaque lecture échoue seule : une valeur à `null` est indisponible, les autres restent affichées.
  */
 export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: string): Promise<MatomoStatistiques> {
   const granularite = getGranulariteForPeriode(periodeId);
+  const fenetre = getFenetrePeriode(periodeId);
+  const fenetrePrecedente = getFenetrePeriodePrecedente(periodeId);
+  const plage = formaterPlage(fenetre);
+  const plagePrecedente = fenetrePrecedente ? formaterPlage(fenetrePrecedente) : null;
 
-  try {
-    const fenetre = getFenetrePeriode(periodeId);
-    const fenetrePrecedente = getFenetrePeriodePrecedente(periodeId);
-    const period = formaterPlage(fenetre);
-    const previousPeriod = fenetrePrecedente ? formaterPlage(fenetrePrecedente) : null;
+  const [visites, tauxRebond, visiteursUniques, visitesPrecedentes, tauxRebondPrecedent, visiteursPrecedents] =
+    await Promise.all([
+      logMatomoFailure(fetchMatomoVisits(granularite, plage, segment), "visites du site"),
+      logMatomoFailure(getTauxRebond(fenetre, granularite, segment), "taux de rebond"),
+      logMatomoFailure(fetchMatomoUniqueVisitorsStrict("range", plage, segment), "visiteurs uniques du site"),
+      plagePrecedente
+        ? logMatomoFailure(fetchMatomoVisits(granularite, plagePrecedente, segment), "visites du site (precedent)")
+        : null,
+      fenetrePrecedente
+        ? logMatomoFailure(getTauxRebond(fenetrePrecedente, granularite, segment), "taux de rebond (precedent)")
+        : null,
+      plagePrecedente
+        ? logMatomoFailure(
+            fetchMatomoUniqueVisitorsStrict("range", plagePrecedente, segment),
+            "visiteurs uniques du site (precedent)"
+          )
+        : null,
+    ]);
 
-    // Récupérer les visites + visiteurs uniques + taux de rebond en parallele (période courante + précédente)
-    const [visitsData, tauxRebond, uniqueVisitors, previousVisitsData, previousTauxRebond, previousUniqueVisitors] =
-      await Promise.all([
-        fetchMatomoVisits(granularite, period, segment),
-        fetchMatomoBounceRate("range", period, segment),
-        fetchMatomoUniqueVisitors("range", period, segment),
-        previousPeriod ? fetchMatomoVisits(granularite, previousPeriod, segment) : Promise.resolve(null),
-        previousPeriod ? fetchMatomoBounceRate("range", previousPeriod, segment) : Promise.resolve(null),
-        previousPeriod ? fetchMatomoUniqueVisitors("range", previousPeriod, segment) : Promise.resolve(0),
-      ]);
+  // Structure : { "date": nombre } (day) ou { "début,fin": nombre } (week/month).
+  // Limite connue : en week/month les buckets de bord débordent de la fenêtre, donc le total
+  // la dépasse un peu. Assumé pour une courbe de tendance.
+  const visitesParJour: VisiteParJour[] = Object.entries(visites ?? {}).map(([date, valeur]) => ({
+    date: extractDateDebut(date),
+    visites: lireVisites(valeur),
+  }));
+  const nombreVisitesTotales = visitesParJour.reduce((total, jour) => total + jour.visites, 0);
 
-    // Structure : { "date": nombre } (day) ou { "début,fin": nombre } (week/month).
-    // Number(...) : Matomo sérialise parfois la valeur en string, et `typeof === "number"`
-    // la remplaçait alors silencieusement par 0.
-    // Limite connue : en week/month les buckets de bord débordent de la fenêtre, donc le total
-    // ci-dessous la dépasse un peu. Assumé pour une courbe de tendance — le découpage exact
-    // (decouperPeriodeMatomo) mêlerait des points jour et semaine sur le même graphique.
-    const visitesParJour: VisiteParJour[] = Object.entries(visitsData).map(([date, visites]) => {
-      const nombre = Number(visites);
-      return { date: extractDateDebut(date), visites: Number.isFinite(nombre) ? nombre : 0 };
-    });
-
-    // Calculer le total
-    const nombreVisitesTotales = visitesParJour.reduce((total, jour) => total + jour.visites, 0);
-
-    // Calculer les variations
-    let variationVisites: number | null = null;
-    let variationTauxRebond: number | null = null;
-    let variationVisiteursUniques: number | null = null;
-
-    if (previousVisitsData) {
-      const previousTotal = Object.values(previousVisitsData).reduce((total: number, v) => {
-        const nombre = Number(v);
-        return total + (Number.isFinite(nombre) ? nombre : 0);
-      }, 0);
-      variationVisites = computeVariation(nombreVisitesTotales, previousTotal);
-    }
-
-    if (previousTauxRebond !== null) {
-      variationTauxRebond = Math.round(tauxRebond - previousTauxRebond);
-    }
-
-    if (previousUniqueVisitors && previousUniqueVisitors > 0) {
-      variationVisiteursUniques = computeVariation(uniqueVisitors, previousUniqueVisitors);
-    }
-
-    return {
-      nombreVisitesTotales,
-      variationVisites,
-      visiteursUniques: uniqueVisitors,
-      variationVisiteursUniques,
-      visitesParJour,
-      granulariteVisites: granularite,
-      tauxRebond,
-      variationTauxRebond,
-    };
-  } catch (error) {
-    console.error("Erreur lors de la récupération des stats Matomo:", error);
-
-    return {
-      nombreVisitesTotales: 0,
-      variationVisites: null,
-      visiteursUniques: 0,
-      variationVisiteursUniques: null,
-      visitesParJour: [],
-      granulariteVisites: granularite,
-      tauxRebond: 0,
-      variationTauxRebond: null,
-    };
-  }
+  return {
+    nombreVisitesTotales,
+    variationVisites:
+      visites && visitesPrecedentes ? computeVariation(nombreVisitesTotales, totalVisites(visitesPrecedentes)) : null,
+    visiteursUniques,
+    variationVisiteursUniques:
+      visiteursUniques !== null && visiteursPrecedents ? computeVariation(visiteursUniques, visiteursPrecedents) : null,
+    visitesParJour,
+    granulariteVisites: granularite,
+    tauxRebond,
+    variationTauxRebond:
+      tauxRebond !== null && tauxRebondPrecedent !== null ? Math.round(tauxRebond - tauxRebondPrecedent) : null,
+  };
 }

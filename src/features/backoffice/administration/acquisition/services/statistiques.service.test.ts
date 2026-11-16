@@ -295,24 +295,26 @@ describe("StatistiquesService", () => {
         .mockReturnValueOnce(mockDbSelectWithWhere([{ count: 20 }]))
         .mockReturnValueOnce(mockDbSelectWithWhere([{ count: 40 }]));
 
-      // Mock Matomo qui retourne des valeurs par défaut (gestion d'erreur dans le service)
+      // Matomo en panne : le service rend null pour ce qu'il n'a pas pu lire
       vi.mocked(matomoService.getMatomoStatistiques).mockResolvedValue({
         nombreVisitesTotales: 0,
         variationVisites: null,
-        visiteursUniques: 0,
+        visiteursUniques: null,
         variationVisiteursUniques: null,
         visitesParJour: [],
         granulariteVisites: "day",
-        tauxRebond: 0,
+        tauxRebond: null,
         variationTauxRebond: null,
       });
 
       // Act
       const stats = await getStatistiques();
 
-      // Assert - Les stats DB doivent être présentes même si Matomo échoue
+      // Assert - Les stats DB restent, et une panne ne devient pas un zéro
       expect(stats.nombreComptesCreés).toBe(150);
       expect(stats.nombreVisitesTotales).toBe(0);
+      expect(stats.visiteursUniques).toBeNull();
+      expect(stats.tauxRebond).toBeNull();
       expect(stats.funnelSimulateurRGA).toBeDefined();
     });
   });

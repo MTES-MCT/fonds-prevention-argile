@@ -10,6 +10,13 @@ interface SiteVitrineTabProps {
   loading: boolean;
 }
 
+// undefined : pas encore chargé ; null : Matomo n'a pas répondu pour cette valeur.
+function formaterValeurMatomo(valeur: number | null | undefined, suffixe = ""): string {
+  if (valeur === undefined) return "...";
+  if (valeur === null) return "Indisponible";
+  return `${valeur.toLocaleString("fr-FR")}${suffixe}`;
+}
+
 export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) {
   const tooltipGraphId = useId();
   const chartLoaded = useDsfrChart("LineChart");
@@ -70,7 +77,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.visiteursUniques.toLocaleString("fr-FR") ?? "..."}
+            value={formaterValeurMatomo(stats?.visiteursUniques)}
             label="Visiteurs uniques"
             variation={stats?.variationVisiteursUniques ?? null}
             loading={loading}
@@ -81,7 +88,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats ? `${stats.tauxRebond.toLocaleString("fr-FR")}%` : "..."}
+            value={formaterValeurMatomo(stats?.tauxRebond, "%")}
             label="Taux de rebond"
             variation={stats?.variationTauxRebond ?? null}
             variationType="points"
@@ -122,7 +129,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
           )}
           {!loading && !chartData && (
             <p className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
-              Aucune donnee disponible.
+              Aucune donnée disponible.
             </p>
           )}
           {!loading && chartData && chartLoaded && (

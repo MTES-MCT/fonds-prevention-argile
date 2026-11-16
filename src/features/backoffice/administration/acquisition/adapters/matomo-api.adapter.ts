@@ -251,23 +251,55 @@ export async function fetchMatomoVisits(
 interface MatomoVisitsSummaryResponse {
   nb_visits: number;
   nb_uniq_visitors: number;
-  bounce_rate: string; // ex: "45%"
   [key: string]: unknown;
 }
 
+/** Visites et rebonds d'une plage : additifs entre sous-periodes, contrairement au taux. */
+export interface CompteurRebond {
+  visites: number;
+  rebonds: number;
+}
+
+function lireCompteurRebond(valeur: unknown): number {
+  if (valeur === undefined) return 0;
+  const nombre = Number(valeur);
+  if (!Number.isFinite(nombre)) {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): compteur non numerique");
+  }
+  return nombre;
+}
+
+function sumBounceCounts(data: unknown): CompteurRebond {
+  if (!data || typeof data !== "object") {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): reponse non structuree");
+  }
+  // En `range` Matomo renvoie la ligne seule, sinon un objet indexe par sous-periode.
+  const lignes: unknown[] = "nb_visits" in data || "bounce_count" in data ? [data] : Object.values(data);
+  const cumul: CompteurRebond = { visites: 0, rebonds: 0 };
+
+  for (const ligne of lignes) {
+    // Une sous-periode sans visite revient en tableau vide.
+    if (Array.isArray(ligne) && ligne.length === 0) continue;
+    if (!ligne || typeof ligne !== "object" || Array.isArray(ligne)) {
+      throw new Error("Reponse Matomo inattendue (VisitsSummary.get): sous-periode non structuree");
+    }
+    const { nb_visits, bounce_count } = ligne as Record<string, unknown>;
+    cumul.visites += lireCompteurRebond(nb_visits);
+    cumul.rebonds += lireCompteurRebond(bounce_count);
+  }
+
+  return cumul;
+}
+
 /**
- * Recupere le taux de rebond depuis l'API Matomo
- * @param period - Periode : 'range', 'day', etc.
+ * Recupere visites et rebonds (VisitsSummary.get) pour une sous-periode alignee.
+ * @param period - 'day', 'week' ou 'month' (cf. `decouperPeriodeMatomo`)
  * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
  */
-export async function fetchMatomoBounceRate(
-  period: string = "range",
-  date: string = "last30",
-  segment?: string
-): Promise<number> {
+export async function fetchMatomoBounceCounts(period: string, date: string, segment?: string): Promise<CompteurRebond> {
   const config = getMatomoConfig();
 
-  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+  const data = await fetchMatomoApi<unknown>(
     {
       module: "API",
       method: "VisitsSummary.get",
@@ -277,13 +309,12 @@ export async function fetchMatomoBounceRate(
       format: "JSON",
       token_auth: config.apiToken,
       segment,
+      showColumns: "nb_visits,bounce_count",
     },
     config.apiUrl
   );
 
-  // bounce_rate est une string comme "45%" — on extrait le nombre
-  const bounceStr = data.bounce_rate ?? "0%";
-  return parseFloat(bounceStr.replace("%", "")) || 0;
+  return sumBounceCounts(data);
 }
 
 /**
@@ -339,8 +370,7 @@ export async function fetchMatomoUniqueVisitors(
 /**
  * Meme appel, mais leve si Matomo n'a pas calcule la metrique
  * (`enable_processing_unique_visitors_range` desactive) au lieu de renvoyer 0, indiscernable
- * d'une vraie absence de visites. Reserve aux appelants qui savent afficher « Indisponible » —
- * `getMatomoStatistiques` a un `catch` global qui remettrait *tous* ses KPI a 0.
+ * d'une vraie absence de visites. Reserve aux appelants qui savent afficher « Indisponible ».
  */
 export async function fetchMatomoUniqueVisitorsStrict(
   period: string = "range",

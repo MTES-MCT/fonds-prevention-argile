@@ -24,6 +24,7 @@ vi.mock("@/shared/config/env.config", () => ({
 }));
 
 import {
+  fetchMatomoBounceCounts,
   fetchMatomoCountByDimension,
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
@@ -213,8 +214,7 @@ describe("appels identiques en cours", () => {
   });
 
   it("partage un seul appel Matomo entre deux demandes simultanées", async () => {
-    // Taux de rebond et visiteurs uniques lisent le même VisitsSummary.get : un `range` suffit.
-    mockFetchResponse({ nb_uniq_visitors: 42, bounce_rate: "40%" });
+    mockFetchResponse({ nb_uniq_visitors: 42 });
 
     const [a, b] = await Promise.all([
       fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
@@ -508,8 +508,7 @@ describe("visiteurs uniques", () => {
   });
 
   it("retombe sur 0 quand Matomo n'a pas calcule la metrique, pour ne pas casser le dashboard", async () => {
-    // `getMatomoStatistiques` a un catch global qui remettrait tous ses KPI a 0 : la variante
-    // tolerante reste le defaut.
+    // Variante tolerante, encore lue par le tableau de bord.
     mockFetchResponse({ nb_visits: 120 });
 
     await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toBe(0);
@@ -533,5 +532,65 @@ describe("visiteurs uniques", () => {
     mockFetchResponse({ "2025-10-01,2025-10-31": "n/a" });
 
     await expect(fetchMatomoUniqueVisitorsSeries("month", "2025-10-01,2025-10-31")).rejects.toThrow(/non numerique/);
+  });
+});
+
+describe("fetchMatomoBounceCounts", () => {
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("demande seulement les visites et les rebonds de la sous-période", async () => {
+    mockFetchResponse({ "2026-01-05,2026-01-11": { nb_visits: 100, bounce_count: 4 } });
+
+    await fetchMatomoBounceCounts("week", "2026-01-05,2026-01-11", "dimension1==36");
+
+    const corps = corpsEnvoye();
+    expect(corps.get("method")).toBe("VisitsSummary.get");
+    expect(corps.get("period")).toBe("week");
+    expect(corps.get("showColumns")).toBe("nb_visits,bounce_count");
+    expect(corps.get("segment")).toBe("dimension1==36");
+  });
+
+  it("cumule les sous-périodes, valeurs sérialisées en string comprises", async () => {
+    mockFetchResponse({
+      "2026-01-05": { nb_visits: 100, bounce_count: 4 },
+      "2026-01-06": { nb_visits: "50", bounce_count: "1" },
+    });
+
+    await expect(fetchMatomoBounceCounts("day", "2026-01-05,2026-01-06")).resolves.toEqual({
+      visites: 150,
+      rebonds: 5,
+    });
+  });
+
+  it("compte pour zéro une sous-période sans visite, renvoyée en tableau vide", async () => {
+    mockFetchResponse({ "2026-01-05": { nb_visits: 100, bounce_count: 4 }, "2026-01-06": [] });
+
+    await expect(fetchMatomoBounceCounts("day", "2026-01-05,2026-01-06")).resolves.toEqual({
+      visites: 100,
+      rebonds: 4,
+    });
+  });
+
+  it("lit une ligne seule, sans index de sous-période", async () => {
+    mockFetchResponse({ nb_visits: 80, bounce_count: 2 });
+
+    await expect(fetchMatomoBounceCounts("range", "2026-01-05,2026-01-11")).resolves.toEqual({
+      visites: 80,
+      rebonds: 2,
+    });
+  });
+
+  it("lève sur un compteur non numérique plutôt que de fausser le taux", async () => {
+    mockFetchResponse({ "2026-01-05": { nb_visits: "n/a", bounce_count: 4 } });
+
+    await expect(fetchMatomoBounceCounts("day", "2026-01-05,2026-01-05")).rejects.toThrow(/non numerique/);
+  });
+
+  it("lève sur une sous-période qui n'est pas une ligne", async () => {
+    mockFetchResponse({ "2026-01-05": 12 });
+
+    await expect(fetchMatomoBounceCounts("day", "2026-01-05,2026-01-05")).rejects.toThrow(/non structuree/);
   });
 });
