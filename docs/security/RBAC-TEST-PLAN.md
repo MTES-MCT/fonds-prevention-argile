@@ -114,7 +114,7 @@ directive `"use server"` suit un commentaire. Une réexportation, dont le corps 
 lisible, échoue au lieu de passer.
 
 Les exceptions vivent dans une `ALLOWLIST` justifiée entrée par entrée (référentiels publics,
-jeton de validation AMO, chiffrement du simulateur en iframe). Une entrée devenue inutile
+jeton de validation AMO, chiffrement du simulateur en iframe, avis de satisfaction sans compte). Une entrée devenue inutile
 fait échouer le test, pour que la liste ne s'élargisse pas en silence.
 
 Heuristique assumée pour le test global : il reconnaît un **nom** de garde dans le corps, il ne prouve pas

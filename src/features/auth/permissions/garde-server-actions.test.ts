@@ -32,6 +32,8 @@ const GARDES_SESSION = ["getSession", "getCurrentUser", "getCurrentAgent"];
 
 // Exceptions légitimes, une justification chacune ; une entrée devenue inutile fait échouer le test.
 const ALLOWLIST: Record<string, string> = {
+  "features/avis/actions/avis.actions.ts › enregistrerAvisAction":
+    "Avis de satisfaction sans compte : n'écrit qu'une note validée, ne lit ni ne renvoie aucune donnée de dossier.",
   "features/backoffice/shared/actions/agent.actions.ts › getCurrentAgent":
     "Résout l'agent de la session courante : c'est la brique d'authentification des autres gardes.",
   "features/backoffice/shared/actions/super-admin-access.ts › assertNotSuperAdminReadOnly":
