@@ -53,6 +53,11 @@ export interface Statistiques {
   visiteursUniques: number | null;
 
   /**
+   * Instant (ISO) où Matomo a rendu les visiteurs uniques, null s'ils sont indisponibles
+   */
+  visiteursUniquesCalculesLe: string | null;
+
+  /**
    * Variation des visiteurs uniques vs période précédente (en %, null si non calculable)
    */
   variationVisiteursUniques: number | null;

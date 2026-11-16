@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getMatomoStatistiques } from "./matomo.service";
 import * as matomoApiAdapter from "../adapters/matomo-api.adapter";
 
+const CALCULE_LE = "2026-11-16T16:42:00.000Z";
+
 vi.mock("../adapters/matomo-api.adapter", () => ({
   fetchMatomoVisits: vi.fn(),
   fetchMatomoBounceCounts: vi.fn(),
@@ -16,7 +18,10 @@ describe("matomo.service - getMatomoStatistiques", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.mocked(matomoApiAdapter.fetchMatomoVisits).mockResolvedValue({});
     vi.mocked(matomoApiAdapter.fetchMatomoBounceCounts).mockResolvedValue({ visites: 100, rebonds: 40 });
-    vi.mocked(matomoApiAdapter.fetchMatomoUniqueVisitorsStrict).mockResolvedValue(100);
+    vi.mocked(matomoApiAdapter.fetchMatomoUniqueVisitorsStrict).mockResolvedValue({
+      valeur: 100,
+      calculeLe: CALCULE_LE,
+    });
   });
 
   it("garde les clés de date simples telles quelles en period=day (7j/30j)", async () => {
@@ -80,6 +85,13 @@ describe("matomo.service - getMatomoStatistiques", () => {
     expect(stats.nombreVisitesTotales).toBe(150);
   });
 
+  it("transmet l'heure à laquelle Matomo a rendu les visiteurs uniques", async () => {
+    const stats = await getMatomoStatistiques("30j");
+
+    expect(stats.visiteursUniques).toBe(100);
+    expect(stats.visiteursUniquesCalculesLe).toBe(CALCULE_LE);
+  });
+
   describe("taux de rebond", () => {
     it("somme visites et rebonds des sous-périodes alignées au lieu d'un `range`", async () => {
       // Un mois plein pèse cent fois un bord : la moyenne des taux donnerait un tout autre chiffre.
@@ -135,6 +147,7 @@ describe("matomo.service - getMatomoStatistiques", () => {
       const stats = await getMatomoStatistiques("30j");
 
       expect(stats.visiteursUniques).toBeNull();
+      expect(stats.visiteursUniquesCalculesLe).toBeNull();
       expect(stats.variationVisiteursUniques).toBeNull();
       expect(stats.visitesParJour).toEqual([{ date: "2026-01-05", visites: 10 }]);
       expect(stats.tauxRebond).toBe(40);
@@ -142,7 +155,7 @@ describe("matomo.service - getMatomoStatistiques", () => {
 
     it("garde la valeur courante sans variation quand seule la période précédente échoue", async () => {
       vi.mocked(matomoApiAdapter.fetchMatomoUniqueVisitorsStrict)
-        .mockResolvedValueOnce(120)
+        .mockResolvedValueOnce({ valeur: 120, calculeLe: CALCULE_LE })
         .mockRejectedValueOnce(panne());
 
       const stats = await getMatomoStatistiques("30j");

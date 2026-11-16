@@ -1,12 +1,16 @@
 import { unstable_cache } from "next/cache";
 import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
-import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
+import type {
+  MatomoVisitsResponse,
+  MatomoEventActionResponse,
+  VisiteursUniquesDates,
+} from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
 import { PARTNER_REFERRERS, type PartnerKey } from "@/shared/domain/partners";
 import { estPlageStable } from "../domain/plage-matomo";
 import type { CompteurSimulations } from "../domain/simulations-departement";
 import { classerEchecReseau, formaterJournalAppel, type IssueAppelMatomo } from "../domain/journal-appel-matomo";
-import { appelerAvecPatience } from "./appel-patient";
+import { appelerAvecPatience, type ResultatDate } from "./appel-patient";
 
 /**
  * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
@@ -360,19 +364,17 @@ export async function fetchMatomoFunnel(
 }
 
 /**
- * Recupere le nombre de visiteurs uniques depuis l'API Matomo (VisitsSummary.get).
- * @param period - Periode : 'range', 'day', etc.
- * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
- * @param segment - Segment Matomo optionnel (ex: "dimension1==36") pour filtrer par departement
+ * Recupere les visiteurs uniques (VisitsSummary.get) et l'instant ou Matomo les a rendus.
+ * Retombe sur 0 si Matomo n'a pas calcule la metrique : variante toleree par le tableau de bord.
  */
 export async function fetchMatomoUniqueVisitors(
   period: string = "range",
   date: string = "last30",
   segment?: string
-): Promise<number> {
-  const data = await requestVisitsSummary(period, date, segment);
+): Promise<VisiteursUniquesDates> {
+  const { valeur: data, calculeLe } = await requestVisitsSummary(period, date, segment);
 
-  return data.nb_uniq_visitors ?? 0;
+  return { valeur: data.nb_uniq_visitors ?? 0, calculeLe: new Date(calculeLe).toISOString() };
 }
 
 /**
@@ -384,19 +386,23 @@ export async function fetchMatomoUniqueVisitorsStrict(
   period: string = "range",
   date: string = "last30",
   segment?: string
-): Promise<number> {
-  const data = await requestVisitsSummary(period, date, segment);
+): Promise<VisiteursUniquesDates> {
+  const { valeur: data, calculeLe } = await requestVisitsSummary(period, date, segment);
 
   const uniques = Number(data.nb_uniq_visitors);
   if (!Number.isFinite(uniques)) {
     throw new Error("Reponse Matomo inattendue (VisitsSummary.get): nb_uniq_visitors absent ou non numerique");
   }
 
-  return uniques;
+  return { valeur: uniques, calculeLe: new Date(calculeLe).toISOString() };
 }
 
 // Hors du cache de Next : il attend le recalcul d'une entrée périmée avant de rendre l'action.
-function requestVisitsSummary(period: string, date: string, segment?: string): Promise<MatomoVisitsSummaryResponse> {
+function requestVisitsSummary(
+  period: string,
+  date: string,
+  segment?: string
+): Promise<ResultatDate<MatomoVisitsSummaryResponse>> {
   const config = getMatomoConfig();
   const params: MatomoRequestParams = {
     module: "API",

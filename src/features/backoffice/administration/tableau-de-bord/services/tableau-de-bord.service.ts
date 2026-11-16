@@ -66,7 +66,10 @@ import {
   regrouperSimulationsParDepartement,
   type CompteurSimulations,
 } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
-import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
+import type {
+  GranulariteVisites,
+  VisiteursUniquesDates,
+} from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
   getFenetrePeriodePrecedente,
@@ -165,14 +168,14 @@ async function getUniqueVisitors(
   fenetre: FenetrePeriode,
   codeDepartement?: string,
   partner?: PartnerKey | null
-): Promise<number> {
+): Promise<VisiteursUniquesDates> {
   const dateRange = formatMatomoDateRange(fenetre);
   const segments: string[] = [];
 
   if (codeDepartement) {
     const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
     const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
-    if (!dimensionId) return 0;
+    if (!dimensionId) return { valeur: 0, calculeLe: new Date().toISOString() };
 
     const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
     segments.push(`dimension${dimensionId}==${codeDeptMatomo}`);
@@ -1300,15 +1303,15 @@ export async function getMatomoSimulationsStats(
     logMatomoFailure(getUniqueVisitors(fenetre, codeDepartement, partner), "visiteurs (periode courante)"),
     previousRange
       ? logMatomoFailure(getUniqueVisitors(previousRange, codeDepartement, partner), "visiteurs (periode precedente)")
-      : Promise.resolve(0),
+      : Promise.resolve(null),
   ]);
 
   const variationVisiteurs =
-    previousRange && currentVisitors !== null && prevVisitors !== null && prevVisitors > 0
-      ? calculerVariation(currentVisitors, prevVisitors)
+    previousRange && currentVisitors !== null && prevVisitors !== null && prevVisitors.valeur > 0
+      ? calculerVariation(currentVisitors.valeur, prevVisitors.valeur)
       : null;
 
-  const visiteursUniques = currentVisitors === null ? null : { valeur: currentVisitors, variation: variationVisiteurs };
+  const visiteursUniques = currentVisitors === null ? null : { ...currentVisitors, variation: variationVisiteurs };
 
   if (currentMatomo === null) {
     // Matomo injoignable : null (et non 0) pour que l'UI affiche "Indisponible".

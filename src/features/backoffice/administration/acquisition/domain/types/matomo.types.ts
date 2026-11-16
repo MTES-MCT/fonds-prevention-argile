@@ -25,6 +25,11 @@ export interface MatomoStatistiques {
   visiteursUniques: number | null;
 
   /**
+   * Instant (ISO) où Matomo a rendu les visiteurs uniques, null s'ils sont indisponibles
+   */
+  visiteursUniquesCalculesLe: string | null;
+
+  /**
    * Variation des visiteurs uniques vs période précédente (en %, null si non calculable)
    */
   variationVisiteursUniques: number | null;
@@ -48,6 +53,12 @@ export interface MatomoStatistiques {
    * Variation du taux de rebond vs période précédente (en points, null si non calculable)
    */
   variationTauxRebond: number | null;
+}
+
+/** Visiteurs uniques et instant (ISO) où Matomo les a rendus : la valeur peut être servie plus tard. */
+export interface VisiteursUniquesDates {
+  valeur: number;
+  calculeLe: string;
 }
 
 /**

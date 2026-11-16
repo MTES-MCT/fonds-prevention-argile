@@ -9,6 +9,8 @@ import {
 import { db } from "@/shared/database/client";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 
+const CALCULE_LE = "2026-11-16T16:42:00.000Z";
+
 vi.mock("@/shared/database/client", () => ({
   db: { select: vi.fn() },
 }));
@@ -87,17 +89,17 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
 
   it("distingue un vrai zero Matomo d'une panne", async () => {
     vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map());
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 0, calculeLe: CALCULE_LE });
 
     const stats = await getMatomoSimulationsStats("30j");
 
     expect(stats.simulationsMatomo).toEqual({ valeur: 0, variation: null });
-    expect(stats.visiteursUniques).toEqual({ valeur: 0, variation: null });
+    expect(stats.visiteursUniques).toEqual({ valeur: 0, variation: null, calculeLe: CALCULE_LE });
   });
 
   it("renvoie les visiteurs uniques meme si les simulations echouent", async () => {
     vi.mocked(fetchMatomoEvents).mockRejectedValue(new Error("timeout"));
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(4955);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 4955, calculeLe: CALCULE_LE });
 
     const stats = await getMatomoSimulationsStats("30j");
 
@@ -107,7 +109,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
 
   it("renvoie les valeurs Matomo quand tout repond", async () => {
     vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(4955);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 4955, calculeLe: CALCULE_LE });
 
     const stats = await getMatomoSimulationsStats("30j");
 
@@ -151,7 +153,7 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
     mockComptesCrees(5);
     vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
     vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(eventsAvecSimulations);
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 0, calculeLe: CALCULE_LE });
   });
 
   afterEach(() => {

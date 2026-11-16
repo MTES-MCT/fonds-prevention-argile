@@ -1,6 +1,8 @@
 export interface StatAvecVariation {
   valeur: number;
   variation: number | null;
+  /** Instant (ISO) du calcul, pour une valeur que Matomo a pu rendre bien avant l'affichage. */
+  calculeLe?: string;
 }
 
 export interface MotifArchivage {

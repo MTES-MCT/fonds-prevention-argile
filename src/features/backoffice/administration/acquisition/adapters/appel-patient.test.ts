@@ -30,7 +30,7 @@ describe("appelerAvecPatience", () => {
     const demande = appelerAvecPatience("cle", appel.lancer, OPTIONS);
     appel.resoudre(42);
 
-    await expect(demande).resolves.toBe(42);
+    await expect(demande).resolves.toMatchObject({ valeur: 42 });
   });
 
   it("rend le résultat gardé sans relancer l'appel tant qu'il est frais", async () => {
@@ -39,8 +39,25 @@ describe("appelerAvecPatience", () => {
 
     await vi.advanceTimersByTimeAsync(OPTIONS.fraicheurMs - 1);
 
-    await expect(appelerAvecPatience("cle", lancer, OPTIONS)).resolves.toBe(42);
+    await expect(appelerAvecPatience("cle", lancer, OPTIONS)).resolves.toMatchObject({ valeur: 42 });
     expect(lancer).toHaveBeenCalledTimes(1);
+  });
+
+  it("date le résultat de la fin de l'appel, et garde cette date quand il est resservi", async () => {
+    vi.setSystemTime(new Date("2026-11-16T16:00:00Z"));
+    const appel = appelControle<number>();
+    const demande = appelerAvecPatience("cle", appel.lancer, OPTIONS);
+    await vi.advanceTimersByTimeAsync(2_000);
+    appel.resoudre(42);
+    const finAppel = new Date("2026-11-16T16:00:02Z").getTime();
+
+    await expect(demande).resolves.toEqual({ valeur: 42, calculeLe: finAppel });
+
+    await vi.advanceTimersByTimeAsync(1_800_000);
+    await expect(appelerAvecPatience("cle", appel.lancer, OPTIONS)).resolves.toEqual({
+      valeur: 42,
+      calculeLe: finAppel,
+    });
   });
 
   it("partage un seul appel entre deux demandes simultanées", async () => {
@@ -52,7 +69,7 @@ describe("appelerAvecPatience", () => {
     ];
     appel.resoudre(42);
 
-    await expect(Promise.all(demandes)).resolves.toEqual([42, 42]);
+    await expect(Promise.all(demandes)).resolves.toMatchObject([{ valeur: 42 }, { valeur: 42 }]);
     expect(appel.lancer).toHaveBeenCalledTimes(1);
   });
 
@@ -75,7 +92,7 @@ describe("appelerAvecPatience", () => {
     // L'appel finit plus tard : son résultat sert la demande suivante.
     appel.resoudre(42);
     await vi.advanceTimersByTimeAsync(0);
-    await expect(appelerAvecPatience("cle", appel.lancer, OPTIONS)).resolves.toBe(42);
+    await expect(appelerAvecPatience("cle", appel.lancer, OPTIONS)).resolves.toMatchObject({ valeur: 42 });
     expect(appel.lancer).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +125,7 @@ describe("appelerAvecPatience", () => {
     const lancer = vi.fn().mockRejectedValueOnce(new Error("panne")).mockResolvedValueOnce(42);
 
     await expect(appelerAvecPatience("cle", lancer, OPTIONS)).rejects.toThrow("panne");
-    await expect(appelerAvecPatience("cle", lancer, OPTIONS)).resolves.toBe(42);
+    await expect(appelerAvecPatience("cle", lancer, OPTIONS)).resolves.toMatchObject({ valeur: 42 });
     expect(lancer).toHaveBeenCalledTimes(2);
   });
 
@@ -120,14 +137,16 @@ describe("appelerAvecPatience", () => {
     const rafraichissement = appelControle<number>();
 
     // Personne n'attend ce rafraîchissement : la valeur périmée est rendue aussitôt.
-    await expect(appelerAvecPatience("cle", rafraichissement.lancer, OPTIONS)).resolves.toBe(42);
+    await expect(appelerAvecPatience("cle", rafraichissement.lancer, OPTIONS)).resolves.toMatchObject({ valeur: 42 });
     rafraichissement.rejeter(new Error("coupure a 60 s"));
     vi.useRealTimers();
     await new Promise((resoudre) => setImmediate(resoudre));
 
     process.off("unhandledRejection", rejetsNonGeres);
     expect(rejetsNonGeres).not.toHaveBeenCalled();
-    await expect(appelerAvecPatience("cle", vi.fn().mockResolvedValue(43), OPTIONS)).resolves.toBe(42);
+    await expect(appelerAvecPatience("cle", vi.fn().mockResolvedValue(43), OPTIONS)).resolves.toMatchObject({
+      valeur: 42,
+    });
   });
 
   it("sert la valeur périmée tout de suite pendant qu'un nouvel appel la remplace", async () => {
@@ -135,12 +154,12 @@ describe("appelerAvecPatience", () => {
     await vi.advanceTimersByTimeAsync(OPTIONS.fraicheurMs);
     const rafraichissement = appelControle<number>();
 
-    await expect(appelerAvecPatience("cle", rafraichissement.lancer, OPTIONS)).resolves.toBe(42);
+    await expect(appelerAvecPatience("cle", rafraichissement.lancer, OPTIONS)).resolves.toMatchObject({ valeur: 42 });
     expect(rafraichissement.lancer).toHaveBeenCalledTimes(1);
 
     rafraichissement.resoudre(43);
     await vi.advanceTimersByTimeAsync(0);
-    await expect(appelerAvecPatience("cle", rafraichissement.lancer, OPTIONS)).resolves.toBe(43);
+    await expect(appelerAvecPatience("cle", rafraichissement.lancer, OPTIONS)).resolves.toMatchObject({ valeur: 43 });
     expect(rafraichissement.lancer).toHaveBeenCalledTimes(1);
   });
 
@@ -152,6 +171,6 @@ describe("appelerAvecPatience", () => {
     const demande = appelerAvecPatience("cle", appel.lancer, OPTIONS);
     appel.resoudre(43);
 
-    await expect(demande).resolves.toBe(43);
+    await expect(demande).resolves.toMatchObject({ valeur: 43 });
   });
 });

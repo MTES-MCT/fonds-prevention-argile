@@ -3,14 +3,19 @@
  * continue et son résultat sert les demandes suivantes (ADR-0033).
  */
 
-interface ResultatGarde {
-  valeur: unknown;
+/** Résultat et instant où l'appel l'a rendu : il peut être servi bien après. */
+export interface ResultatDate<T> {
+  valeur: T;
+  calculeLe: number;
+}
+
+interface ResultatGarde extends ResultatDate<unknown> {
   fraisJusqua: number;
   gardeJusqua: number;
 }
 
 interface AppelEnVol {
-  promesse: Promise<unknown>;
+  promesse: Promise<ResultatDate<unknown>>;
   debut: number;
 }
 
@@ -53,10 +58,11 @@ function demarrer(cle: string, lancer: () => Promise<unknown>, fraicheurMs: numb
       purgerResultats(maintenant);
       etat.resultats.set(cle, {
         valeur,
+        calculeLe: maintenant,
         fraisJusqua: maintenant + fraicheurMs,
         gardeJusqua: maintenant + fraicheurMs + DUREE_GARDE_PERIMEE_MS,
       });
-      return valeur;
+      return { valeur, calculeLe: maintenant };
     })
     .finally(() => etat.enVol.delete(cle));
   // Un échec sans appelant à l'écoute ne doit pas devenir un rejet non géré.
@@ -67,7 +73,7 @@ function demarrer(cle: string, lancer: () => Promise<unknown>, fraicheurMs: numb
   return enVol;
 }
 
-async function attendre(enVol: AppelEnVol, attenteMs: number): Promise<unknown> {
+async function attendre(enVol: AppelEnVol, attenteMs: number): Promise<ResultatDate<unknown>> {
   const reste = attenteMs - (Date.now() - enVol.debut);
   if (reste <= 0) throw new AttenteDepassee(attenteMs);
 
@@ -90,15 +96,16 @@ export async function appelerAvecPatience<T>(
   cle: string,
   lancer: () => Promise<T>,
   { attenteMs, fraicheurMs }: OptionsAppelPatient
-): Promise<T> {
+): Promise<ResultatDate<T>> {
   const maintenant = Date.now();
   const garde = etat.resultats.get(cle);
-  if (garde && maintenant < garde.fraisJusqua) return garde.valeur as T;
+  const rendreGarde = (): ResultatDate<T> => ({ valeur: garde!.valeur as T, calculeLe: garde!.calculeLe });
+  if (garde && maintenant < garde.fraisJusqua) return rendreGarde();
 
   const enVol = etat.enVol.get(cle) ?? demarrer(cle, lancer, fraicheurMs);
-  if (garde && maintenant < garde.gardeJusqua) return garde.valeur as T;
+  if (garde && maintenant < garde.gardeJusqua) return rendreGarde();
 
-  return (await attendre(enVol, attenteMs)) as T;
+  return (await attendre(enVol, attenteMs)) as ResultatDate<T>;
 }
 
 /** Réservé aux tests : l'état survit sinon d'un test à l'autre. */

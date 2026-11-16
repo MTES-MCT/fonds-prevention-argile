@@ -208,7 +208,9 @@ L'échec n'étant pas gardé (option D bis), le second écran repartait de zéro
 - l'appelant n'attend que 4 s, comptées depuis le début de l'appel, puis affiche « Indisponible » ;
 - qui redemande la même plage rejoint l'appel en cours, sans attendre une seconde fois ;
 - le résultat est gardé en mémoire du processus, 24 h pour une plage close et 1 h sinon ; périmé, il
-  reste servi pendant qu'un nouvel appel le remplace. Un échec n'est toujours pas gardé.
+  reste servi pendant qu'un nouvel appel le remplace. Un échec n'est toujours pas gardé ;
+- le résultat porte l'instant où Matomo l'a rendu, affiché dans l'infobulle des deux cartes de
+  l'administration (« Chiffre calculé à 17:42. ») : un chiffre servi périmé ne se présente pas comme frais.
 
 Ce résultat ne passe plus par `unstable_cache` : dans une action serveur, Next attend le recalcul d'une
 entrée périmée avant de rendre la réponse (`pendingRevalidates`), si bien qu'un appel de 60 s aurait

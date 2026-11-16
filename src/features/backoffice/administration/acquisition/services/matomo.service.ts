@@ -124,9 +124,12 @@ export async function getMatomoStatistiques(periodeId?: PeriodeId, segment?: str
     nombreVisitesTotales,
     variationVisites:
       visites && visitesPrecedentes ? computeVariation(nombreVisitesTotales, totalVisites(visitesPrecedentes)) : null,
-    visiteursUniques,
+    visiteursUniques: visiteursUniques?.valeur ?? null,
+    visiteursUniquesCalculesLe: visiteursUniques?.calculeLe ?? null,
     variationVisiteursUniques:
-      visiteursUniques !== null && visiteursPrecedents ? computeVariation(visiteursUniques, visiteursPrecedents) : null,
+      visiteursUniques && visiteursPrecedents?.valeur
+        ? computeVariation(visiteursUniques.valeur, visiteursPrecedents.valeur)
+        : null,
     visitesParJour,
     granulariteVisites: granularite,
     tauxRebond,

@@ -8,6 +8,8 @@ import {
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
 import { getPublicStatsCards, getPublicStatsEvolution } from "./public-stats.service";
 
+const CALCULE_LE = "2026-11-16T16:42:00.000Z";
+
 vi.mock("next/cache", () => ({
   // Aller-retour JSON, comme le vrai cache : un `Date` mis en cache revient en `string` au hit
   // suivant. Un pass-through masquerait cette classe de bug au lieu de la faire échouer ici.
@@ -48,7 +50,7 @@ describe("getPublicStatsCards", () => {
   });
 
   it("agrège les compteurs BDD et Matomo depuis le lancement", async () => {
-    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockResolvedValue(12345);
+    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockResolvedValue({ valeur: 12345, calculeLe: CALCULE_LE });
     // Les sous-périodes suivantes ne portent aucun event : le total doit rester celui de la 1re.
     vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map());
     vi.mocked(fetchMatomoEvents).mockResolvedValueOnce(
@@ -77,7 +79,7 @@ describe("getPublicStatsCards", () => {
   });
 
   it("somme les events par sous-période sans jamais demander un period=range (ADR-0033)", async () => {
-    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockResolvedValue(0);
+    vi.mocked(fetchMatomoUniqueVisitorsStrict).mockResolvedValue({ valeur: 0, calculeLe: CALCULE_LE });
     vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map([[MATOMO_EVENTS.SIMULATEUR_RESULT_ELIGIBLE, 10]]));
     vi.mocked(db.select)
       .mockReturnValueOnce(mockDbCount(0))

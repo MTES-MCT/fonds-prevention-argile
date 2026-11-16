@@ -510,7 +510,7 @@ describe("visiteurs uniques", () => {
     // Variante tolerante, encore lue par le tableau de bord.
     mockFetchResponse({ nb_visits: 120 });
 
-    await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toBe(0);
+    await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toMatchObject({ valeur: 0 });
   });
 
   it("leve dans la variante stricte, pour que l'appelant affiche « Indisponible »", async () => {
@@ -530,11 +530,22 @@ describe("visiteurs uniques", () => {
     expect(corpsEnvoye().get("token_auth")).toBe("token-test");
   });
 
+  it("accompagne le nombre de l'instant où Matomo l'a rendu", async () => {
+    mockFetchResponse({ nb_uniq_visitors: 42 });
+    const avant = Date.now();
+
+    const resultat = await fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08");
+
+    expect(resultat.valeur).toBe(42);
+    expect(new Date(resultat.calculeLe).toISOString()).toBe(resultat.calculeLe);
+    expect(new Date(resultat.calculeLe).getTime()).toBeGreaterThanOrEqual(avant);
+  });
+
   it("rend le résultat gardé à la demande suivante, sans nouvel appel", async () => {
     mockFetchResponse({ nb_uniq_visitors: 42 });
 
     await fetchMatomoUniqueVisitorsStrict("range", "2025-10-16,2026-09-08");
-    await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toBe(42);
+    await expect(fetchMatomoUniqueVisitors("range", "2025-10-16,2026-09-08")).resolves.toMatchObject({ valeur: 42 });
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });

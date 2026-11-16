@@ -16,6 +16,7 @@ function stats(matomo: Partial<Statistiques>): Statistiques {
     nombreVisitesTotales: 0,
     variationVisites: null,
     visiteursUniques: 1200,
+    visiteursUniquesCalculesLe: null,
     variationVisiteursUniques: null,
     visitesParJour: [],
     granulariteVisites: "day",
@@ -49,6 +50,20 @@ describe("SiteVitrineTab", () => {
     render(<SiteVitrineTab stats={stats({ tauxRebond: 0 })} loading={false} />);
 
     expect(valeurDe("Taux de rebond")).toBe("0%");
+  });
+
+  it("donne l'heure du calcul dans l'infobulle des visiteurs uniques", () => {
+    const calculeLe = new Date();
+    calculeLe.setHours(9, 5, 0, 0);
+    render(<SiteVitrineTab stats={stats({ visiteursUniquesCalculesLe: calculeLe.toISOString() })} loading={false} />);
+
+    expect(screen.getByText(/personnes distinctes sur la période/).textContent).toContain("Chiffre calculé à 09:05.");
+  });
+
+  it("n'ajoute rien à l'infobulle quand la valeur est indisponible", () => {
+    render(<SiteVitrineTab stats={stats({ visiteursUniques: null })} loading={false} />);
+
+    expect(screen.getByText(/personnes distinctes sur la période/).textContent).not.toContain("calculé");
   });
 
   it("affiche des points de suspension avant le premier chargement", () => {

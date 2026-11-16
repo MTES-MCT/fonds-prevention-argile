@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo } from "react";
 import { DashboardStatCard } from "../../../tableau-de-bord/shared/DashboardStatCard";
+import { completerInfobulle } from "../../../tableau-de-bord/shared/format-matomo-value.utils";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
 
@@ -82,7 +83,10 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
             variation={stats?.variationVisiteursUniques ?? null}
             loading={loading}
             compact
-            tooltip="Données Matomo : personnes distinctes sur la période, filtrées par département et partenaire."
+            tooltip={completerInfobulle(
+              "Données Matomo : personnes distinctes sur la période, filtrées par département et partenaire.",
+              stats?.visiteursUniquesCalculesLe
+            )}
           />
         </div>
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>

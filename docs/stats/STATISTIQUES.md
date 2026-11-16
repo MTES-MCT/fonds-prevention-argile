@@ -39,7 +39,8 @@ réellement (portée de la dimension département, effet d'un segment, durée d'
 - **Matomo** : les comptages d'évènements de l'entonnoir et les rapports par dimension (département, commune) sont découpés en
   jours, semaines ou mois puis sommés (`decouperPeriodeMatomo`, ADR-0033), comme les visites et les rebonds du taux de rebond ; les
   visiteurs uniques et les tunnels restent en `period=range`. Les visiteurs uniques sont attendus 4 s au plus : au-delà la carte affiche
-  « Indisponible », l'appel continue jusqu'à 60 s et son résultat sert les affichages suivants, 1 h (24 h pour une plage close). Les rapports par dimension sont lus sans `flat`, toutes valeurs comprises : mêmes totaux par valeur
+  « Indisponible », l'appel continue jusqu'à 60 s et son résultat sert les affichages suivants, 1 h (24 h pour une plage close).
+  Périmé, il reste affiché pendant son recalcul : l'infobulle des cartes du tableau de bord et de l'onglet Site vitrine donne l'heure du calcul. Les rapports par dimension sont lus sans `flat`, toutes valeurs comprises : mêmes totaux par valeur
   (vérifié le 2026-11-16), et le Top 5 communes n'est plus limité aux 100 premières lignes commune × page. Les dates envoyées sont celles du
   serveur : autour de minuit, un décalage d'un jour est possible avec le fuseau du site Matomo (non vérifié).
 
