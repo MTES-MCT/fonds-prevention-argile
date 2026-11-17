@@ -227,6 +227,20 @@ iframe.src =
             vérifier son éligibilité : le simulateur d&apos;éligibilité prend alors la suite dans la même iframe, sans
             autre intégration de votre part.
           </p>
+
+          <h3 className="fr-mt-4w fr-h6">Démonstration</h3>
+          <div className="fr-mt-2w">
+            <iframe
+              src="https://staging.fonds-prevention-argile.beta.gouv.fr/embed-vulnerabilite-rga"
+              title="Simulateur de vulnérabilité au retrait-gonflement des argiles - Démonstration"
+              style={{
+                width: "100%",
+                height: "650px",
+              }}
+              referrerPolicy="no-referrer-when-downgrade"
+              loading="lazy"
+            />
+          </div>
         </>
       )}
 
