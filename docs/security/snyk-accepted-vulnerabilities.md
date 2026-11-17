@@ -369,6 +369,11 @@ Correctif en deux temps :
 - `useRgaMap` appelle `maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs")` avant la création de
   la carte.
 
+> **Le worker est devenu autonome** (constaté en 6.17.0, novembre 2026) : il n'importe plus
+> `maplibre-gl-shared.mjs`, que le paquet livre désormais vide, et seul le worker est demandé au
+> chargement de la carte. Le script copie toujours les deux fichiers, ce qui reste juste avec
+> l'une comme l'autre version.
+
 > Le `Procfile` n'est **pas** le bon crochet : ses entrées (`postdeploy`, `web`) tournent au
 > runtime, après le build et après l'élagage des devDeps.
 
