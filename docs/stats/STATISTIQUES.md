@@ -167,6 +167,21 @@ Filtre période seul. Fenêtre propre à cette page (§ 1) ; le tunnel porte sur
 
 ---
 
+## 7 bis. Back-office — Satisfaction (`/administration/satisfaction`)
+
+Aucun filtre : tous les avis depuis le début. Un avis par parcours et par étape (une nouvelle réponse remplace
+l'ancienne) ; les avis sur les simulateurs sont anonymes et non dédoublonnés (ADR-0054).
+
+| Statistique          | Ce qu'elle compte                                                                                                                                        | Source     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Réponses             | Avis enregistrés pour le sujet : six étapes du parcours et les deux simulateurs (celui de vulnérabilité seulement là où il est servi).                   | BDD `avis` |
+| Répartition par note | Avis par réponse, de « Très difficile » (1) à « Très facile » (5).                                                                                       | BDD `avis` |
+| Commentaires         | Les 200 commentaires les plus récents, saisis après une réponse « Difficile » ou « Très difficile ». Administrateurs et super-administrateurs seulement. | BDD `avis` |
+
+Le taux de réponse n'est pas calculé ici : le nombre de mails envoyés se lit dans Brevo.
+
+---
+
 ## 8. Espace agent
 
 | Statistique                                     | Ce qu'elle compte                                                                                                                                                                                                                                                                                                    |

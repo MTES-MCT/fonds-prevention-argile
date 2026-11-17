@@ -18,3 +18,4 @@ export { rgaZonesRepository } from "./rga-zones.repository";
 export { syncRunRepository as syncRunRepo } from "./sync-run.repository";
 export type { SyncRunDetail, SyncRunDetailEntry, SyncRunListItem } from "./sync-run.repository";
 export { vulnerabiliteSimulationsRepository as vulnerabiliteSimulationsRepo } from "./vulnerabilite-simulations.repository";
+export { avisRepository as avisRepo } from "./avis.repository";
