@@ -5,16 +5,34 @@ const NB_RESSOURCES = 4;
 export const SITE_INTERNE = "(interne Node)";
 
 export interface MemoireConteneur {
+  total: number | null;
   anon: number;
   cache: number;
   swap: number | null;
 }
 
+/** Compteurs cumulés depuis la création du conteneur : c'est leur hausse d'un relevé à l'autre qui compte. */
+export interface PressionMemoire {
+  limiteAtteinte: number | null;
+  swapRefuse: number | null;
+  tues: number | null;
+  ralentiSecondes: number | null;
+  bloqueSecondes: number | null;
+}
+
+export interface MemoireHote {
+  disponible: number;
+  swapLibre: number;
+}
+
 export interface Releve {
   dureeSecondes: number;
   conteneur: MemoireConteneur | null;
+  pression: PressionMemoire | null;
+  hote: MemoireHote | null;
   rss: number;
   rssAnonyme: number | null;
+  enSwap: number | null;
   tasUtilise: number;
   tasTotal: number;
   externe: number;
@@ -57,20 +75,67 @@ function lireCompteur(contenu: string, cle: string): number | null {
   return Number.isFinite(valeur) ? valeur : null;
 }
 
-/** Lit `memory.stat` (cgroup v2) : `scalingo stats` additionne anon et cache, seul anon pèse vraiment. */
-export function lireMemoireConteneur(memoryStat: string | null, swapCurrent: string | null): MemoireConteneur | null {
+function lireNombre(contenu: string | null): number | null {
+  const valeur = contenu === null ? NaN : Number(contenu.trim());
+  return Number.isFinite(valeur) ? valeur : null;
+}
+
+/** Lit `memory.stat` (cgroup v2) : `scalingo stats` affiche le total, cache compris, seul anon pèse vraiment. */
+export function lireMemoireConteneur(
+  memoryStat: string | null,
+  swapCurrent: string | null,
+  memoryCurrent: string | null = null
+): MemoireConteneur | null {
   if (!memoryStat) return null;
   const anon = lireCompteur(memoryStat, "anon");
   const cache = lireCompteur(memoryStat, "file");
   if (anon === null || cache === null) return null;
-  const swap = swapCurrent === null ? NaN : Number(swapCurrent.trim());
-  return { anon, cache, swap: Number.isFinite(swap) ? swap : null };
+  return { total: lireNombre(memoryCurrent), anon, cache, swap: lireNombre(swapCurrent) };
 }
 
-/** Lit `RssAnon` dans `/proc/self/status`, exprimé en kB par le noyau. */
-export function lireRssAnonyme(procStatus: string | null): number | null {
-  const kilo = procStatus?.match(/^RssAnon:\s+(\d+) kB$/m)?.[1];
+// `memory.pressure` : temps cumulé, en microsecondes, où des tâches ont attendu de la mémoire.
+function lireAttenteSecondes(memoryPressure: string | null, portee: "some" | "full"): number | null {
+  const micro = memoryPressure?.match(new RegExp(`^${portee} .*total=(\\d+)$`, "m"))?.[1];
+  return micro ? Number(micro) / 1_000_000 : null;
+}
+
+/** Dit si le conteneur a buté sur ses propres limites (`memory.events`) et si ses tâches ont attendu de la mémoire. */
+export function lirePressionMemoire(
+  memoryEvents: string | null,
+  swapEvents: string | null,
+  memoryPressure: string | null
+): PressionMemoire | null {
+  const pression: PressionMemoire = {
+    limiteAtteinte: memoryEvents ? lireCompteur(memoryEvents, "max") : null,
+    swapRefuse: swapEvents ? lireCompteur(swapEvents, "max") : null,
+    tues: memoryEvents ? lireCompteur(memoryEvents, "oom_kill") : null,
+    ralentiSecondes: lireAttenteSecondes(memoryPressure, "some"),
+    bloqueSecondes: lireAttenteSecondes(memoryPressure, "full"),
+  };
+  return Object.values(pression).every((valeur) => valeur === null) ? null : pression;
+}
+
+// Le noyau exprime ces champs en kB.
+function lireChampKilo(contenu: string | null, champ: string): number | null {
+  const kilo = contenu?.match(new RegExp(`^${champ}:\\s+(\\d+) kB$`, "m"))?.[1];
   return kilo ? Number(kilo) * 1024 : null;
+}
+
+/** Lit `RssAnon` dans `/proc/self/status` : la mémoire du processus présente en RAM. */
+export function lireRssAnonyme(procStatus: string | null): number | null {
+  return lireChampKilo(procStatus, "RssAnon");
+}
+
+/** Lit `VmSwap` dans `/proc/self/status` : la mémoire du processus partie en swap. */
+export function lireEnSwap(procStatus: string | null): number | null {
+  return lireChampKilo(procStatus, "VmSwap");
+}
+
+/** `/proc/meminfo` décrit la machine hôte, pas le conteneur : c'est elle qui pousse en swap quand elle manque de RAM. */
+export function lireMemoireHote(meminfo: string | null): MemoireHote | null {
+  const disponible = lireChampKilo(meminfo, "MemAvailable");
+  const swapLibre = lireChampKilo(meminfo, "SwapFree");
+  return disponible === null || swapLibre === null ? null : { disponible, swapLibre };
 }
 
 export function compterRessources(types: string[]): [string, number][] {
@@ -90,20 +155,40 @@ export function formaterDuree(secondes: number): string {
 
 const enMo = (octets: number) => Math.round(octets / MO);
 
+function formaterPression(pression: PressionMemoire): string {
+  const champs: [string, string | number | null][] = [
+    ["limite", pression.limiteAtteinte],
+    ["swapRefuse", pression.swapRefuse],
+    ["tues", pression.tues],
+    ["ralenti", pression.ralentiSecondes === null ? null : `${pression.ralentiSecondes.toFixed(1)}s`],
+    ["bloque", pression.bloqueSecondes === null ? null : `${pression.bloqueSecondes.toFixed(1)}s`],
+  ];
+  return champs
+    .filter(([, valeur]) => valeur !== null)
+    .map(([nom, valeur]) => `${nom}=${valeur}`)
+    .join(" ");
+}
+
 /** Une ligne par relevé, toutes les valeurs en Mo : la colonne qui monte d'un relevé à l'autre désigne la cause. */
 export function formaterReleve(releve: Releve): string {
-  const { conteneur, rssAnonyme, espaces } = releve;
+  const { conteneur, pression, hote, rssAnonyme, enSwap, espaces } = releve;
   const blocs = [`actif=${formaterDuree(releve.dureeSecondes)}`];
 
   if (conteneur) {
+    const total = conteneur.total === null ? "" : `total=${enMo(conteneur.total)} `;
     const swap = conteneur.swap === null ? "?" : enMo(conteneur.swap);
-    blocs.push(`conteneur anon=${enMo(conteneur.anon)} cache=${enMo(conteneur.cache)} swap=${swap}`);
+    blocs.push(`conteneur ${total}anon=${enMo(conteneur.anon)} cache=${enMo(conteneur.cache)} swap=${swap}`);
   }
+  if (pression) blocs.push(`pression ${formaterPression(pression)}`);
+  if (hote) blocs.push(`hote dispo=${enMo(hote.disponible)} swapLibre=${enMo(hote.swapLibre)}`);
 
-  const horsTas = rssAnonyme === null ? "" : ` horsTas=${enMo(Math.max(0, rssAnonyme - releve.tasTotal))}`;
+  // Une page partie en swap reste au processus : sans elle, horsTas tombait à 0 dès que le swap se remplissait.
+  const horsTas =
+    rssAnonyme === null ? "" : ` horsTas=${enMo(Math.max(0, rssAnonyme + (enSwap ?? 0) - releve.tasTotal))}`;
+  const swapProcessus = enSwap === null ? "" : ` enSwap=${enMo(enSwap)}`;
   blocs.push(
-    `processus rss=${enMo(releve.rss)} tas=${enMo(releve.tasUtilise)}/${enMo(releve.tasTotal)}${horsTas}` +
-      ` externe=${enMo(releve.externe)} buffers=${enMo(releve.buffers)}`
+    `processus rss=${enMo(releve.rss)}${swapProcessus} tas=${enMo(releve.tasUtilise)}/${enMo(releve.tasTotal)}` +
+      `${horsTas} externe=${enMo(releve.externe)} buffers=${enMo(releve.buffers)}`
   );
   blocs.push(`tas vieux=${enMo(espaces.vieux)} grands=${enMo(espaces.grands)} code=${enMo(espaces.code)}`);
 
