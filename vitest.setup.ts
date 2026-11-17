@@ -37,13 +37,9 @@ vi.mock("@/lib/config/env.config", () => ({
     DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: "https://api.test.fr/api/v2/graphql",
     DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: "test-api-key",
     DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: "test-id-eligibilite",
-    DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: "test-nom-eligibilite",
     DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: "test-id-diagnostic",
-    DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC: "test-nom-diagnostic",
     DEMARCHES_SIMPLIFIEES_ID_DEVIS: "test-id-devis",
-    DEMARCHES_SIMPLIFIEES_NOM_DEVIS: "test-nom-devis",
     DEMARCHES_SIMPLIFIEES_ID_FACTURES: "test-id-factures",
-    DEMARCHES_SIMPLIFIEES_NOM_FACTURES: "test-nom-factures",
   })),
   isClient: vi.fn(() => false),
 }));
