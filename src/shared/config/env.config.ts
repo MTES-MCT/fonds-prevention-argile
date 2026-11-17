@@ -93,7 +93,6 @@ const proConnectEnvSchema = z.object({
 
 // Schéma de validation des variables d'environnement côté serveur
 const serverSchema = z.object({
-  NEXT_TELEMETRY_DISABLED: z.string().optional(),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_KEY: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_GRAPHQL_API_URL: z
     .string()
@@ -105,13 +104,9 @@ const serverSchema = z.object({
 
   // Configuration des 4 démarches dans DS
   DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_ID_DEVIS: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_NOM_DEVIS: z.string().min(1),
   DEMARCHES_SIMPLIFIEES_ID_FACTURES: z.string().min(1),
-  DEMARCHES_SIMPLIFIEES_NOM_FACTURES: z.string().min(1),
 
   // Clé API Matomo pour le tracking
   MATOMO_API_TOKEN: z.string().min(1),
