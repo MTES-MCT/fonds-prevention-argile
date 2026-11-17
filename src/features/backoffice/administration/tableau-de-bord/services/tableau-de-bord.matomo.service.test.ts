@@ -4,10 +4,12 @@ import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
-  fetchMatomoSimulationsGroupedByDepartment,
+  fetchMatomoSimulationsGroupedByDimension,
 } from "../../acquisition/adapters/matomo-api.adapter";
 import { db } from "@/shared/database/client";
 import { MATOMO_EVENTS } from "@/shared/constants/matomo.constants";
+
+const CALCULE_LE = "2026-11-16T16:42:00.000Z";
 
 vi.mock("@/shared/database/client", () => ({
   db: { select: vi.fn() },
@@ -17,7 +19,6 @@ vi.mock("../../acquisition/adapters/matomo-api.adapter", () => ({
   fetchMatomoEvents: vi.fn(),
   fetchMatomoEventsByDepartment: vi.fn(),
   fetchMatomoUniqueVisitors: vi.fn(),
-  fetchMatomoSimulationsGroupedByDepartment: vi.fn(),
   fetchMatomoSimulationsGroupedByDimension: vi.fn(),
   buildPartnerSegment: vi.fn(() => undefined),
 }));
@@ -88,17 +89,17 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
 
   it("distingue un vrai zero Matomo d'une panne", async () => {
     vi.mocked(fetchMatomoEvents).mockResolvedValue(new Map());
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 0, calculeLe: CALCULE_LE });
 
     const stats = await getMatomoSimulationsStats("30j");
 
     expect(stats.simulationsMatomo).toEqual({ valeur: 0, variation: null });
-    expect(stats.visiteursUniques).toEqual({ valeur: 0, variation: null });
+    expect(stats.visiteursUniques).toEqual({ valeur: 0, variation: null, calculeLe: CALCULE_LE });
   });
 
   it("renvoie les visiteurs uniques meme si les simulations echouent", async () => {
     vi.mocked(fetchMatomoEvents).mockRejectedValue(new Error("timeout"));
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(4955);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 4955, calculeLe: CALCULE_LE });
 
     const stats = await getMatomoSimulationsStats("30j");
 
@@ -108,7 +109,7 @@ describe("getMatomoSimulationsStats — panne Matomo vs vrai zero", () => {
 
   it("renvoie les valeurs Matomo quand tout repond", async () => {
     vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(4955);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 4955, calculeLe: CALCULE_LE });
 
     const stats = await getMatomoSimulationsStats("30j");
 
@@ -152,7 +153,7 @@ describe("getMatomoSimulationsStats — fenêtre réellement interrogée sur Mat
     mockComptesCrees(5);
     vi.mocked(fetchMatomoEvents).mockResolvedValue(eventsAvecSimulations);
     vi.mocked(fetchMatomoEventsByDepartment).mockResolvedValue(eventsAvecSimulations);
-    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue(0);
+    vi.mocked(fetchMatomoUniqueVisitors).mockResolvedValue({ valeur: 0, calculeLe: CALCULE_LE });
   });
 
   afterEach(() => {
@@ -246,12 +247,12 @@ describe("getTopDepartementsMatomo — une seule unité par colonne, filtre touj
     env.dimensionDepartement = undefined;
 
     await expect(getTopDepartementsMatomo("30j")).rejects.toThrow("NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID");
-    expect(fetchMatomoSimulationsGroupedByDepartment).not.toHaveBeenCalled();
+    expect(fetchMatomoSimulationsGroupedByDimension).not.toHaveBeenCalled();
   });
 
   it("fusionne les variantes « 3 » et « 03 » de Matomo en une ligne, avec les comptes de la base", async () => {
     mockParcoursIndre("3");
-    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(
+    vi.mocked(fetchMatomoSimulationsGroupedByDimension).mockResolvedValue(
       new Map([
         ["3", { total: 5, eligible: 2, nonEligible: 3 }],
         ["03", { total: 7, eligible: 4, nonEligible: 3 }],
@@ -266,7 +267,7 @@ describe("getTopDepartementsMatomo — une seule unité par colonne, filtre touj
   });
 
   it("ne complète pas un département absent de Matomo avec des parcours BDD", async () => {
-    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(
+    vi.mocked(fetchMatomoSimulationsGroupedByDimension).mockResolvedValue(
       new Map([["63", { total: 12, eligible: 4, nonEligible: 8 }]])
     );
 
@@ -277,15 +278,31 @@ describe("getTopDepartementsMatomo — une seule unité par colonne, filtre touj
   });
 
   it("garde des simulations à 0 plutôt que des parcours quand Matomo ne renvoie rien", async () => {
-    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(new Map());
+    vi.mocked(fetchMatomoSimulationsGroupedByDimension).mockResolvedValue(new Map());
 
     const top = await getTopDepartementsMatomo("30j");
 
     expect(top).toEqual([expect.objectContaining({ codeDepartement: "36", simulations: 0, comptesCrees: 1 })]);
   });
 
+  it("somme des sous-périodes alignées au lieu d'un `range`, que Matomo recalcule à chaque appel", async () => {
+    vi.mocked(fetchMatomoSimulationsGroupedByDimension).mockResolvedValue(
+      new Map([["63", { total: 3, eligible: 1, nonEligible: 2 }]])
+    );
+
+    const top = await getTopDepartementsMatomo("12m");
+
+    const appels = vi.mocked(fetchMatomoSimulationsGroupedByDimension).mock.calls;
+    expect(appels.length).toBeGreaterThan(1);
+    expect(appels.every(([, options]) => options?.period !== "range")).toBe(true);
+    expect(top.find((d) => d.codeDepartement === "63")).toMatchObject({
+      simulations: 3 * appels.length,
+      simulationsEligibles: appels.length,
+    });
+  });
+
   it("applique le filtre département même quand Matomo ne renvoie rien", async () => {
-    vi.mocked(fetchMatomoSimulationsGroupedByDepartment).mockResolvedValue(new Map());
+    vi.mocked(fetchMatomoSimulationsGroupedByDimension).mockResolvedValue(new Map());
 
     expect(await getTopDepartementsMatomo("30j", "63")).toEqual([]);
   });

@@ -7,7 +7,6 @@ vi.mock("../../acquisition/adapters/matomo-api.adapter", () => ({
   fetchMatomoEvents: vi.fn(),
   fetchMatomoEventsByDepartment: vi.fn(),
   fetchMatomoUniqueVisitors: vi.fn(),
-  fetchMatomoSimulationsGroupedByDepartment: vi.fn(),
   fetchMatomoSimulationsGroupedByDimension: vi.fn(),
   buildPartnerSegment: vi.fn(() => undefined),
 }));

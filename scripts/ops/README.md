@@ -54,6 +54,7 @@ Les scripts **autonomes** (sans import `@/`, comme `check-ds-permissions` et
 | [`backfill-actions-audit.ts`](#backfill-actions-audit)           | **écrit** | Rejoue dans `parcours_actions` les réponses Aller-vers et les archivages passés, à leur date d'origine                                                                                           | `pnpm fix:backfill-actions-audit`                      |
 | [`cas-de-test.ts`](#cas-de-test)                                 | read-only | Prépare une session de tests manuels : les cas visibles par un compte donné, par scénario, avec URLs directes                                                                                    | `pnpm qa:cas-de-test`                                  |
 | [`debug-matomo-events.ts`](#debug-matomo-events)                 | read-only | Diagnostic des doublons d'événements Matomo (funnel simulateur)                                                                                                                                  | `tsx scripts/ops/debug/debug-matomo-events.ts`         |
+| [`mesurer-matomo.ts`](#mesurer-matomo)                           | read-only | Durée et taille des requêtes Matomo des pages de statistiques, sans afficher de chiffre                                                                                                          | `tsx scripts/ops/debug/mesurer-matomo.ts`              |
 | [`fetch-demarche-schema.ts`](#fetch-demarche-schema)             | read-only | Dump les champs + annotations d'une démarche DS avec leurs IDs (alimente `ds-field-ids.ts`)                                                                                                      | `pnpm ds:fetch-schema <numero>`                        |
 | [`check-ds-permissions.ts`](#check-ds-permissions)               | read-only | Vérifie que le token GraphQL a accès à chaque démarche configurée (sinon synchro KO)                                                                                                             | `pnpm ds:check-permissions`                            |
 | [`extend-expired-tokens.sql`](#extend-expired-tokens)            | **écrit** | Repousse la date d'expiration des tokens AMO expirés                                                                                                                                             | `psql -f scripts/ops/sql/extend-expired-tokens.sql`    |
@@ -406,6 +407,21 @@ Diagnostic des doublons d'événements Matomo dans le funnel simulateur :
 tsx scripts/ops/debug/debug-matomo-events.ts
 tsx scripts/ops/debug/debug-matomo-events.ts --since=2026-04-09
 ```
+
+### mesurer-matomo
+
+Lance les requêtes Matomo des pages de statistiques (visites, résumé en `range`, rebonds, évènements et
+rapports par dimension en sous-périodes, tunnel) et affiche pour chacune la durée, la taille et l'issue. Aucun
+chiffre de fréquentation n'est affiché. À relancer avant et après un changement côté code ou côté Matomo.
+
+```bash
+tsx scripts/ops/debug/mesurer-matomo.ts
+tsx scripts/ops/debug/mesurer-matomo.ts --jours=365 --departement=36 --delai=60
+```
+
+Une requête que Matomo n'a pas encore archivée est lente au premier passage, puis rapide : mesurer deux
+fois avant de conclure. En production, chaque appel réel écrit aussi une ligne `[matomo] appel …` dans
+les logs (`duree=`, `issue=`).
 
 ### fetch-demarche-schema
 

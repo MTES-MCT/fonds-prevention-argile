@@ -47,7 +47,6 @@ import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
-  fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
@@ -58,9 +57,19 @@ import {
   decouperPeriodeMatomo,
   formaterDateMatomo,
 } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
-import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
-import { regrouperSimulationsParDepartement } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
-import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
+import {
+  cumulerCompteurs,
+  cumulerSimulations,
+} from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import { logMatomoFailure } from "@/features/backoffice/administration/acquisition/domain/panne-matomo";
+import {
+  regrouperSimulationsParDepartement,
+  type CompteurSimulations,
+} from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
+import type {
+  GranulariteVisites,
+  VisiteursUniquesDates,
+} from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
   getFenetrePeriodePrecedente,
@@ -85,18 +94,6 @@ interface SimulationsMatomoResult {
   eligible: number;
   nonEligible: number;
   total: number;
-}
-
-/**
- * Trace une panne Matomo et renvoie null, pour la distinguer d'un vrai zero cote UI.
- */
-async function logMatomoFailure<T>(promise: Promise<T>, contexte: string): Promise<T | null> {
-  try {
-    return await promise;
-  } catch (error) {
-    console.error(`[matomo] echec ${contexte}:`, error instanceof Error ? error.message : error);
-    return null;
-  }
 }
 
 /**
@@ -147,6 +144,23 @@ async function getSimulationsMatomo(
   return { eligible, nonEligible, total: eligible + nonEligible };
 }
 
+/** Rapport par dimension sur une fenêtre : sous-périodes alignées puis sommées, jamais `range` (ADR-0033). */
+async function getSimulationsParDimension(
+  dimensionId: number,
+  fenetre: FenetrePeriode,
+  granularite: GranulariteVisites,
+  partner?: PartnerKey | null
+): Promise<Map<string, CompteurSimulations>> {
+  const extraSegment = buildPartnerSegment(partner);
+  const sousPeriodes = decouperPeriodeMatomo(fenetre.debut, fenetre.dernierJour, granularite);
+  const parAppel = await Promise.all(
+    sousPeriodes.map(({ period, date }) =>
+      fetchMatomoSimulationsGroupedByDimension(dimensionId, { period, date, extraSegment })
+    )
+  );
+  return cumulerSimulations(parAppel);
+}
+
 /**
  * Recupere le nombre de visiteurs uniques depuis Matomo, avec filtrage departement optionnel.
  */
@@ -154,14 +168,14 @@ async function getUniqueVisitors(
   fenetre: FenetrePeriode,
   codeDepartement?: string,
   partner?: PartnerKey | null
-): Promise<number> {
+): Promise<VisiteursUniquesDates> {
   const dateRange = formatMatomoDateRange(fenetre);
   const segments: string[] = [];
 
   if (codeDepartement) {
     const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
     const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
-    if (!dimensionId) return 0;
+    if (!dimensionId) return { valeur: 0, calculeLe: new Date().toISOString() };
 
     const codeDeptMatomo = toOfficialCodeDepartement(codeDepartement);
     segments.push(`dimension${dimensionId}==${codeDeptMatomo}`);
@@ -1005,8 +1019,6 @@ export async function getTopDepartementsMatomo(
 ): Promise<DepartementStats[]> {
   const fenetre = getDateRange(periodeId);
   const { debut, fin } = fenetre;
-  const dateRange = formatMatomoDateRange(fenetre);
-  const partnerSegment = buildPartnerSegment(partner);
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
@@ -1014,11 +1026,7 @@ export async function getTopDepartementsMatomo(
   if (!dimensionId) throw new Error("NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré");
 
   const [matomoParValeur, bddStats] = await Promise.all([
-    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    }),
+    getSimulationsParDimension(dimensionId, fenetre, getGranulariteForPeriode(periodeId), partner),
     getTopDepartementsStats(debut, fin, partner),
   ]);
   const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
@@ -1094,8 +1102,6 @@ export async function getTopCommunesMatomo(
 ): Promise<CommuneSimulationsStats[]> {
   const fenetre = getDateRange(periodeId);
   const { debut, fin } = fenetre;
-  const dateRange = formatMatomoDateRange(fenetre);
-  const partnerSegment = buildPartnerSegment(partner);
 
   const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
   const communeDimensionId = communeDimensionIdStr ? Number(communeDimensionIdStr) : null;
@@ -1105,11 +1111,12 @@ export async function getTopCommunesMatomo(
   }
 
   try {
-    const matomoByCommune = await fetchMatomoSimulationsGroupedByDimension(communeDimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    });
+    const matomoByCommune = await getSimulationsParDimension(
+      communeDimensionId,
+      fenetre,
+      getGranulariteForPeriode(periodeId),
+      partner
+    );
 
     if (matomoByCommune.size === 0) {
       return getTopCommunesStats(debut, fin, codeDepartement, partner);
@@ -1296,15 +1303,15 @@ export async function getMatomoSimulationsStats(
     logMatomoFailure(getUniqueVisitors(fenetre, codeDepartement, partner), "visiteurs (periode courante)"),
     previousRange
       ? logMatomoFailure(getUniqueVisitors(previousRange, codeDepartement, partner), "visiteurs (periode precedente)")
-      : Promise.resolve(0),
+      : Promise.resolve(null),
   ]);
 
   const variationVisiteurs =
-    previousRange && currentVisitors !== null && prevVisitors !== null && prevVisitors > 0
-      ? calculerVariation(currentVisitors, prevVisitors)
+    previousRange && currentVisitors !== null && prevVisitors !== null && prevVisitors.valeur > 0
+      ? calculerVariation(currentVisitors.valeur, prevVisitors.valeur)
       : null;
 
-  const visiteursUniques = currentVisitors === null ? null : { valeur: currentVisitors, variation: variationVisiteurs };
+  const visiteursUniques = currentVisitors === null ? null : { ...currentVisitors, variation: variationVisiteurs };
 
   if (currentMatomo === null) {
     // Matomo injoignable : null (et non 0) pour que l'UI affiche "Indisponible".

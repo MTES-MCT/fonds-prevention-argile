@@ -178,7 +178,7 @@ export async function getPublicStatsCards(): Promise<PublicStatsCards> {
   ]);
 
   return {
-    visiteurs,
+    visiteurs: visiteurs?.valeur ?? null,
     simulationsEligibles: simulations?.eligibles ?? null,
     simulationsTerminees: simulations?.terminees ?? null,
     ...comptages,

@@ -1,6 +1,6 @@
 # ADR-0033 : Granularité adaptée pour les events Matomo du dashboard (anti-timeout)
 
-**Date** : 2026-09-07 (amendé le 2026-09-08)
+**Date** : 2026-09-07 (amendé le 2026-09-08 et le 2026-11-16)
 **Statut** : Accepté
 
 ## Contexte
@@ -142,6 +142,86 @@ l'administration Matomo, déclarer un segment par département (`dimensionX==cod
 « Traiter ce rapport en tâche de fond également » activée. Action côté ops/admin Matomo, hors du
 code applicatif, à mesurer une fois faite.
 
+## Amendement du 2026-11-16 : rapports par dimension, cache et journal
+
+Les lenteurs persistaient. Mesuré ce jour sur l'instance (`scripts/ops/debug/mesurer-matomo.ts`,
+lecture seule), les rapports par dimension, restés en `period=range` avec `flat=1`, ne répondaient
+plus dans le délai de 10 s :
+
+| Requête                              | Avant                          | Après (sous-périodes, sans `flat`) |
+| ------------------------------------ | ------------------------------ | ---------------------------------- |
+| Par département, éligibles, 14 jours | 41,6 s (`range`, `flat`)       | 0,5 à 0,8 s                        |
+| Par département, éligibles, 5 mois   | plus de 60 s (`range`, `flat`) | 0,7 s sur 11 mois                  |
+| Par commune, éligibles, 11 mois      | 34,5 s (sous-périodes, `flat`) | 0,7 s                              |
+
+- **Les rapports par dimension suivent la décision des évènements** : `getTopDepartementsMatomo`,
+  `getTopCommunesMatomo` et `getVulnerabiliteTopDepartements` découpent la fenêtre
+  (`decouperPeriodeMatomo`) puis somment. Totaux par valeur identiques au `range` : 0 écart sur
+  14 jours, par département (16 valeurs) et par commune (261), en jours comme en semaines.
+- **`flat=1` est abandonné sur ces rapports.** Il faisait charger à Matomo une sous-table d'URL par
+  valeur, que l'adaptateur refusionnait aussitôt. Sans lui, mêmes totaux par valeur (0 écart sur cinq
+  comparaisons, jusqu'à 1 915 communes), réponse 4 à 30 fois plus petite. `showColumns=nb_visits`
+  et une réduction à `label` et `nb_visits` avant mise en cache tiennent l'entrée sous les 2 Mo de
+  Next ; toutes les valeurs sont donc demandées, communes comprises.
+- **Cache de 24 h pour une plage close depuis deux jours**, 1 h sinon (`estPlageStable`). Le bucket
+  central d'un découpage garde la même clé plusieurs jours : il n'est plus redemandé chaque heure.
+  La marge de deux jours couvre le réarchivage de la veille par Matomo.
+- **Deux demandes identiques en cours partagent un appel** : taux de rebond et visiteurs uniques
+  lisaient chacun le même `VisitsSummary.get` en `range`.
+- **Chaque appel réel écrit une ligne** `[matomo] appel methode=… period=… jours=… segment=…
+simultanes=… duree=… issue=…`, sans valeur de segment. Un appel servi par le cache n'en écrit pas.
+
+Non traité, mesuré le même jour : `VisitsSummary.get` en `range` (visiteurs uniques, taux de rebond)
+met 13,5 s sur 30 jours au national et dépasse 40 s sur la période précédente, sur 12 mois ou avec
+un segment département, tant que Matomo n'a pas fini l'archive. Un plafond d'appels simultanés a été
+écarté faute de mesure : derrière le délai de 10 s par appel, il allongerait le pire cas au-delà des
+30 s du routeur. Suivi dans [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md#statistiques).
+
+## Amendement du 2026-11-16 (suite) : taux de rebond et pannes isolées
+
+Le taux de rebond de l'onglet Site vitrine quitte `range`. Un taux ne s'additionne pas, mais ses deux
+termes si : `VisitsSummary.get` est lu par sous-périodes avec `showColumns=nb_visits,bounce_count`,
+puis le service divise les sommes et arrondit à l'entier, comme le `bounce_rate` de Matomo.
+
+| Fenêtre                         | `range`      | Sous-périodes | Visites et rebonds   |
+| ------------------------------- | ------------ | ------------- | -------------------- |
+| 30 jours, national              | 19,8 s       | 0,4 s         | identiques           |
+| 30 jours précédents, national   | 32,7 s       | 0,4 s         | identiques           |
+| 90 jours, national              | 55,5 s       | 0,3 s         | identiques           |
+| 12 mois, national               | plus de 60 s | 0,7 s         | `range` sans réponse |
+| 12 mois, un département (trois) | non mesuré   | 0,3 à 0,9 s   | non comparés         |
+
+`getMatomoStatistiques` perd son `catch` global, qui remettait cartes et courbe à 0 dès qu'un appel
+échouait. Chaque lecture échoue seule (`logMatomoFailure`) : `visiteursUniques` et `tauxRebond` valent
+`null`, affiché « Indisponible », et la courbe reste. Les visiteurs uniques, toujours en `range`,
+passent par la variante stricte : une métrique absente n'est plus lue comme 0.
+
+### Visiteurs uniques : l'appel va au bout, l'appelant n'attend pas
+
+Relevé le même jour sur la page Acquisition en local : les visiteurs uniques échouaient après 10 s
+dans deux actions serveur successives, pour la même requête, soit 20 s d'attente sur une trentaine.
+L'échec n'étant pas gardé (option D bis), le second écran repartait de zéro.
+
+`requestVisitsSummary` passe par `appelerAvecPatience` (`adapters/appel-patient.ts`) :
+
+- l'appel à Matomo dispose de 60 s, au-delà desquelles Matomo coupe lui-même la connexion ;
+- l'appelant n'attend que 4 s, comptées depuis le début de l'appel, puis affiche « Indisponible » ;
+- qui redemande la même plage rejoint l'appel en cours, sans attendre une seconde fois ;
+- le résultat est gardé en mémoire du processus, 24 h pour une plage close et 1 h sinon ; périmé, il
+  reste servi pendant qu'un nouvel appel le remplace. Un échec n'est toujours pas gardé ;
+- le résultat porte l'instant où Matomo l'a rendu, affiché dans l'infobulle des deux cartes de
+  l'administration (« Chiffre calculé à 17:42. ») : un chiffre servi périmé ne se présente pas comme frais.
+
+Ce résultat ne passe plus par `unstable_cache` : dans une action serveur, Next attend le recalcul d'une
+entrée périmée avant de rendre la réponse (`pendingRevalidates`), si bien qu'un appel de 60 s aurait
+bloqué la page au-delà des 30 s du routeur. L'état vit sur `globalThis`, pages et actions étant
+compilées à part. Il est propre à chaque conteneur et perdu au redémarrage : le premier appel le refait.
+
+Vérifié sur une plage de 52 jours : main rendue en 4 s, demandes suivantes en 0 ms, nombre reçu dès la
+fin de l'appel (21,8 s) puis servi sans nouvel appel. Limite : la plage de `/stats`, depuis le lancement
+(397 jours), a dépassé 60 s deux fois de suite ; la carte y reste « Indisponible » tant que Matomo n'a
+pas fini son archive.
+
 ## Liens
 
 - `src/features/backoffice/administration/acquisition/domain/decoupage-periode.ts` —
@@ -149,7 +229,9 @@ code applicatif, à mesurer une fois faite.
 - `src/features/backoffice/administration/tableau-de-bord/domain/periode-window.ts` — bornes de
   fenêtre partagées (inclusives côté Matomo, exclusives côté BDD)
 - `src/features/backoffice/administration/acquisition/adapters/matomo-api.adapter.ts` —
-  `sumEventCounts`, `fetchMatomoApiCached` (cache des seuls succès, inchangé)
+  `sumEventCounts`, `sumDimensionCounts`, `fetchMatomoApi` (cache des seuls succès, appels partagés)
+- `src/features/backoffice/administration/acquisition/domain/plage-matomo.ts` — `estPlageStable`
+- `src/features/backoffice/administration/acquisition/domain/journal-appel-matomo.ts` — ligne de journal
 - `src/features/backoffice/administration/tableau-de-bord/services/tableau-de-bord.service.ts` —
   `getSimulationsMatomo` (découpage + cumul), `getUniqueVisitors` (inchangé, `period=range`)
 - [Référence API Matomo](https://developer.matomo.org/api-reference/reporting-api) —

@@ -10,7 +10,7 @@ import type { ActiviteStats, ActionTypeStat } from "../domain/types/activite.typ
 /**
  * Calcule les dates de debut/fin pour une periode donnee.
  * Duplique volontairement tableau-de-bord.service.ts (pattern etabli : chaque
- * service de stats garde ses propres helpers de periode, cf. statistiques-departement.service.ts).
+ * service de stats garde ses propres helpers de periode, cf. vulnerabilite-stats.service.ts).
  */
 function getDateRange(periodeId: PeriodeId): { debut: Date; fin: Date } {
   const fin = new Date();

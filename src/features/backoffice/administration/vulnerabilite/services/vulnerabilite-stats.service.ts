@@ -22,8 +22,15 @@ import { transformMatomoFunnelData } from "@/features/backoffice/administration/
 import type { FunnelStatistiques } from "@/features/backoffice/administration/acquisition/domain/types/matomo-funnels.types";
 import { toOfficialCodeDepartement, getDepartementName } from "@/shared/constants/departements.constants";
 import { getClientEnv } from "@/shared/config/env.config";
-import { plageDerniersJours } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
-import { PERIODES } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
+import {
+  decouperPeriodeMatomo,
+  plageDerniersJours,
+} from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
+import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import {
+  PERIODES,
+  SERVICE_START_DATE,
+} from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import type { PeriodeId } from "@/features/backoffice/administration/tableau-de-bord/domain/types/tableau-de-bord.types";
 import { getGranulariteForPeriode } from "@/features/backoffice/administration/acquisition/services/matomo.service";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
@@ -48,11 +55,6 @@ function getDateRange(periodeId: PeriodeId): { debut: Date; fin: Date } {
   const debut = new Date();
   debut.setDate(debut.getDate() - periode.jours);
   return { debut, fin };
-}
-
-function formatMatomoDateRange(debut: Date, fin: Date): string {
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return `${fmt(debut)},${fmt(fin)}`;
 }
 
 /**
@@ -187,7 +189,6 @@ export async function getVulnerabiliteComptesStats(periodeId: PeriodeId): Promis
  */
 export async function getVulnerabiliteTopDepartements(periodeId: PeriodeId): Promise<VulnerabiliteTopDepartement[]> {
   const { debut, fin } = getDateRange(periodeId);
-  const dateRange = formatMatomoDateRange(debut, fin);
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
@@ -198,11 +199,15 @@ export async function getVulnerabiliteTopDepartements(periodeId: PeriodeId): Pro
   }
 
   try {
-    const counts = await fetchMatomoCountByDimension(dimensionId, "eventAction==vulnerabilite_result", {
-      period: "range",
-      date: dateRange,
-      toutesLesLignes: true,
-    });
+    // « Depuis le début » part de 1970 : sans cette borne, on demanderait des centaines de mois vides.
+    const debutMatomo = debut < SERVICE_START_DATE ? SERVICE_START_DATE : debut;
+    const sousPeriodes = decouperPeriodeMatomo(debutMatomo, fin, getGranulariteForPeriode(periodeId));
+    const parAppel = await Promise.all(
+      sousPeriodes.map(({ period, date }) =>
+        fetchMatomoCountByDimension(dimensionId, "eventAction==vulnerabilite_result", { period, date })
+      )
+    );
+    const counts = cumulerCompteurs(parAppel);
 
     const result: VulnerabiliteTopDepartement[] = [];
     for (const [code, simulations] of counts) {

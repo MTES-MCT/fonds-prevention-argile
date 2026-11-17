@@ -48,9 +48,14 @@ export interface Statistiques {
   variationVisites: number | null;
 
   /**
-   * Nombre de visiteurs uniques (dédupliqués)
+   * Nombre de visiteurs uniques (dédupliqués), null si Matomo n'a pas répondu
    */
-  visiteursUniques: number;
+  visiteursUniques: number | null;
+
+  /**
+   * Instant (ISO) où Matomo a rendu les visiteurs uniques, null s'ils sont indisponibles
+   */
+  visiteursUniquesCalculesLe: string | null;
 
   /**
    * Variation des visiteurs uniques vs période précédente (en %, null si non calculable)
@@ -68,9 +73,9 @@ export interface Statistiques {
   granulariteVisites: GranulariteVisites;
 
   /**
-   * Taux de rebond global (en pourcentage, ex: 45 pour 45%)
+   * Taux de rebond global (en pourcentage, ex: 45 pour 45%), null si Matomo n'a pas répondu
    */
-  tauxRebond: number;
+  tauxRebond: number | null;
 
   /**
    * Variation du taux de rebond vs période précédente (en points, null si non calculable)
