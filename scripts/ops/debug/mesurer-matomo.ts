@@ -100,10 +100,15 @@ async function main(): Promise<void> {
     date: plage,
     segment: segmentDepartement,
   });
-  await mesurer("Résumé en range (visiteurs uniques, rebond)", {
+  await mesurer("Résumé en range (visiteurs uniques)", {
     method: "VisitsSummary.get",
     period: "range",
     date: plage,
+    segment: segmentDepartement,
+  });
+  await mesurerDecoupe("Visites et rebonds, sous-périodes", {
+    method: "VisitsSummary.get",
+    showColumns: "nb_visits,bounce_count",
     segment: segmentDepartement,
   });
   await mesurerDecoupe("Évènements, sous-périodes", {

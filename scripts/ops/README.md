@@ -410,8 +410,8 @@ tsx scripts/ops/debug/debug-matomo-events.ts --since=2026-04-09
 
 ### mesurer-matomo
 
-Lance les requêtes Matomo des pages de statistiques (visites, résumé en `range`, évènements et rapports
-par dimension en sous-périodes, tunnel) et affiche pour chacune la durée, la taille et l'issue. Aucun
+Lance les requêtes Matomo des pages de statistiques (visites, résumé en `range`, rebonds, évènements et
+rapports par dimension en sous-périodes, tunnel) et affiche pour chacune la durée, la taille et l'issue. Aucun
 chiffre de fréquentation n'est affiché. À relancer avant et après un changement côté code ou côté Matomo.
 
 ```bash

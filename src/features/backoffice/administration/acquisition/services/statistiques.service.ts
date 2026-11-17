@@ -66,11 +66,12 @@ export async function getStatistiques(
     // Stats Matomo (0 et tableau vide si filtrées par entreprise car non disponibles)
     nombreVisitesTotales: matomoStats?.nombreVisitesTotales ?? 0,
     variationVisites: matomoStats?.variationVisites ?? null,
-    visiteursUniques: matomoStats?.visiteursUniques ?? 0,
+    visiteursUniques: matomoStats ? matomoStats.visiteursUniques : 0,
+    visiteursUniquesCalculesLe: matomoStats?.visiteursUniquesCalculesLe ?? null,
     variationVisiteursUniques: matomoStats?.variationVisiteursUniques ?? null,
     visitesParJour: matomoStats?.visitesParJour ?? [],
     granulariteVisites: matomoStats?.granulariteVisites ?? "day",
-    tauxRebond: matomoStats?.tauxRebond ?? 0,
+    tauxRebond: matomoStats ? matomoStats.tauxRebond : 0,
     variationTauxRebond: matomoStats?.variationTauxRebond ?? null,
     funnelSimulateurRGA: funnelStats,
   };
@@ -90,6 +91,7 @@ function getEmptyStatistiques(): Statistiques {
     nombreVisitesTotales: 0,
     variationVisites: null,
     visiteursUniques: 0,
+    visiteursUniquesCalculesLe: null,
     variationVisiteursUniques: null,
     visitesParJour: [],
     granulariteVisites: "day",

@@ -1,11 +1,16 @@
 import { unstable_cache } from "next/cache";
 import { getServerEnv, getClientEnv } from "@/shared/config/env.config";
-import type { MatomoVisitsResponse, MatomoEventActionResponse } from "../domain/types/matomo.types";
+import type {
+  MatomoVisitsResponse,
+  MatomoEventActionResponse,
+  VisiteursUniquesDates,
+} from "../domain/types/matomo.types";
 import type { MatomoFunnelFlowTableResponse } from "../domain/types/matomo-funnels.types";
 import { PARTNER_REFERRERS, type PartnerKey } from "@/shared/domain/partners";
 import { estPlageStable } from "../domain/plage-matomo";
 import type { CompteurSimulations } from "../domain/simulations-departement";
 import { classerEchecReseau, formaterJournalAppel, type IssueAppelMatomo } from "../domain/journal-appel-matomo";
+import { appelerAvecPatience, type ResultatDate } from "./appel-patient";
 
 /**
  * Construit un segment Matomo filtrant par referrer (host) pour un partenaire connu.
@@ -84,6 +89,9 @@ function getMatomoConfig(): MatomoConfig {
 }
 
 const MATOMO_TIMEOUT_MS = 10_000;
+// Un `range` non archivé met jusqu'à une minute : l'appel va au bout, l'appelant n'attend que 4 s.
+const MATOMO_TIMEOUT_LONG_MS = 60_000;
+const MATOMO_ATTENTE_APPEL_LONG_MS = 4_000;
 const TTL_PLAGE_OUVERTE_SECONDES = 3600;
 const TTL_PLAGE_STABLE_SECONDES = 24 * 3600;
 export const MATOMO_CACHE_TAG = "matomo-api";
@@ -93,7 +101,11 @@ let appelsEnCours = 0;
 /**
  * Appel HTTP brut vers l'API Matomo, sans cache. Journalise chaque appel (duree, issue).
  */
-async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string): Promise<T> {
+async function requestMatomoApi<T>(
+  params: MatomoRequestParams,
+  apiUrl: string,
+  delaiMs: number = MATOMO_TIMEOUT_MS
+): Promise<T> {
   const filteredParams = Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined)
   ) as Record<string, string>;
@@ -112,7 +124,7 @@ async function requestMatomoApi<T>(params: MatomoRequestParams, apiUrl: string):
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: searchParams.toString(),
-      signal: AbortSignal.timeout(MATOMO_TIMEOUT_MS),
+      signal: AbortSignal.timeout(delaiMs),
       // Le cache est gere par unstable_cache en amont, qui ne memorise pas les erreurs — volontaire :
       // un premier timeout n'empeche pas Matomo de terminer l'archive en tache de fond ; un nouvel
       // essai un peu plus tard (l'archive etant alors prete) doit pouvoir reussir immediatement,
@@ -251,23 +263,55 @@ export async function fetchMatomoVisits(
 interface MatomoVisitsSummaryResponse {
   nb_visits: number;
   nb_uniq_visitors: number;
-  bounce_rate: string; // ex: "45%"
   [key: string]: unknown;
 }
 
+/** Visites et rebonds d'une plage : additifs entre sous-periodes, contrairement au taux. */
+export interface CompteurRebond {
+  visites: number;
+  rebonds: number;
+}
+
+function lireCompteurRebond(valeur: unknown): number {
+  if (valeur === undefined) return 0;
+  const nombre = Number(valeur);
+  if (!Number.isFinite(nombre)) {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): compteur non numerique");
+  }
+  return nombre;
+}
+
+function sumBounceCounts(data: unknown): CompteurRebond {
+  if (!data || typeof data !== "object") {
+    throw new Error("Reponse Matomo inattendue (VisitsSummary.get): reponse non structuree");
+  }
+  // En `range` Matomo renvoie la ligne seule, sinon un objet indexe par sous-periode.
+  const lignes: unknown[] = "nb_visits" in data || "bounce_count" in data ? [data] : Object.values(data);
+  const cumul: CompteurRebond = { visites: 0, rebonds: 0 };
+
+  for (const ligne of lignes) {
+    // Une sous-periode sans visite revient en tableau vide.
+    if (Array.isArray(ligne) && ligne.length === 0) continue;
+    if (!ligne || typeof ligne !== "object" || Array.isArray(ligne)) {
+      throw new Error("Reponse Matomo inattendue (VisitsSummary.get): sous-periode non structuree");
+    }
+    const { nb_visits, bounce_count } = ligne as Record<string, unknown>;
+    cumul.visites += lireCompteurRebond(nb_visits);
+    cumul.rebonds += lireCompteurRebond(bounce_count);
+  }
+
+  return cumul;
+}
+
 /**
- * Recupere le taux de rebond depuis l'API Matomo
- * @param period - Periode : 'range', 'day', etc.
+ * Recupere visites et rebonds (VisitsSummary.get) pour une sous-periode alignee.
+ * @param period - 'day', 'week' ou 'month' (cf. `decouperPeriodeMatomo`)
  * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
  */
-export async function fetchMatomoBounceRate(
-  period: string = "range",
-  date: string = "last30",
-  segment?: string
-): Promise<number> {
+export async function fetchMatomoBounceCounts(period: string, date: string, segment?: string): Promise<CompteurRebond> {
   const config = getMatomoConfig();
 
-  const data = await fetchMatomoApi<MatomoVisitsSummaryResponse>(
+  const data = await fetchMatomoApi<unknown>(
     {
       module: "API",
       method: "VisitsSummary.get",
@@ -277,13 +321,12 @@ export async function fetchMatomoBounceRate(
       format: "JSON",
       token_auth: config.apiToken,
       segment,
+      showColumns: "nb_visits,bounce_count",
     },
     config.apiUrl
   );
 
-  // bounce_rate est une string comme "45%" — on extrait le nombre
-  const bounceStr = data.bounce_rate ?? "0%";
-  return parseFloat(bounceStr.replace("%", "")) || 0;
+  return sumBounceCounts(data);
 }
 
 /**
@@ -321,57 +364,65 @@ export async function fetchMatomoFunnel(
 }
 
 /**
- * Recupere le nombre de visiteurs uniques depuis l'API Matomo (VisitsSummary.get).
- * @param period - Periode : 'range', 'day', etc.
- * @param date - Plage au format 'YYYY-MM-DD,YYYY-MM-DD'
- * @param segment - Segment Matomo optionnel (ex: "dimension1==36") pour filtrer par departement
+ * Recupere les visiteurs uniques (VisitsSummary.get) et l'instant ou Matomo les a rendus.
+ * Retombe sur 0 si Matomo n'a pas calcule la metrique : variante toleree par le tableau de bord.
  */
 export async function fetchMatomoUniqueVisitors(
   period: string = "range",
   date: string = "last30",
   segment?: string
-): Promise<number> {
-  const data = await requestVisitsSummary(period, date, segment);
+): Promise<VisiteursUniquesDates> {
+  const { valeur: data, calculeLe } = await requestVisitsSummary(period, date, segment);
 
-  return data.nb_uniq_visitors ?? 0;
+  return { valeur: data.nb_uniq_visitors ?? 0, calculeLe: new Date(calculeLe).toISOString() };
 }
 
 /**
  * Meme appel, mais leve si Matomo n'a pas calcule la metrique
  * (`enable_processing_unique_visitors_range` desactive) au lieu de renvoyer 0, indiscernable
- * d'une vraie absence de visites. Reserve aux appelants qui savent afficher « Indisponible » —
- * `getMatomoStatistiques` a un `catch` global qui remettrait *tous* ses KPI a 0.
+ * d'une vraie absence de visites. Reserve aux appelants qui savent afficher « Indisponible ».
  */
 export async function fetchMatomoUniqueVisitorsStrict(
   period: string = "range",
   date: string = "last30",
   segment?: string
-): Promise<number> {
-  const data = await requestVisitsSummary(period, date, segment);
+): Promise<VisiteursUniquesDates> {
+  const { valeur: data, calculeLe } = await requestVisitsSummary(period, date, segment);
 
   const uniques = Number(data.nb_uniq_visitors);
   if (!Number.isFinite(uniques)) {
     throw new Error("Reponse Matomo inattendue (VisitsSummary.get): nb_uniq_visitors absent ou non numerique");
   }
 
-  return uniques;
+  return { valeur: uniques, calculeLe: new Date(calculeLe).toISOString() };
 }
 
-function requestVisitsSummary(period: string, date: string, segment?: string): Promise<MatomoVisitsSummaryResponse> {
+// Hors du cache de Next : il attend le recalcul d'une entrée périmée avant de rendre l'action.
+function requestVisitsSummary(
+  period: string,
+  date: string,
+  segment?: string
+): Promise<ResultatDate<MatomoVisitsSummaryResponse>> {
   const config = getMatomoConfig();
+  const params: MatomoRequestParams = {
+    module: "API",
+    method: "VisitsSummary.get",
+    idSite: config.siteId,
+    period,
+    date,
+    format: "JSON",
+    token_auth: config.apiToken,
+    segment,
+  };
+  const cle = JSON.stringify([{ ...params, token_auth: undefined }, config.apiUrl]);
 
-  return fetchMatomoApi<MatomoVisitsSummaryResponse>(
+  return appelerAvecPatience(
+    cle,
+    () => requestMatomoApi<MatomoVisitsSummaryResponse>(params, config.apiUrl, MATOMO_TIMEOUT_LONG_MS),
     {
-      module: "API",
-      method: "VisitsSummary.get",
-      idSite: config.siteId,
-      period,
-      date,
-      format: "JSON",
-      token_auth: config.apiToken,
-      segment,
-    },
-    config.apiUrl
+      attenteMs: MATOMO_ATTENTE_APPEL_LONG_MS,
+      fraicheurMs: (estPlageStable(date) ? TTL_PLAGE_STABLE_SECONDES : TTL_PLAGE_OUVERTE_SECONDES) * 1000,
+    }
   );
 }
 

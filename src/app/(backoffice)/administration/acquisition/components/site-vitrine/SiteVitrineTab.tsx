@@ -2,12 +2,20 @@
 
 import { useEffect, useId, useMemo } from "react";
 import { DashboardStatCard } from "../../../tableau-de-bord/shared/DashboardStatCard";
+import { completerInfobulle } from "../../../tableau-de-bord/shared/format-matomo-value.utils";
 import { useDsfrChart } from "@/shared/hooks/useDsfrChart";
 import type { Statistiques } from "@/features/backoffice/administration/acquisition/domain/types/statistiques.types";
 
 interface SiteVitrineTabProps {
   stats: Statistiques | null;
   loading: boolean;
+}
+
+// undefined : pas encore chargé ; null : Matomo n'a pas répondu pour cette valeur.
+function formaterValeurMatomo(valeur: number | null | undefined, suffixe = ""): string {
+  if (valeur === undefined) return "...";
+  if (valeur === null) return "Indisponible";
+  return `${valeur.toLocaleString("fr-FR")}${suffixe}`;
 }
 
 export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) {
@@ -70,18 +78,21 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats?.visiteursUniques.toLocaleString("fr-FR") ?? "..."}
+            value={formaterValeurMatomo(stats?.visiteursUniques)}
             label="Visiteurs uniques"
             variation={stats?.variationVisiteursUniques ?? null}
             loading={loading}
             compact
-            tooltip="Données Matomo : personnes distinctes sur la période, filtrées par département et partenaire."
+            tooltip={completerInfobulle(
+              "Données Matomo : personnes distinctes sur la période, filtrées par département et partenaire.",
+              stats?.visiteursUniquesCalculesLe
+            )}
           />
         </div>
         <div style={{ flex: "1 1 200px", minWidth: 0 }}>
           <DashboardStatCard
             className=""
-            value={stats ? `${stats.tauxRebond.toLocaleString("fr-FR")}%` : "..."}
+            value={formaterValeurMatomo(stats?.tauxRebond, "%")}
             label="Taux de rebond"
             variation={stats?.variationTauxRebond ?? null}
             variationType="points"
@@ -122,7 +133,7 @@ export default function SiteVitrineTab({ stats, loading }: SiteVitrineTabProps) 
           )}
           {!loading && !chartData && (
             <p className="fr-text--sm" style={{ color: "var(--text-mention-grey)" }}>
-              Aucune donnee disponible.
+              Aucune donnée disponible.
             </p>
           )}
           {!loading && chartData && chartLoaded && (

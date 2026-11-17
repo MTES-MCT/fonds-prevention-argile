@@ -153,25 +153,25 @@ produit : le code est simple une fois la définition choisie.
 
 ### Lenteurs Matomo : ce qui reste après les rapports par dimension
 
-- **Constat** (mesuré le 2026-11-16, amendement d'ADR-0033) : `VisitsSummary.get` en `period=range`, qui
-  donne les visiteurs uniques et le taux de rebond, met 13,5 s sur 30 jours au national et dépasse 40 s sur
-  la période précédente, sur 12 mois ou avec un segment département, tant que Matomo n'a pas fini
-  l'archive. Le délai de 10 s tombe donc avant ; dans l'onglet Site vitrine, un seul échec remet toutes
-  les cartes et la courbe à 0 (`getMatomoStatistiques`). Les fenêtres glissent chaque jour : chaque matin,
-  tout est à recalculer.
+- **Constat** (mesuré le 2026-11-16, amendements d'ADR-0033) : `VisitsSummary.get` en `period=range`, qui
+  donne les visiteurs uniques, met de 13 à 20 s sur 30 jours au national et dépasse 40 s sur la période
+  précédente, sur 12 mois ou avec un segment département, tant que Matomo n'a pas fini l'archive. La
+  carte affiche donc « Indisponible » au premier affichage, après 4 s d'attente, et le nombre au suivant
+  si l'appel a fini. Sur `/stats`, la plage depuis le lancement dépasse 60 s : le nombre n'arrive que si
+  Matomo termine son archive entre deux appels. Les fenêtres glissent chaque jour : chaque matin, tout
+  est à recalculer.
 - **Pistes**, de la moins à la plus lourde :
-  1. taux de rebond par sous-périodes (`bounce_count` et `nb_visits` sont additifs, `showColumns` vérifié
-     sur l'instance) et échec des visiteurs uniques isolé du reste de l'onglet ;
+  1. réessai côté client d'une carte « Indisponible », qui aujourd'hui demande un rechargement ;
   2. lectures en routes GET appelées en parallèle, avec annulation au changement de filtre : les server
-     actions s'exécutent une par une et attendent le recalcul d'une entrée de cache périmée ;
-  3. laisser l'appel `range` finir au-delà de 10 s pour remplir le cache, et réessayer côté client ;
-  4. comptages journaliers par département rangés en base par un cron, `/stats` compris (option D
+     actions s'exécutent une par une et attendent le recalcul d'une entrée de cache périmée. L'onglet
+     Site vitrine attend en plus le tunnel, lu dans la même action (`getStatistiques`) ;
+  3. comptages journaliers par département rangés en base par un cron, `/stats` compris (option D
      d'ADR-0033, à rouvrir) ;
-  5. segments pré-archivés côté Matomo (option C d'ADR-0033, état non vérifié).
+  4. segments pré-archivés côté Matomo (option C d'ADR-0033, état non vérifié).
 - **Plafond d'appels simultanés** : écarté sans mesure. La ligne `[matomo] appel … simultanes=…` des logs
   dira s'il faut le poser.
 - **Préalable** : quelques jours de logs en production (`issue=timeout`, `duree=`) pour classer ces pistes,
-  et un arbitrage sur la piste 4, qui change la source de plusieurs statistiques.
+  et un arbitrage sur la piste 3, qui change la source de plusieurs statistiques.
 
 ### Bornes de mois de `/stats` calculées en heure locale
 

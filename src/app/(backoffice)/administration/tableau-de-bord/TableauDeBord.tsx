@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { FiltresTableauDeBord } from "./FiltresTableauDeBord";
 import { DashboardStatCard } from "./shared/DashboardStatCard";
-import { formatMatomoValue } from "./shared/format-matomo-value.utils";
+import { completerInfobulle, formatMatomoValue } from "./shared/format-matomo-value.utils";
 import { DemandesArchiveesCard } from "./demandes-archivees/DemandesArchiveesCard";
 import { DemandesIneligiblesCard } from "./demandes-ineligibles/DemandesIneligiblesCard";
 import { TopDepartementsCard } from "./top-departements/TopDepartementsCard";
@@ -168,7 +168,10 @@ export function TableauDeBord() {
               variation={matomoSimuStats?.visiteursUniques?.variation ?? null}
               loading={false}
               compact
-              tooltip="Données Matomo : personnes distinctes sur la période. La somme de plusieurs périodes peut dépasser le total : un visiteur revenu compte dans chacune."
+              tooltip={completerInfobulle(
+                "Données Matomo : personnes distinctes sur la période. La somme de plusieurs périodes peut dépasser le total : un visiteur revenu compte dans chacune.",
+                matomoSimuStats?.visiteursUniques?.calculeLe
+              )}
             />
             <DashboardStatCard
               value={simulationEligibleValue}
