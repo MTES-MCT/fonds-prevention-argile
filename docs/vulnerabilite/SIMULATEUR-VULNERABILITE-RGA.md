@@ -102,6 +102,9 @@ Tous derrière la même bascule : hors des environnements actifs, aucun ne s'aff
 | Dossier côté agent     | `VulnerabiliteDossier` sur les pages dossier, demande et prospect : « Faire le test avec le demandeur » | bascule active ; AMO, Aller-vers et hybride (ni super-admin, ni analyste, ni administrateur) |
 | Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base                                         | bascule active, test rattaché au compte, sinon renvoi vers le simulateur                     |
 
+> La documentation partenaire (`/documentation/integration-iframe`) ne donne l'URL de l'iframe
+> `/embed-vulnerabilite-rga` que derrière la même bascule : hors des environnements actifs, la section disparaît.
+
 > `/vulnerabilite-rga` vit dans le groupe de routes `(tunnel)` ([ADR-0040](../adr/0040-tunnel-simulateur-adresse-en-deux-ecrans.md)),
 > comme `/simulateur` : header réduit à l'aide, pas de navigation. L'iframe `/embed-vulnerabilite-rga` n'est pas concernée.
 
