@@ -6,7 +6,10 @@ import {
   formaterAllocations,
   formaterReleve,
   indexerParSite,
+  lireEnSwap,
   lireMemoireConteneur,
+  lireMemoireHote,
+  lirePressionMemoire,
   lireRssAnonyme,
   resumerAllocations,
   type Releve,
@@ -29,19 +32,29 @@ async function lireFichier(chemin: string): Promise<string | null> {
 }
 
 async function construireReleve(): Promise<Releve> {
-  const [memoryStat, swapCurrent, procStatus] = await Promise.all([
-    lireFichier("/sys/fs/cgroup/memory.stat"),
-    lireFichier("/sys/fs/cgroup/memory.swap.current"),
-    lireFichier("/proc/self/status"),
-  ]);
+  const cgroup = (fichier: string) => lireFichier(`/sys/fs/cgroup/${fichier}`);
+  const [memoryStat, swapCurrent, memoryCurrent, memoryEvents, swapEvents, memoryPressure, procStatus, meminfo] =
+    await Promise.all([
+      cgroup("memory.stat"),
+      cgroup("memory.swap.current"),
+      cgroup("memory.current"),
+      cgroup("memory.events"),
+      cgroup("memory.swap.events"),
+      cgroup("memory.pressure"),
+      lireFichier("/proc/self/status"),
+      lireFichier("/proc/meminfo"),
+    ]);
   const memoire = process.memoryUsage();
   const espaces = new Map(v8.getHeapSpaceStatistics().map((e) => [e.space_name, e.space_used_size]));
 
   return {
     dureeSecondes: process.uptime(),
-    conteneur: lireMemoireConteneur(memoryStat, swapCurrent),
+    conteneur: lireMemoireConteneur(memoryStat, swapCurrent, memoryCurrent),
+    pression: lirePressionMemoire(memoryEvents, swapEvents, memoryPressure),
+    hote: lireMemoireHote(meminfo),
     rss: memoire.rss,
     rssAnonyme: lireRssAnonyme(procStatus),
+    enSwap: lireEnSwap(procStatus),
     tasUtilise: memoire.heapUsed,
     tasTotal: memoire.heapTotal,
     externe: memoire.external,
