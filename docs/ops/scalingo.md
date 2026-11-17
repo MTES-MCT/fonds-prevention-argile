@@ -200,12 +200,17 @@ scalingo --app fonds-argile-staging --region osc-fr1 stats
 
 Le pourcentage affiché **compte le cache de fichiers** : mesuré le 16 novembre 2026, 300 Mo écrits
 sur disque dans un one-off s'affichent 311 MiB pour 2 Mo de mémoire réelle. Un conteneur à 95 % peut
-donc aller bien. Le signal fiable est le **swap**, à 0 en temps normal.
+donc aller bien.
 
-Swap plein, le processus Node se fige : plus aucune connexion PostgreSQL n'aboutit
-(`CONNECT_TIMEOUT` dans les logs), les pages expirent et le cron de synchronisation échoue. C'est
-la panne du staging du 15 novembre 2026, levée par un `restart`. Repère pris ce jour-là : le serveur
-pèse 188 Mo à froid et 220 Mo après douze pages.
+Le **swap** seul ne dit pas davantage que le conteneur sature : le 17 novembre, `web-1` l'a gardé plein
+(128 MiB) pendant sept heures avec 150 Mo de mémoire réelle sur 512, sans gel ni timeout. La machine
+hôte, elle, n'avait que 3,8 Go disponibles sur 57,6 et 14,5 Go en swap (lu dans un one-off) : c'est
+probablement elle qui pousse en swap les pages peu utilisées de ses conteneurs.
+
+Le 15 novembre 2026, le staging s'est figé, mémoire et swap pleins : plus aucune connexion PostgreSQL
+n'aboutissait (`CONNECT_TIMEOUT` dans les logs), les pages expiraient et le cron de synchronisation a
+échoué, jusqu'au `restart`. La cause n'est pas établie. Repères : le serveur pèse 188 Mo à froid,
+240 Mo après dix minutes de trafic, 280 Mo après dix-sept heures.
 
 ### Relevé mémoire dans les logs
 
@@ -234,11 +239,27 @@ La colonne qui monte d'un relevé à l'autre désigne la piste :
 
 | Colonne qui monte              | Ce que ça désigne                                                   |
 | ------------------------------ | ------------------------------------------------------------------- |
+| `anon` + `swap`                | Mémoire réelle du serveur, où qu'elle soit : c'est elle qui grossit |
 | `tas`, `vieux`, `grands`       | Objets JavaScript retenus : le coupable est dans les lignes `alloc` |
 | `buffers`, `externe`           | Tampons binaires (réponses HTTP, fichiers) gardés en mémoire        |
 | `horsTas` seul, `tas` stable   | Mémoire native : traitement d'images (`sharp`), fragmentation       |
 | `ressources` (`TCPSocketWrap`) | Connexions ou minuteurs jamais fermés                               |
 | `cache` seul                   | Cache de fichiers, que le noyau reprend au besoin : rien à corriger |
+| `limite`                       | Le conteneur a buté sur ses 512 Mo : son contenu est en cause       |
+| `swapRefuse`                   | Le swap du conteneur était plein quand le noyau a voulu y écrire    |
+| `tues`                         | Un processus du conteneur a été tué faute de mémoire                |
+| `ralenti`, `bloque`            | Secondes passées à attendre de la mémoire : `bloque` qui monte, gel |
+
+`limite`, `swapRefuse`, `tues`, `ralenti` et `bloque` sont cumulés depuis la création du conteneur.
+`hote dispo` et `hote swapLibre` décrivent la machine hôte (`/proc/meminfo`), pas le conteneur.
+
+Le swap vient-il du code ? Trois lectures, sur les relevés où `swap` monte :
+
+| Ce qu'on lit                                        | Conclusion                                               |
+| --------------------------------------------------- | -------------------------------------------------------- |
+| `limite` ne bouge pas, `hote dispo` est bas         | L'hôte reprend de la mémoire : le code n'y est pour rien |
+| `limite` monte, `anon` + `swap` loin des 512 Mo     | Le cache de fichiers remplit le conteneur, sans gravité  |
+| `limite` monte, `anon` + `swap` approche des 512 Mo | Le serveur grossit : chercher dans `tas` et `alloc`      |
 
 Une ligne `alloc` se lit `+12.3 Mo (41.0 Mo) fonction (fichier:ligne:colonne) < appelant` :
 croissance depuis le premier relevé, taille actuelle, puis la fonction applicative la plus proche de
@@ -246,8 +267,12 @@ l'allocation. Le fichier est relatif à `.next/server/` (`nm/` pour `node_module
 minifié, la colonne se retrouve dans le fichier du même build. `MEMORY_LOG_TOP_ALLOCATIONS` absente
 ou à 0 : seule la ligne de synthèse est écrite, sans échantillonnage des allocations.
 
+`total` est la mémoire que `scalingo stats` affiche, cache de fichiers et mémoire du noyau compris ;
+`enSwap` est la part du processus Node partie en swap, comptée dans `horsTas`.
+
 Limites : les allocations sont échantillonnées (une tous les 128 Kio), et rien n'y explique une
-hausse de `horsTas`. Retirer les deux variables (`env-unset`) une fois la cause trouvée.
+hausse de `horsTas`. Le relevé ne voit que le serveur en marche, pas le build d'un déploiement, qui
+tourne dans un autre conteneur. Retirer les deux variables (`env-unset`) une fois la cause trouvée.
 
 ## Divers
 
