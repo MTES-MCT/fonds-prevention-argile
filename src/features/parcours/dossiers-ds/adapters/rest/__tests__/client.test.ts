@@ -5,13 +5,9 @@ vi.mock("@/shared/config/env.config", () => ({
   getServerEnv: vi.fn(() => ({
     DEMARCHES_SIMPLIFIEES_REST_API_URL: "https://www.demarches-simplifiees.fr/api/public/v1",
     DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE: "123456",
-    DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE: "test-eligibilite",
     DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC: "123457",
-    DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC: "test-diagnostic",
     DEMARCHES_SIMPLIFIEES_ID_DEVIS: "123458",
-    DEMARCHES_SIMPLIFIEES_NOM_DEVIS: "test-devis",
     DEMARCHES_SIMPLIFIEES_ID_FACTURES: "123459",
-    DEMARCHES_SIMPLIFIEES_NOM_FACTURES: "test-factures",
   })),
   isClient: vi.fn(() => false),
   isServer: vi.fn(() => true),
@@ -27,45 +23,6 @@ describe("DemarchesSimplifieesPrefillClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     client = new DemarchesSimplifieesPrefillClient();
-  });
-
-  describe("getSchema", () => {
-    it("devrait récupérer le schéma d'une démarche", async () => {
-      const mockSchema = {
-        revision: {
-          champDescriptors: [
-            {
-              id: "champ_1",
-              label: "Test Field",
-              type: "text",
-              required: true,
-            },
-          ],
-        },
-      };
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify(mockSchema), {
-          status: 200,
-          statusText: "OK",
-          headers: new Headers({ "Content-Type": "application/json" }),
-        })
-      );
-
-      const result = await client.getSchema(Step.ELIGIBILITE);
-
-      expect(fetch).toHaveBeenCalledWith(
-        "https://www.demarches-simplifiees.fr/preremplir/test-eligibilite/schema",
-        expect.objectContaining({
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        })
-      );
-
-      expect(result).toEqual(mockSchema);
-    });
   });
 
   describe("createPrefillDossier", () => {

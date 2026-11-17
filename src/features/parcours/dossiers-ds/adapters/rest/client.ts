@@ -6,34 +6,19 @@ export type DemarcheType = "ELIGIBILITE" | "DIAGNOSTIC" | "DEVIS" | "FACTURES";
 
 export class DemarchesSimplifieesPrefillClient {
   private baseUrl: string;
-  private publicUrl: string;
-  private demarcheConfigs: Record<DemarcheType, { id: string; nom: string }>;
+  private demarcheConfigs: Record<DemarcheType, { id: string }>;
 
   constructor() {
     const env = getServerEnv();
 
     this.baseUrl = env.DEMARCHES_SIMPLIFIEES_REST_API_URL;
-    // URL publique pour les endpoints non-API (schema, preremplir, etc.)
-    this.publicUrl = this.baseUrl.replace("/api/public/v1", "");
 
     // Configuration des 4 démarches
     this.demarcheConfigs = {
-      ELIGIBILITE: {
-        id: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE,
-        nom: env.DEMARCHES_SIMPLIFIEES_NOM_ELIGIBILITE,
-      },
-      DIAGNOSTIC: {
-        id: env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC,
-        nom: env.DEMARCHES_SIMPLIFIEES_NOM_DIAGNOSTIC,
-      },
-      DEVIS: {
-        id: env.DEMARCHES_SIMPLIFIEES_ID_DEVIS,
-        nom: env.DEMARCHES_SIMPLIFIEES_NOM_DEVIS,
-      },
-      FACTURES: {
-        id: env.DEMARCHES_SIMPLIFIEES_ID_FACTURES,
-        nom: env.DEMARCHES_SIMPLIFIEES_NOM_FACTURES,
-      },
+      ELIGIBILITE: { id: env.DEMARCHES_SIMPLIFIEES_ID_ELIGIBILITE },
+      DIAGNOSTIC: { id: env.DEMARCHES_SIMPLIFIEES_ID_DIAGNOSTIC },
+      DEVIS: { id: env.DEMARCHES_SIMPLIFIEES_ID_DEVIS },
+      FACTURES: { id: env.DEMARCHES_SIMPLIFIEES_ID_FACTURES },
     };
   }
 
@@ -71,36 +56,11 @@ export class DemarchesSimplifieesPrefillClient {
       throw new Error(`Configuration manquante pour la démarche: ${type}`);
     }
 
-    if (!config.id || !config.nom) {
+    if (!config.id) {
       throw new Error(`Configuration incomplète pour la démarche: ${type}`);
     }
 
     return config;
-  }
-
-  /**
-   * Récupère le schéma d'une démarche
-   * Endpoint: /preremplir/{nom-demarche}/schema
-   */
-  async getSchema(demarcheType: DemarcheType | Step): Promise<DemarcheSchema> {
-    const config = this.getConfig(demarcheType);
-    const url = `${this.publicUrl}/preremplir/${config.nom}/schema`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Erreur lors de la récupération du schéma pour ${demarcheType}: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return response.json();
   }
 
   /**
