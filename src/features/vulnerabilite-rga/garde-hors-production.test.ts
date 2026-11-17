@@ -34,6 +34,7 @@ const PORTEURS_DE_GARDE = [
   "src/app/(backoffice)/espace-agent/shared/components/VulnerabiliteDossier.tsx",
   "src/features/backoffice/espace-agent/shared/actions/test-vulnerabilite-agent.actions.ts",
   "src/features/vulnerabilite-rga/actions/enregistrer-resultat.actions.ts",
+  "src/app/(main)/documentation/integration-iframe/page.tsx",
 ];
 
 function fichiers(dossier: string): string[] {

@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 
 export const metadata: Metadata = {
   title: "Documentation - Intégration iframe | Fonds prévention argile",
@@ -40,6 +41,16 @@ export default function DocumentationIntegrationPage() {
 iframe.src =
   "https://fonds-prevention-argile.beta.gouv.fr/embed-simulateur#adresse=" +
   encodeURIComponent(adresse);`;
+
+  const iframeCodeVulnerabilite = `<iframe
+  src="https://fonds-prevention-argile.beta.gouv.fr/embed-vulnerabilite-rga"
+  title="Simulateur de vulnérabilité au retrait-gonflement des argiles"
+  style="width: 100%; height: 800px; border: none;"
+  referrerpolicy="no-referrer-when-downgrade"
+></iframe>`;
+
+  // Hors des environnements actifs, l'URL embarquée répond 404 : ne pas la donner aux partenaires.
+  const vulnerabiliteActive = isVulnerabiliteRgaActive();
 
   return (
     <div className="fr-container fr-py-6w">
@@ -193,6 +204,31 @@ iframe.src =
           </li>
         </ul>
       </div>
+
+      {/* Simulateur de vulnérabilité */}
+      {vulnerabiliteActive && (
+        <>
+          <h2 className="fr-mt-8w">Intégrer le simulateur de vulnérabilité</h2>
+          <p>
+            Le Fonds prévention argile propose un second simulateur : en quelques questions sur la maison et son
+            terrain, il indique au propriétaire les points de vulnérabilité de son logement face au retrait-gonflement
+            des argiles, avec des recommandations pour agir. Son intégration est identique à celle du simulateur
+            d&apos;éligibilité : seule l&apos;adresse de l&apos;iframe change.
+          </p>
+          <div className="fr-highlight">
+            <pre>
+              <code>{iframeCodeVulnerabilite}</code>
+            </pre>
+          </div>
+          <p className="fr-mt-3w">
+            Tout ce qui précède s&apos;applique sans changement : hauteur fixe de 800px, styles personnalisés et
+            préremplissage de l&apos;adresse après un <code>#</code>. Le résultat s&apos;affiche directement dans le
+            cadre. Quand le logement peut relever du Fonds prévention argile, un bouton propose à l&apos;utilisateur de
+            vérifier son éligibilité : le simulateur d&apos;éligibilité prend alors la suite dans la même iframe, sans
+            autre intégration de votre part.
+          </p>
+        </>
+      )}
 
       {/* Checklist d'intégration */}
       <h2 className="fr-mt-8w">Checklist d'intégration</h2>
