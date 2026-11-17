@@ -6,7 +6,10 @@ import {
   formaterDuree,
   formaterReleve,
   indexerParSite,
+  lireEnSwap,
   lireMemoireConteneur,
+  lireMemoireHote,
+  lirePressionMemoire,
   lireRssAnonyme,
   resumerAllocations,
   SITE_INTERNE,
@@ -26,11 +29,16 @@ describe("lireMemoireConteneur", () => {
   it("sépare la mémoire anonyme du cache de fichiers", () => {
     const stat = `anon ${200 * MO}\nfile ${300 * MO}\nfile_mapped ${5 * MO}\nkernel ${9 * MO}\n`;
 
-    expect(lireMemoireConteneur(stat, `${12 * MO}\n`)).toEqual({ anon: 200 * MO, cache: 300 * MO, swap: 12 * MO });
+    expect(lireMemoireConteneur(stat, `${12 * MO}\n`, `${511 * MO}\n`)).toEqual({
+      total: 511 * MO,
+      anon: 200 * MO,
+      cache: 300 * MO,
+      swap: 12 * MO,
+    });
   });
 
-  it("garde le relevé quand le swap n'est pas lisible", () => {
-    expect(lireMemoireConteneur("anon 10\nfile 20\n", null)).toEqual({ anon: 10, cache: 20, swap: null });
+  it("garde le relevé quand le swap et le total ne sont pas lisibles", () => {
+    expect(lireMemoireConteneur("anon 10\nfile 20\n", null)).toEqual({ total: null, anon: 10, cache: 20, swap: null });
   });
 
   it("renvoie null hors conteneur ou sur un format inattendu", () => {
@@ -47,6 +55,58 @@ describe("lireRssAnonyme", () => {
   it("renvoie null quand le fichier manque", () => {
     expect(lireRssAnonyme(null)).toBeNull();
     expect(lireRssAnonyme("VmRSS: 12 kB\n")).toBeNull();
+  });
+});
+
+describe("lireEnSwap", () => {
+  it("lit la part du processus partie en swap", () => {
+    expect(lireEnSwap("RssAnon:\t  140000 kB\nVmSwap:\t  117760 kB\n")).toBe(117760 * 1024);
+    expect(lireEnSwap("RssAnon: 12 kB\n")).toBeNull();
+  });
+});
+
+describe("lirePressionMemoire", () => {
+  const events = "low 0\nhigh 0\nmax 3\noom 1\noom_kill 1\noom_group_kill 0\n";
+  const swapEvents = "high 0\nmax 42\nfail 0\n";
+  const pressure =
+    "some avg10=0.00 avg60=0.12 avg300=0.40 total=12500000\nfull avg10=0.00 avg60=0.05 avg300=0.10 total=3200000\n";
+
+  it("compte les passages à la limite et le temps passé à attendre de la mémoire", () => {
+    expect(lirePressionMemoire(events, swapEvents, pressure)).toEqual({
+      limiteAtteinte: 3,
+      swapRefuse: 42,
+      tues: 1,
+      ralentiSecondes: 12.5,
+      bloqueSecondes: 3.2,
+    });
+  });
+
+  it("garde ce qui est lisible", () => {
+    expect(lirePressionMemoire(events, null, null)).toEqual({
+      limiteAtteinte: 3,
+      swapRefuse: null,
+      tues: 1,
+      ralentiSecondes: null,
+      bloqueSecondes: null,
+    });
+  });
+
+  it("renvoie null hors conteneur", () => {
+    expect(lirePressionMemoire(null, null, null)).toBeNull();
+  });
+});
+
+describe("lireMemoireHote", () => {
+  it("lit la mémoire disponible et le swap libre de la machine", () => {
+    const meminfo =
+      "MemTotal:       57583184 kB\nMemAvailable:    3827612 kB\nSwapTotal: 41938940 kB\nSwapFree:       27390948 kB\n";
+
+    expect(lireMemoireHote(meminfo)).toEqual({ disponible: 3827612 * 1024, swapLibre: 27390948 * 1024 });
+  });
+
+  it("renvoie null quand le fichier manque ou n'a pas ces champs", () => {
+    expect(lireMemoireHote(null)).toBeNull();
+    expect(lireMemoireHote("MemTotal: 12 kB\n")).toBeNull();
   });
 });
 
@@ -78,9 +138,12 @@ describe("formaterDuree", () => {
 describe("formaterReleve", () => {
   const releve: Releve = {
     dureeSecondes: 3 * 86400 + 4 * 3600,
-    conteneur: { anon: 212 * MO, cache: 180 * MO, swap: 0 },
+    conteneur: { total: 401 * MO, anon: 212 * MO, cache: 180 * MO, swap: 0 },
+    pression: { limiteAtteinte: 0, swapRefuse: 0, tues: 0, ralentiSecondes: 12.5, bloqueSecondes: 3.24 },
+    hote: { disponible: 3738 * MO, swapLibre: 26749 * MO },
     rss: 290 * MO,
     rssAnonyme: 182 * MO,
+    enSwap: 0,
     tasUtilise: 128 * MO,
     tasTotal: 135 * MO,
     externe: 5 * MO,
@@ -91,14 +154,35 @@ describe("formaterReleve", () => {
 
   it("tient en une ligne, en Mo", () => {
     expect(formaterReleve(releve)).toBe(
-      "[memoire] actif=3j04h | conteneur anon=212 cache=180 swap=0 | " +
-        "processus rss=290 tas=128/135 horsTas=47 externe=5 buffers=1 | " +
+      "[memoire] actif=3j04h | conteneur total=401 anon=212 cache=180 swap=0 | " +
+        "pression limite=0 swapRefuse=0 tues=0 ralenti=12.5s bloque=3.2s | hote dispo=3738 swapLibre=26749 | " +
+        "processus rss=290 enSwap=0 tas=128/135 horsTas=47 externe=5 buffers=1 | " +
         "tas vieux=83 grands=35 code=6 | ressources TCPSocketWrap=2 Timeout=1"
     );
   });
 
+  it("compte dans horsTas la mémoire du processus partie en swap", () => {
+    const ligne = formaterReleve({ ...releve, rssAnonyme: 135 * MO, enSwap: 117 * MO });
+
+    expect(ligne).toContain("processus rss=290 enSwap=117 tas=128/135 horsTas=117 ");
+  });
+
+  it("n'écrit que les compteurs de pression lisibles", () => {
+    const pression = { limiteAtteinte: 2, swapRefuse: null, tues: null, ralentiSecondes: null, bloqueSecondes: 0 };
+
+    expect(formaterReleve({ ...releve, pression })).toContain(" | pression limite=2 bloque=0.0s | ");
+  });
+
   it("omet ce que la machine ne sait pas mesurer", () => {
-    const ligne = formaterReleve({ ...releve, conteneur: null, rssAnonyme: null, ressources: [] });
+    const ligne = formaterReleve({
+      ...releve,
+      conteneur: null,
+      pression: null,
+      hote: null,
+      rssAnonyme: null,
+      enSwap: null,
+      ressources: [],
+    });
 
     expect(ligne).toBe(
       "[memoire] actif=3j04h | processus rss=290 tas=128/135 externe=5 buffers=1 | tas vieux=83 grands=35 code=6"

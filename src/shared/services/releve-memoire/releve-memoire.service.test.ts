@@ -53,7 +53,8 @@ describe("demarrerReleveMemoire", () => {
 
     await vi.advanceTimersByTimeAsync(60_000);
     await vi.waitFor(() => expect(lignesMemoire()).toHaveLength(2));
-    expect(lignesMemoire()[1]).toMatch(/^\[memoire\] actif=\d+min .*processus rss=\d+ tas=\d+\/\d+ /);
+    // enSwap n'est écrit que sous Linux, où /proc/self/status existe.
+    expect(lignesMemoire()[1]).toMatch(/^\[memoire\] actif=\d+min .*processus rss=\d+ (enSwap=\d+ )?tas=\d+\/\d+ /);
 
     await vi.advanceTimersByTimeAsync(9 * 60_000);
     await vi.waitFor(() => expect(lignesMemoire()).toHaveLength(3));
