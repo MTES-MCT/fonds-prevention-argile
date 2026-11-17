@@ -1,8 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+// Enveloppe transparente : n'exerce pas le cache Next, mais retient quelle enveloppe a servi et ce qu'elle a rendu.
+const cache = vi.hoisted(() => ({
+  appels: [] as { cles: string[]; revalidate: number; resultat: Promise<unknown> }[],
+}));
+
 vi.mock("next/cache", () => ({
-  // Pass-through en test : ce fichier n'exerce donc que l'adaptateur, jamais le cache Next.
-  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+  unstable_cache:
+    (fn: (...args: unknown[]) => Promise<unknown>, cles: string[], options: { revalidate: number }) =>
+    (...args: unknown[]) => {
+      const resultat = fn(...args);
+      cache.appels.push({ cles, revalidate: options.revalidate, resultat });
+      return resultat;
+    },
 }));
 
 vi.mock("@/shared/config/env.config", () => ({
@@ -17,14 +27,21 @@ import {
   fetchMatomoCountByDimension,
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
-  fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
   fetchMatomoUniqueVisitors,
   fetchMatomoUniqueVisitorsSeries,
   fetchMatomoUniqueVisitorsStrict,
 } from "./matomo-api.adapter";
+import { formaterDateMatomo } from "../domain/decoupage-periode";
 
 const originalFetch = global.fetch;
+
+// Chaque appel réel écrit une ligne de journal : on la capte pour ne pas noyer la sortie des tests.
+beforeEach(() => {
+  cache.appels.length = 0;
+  vi.spyOn(console, "info").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+});
 
 function mockFetchResponse(body: unknown) {
   global.fetch = vi.fn().mockResolvedValue({
@@ -32,6 +49,11 @@ function mockFetchResponse(body: unknown) {
     json: () => Promise.resolve(body),
     text: () => Promise.resolve(""),
   } as Response);
+}
+
+function corpsEnvoye(index = 0): URLSearchParams {
+  const [, init] = vi.mocked(global.fetch).mock.calls[index] as [string, RequestInit];
+  return new URLSearchParams(init.body as string);
 }
 
 describe("fetchMatomoCountByDimension", () => {
@@ -43,11 +65,10 @@ describe("fetchMatomoCountByDimension", () => {
     global.fetch = originalFetch;
   });
 
-  it("agrège les visites par valeur de dimension (labels 'valeur - url' scope action)", async () => {
+  it("cumule les visites par valeur de dimension", async () => {
     mockFetchResponse([
-      { label: "36 - fonds-prevention-argile.beta.gouv.fr/vulnerabilite-rga", nb_visits: 7 },
-      { label: "36 - fonds-prevention-argile.beta.gouv.fr/vulnerabilite-rga?x=1", nb_visits: 3 },
-      { label: "18 - fonds-prevention-argile.beta.gouv.fr/vulnerabilite-rga", nb_visits: 2 },
+      { label: "36", nb_visits: 10 },
+      { label: "18", nb_visits: 2 },
       { label: "-", nb_visits: 1 },
     ]);
 
@@ -58,33 +79,89 @@ describe("fetchMatomoCountByDimension", () => {
     expect(result.size).toBe(2);
   });
 
+  it("lit encore l'ancien format à plat « valeur - url », pour une réponse restée en cache", async () => {
+    mockFetchResponse([
+      { label: "36 - fonds-prevention-argile.beta.gouv.fr/vulnerabilite-rga", nb_visits: 7 },
+      { label: "36 - fonds-prevention-argile.beta.gouv.fr/vulnerabilite-rga?x=1", nb_visits: 3 },
+    ]);
+
+    const result = await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result");
+
+    expect(result.get("36")).toBe(10);
+  });
+
+  it("somme les sous-périodes d'une réponse en day/week/month", async () => {
+    mockFetchResponse({
+      "2026-09": [
+        { label: "36", nb_visits: 4 },
+        { label: "18", nb_visits: 1 },
+      ],
+      "2026-10": [{ label: "36", nb_visits: "6" }],
+    });
+
+    const result = await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result", {
+      period: "month",
+      date: "2026-09-01,2026-10-31",
+    });
+
+    expect(result.get("36")).toBe(10);
+    expect(result.get("18")).toBe(1);
+  });
+
+  it("rejette une sous-période non tabulaire au lieu de rendre un total amputé", async () => {
+    mockFetchResponse({
+      "2026-09": [{ label: "36", nb_visits: 4 }],
+      "2026-10": { result: "error", message: "archive indisponible" },
+    });
+
+    await expect(
+      fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result", {
+        period: "month",
+        date: "2026-09-01,2026-10-31",
+      })
+    ).rejects.toThrow("sous-periode non tabulaire");
+  });
+
+  it("rejette un compteur absent au lieu de le compter pour zéro", async () => {
+    mockFetchResponse([{ label: "36" }]);
+
+    await expect(fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result")).rejects.toThrow(
+      "compteur non numerique"
+    );
+  });
+
   it("segmente la requête avec l'eventAction fourni, isolant les deux simulateurs", async () => {
     mockFetchResponse([]);
 
     await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result");
 
-    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
-    const body = new URLSearchParams(init.body as string);
-    expect(body.get("segment")).toBe("eventAction==vulnerabilite_result");
-    expect(body.get("method")).toBe("CustomDimensions.getCustomDimension");
+    expect(corpsEnvoye().get("segment")).toBe("eventAction==vulnerabilite_result");
+    expect(corpsEnvoye().get("method")).toBe("CustomDimensions.getCustomDimension");
   });
 
-  it("lève la limite de lignes Matomo (100 par défaut) quand on demande toutes les lignes", async () => {
-    mockFetchResponse([]);
-
-    await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result", { toutesLesLignes: true });
-
-    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
-    expect(new URLSearchParams(init.body as string).get("filter_limit")).toBe("-1");
-  });
-
-  it("garde la limite par défaut de Matomo sans la demande explicite (Top 5 communes, jamais mesuré en entier)", async () => {
+  it("demande toutes les valeurs, sans `flat` et avec la seule colonne utile", async () => {
+    // `flat` faisait charger à Matomo une sous-table d'URL par valeur (34 s contre 0,7 s mesurés),
+    // pour des totaux par valeur identiques.
     mockFetchResponse([]);
 
     await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result");
 
-    const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
-    expect(new URLSearchParams(init.body as string).has("filter_limit")).toBe(false);
+    expect(corpsEnvoye().has("flat")).toBe(false);
+    expect(corpsEnvoye().get("filter_limit")).toBe("-1");
+    expect(corpsEnvoye().get("showColumns")).toBe("nb_visits");
+  });
+
+  it("ne met en cache que label et nb_visits, pour rester sous la limite de 2 Mo de Next", async () => {
+    mockFetchResponse({
+      "2026-09": [{ label: "36", nb_visits: 4, segment: "dimension5==36", idsubdatatable: 12 }],
+    });
+
+    await fetchMatomoCountByDimension(5, "eventAction==vulnerabilite_result", {
+      period: "month",
+      date: "2026-09-01,2026-09-30",
+    });
+
+    await expect(cache.appels[0].resultat).resolves.toEqual({ "2026-09": [{ label: "36", nb_visits: 4 }] });
   });
 
   it("un seul appel HTTP (contrairement à fetchMatomoSimulationsGroupedByDimension qui en fait 2)", async () => {
@@ -96,7 +173,7 @@ describe("fetchMatomoCountByDimension", () => {
   });
 });
 
-describe("fetchMatomoSimulationsGroupedByDepartment — liste complète des départements", () => {
+describe("fetchMatomoSimulationsGroupedByDimension", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -105,45 +182,11 @@ describe("fetchMatomoSimulationsGroupedByDepartment — liste complète des dép
     global.fetch = originalFetch;
   });
 
-  it("demande toutes les lignes sur les deux rapports (éligibles et non éligibles)", async () => {
-    mockFetchResponse([]);
-
-    await fetchMatomoSimulationsGroupedByDepartment(5, { period: "range", date: "2026-09-01,2026-09-30" });
-
-    const appels = vi.mocked(global.fetch).mock.calls as [string, RequestInit][];
-    expect(appels).toHaveLength(2);
-    for (const [, init] of appels) {
-      expect(new URLSearchParams(init.body as string).get("filter_limit")).toBe("-1");
-    }
-  });
-
-  it("laisse le rapport par commune à la limite par défaut", async () => {
-    mockFetchResponse([]);
-
-    await fetchMatomoSimulationsGroupedByDimension(6, { period: "range", date: "2026-09-01,2026-09-30" });
-
-    const appels = vi.mocked(global.fetch).mock.calls as [string, RequestInit][];
-    for (const [, init] of appels) {
-      expect(new URLSearchParams(init.body as string).has("filter_limit")).toBe(false);
-    }
-  });
-});
-
-describe("fetchMatomoSimulationsGroupedByDimension — non-régression après extraction du helper commun", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-  });
-
-  it("fusionne les 2 appels (éligible + non éligible) par département", async () => {
-    let callCount = 0;
-    global.fetch = vi.fn().mockImplementation(() => {
-      callCount += 1;
+  it("fusionne les 2 appels (éligible + non éligible) par valeur", async () => {
+    global.fetch = vi.fn().mockImplementation((_url: string, init: RequestInit) => {
+      const segment = new URLSearchParams(init.body as string).get("segment");
       const body =
-        callCount === 1
+        segment === "eventAction==simulateur_result_eligible"
           ? [{ label: "36", nb_visits: 5 }]
           : [
               { label: "36", nb_visits: 2 },
@@ -161,6 +204,125 @@ describe("fetchMatomoSimulationsGroupedByDimension — non-régression après ex
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(result.get("36")).toEqual({ total: 7, eligible: 5, nonEligible: 2 });
     expect(result.get("18")).toEqual({ total: 1, eligible: 0, nonEligible: 1 });
+  });
+});
+
+describe("appels identiques en cours", () => {
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("partage un seul appel Matomo entre deux demandes simultanées", async () => {
+    // Taux de rebond et visiteurs uniques lisent le même VisitsSummary.get : un `range` suffit.
+    mockFetchResponse({ nb_uniq_visitors: 42, bounce_rate: "40%" });
+
+    const [a, b] = await Promise.all([
+      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
+      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
+    ]);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect([a, b]).toEqual([42, 42]);
+  });
+
+  it("ne partage pas deux demandes dont le segment diffère", async () => {
+    mockFetchResponse({ nb_uniq_visitors: 42 });
+
+    await Promise.all([
+      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31"),
+      fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31", "dimension1==36"),
+    ]);
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne retient pas un échec : la demande suivante repart vers Matomo", async () => {
+    global.fetch = vi.fn().mockRejectedValueOnce(new DOMException("delai", "TimeoutError"));
+    await expect(fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31")).rejects.toThrow();
+
+    mockFetchResponse({ nb_uniq_visitors: 42 });
+
+    await expect(fetchMatomoUniqueVisitors("range", "2026-01-01,2026-01-31")).resolves.toBe(42);
+  });
+});
+
+describe("durée de cache selon la plage", () => {
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("garde 24 h une plage close, dont la réponse ne changera plus", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoEvents({ period: "month", date: "2025-11-01,2025-11-30" });
+
+    expect(cache.appels).toHaveLength(1);
+    expect(cache.appels[0]).toMatchObject({ revalidate: 24 * 3600, cles: ["matomo-api", "plage-stable"] });
+  });
+
+  it("garde 1 h une plage qui contient aujourd'hui", async () => {
+    mockFetchResponse({});
+    const aujourdHui = formaterDateMatomo(new Date());
+
+    await fetchMatomoEvents({ period: "day", date: `${aujourdHui},${aujourdHui}` });
+
+    expect(cache.appels[0]).toMatchObject({ revalidate: 3600, cles: ["matomo-api"] });
+  });
+
+  it("garde 1 h un mot-clé Matomo, dont la fin glisse chaque jour", async () => {
+    mockFetchResponse([]);
+
+    await fetchMatomoEvents({ period: "range", date: "2025-01-01,today" });
+
+    expect(cache.appels[0].revalidate).toBe(3600);
+  });
+});
+
+describe("journal des appels", () => {
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("écrit une ligne par appel réussi, sans le jeton ni la valeur du segment", async () => {
+    mockFetchResponse({});
+
+    await fetchMatomoEventsByDepartment("36", 5, { period: "week", date: "2026-01-05,2026-01-18" });
+
+    const ligne = vi.mocked(console.info).mock.calls[0][0] as string;
+    expect(ligne).toMatch(
+      /^\[matomo\] appel methode=Events\.getAction period=week jours=14 segment=dimension5 simultanes=1 duree=\d+ms issue=ok$/
+    );
+    expect(ligne).not.toContain("token-test");
+  });
+
+  it("signale un délai dépassé en avertissement", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new DOMException("delai", "TimeoutError"));
+
+    await expect(fetchMatomoEvents({ period: "day", date: "2026-01-01,2026-01-01" })).rejects.toThrow();
+
+    expect(vi.mocked(console.warn).mock.calls[0][0]).toContain("issue=timeout");
+    expect(console.info).not.toHaveBeenCalled();
+  });
+
+  it("distingue le refus de Matomo, renvoyé en HTTP 200", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFetchResponse({ result: "error", message: "token_auth invalide" });
+
+    await expect(fetchMatomoEvents({ period: "day", date: "2026-01-02,2026-01-02" })).rejects.toThrow();
+
+    expect(vi.mocked(console.warn).mock.calls[0][0]).toContain("issue=erreur_matomo");
+  });
+
+  it("compte les appels partis en même temps", async () => {
+    mockFetchResponse({});
+
+    await Promise.all([
+      fetchMatomoEvents({ period: "day", date: "2026-01-03,2026-01-03" }),
+      fetchMatomoEvents({ period: "day", date: "2026-01-04,2026-01-04" }),
+    ]);
+
+    const lignes = vi.mocked(console.info).mock.calls.map(([ligne]) => ligne as string);
+    expect(lignes.some((ligne) => ligne.includes("simultanes=2"))).toBe(true);
   });
 });
 

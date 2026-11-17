@@ -272,9 +272,36 @@ describe("getVulnerabiliteTopDepartements", () => {
     expect(fetchMatomoCountByDimension).toHaveBeenCalledWith(
       5,
       "eventAction==vulnerabilite_result",
-      expect.objectContaining({ period: "range", toutesLesLignes: true })
+      expect.objectContaining({ period: "day" })
     );
     expect(result).toEqual([{ codeDepartement: "36", nomDepartement: "Indre", simulations: 12 }]);
+  });
+
+  it("somme les sous-périodes au lieu de demander un `range`, que Matomo ne pré-archive pas", async () => {
+    vi.mocked(getClientEnv).mockReturnValue({
+      NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: "5",
+    } as ReturnType<typeof getClientEnv>);
+    vi.mocked(fetchMatomoCountByDimension).mockResolvedValue(new Map([["36", 2]]));
+
+    const result = await getVulnerabiliteTopDepartements("12m");
+
+    const appels = vi.mocked(fetchMatomoCountByDimension).mock.calls;
+    expect(appels.length).toBeGreaterThan(1);
+    expect(appels.every(([, , options]) => options?.period !== "range")).toBe(true);
+    expect(result).toEqual([{ codeDepartement: "36", nomDepartement: "Indre", simulations: 2 * appels.length }]);
+  });
+
+  it("borne « depuis le début » au lancement du service, pas à 1970", async () => {
+    vi.mocked(getClientEnv).mockReturnValue({
+      NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID: "5",
+    } as ReturnType<typeof getClientEnv>);
+    vi.mocked(fetchMatomoCountByDimension).mockResolvedValue(new Map());
+
+    await getVulnerabiliteTopDepartements("tout");
+
+    const dates = vi.mocked(fetchMatomoCountByDimension).mock.calls.map(([, , options]) => options?.date ?? "");
+    expect(dates.length).toBeGreaterThan(0);
+    expect(dates.every((date) => date >= "2025-10-16")).toBe(true);
   });
 
   it("renvoie une liste vide (jamais une erreur) quand Matomo est injoignable", async () => {

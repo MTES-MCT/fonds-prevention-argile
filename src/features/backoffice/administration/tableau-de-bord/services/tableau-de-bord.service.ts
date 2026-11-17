@@ -47,7 +47,6 @@ import {
   fetchMatomoEvents,
   fetchMatomoEventsByDepartment,
   fetchMatomoUniqueVisitors,
-  fetchMatomoSimulationsGroupedByDepartment,
   fetchMatomoSimulationsGroupedByDimension,
   buildPartnerSegment,
 } from "@/features/backoffice/administration/acquisition/adapters/matomo-api.adapter";
@@ -58,8 +57,14 @@ import {
   decouperPeriodeMatomo,
   formaterDateMatomo,
 } from "@/features/backoffice/administration/acquisition/domain/decoupage-periode";
-import { cumulerCompteurs } from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
-import { regrouperSimulationsParDepartement } from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
+import {
+  cumulerCompteurs,
+  cumulerSimulations,
+} from "@/features/backoffice/administration/acquisition/domain/cumul-compteurs";
+import {
+  regrouperSimulationsParDepartement,
+  type CompteurSimulations,
+} from "@/features/backoffice/administration/acquisition/domain/simulations-departement";
 import type { GranulariteVisites } from "@/features/backoffice/administration/acquisition/domain/types/matomo.types";
 import {
   getFenetrePeriode,
@@ -145,6 +150,23 @@ async function getSimulationsMatomo(
   const nonEligible = events.get(MATOMO_EVENTS.SIMULATEUR_RESULT_NON_ELIGIBLE) ?? 0;
 
   return { eligible, nonEligible, total: eligible + nonEligible };
+}
+
+/** Rapport par dimension sur une fenêtre : sous-périodes alignées puis sommées, jamais `range` (ADR-0033). */
+async function getSimulationsParDimension(
+  dimensionId: number,
+  fenetre: FenetrePeriode,
+  granularite: GranulariteVisites,
+  partner?: PartnerKey | null
+): Promise<Map<string, CompteurSimulations>> {
+  const extraSegment = buildPartnerSegment(partner);
+  const sousPeriodes = decouperPeriodeMatomo(fenetre.debut, fenetre.dernierJour, granularite);
+  const parAppel = await Promise.all(
+    sousPeriodes.map(({ period, date }) =>
+      fetchMatomoSimulationsGroupedByDimension(dimensionId, { period, date, extraSegment })
+    )
+  );
+  return cumulerSimulations(parAppel);
 }
 
 /**
@@ -1005,8 +1027,6 @@ export async function getTopDepartementsMatomo(
 ): Promise<DepartementStats[]> {
   const fenetre = getDateRange(periodeId);
   const { debut, fin } = fenetre;
-  const dateRange = formatMatomoDateRange(fenetre);
-  const partnerSegment = buildPartnerSegment(partner);
 
   const dimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID;
   const dimensionId = dimensionIdStr ? Number(dimensionIdStr) : null;
@@ -1014,11 +1034,7 @@ export async function getTopDepartementsMatomo(
   if (!dimensionId) throw new Error("NEXT_PUBLIC_MATOMO_DIMENSION_DEPARTEMENT_ID non configuré");
 
   const [matomoParValeur, bddStats] = await Promise.all([
-    fetchMatomoSimulationsGroupedByDepartment(dimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    }),
+    getSimulationsParDimension(dimensionId, fenetre, getGranulariteForPeriode(periodeId), partner),
     getTopDepartementsStats(debut, fin, partner),
   ]);
   const matomoByDept = regrouperSimulationsParDepartement(matomoParValeur);
@@ -1094,8 +1110,6 @@ export async function getTopCommunesMatomo(
 ): Promise<CommuneSimulationsStats[]> {
   const fenetre = getDateRange(periodeId);
   const { debut, fin } = fenetre;
-  const dateRange = formatMatomoDateRange(fenetre);
-  const partnerSegment = buildPartnerSegment(partner);
 
   const communeDimensionIdStr = getClientEnv().NEXT_PUBLIC_MATOMO_DIMENSION_COMMUNE_ID;
   const communeDimensionId = communeDimensionIdStr ? Number(communeDimensionIdStr) : null;
@@ -1105,11 +1119,12 @@ export async function getTopCommunesMatomo(
   }
 
   try {
-    const matomoByCommune = await fetchMatomoSimulationsGroupedByDimension(communeDimensionId, {
-      period: "range",
-      date: dateRange,
-      extraSegment: partnerSegment,
-    });
+    const matomoByCommune = await getSimulationsParDimension(
+      communeDimensionId,
+      fenetre,
+      getGranulariteForPeriode(periodeId),
+      partner
+    );
 
     if (matomoByCommune.size === 0) {
       return getTopCommunesStats(debut, fin, codeDepartement, partner);
