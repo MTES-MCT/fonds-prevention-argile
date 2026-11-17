@@ -5,7 +5,8 @@ import { copyFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
-// Le worker importe son chunk partage en relatif : les deux doivent atterrir cote a cote.
+// En 6.11 le worker importe son chunk partage en relatif ; en 6.17 il est autonome et le chunk
+// est livre vide. Copier les deux cote a cote reste juste dans les deux cas.
 const FICHIERS = ["maplibre-gl-worker.mjs", "maplibre-gl-shared.mjs"];
 
 const dist = dirname(createRequire(import.meta.url).resolve("maplibre-gl/dist/maplibre-gl.mjs"));
