@@ -82,5 +82,6 @@ purement cosmétique.
 | 0051 | [Rôles AMO et Aller-vers portés par la structure](0051-roles-amo-aller-vers-portes-par-la-structure.md) | Accepté |
 | 0052 | [Annuaire des experts RGA, habilitation de structure et ordre neutre](0052-annuaire-des-experts-ordre-neutre.md) | Accepté |
 | 0053 | [Identité et type portés par la structure, une fiche par structure](0053-identite-portee-par-la-structure.md) | Accepté |
+| 0054 | [Limitation de débit des routes publiques, en mémoire et par conteneur](0054-limitation-de-debit-en-memoire.md) | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->
