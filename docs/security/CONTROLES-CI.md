@@ -87,14 +87,17 @@ Une licence nouvelle se traite de même : après relecture, l'ajouter à `allow-
 
 Ils se règlent dans GitHub, pas dans un fichier. État relevé le 18 novembre 2026.
 
-| Réglage                                           | État       |
-| ------------------------------------------------- | ---------- |
-| Revue obligatoire avant fusion sur `main`         | Actif      |
-| Force-push et suppression de `main` interdits     | Actif      |
-| Détection de secrets par GitHub (secret scanning) | Actif      |
-| Correctifs de sécurité Dependabot                 | Actif      |
-| Jobs de CI requis pour fusionner                  | **Absent** |
-| Blocage des secrets au push (push protection)     | **Absent** |
+| Réglage                                             | État       |
+| --------------------------------------------------- | ---------- |
+| Revue obligatoire avant fusion sur `main`           | Actif      |
+| Force-push et suppression de `main` interdits       | Actif      |
+| Détection de secrets par GitHub (secret scanning)   | Actif      |
+| Détection de secrets par GitGuardian, sur chaque PR | Actif      |
+| Analyse de qualité du code (GitHub Code Quality)    | Actif      |
+| Analyse de sécurité du code (CodeQL, code scanning) | **Absent** |
+| Correctifs de sécurité Dependabot                   | Actif      |
+| Jobs de CI requis pour fusionner                    | **Absent** |
+| Blocage des secrets au push (push protection)       | **Absent** |
 
 Tant que les jobs ne sont pas requis, une PR peut être fusionnée avec une CI rouge : les contrôles
 du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJETS-A-TRAITER.md).
@@ -103,7 +106,9 @@ du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJE
 
 ## 5. Ce que la CI ne vérifie pas
 
-- Les en-têtes HTTP servis, la garde des routes d'API (`route.ts`) et l'analyse statique du code.
+- Les en-têtes HTTP servis et la garde des routes d'API (`route.ts`).
+- Les failles dans le code lui-même : l'analyse en place (Code Quality) juge la maintenabilité, pas
+  la sécurité, et le code scanning CodeQL n'est pas configuré.
 - Le comportement de l'application déployée : aucun scan dynamique.
 - La logique métier et le cloisonnement entre rôles au-delà des tests du § 2 : c'est l'objet d'un
   audit manuel.
