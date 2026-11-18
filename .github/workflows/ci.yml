@@ -6,39 +6,72 @@ on:
   pull_request:
     branches: [main, dev]
 
+# Aucun droit par défaut : chaque job déclare les siens (docs/security/CONTROLES-CI.md).
+permissions: {}
+
 jobs:
   security:
     name: Security Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Talisman
+        env:
+          TALISMAN_VERSION: v1.37.0
+          TALISMAN_SHA256: 8e0ae8bb7b160bf10c4fa1448beb04a32a35e63505b3dddff74a092bccaaa7e4
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/thoughtworks/talisman/releases/download/${TALISMAN_VERSION}/talisman_linux_amd64" \
+            -o "${RUNNER_TEMP}/talisman"
+          echo "${TALISMAN_SHA256}  ${RUNNER_TEMP}/talisman" | sha256sum --check --strict
+          chmod +x "${RUNNER_TEMP}/talisman"
 
       - name: Detect secrets with Talisman
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
         run: |
-          # Télécharger et installer Talisman
-          curl -L https://github.com/thoughtworks/talisman/releases/latest/download/talisman_linux_amd64 -o talisman
-          chmod +x talisman
+          set -euo pipefail
+          head_sha="${PR_HEAD_SHA:-$GITHUB_SHA}"
+          base_sha="${PR_BASE_SHA:-$PUSH_BEFORE_SHA}"
 
-          # Scanner le code
-          ./talisman --githook pre-commit || (echo "::error::Secrets detected in code" && exit 1)
+          # Branche neuve ou historique réécrit : pas de commit précédent, on part de la divergence avec main.
+          if [ -z "$base_sha" ] || ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            base_sha=$(git merge-base "$head_sha" origin/main)
+          fi
+
+          # Le mode pre-commit ne lit que l'index, vide en CI : seul pre-push scanne des commits.
+          echo "Scan des commits ${base_sha}..${head_sha}"
+          echo "refs/heads/ci ${head_sha} refs/heads/ci ${base_sha}" \
+            | "${RUNNER_TEMP}/talisman" --githook pre-push \
+            || { echo "::error::Talisman a détecté un secret potentiel dans les commits scannés"; exit 1; }
 
   ci:
     name: Test, Lint & Build
     runs-on: ubuntu-latest
     needs: security
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: ".node-version"
           cache: "pnpm"
