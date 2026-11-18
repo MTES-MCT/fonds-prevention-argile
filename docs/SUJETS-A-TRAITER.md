@@ -360,6 +360,31 @@ refuse un push contenant une clé reconnue, est désactivée.
 exécutés), puis un accès administrateur au dépôt de l'organisation. Jobs à exiger : `Security Checks`,
 `Test, Lint & Build`, `Dependency Review`. Mettre à jour le § 4 du registre une fois fait.
 
+### Limiter le débit des routes publiques
+
+Relevé en inventoriant les routes d'API (novembre 2026). Aucune route n'a de limitation de débit :
+`/api/rga/alea` lance une requête PostGIS par appel, `/api/ds/piece-modele` un appel à DN, et les départs
+de connexion (`/api/auth/fc/login`, `/api/auth/pc/login`) un aller-retour vers le fournisseur. Les
+entrées sont validées, mais rien n'empêche de les appeler en boucle.
+
+**Préalable** : savoir ce que Scalingo filtre déjà devant l'application, puis choisir où limiter
+(hébergeur, middleware, ou stockage partagé si plusieurs conteneurs).
+
+### Réduire ce que dit la sonde `/api/health`
+
+La route est publique et renvoie la version de l'application et le nom de l'environnement. Rien de
+sensible, mais c'est de l'information donnée à qui la demande, comme l'était `X-Powered-By`.
+
+**Préalable** : vérifier ce que lit la supervision (Scalingo, DashLord) avant de retirer un champ.
+
+### Valider les entrées des actions de synchronisation
+
+`listSyncRunsAction(page, pageSize)` et `getSyncRunDetailAction(runId)` prennent leurs paramètres tels
+quels : une taille de page arbitraire et un identifiant non vérifié atteignent le dépôt. Réservées au
+super-administrateur, donc sans urgence.
+
+**Préalable** : aucun, un schéma Zod en tête des deux actions.
+
 ### Donner une licence au dépôt
 
 Le dépôt est public et n'a ni fichier `LICENSE`, ni champ `license` dans `package.json` : en droit, le

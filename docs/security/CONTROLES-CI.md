@@ -55,13 +55,15 @@ sha512, et l'empreinte à recalculer à chaque montée de version faisait échou
 
 Ils tournent avec `pnpm test`, donc à chaque push. Chacun échoue en nommant le fichier fautif.
 
-| Test                                                      | Ce qu'il refuse                                                                |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `auth/permissions/garde-server-actions.test.ts`           | Une server action sans garde, ou qui lit le rôle du JWT                        |
-| `backoffice/espace-agent/garde-actions.test.ts`           | Une action de l'espace agent dont la garde n'est pas la première instruction   |
-| `app/(backoffice)/espace-agent/garde-pages.test.ts`       | Une page ou un `generateMetadata` de l'espace agent sans garde                 |
-| `shared/database/inventaire-donnees-personnelles.test.ts` | Une colonne absente de l'inventaire ou non traitée à la restauration d'un dump |
-| `vulnerabilite-rga/garde-hors-production.test.ts`         | Une surface du simulateur de vulnérabilité ouverte en production               |
+| Test                                                      | Ce qu'il refuse                                                                               |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `auth/permissions/garde-server-actions.test.ts`           | Une server action sans garde, ou qui lit le rôle du JWT                                       |
+| `app/garde-routes.test.ts`                                | Une route d'API (`route.ts`) non déclarée au registre, ou qui n'appelle pas la garde annoncée |
+| `app/(backoffice)/administration/garde-pages.test.ts`     | Une page d'administration sans niveau d'accès déclaré, ou sans le test de rôle de son niveau  |
+| `backoffice/espace-agent/garde-actions.test.ts`           | Une action de l'espace agent dont la garde n'est pas la première instruction                  |
+| `app/(backoffice)/espace-agent/garde-pages.test.ts`       | Une page ou un `generateMetadata` de l'espace agent sans garde                                |
+| `shared/database/inventaire-donnees-personnelles.test.ts` | Une colonne absente de l'inventaire ou non traitée à la restauration d'un dump                |
+| `vulnerabilite-rga/garde-hors-production.test.ts`         | Une surface du simulateur de vulnérabilité ouverte en production                              |
 
 Détail et limites : [RBAC-TEST-PLAN.md § 5](RBAC-TEST-PLAN.md).
 
@@ -106,7 +108,7 @@ du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJE
 
 ## 5. Ce que la CI ne vérifie pas
 
-- Les en-têtes HTTP servis et la garde des routes d'API (`route.ts`).
+- Les en-têtes HTTP servis.
 - Les failles dans le code lui-même : l'analyse en place (Code Quality) juge la maintenabilité, pas
   la sécurité, et le code scanning CodeQL n'est pas configuré.
 - Le comportement de l'application déployée : aucun scan dynamique.
