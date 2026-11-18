@@ -1,12 +1,16 @@
 import { generateAuthorizationUrl, ROUTES } from "@/features/auth";
 import { getServerEnv } from "@/shared/config/env.config";
 import { NextResponse } from "next/server";
+import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
 
 /**
  * GET /api/auth/fc/login
  * Initie le flow de connexion FranceConnect
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const refus = limiterDebit(request, "connexion");
+  if (refus) return refus;
+
   try {
     // Générer l'URL d'autorisation avec state et nonce
     const authUrl = await generateAuthorizationUrl();

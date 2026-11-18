@@ -7,6 +7,7 @@ import {
 import { getServerEnv } from "@/shared/config/env.config";
 import { normalizePartnerSlug } from "@/shared/domain/partners";
 import { NextRequest, NextResponse } from "next/server";
+import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
 
 const PARTNER_COOKIE_NAME = "partner_source";
 
@@ -15,6 +16,9 @@ const PARTNER_COOKIE_NAME = "partner_source";
  * Traite le retour de FranceConnect après authentification
  */
 export async function GET(request: NextRequest) {
+  const refus = limiterDebit(request, "connexion");
+  if (refus) return refus;
+
   const baseUrl = getServerEnv().BASE_URL;
   const searchParams = request.nextUrl.searchParams;
 
