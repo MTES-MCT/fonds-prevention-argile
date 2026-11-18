@@ -1,37 +1,15 @@
 import type { NextConfig } from "next";
+import { construireReglesEnTetes } from "./src/shared/config/en-tetes-http";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@gouvfr/dsfr"],
+  // « X-Powered-By: Next.js » annonce la pile technique sans rien apporter.
+  poweredByHeader: false,
   images: {
     qualities: [25, 50, 85, 95],
   },
   async headers() {
-    return [
-      {
-        // Autoriser l'iframe uniquement sur les routes /embed/*
-        source: "/embed/:path*",
-        headers: [
-          {
-            key: "X-Frame-Options",
-            value: "ALLOWALL",
-          },
-          {
-            key: "Content-Security-Policy",
-            value: "frame-ancestors *",
-          },
-        ],
-      },
-      {
-        // Protéger toutes les autres routes (par défaut)
-        source: "/:path((?!embed).*)*",
-        headers: [
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-        ],
-      },
-    ];
+    return construireReglesEnTetes();
   },
 };
 

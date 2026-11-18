@@ -98,8 +98,8 @@ jobs:
 
       - name: Build application
         run: pnpm build
-        env:
-          # Variables d'environnement pour le build
+        # Valeurs d'exemple, reprises telles quelles par le contrôle des en-têtes (ancre YAML).
+        env: &env_application
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
           NEXT_PUBLIC_DEMARCHES_SIMPLIFIEES_BASE_URL: https://www.demarches-simplifiees.fr
@@ -143,3 +143,17 @@ jobs:
           PC_SCOPES: "openid email"
           PC_ACR_VALUES: "eidas1"
           PC_STATE_TTL: "300"
+
+      # Le serveur de production réel : seul moyen de voir ce que Next et le middleware servent vraiment.
+      - name: Check HTTP security headers on the built app
+        env: *env_application
+        run: |
+          set -euo pipefail
+          pnpm start > "${RUNNER_TEMP}/next.log" 2>&1 &
+
+          for _ in $(seq 1 30); do
+            curl -fsS -o /dev/null http://localhost:3000/robots.txt && break
+            sleep 1
+          done
+
+          pnpm -s audit:en-tetes http://localhost:3000 || { cat "${RUNNER_TEMP}/next.log"; exit 1; }
