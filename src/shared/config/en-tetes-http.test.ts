@@ -90,7 +90,10 @@ describe("en-têtes HTTP de sécurité", () => {
     ["/embed-simulateur-bis", false],
     ["/embedded", false],
     ["/embed-simulateur", true],
-    ["/embed-simulateur/etape", true],
+    ["/embed-simulateur/etape", false],
+    ["/embed-vulnerabilite-rga/inconnu", false],
+    ["/embed-simulateur/", true],
+    ["/EMBED-SIMULATEUR", true],
     ["/embed-vulnerabilite-rga", true],
   ])("%s : encadrable par un tiers = %s", (chemin, encadrable) => {
     const servis = enTetesServis(chemin);

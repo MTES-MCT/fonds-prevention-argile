@@ -47,27 +47,27 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Contrôler les en-têtes servis
-        id: controle
         env:
           URL_SITE: ${{ matrix.url }}
         run: pnpm -s audit:en-tetes "$URL_SITE"
 
       - name: Ouvrir ou relancer l'issue de suivi
-        if: failure() && steps.controle.conclusion == 'failure' && github.event_name == 'schedule'
+        # Toute panne compte, installation comprise : une surveillance muette vaut une surveillance absente.
+        if: failure() && github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ github.token }}
           ENVIRONNEMENT: ${{ matrix.environnement }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          titre="En-têtes de sécurité non conformes sur ${ENVIRONNEMENT}"
-          corps="La vérification quotidienne a relevé un écart : ${RUN_URL}
+          titre="Vérification des en-têtes de sécurité en échec sur ${ENVIRONNEMENT}"
+          corps="La vérification quotidienne a échoué (écart, ou contrôle qui n'a pas pu tourner) : ${RUN_URL}
 
           Les en-têtes attendus sont définis dans \`src/shared/config/en-tetes-http.ts\` (registre : \`docs/security/CONTROLES-CI.md\`)."
 
           numero=$(gh issue list --state open --search "in:title \"${titre}\"" --json number --jq '.[0].number // empty')
           if [ -n "$numero" ]; then
-            gh issue comment "$numero" --body "Toujours en écart : ${RUN_URL}"
+            gh issue comment "$numero" --body "Toujours en échec : ${RUN_URL}"
           else
             gh issue create --title "$titre" --body "$corps"
           fi

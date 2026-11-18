@@ -30,13 +30,15 @@ export const EN_TETES_NON_ENCADRABLE: EnTete[] = [
 // hors http(s) (fichier local, webview d'application), que l'absence d'en-tête autorise.
 export const EN_TETES_ABSENTS_SI_EMBARQUEE = EN_TETES_NON_ENCADRABLE.map((enTete) => enTete.key);
 
+// Insensible à la casse, comme les motifs de next.config : `/EMBED-SIMULATEUR` y échappe aussi (c'est un 404).
 export function estPageEmbarquee(chemin: string): boolean {
-  return PAGES_EMBARQUEES.some((page) => chemin === page || chemin.startsWith(`${page}/`));
+  const normalise = chemin.toLowerCase().replace(/\/$/, "");
+  return PAGES_EMBARQUEES.some((page) => page === normalise);
 }
 
 export function construireReglesEnTetes(): RegleEnTetes[] {
-  // `(?:/|$)` : `/embed-simulateur-bis` n'est pas `/embed-simulateur` et reste donc protégée.
-  const pagesEmbarquees = PAGES_EMBARQUEES.map((page) => `${page.slice(1)}(?:/|$)`).join("|");
+  // `/?$` : le chemin exact seulement. Ni `/embed-simulateur-bis`, ni un sous-chemin, n'héritent de l'exception.
+  const pagesEmbarquees = PAGES_EMBARQUEES.map((page) => `${page.slice(1)}/?$`).join("|");
 
   return [
     { source: "/(.*)", headers: EN_TETES_COMMUNS },
