@@ -371,6 +371,13 @@ si elle ne devrait pas être découpée avant de raccourcir le texte.
 
 ### Revue Copilot avant merge (à chaque PR)
 
+> **Suspendue depuis novembre 2026 : la revue Copilot n'est plus disponible sur le dépôt**
+> (cause supposée : la licence de l'organisation ou de l'incubateur, non confirmée). Les étapes 2
+> à 7 ci-dessous ne s'appliquent plus tant qu'elle n'est pas rétablie : ne pas attendre de retour
+> Copilot, ne pas en redemander. Restent valables la création de PR et le push sur demande
+> explicite, et l'approbation humaine avant merge. La section est conservée pour le jour où la
+> revue revient.
+
 Une fois la branche prête et validée (`pnpm validate` vert), **ne pas merger directement**.
 Le cycle de revue est le suivant :
 
