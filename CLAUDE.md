@@ -133,6 +133,10 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   `pnpm audit` (et `pnpm audit --prod` pour isoler le runtime). Toute vulnérabilité
   nouvelle ou acceptée doit être tracée dans `docs/security/snyk-accepted-vulnerabilities.md`
   avec sévérité, chemin transitif et justification d'acceptation (ou plan de correction).
+  Une faille High ou Critical acceptée se déclare en plus dans les deux listes d'exceptions de la
+  CI, sinon l'audit du lundi et la revue des PR échouent : `docs/security/CONTROLES-CI.md` § 3.
+- **Tout contrôle de sécurité ajouté, modifié ou retiré** (workflow, test méta, réglage du dépôt)
+  met à jour `docs/security/CONTROLES-CI.md` dans la même PR.
 
 ### Tests E2E / UI à chaque PR
 
@@ -549,6 +553,7 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - @docs/parcours/FLOW-AND-SYNC.md — Flux et synchronisation du parcours
 - @docs/security/snyk-accepted-vulnerabilities.md — Vulnérabilités acceptées (faux positifs)
 - [docs/stats/STATISTIQUES.md](docs/stats/STATISTIQUES.md) — Ce que compte chaque statistique, publique et interne (à lire avant de toucher une stat)
+- [docs/security/CONTROLES-CI.md](docs/security/CONTROLES-CI.md) — Contrôles de sécurité automatisés (CI, tests méta, réglages du dépôt) et procédure pour accepter une vulnérabilité
 - [docs/security/DONNEES-PERSONNELLES.md](docs/security/DONNEES-PERSONNELLES.md) — Données personnelles colonne par colonne, et leur traitement à la restauration d'un dump
 
 Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).

@@ -9,12 +9,14 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (novembre 2026) — trois vulnérabilités acceptées** : `uuid` <11.1.1 (Moderate,
-> runtime, transitif via `exceljs`), `minimatch` <11.0.1 (Moderate, transitif via `exceljs` et
-> l'outillage, correctif sorti le 2026-10-27 et bloqué par `minimumReleaseAge` jusqu'au 2026-11-03) et
-> `deepmerge` 4.2–4.3.1 (Low, transitif via `@react-email/render`, aucun correctif publié). Tout le reste
-> est corrigé à la source. Voir
-> [Refresh — novembre 2026 (correctif critique `next`)](#refresh--novembre-2026-branche-chorebump-deps-securite-nov).
+> **État courant (18 novembre 2026) — trois vulnérabilités acceptées** : `picomatch` <=4.0.7 (High,
+> outillage de test seulement, aucun correctif publié), `uuid` <11.1.1 (Moderate, runtime, transitif
+> via `exceljs`) et `minimatch` <11.0.1 (Moderate, transitif via `exceljs` et l'outillage, correctif
+> 11.0.1 à tester : deux majors au-dessus de l'override). Tout le reste est corrigé à la source. Voir
+> [Refresh — novembre 2026 (socle CI)](#refresh--novembre-2026-branche-choreci-socle-securite).
+>
+> Depuis novembre 2026, l'audit tourne chaque lundi en CI et une PR qui introduit une faille High est
+> refusée : voir [CONTROLES-CI.md](CONTROLES-CI.md), qui dit aussi où déclarer une faille acceptée.
 
 ## Décision
 
@@ -524,6 +526,22 @@ n'est plus remonté par l'audit (avis retiré ou requalifié) : version inchang�
 | `uuid` <11.1.1        | Moderate | runtime | `exceljs > uuid`                                    | Inchangé : exceljs appelle `uuidv4()` sans buffer, faille non atteignable                                                                                                                                                                                                                  |
 | `minimatch` <11.0.1   | Moderate | runtime | `exceljs > archiver > … > glob > minimatch`, eslint | `GHSA-g3hv-75wg-m249`, DoS par amplification de motifs : aucun motif ne vient d'une entrée externe. Seul correctif : la 11.0.1 (2026-10-27), bloquée jusqu'au 2026-11-03, et deux majors au-dessus de l'override `^9.0.7` : à tester avant de l'appliquer à eslint, exceljs et drizzle-kit |
 | `deepmerge` 4.2–4.3.1 | Low      | runtime | `@react-email/render > html-to-text > deepmerge`    | `GHSA-gcqx-w48m-w2h4`, pollution de prototype : n'y passent que nos propres options de rendu d'email. Aucun correctif publié                                                                                                                                                               |
+
+## Refresh — novembre 2026 (branche `chore/ci-socle-securite`)
+
+Branche sans changement de dépendance : elle met l'audit en CI (cf. [CONTROLES-CI.md](CONTROLES-CI.md)).
+`pnpm audit` du 18 novembre relève un avis High apparu depuis le refresh précédent ; `deepmerge`, accepté
+alors, n'est plus remonté. `pnpm audit --prod` : 2 Moderate, aucune High.
+
+| Dépendance vulnérable | Sévérité | Type   | Chemin                                                                     | Justification                                                                                                                                                                                                                                                                                              |
+| --------------------- | -------- | ------ | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `picomatch` <=4.0.7   | High     | devDep | `vitest > … > vite > picomatch`, `@vitejs/plugin-react > vite > picomatch` | `GHSA-fc5q-39xc-vjpf`, ReDoS sur des motifs extglob répétés. Les motifs viennent de la configuration de Vite et de Vitest, jamais d'une entrée externe, et rien de tout ça n'est déployé (absent de `pnpm audit --prod`). **Aucune version corrigée publiée** : 4.0.7 est la dernière, elle est vulnérable |
+
+Première faille déclarée dans les listes d'exceptions de la CI : `auditConfig.ignoreGhsas`
+(`pnpm-workspace.yaml`) et `allow-ghsas` (`revue-dependances.yml`). À retirer des deux, et l'override
+`picomatch` à relever, dès qu'un correctif est publié.
+
+`uuid` et `minimatch` restent acceptés, sans changement.
 
 ## Prochaine revue
 
