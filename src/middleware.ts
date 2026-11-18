@@ -16,6 +16,7 @@ import {
   estSessionConforme,
 } from "@/features/auth/edge";
 import { UserRole } from "@/shared/domain/value-objects";
+import { estCheminInterne } from "@/features/auth/utils/chemin-interne.utils";
 
 /**
  * Middleware de gestion de l'authentification
@@ -73,7 +74,8 @@ export async function middleware(request: NextRequest) {
       // Vérifier s'il y a une URL de redirection sauvegardée
       const redirectTo = request.cookies.get(COOKIE_NAMES.REDIRECT_TO)?.value;
 
-      if (redirectTo) {
+      // Cookie non signé : une valeur qui sortirait du site retombe sur la redirection par défaut.
+      if (estCheminInterne(redirectTo)) {
         // Vérifier que la redirection est compatible avec le rôle
         const isAmoRole = role === UserRole.AMO;
         const isAdminRoute = redirectTo.startsWith(ROUTES.backoffice.administration.root);
