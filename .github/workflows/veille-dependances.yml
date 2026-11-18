@@ -1,0 +1,102 @@
+name: Veille des dépendances
+
+# Deux contrôles qui ne dépendent d'aucune PR :
+# - audit : une faille publiée sur une dépendance déjà en place, même si personne ne travaille ;
+# - sbom  : l'inventaire des composants déployés, régénéré à chaque évolution de main.
+# Doc : docs/security/CONTROLES-CI.md.
+
+on:
+  schedule:
+    # Lundi matin, hors heure pile (GitHub retarde les crons lancés à :00).
+    - cron: "37 5 * * 1"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  audit:
+    name: Audit des vulnérabilités
+    # Pas à chaque push : une faille publiée entre-temps ne doit pas rougir main à la place de la veille.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: ".node-version"
+
+      # L'audit lit le lockfile : aucune installation, donc aucun code de dépendance exécuté.
+      - name: Audit des dépendances (High et Critical)
+        id: audit
+        run: pnpm audit --audit-level=high
+
+      - name: Ouvrir ou relancer l'issue de suivi
+        if: failure() && steps.audit.conclusion == 'failure' && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          titre="Veille des dépendances : faille High ou Critical non traitée"
+          corps="L'audit hebdomadaire a échoué : ${RUN_URL}
+
+          Corriger la dépendance, ou l'accepter en la justifiant dans \`docs/security/snyk-accepted-vulnerabilities.md\` (procédure : \`docs/security/CONTROLES-CI.md\`)."
+
+          numero=$(gh issue list --state open --search "in:title \"${titre}\"" --json number --jq '.[0].number // empty')
+          if [ -n "$numero" ]; then
+            gh issue comment "$numero" --body "Toujours en échec : ${RUN_URL}"
+          else
+            gh issue create --title "$titre" --body "$corps"
+          fi
+
+  sbom:
+    name: Inventaire des composants (SBOM)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+
+      # Installation requise : sans node_modules, l'inventaire n'a pas les licences.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Générer l'inventaire CycloneDX
+        run: |
+          set -euo pipefail
+          pnpm sbom --sbom-format cyclonedx --prod > sbom-production.cdx.json
+          pnpm sbom --sbom-format cyclonedx > sbom-complet.cdx.json
+
+      - name: Publier l'inventaire
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom-*.cdx.json
+          retention-days: 90
+          if-no-files-found: error

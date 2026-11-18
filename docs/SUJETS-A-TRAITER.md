@@ -349,6 +349,25 @@ l'équipe. Il est défini en un seul endroit, `MENTION_LIBRE_CHOIX` (`administra
 
 **Préalable** : le retour de la DHUP sur le texte, et sur l'ordre alphabétique retenu.
 
+### Rendre la CI obligatoire et bloquer les secrets au push
+
+Relevé en mettant les contrôles de sécurité en CI (novembre 2026). Le ruleset `protection-default`
+n'exige aucun job : une PR peut être fusionnée avec une CI rouge, si bien que les contrôles de
+[CONTROLES-CI.md](security/CONTROLES-CI.md) informent sans bloquer. La push protection de GitHub, qui
+refuse un push contenant une clé reconnue, est désactivée.
+
+**Préalable** : les workflows fusionnés sur `main` (GitHub ne propose en « requis » que des jobs déjà
+exécutés), puis un accès administrateur au dépôt de l'organisation. Jobs à exiger : `Security Checks`,
+`Test, Lint & Build`, `Dependency Review`. Mettre à jour le § 4 du registre une fois fait.
+
+### Donner une licence au dépôt
+
+Le dépôt est public et n'a ni fichier `LICENSE`, ni champ `license` dans `package.json` : en droit, le
+code n'est réutilisable par personne. Les licences des dépendances, elles, sont contrôlées à chaque PR
+depuis novembre 2026.
+
+**Préalable** : le choix de la licence par l'équipe et le ministère.
+
 ## Exploitation
 
 ### Mémoire du serveur : trouver ce qui grossit, puis décider du préchargement
