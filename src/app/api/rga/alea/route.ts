@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getAleaByCoordinates } from "@/shared/services/rga";
+import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
 
 // Number() et non parseFloat : « 46.8;DROP » n'est pas un nombre. Les bornes écartent aussi l'infini.
 const Coordonnees = z.object({
@@ -13,6 +14,9 @@ const Coordonnees = z.object({
  * Sans authentification : donnée géographique publique.
  */
 export async function GET(request: NextRequest) {
+  const refus = limiterDebit(request, "lecture");
+  if (refus) return refus;
+
   const { searchParams } = request.nextUrl;
   const latStr = searchParams.get("lat");
   const lonStr = searchParams.get("lon");

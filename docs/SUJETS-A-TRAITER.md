@@ -360,15 +360,15 @@ refuse un push contenant une clé reconnue, est désactivée.
 exécutés), puis un accès administrateur au dépôt de l'organisation. Jobs à exiger : `Security Checks`,
 `Test, Lint & Build`, `Dependency Review`. Mettre à jour le § 4 du registre une fois fait.
 
-### Limiter le débit des routes publiques
+### Plafonner les server actions publiques, et arbitrer un pare-feu applicatif
 
-Relevé en inventoriant les routes d'API (novembre 2026). Aucune route n'a de limitation de débit :
-`/api/rga/alea` lance une requête PostGIS par appel, `/api/ds/piece-modele` un appel à DN, et les départs
-de connexion (`/api/auth/fc/login`, `/api/auth/pc/login`) un aller-retour vers le fournisseur. Les
-entrées sont validées, mais rien n'empêche de les appeler en boucle.
+Les routes d'API publiques ont un plafond d'appels par adresse depuis novembre 2026
+([ADR-0054](adr/0054-limitation-de-debit-en-memoire.md)). Restent hors de ce plafond les server actions
+publiques (référentiels CATNAT et Aller-vers, chiffrement du simulateur en iframe), qui ne passent pas par
+un `route.ts`. Le plafond est tenu en mémoire d'un conteneur : il n'arrête pas une attaque répartie.
 
-**Préalable** : savoir ce que Scalingo filtre déjà devant l'application, puis choisir où limiter
-(hébergeur, middleware, ou stockage partagé si plusieurs conteneurs).
+**Préalable** : l'arbitrage du RSSI sur un pare-feu applicatif devant l'application ; et, si l'on passe à
+plusieurs conteneurs web, un compteur partagé (option B de l'ADR).
 
 ### Réduire ce que dit la sonde `/api/health`
 
