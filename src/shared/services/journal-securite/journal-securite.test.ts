@@ -104,6 +104,26 @@ describe("journaliser", () => {
     expect(lue.details).toEqual({ email: "[masque]", note: "y".repeat(120), nombre: 3 });
   });
 
+  it("n'écrit pas une adresse qui n'a pas la forme d'une adresse", async () => {
+    await journaliser({ evenement: "acces_refuse", acteur: { type: "anonyme" }, ip: "Jean Dupont 0612345678" });
+    expect(derniereLigne(sortie).ip).toBe("inconnue");
+
+    await journaliser({ evenement: "acces_refuse", acteur: { type: "anonyme" }, ip: "2001:db8::7" });
+    expect(derniereLigne(sortie).ip).toBe("2001:db8::7");
+  });
+
+  it("le filet couvre aussi l'acteur, et écarte un détail qui n'est ni texte, ni nombre, ni booléen", async () => {
+    await journaliser({
+      evenement: "agent_modifie",
+      acteur: { type: "agent", id: "jean.dupont@example.org", role: "r".repeat(400) },
+      details: { code: {} as never, rappel: (() => "x") as never, nul: null, vrai: true },
+    });
+
+    const lue = derniereLigne(sortie) as { acteur: Record<string, string>; details: Record<string, unknown> };
+    expect(lue.acteur).toEqual({ type: "agent", id: "[masque]", role: "r".repeat(120) });
+    expect(lue.details).toEqual({ nul: null, vrai: true });
+  });
+
   it("un retour à la ligne dans une valeur ne coupe pas la ligne du journal", async () => {
     await journaliser({
       evenement: "observation_dn_resolue",

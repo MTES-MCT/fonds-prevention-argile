@@ -96,4 +96,13 @@ describe("adresseClient", () => {
   it("sans aucun en-tête (local) → un seul compteur commun", () => {
     expect(adresseClient(requete())).toBe("inconnue");
   });
+
+  it.each([
+    [{ "x-real-ip": "Jean Dupont jean@example.org" }, "inconnue"],
+    [{ "x-real-ip": "0612345678", "x-forwarded-for": "198.51.100.9" }, "198.51.100.9"],
+    [{ "x-forwarded-for": "198.51.100.9, Jean Dupont 0612345678" }, "inconnue"],
+    [{ "x-real-ip": "2001:db8::7" }, "2001:db8::7"],
+  ])("ne reprend qu'une valeur qui a la forme d'une adresse (%j)", (enTetes, attendue) => {
+    expect(adresseClient(requete(enTetes))).toBe(attendue);
+  });
 });

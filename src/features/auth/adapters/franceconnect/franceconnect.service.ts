@@ -382,7 +382,9 @@ export function handleFranceConnectError(
   });
 
   // Mapper l'erreur FC
-  const errorCode: ErrorCode = (FC_ERROR_MAPPING[error] as ErrorCode) || ERROR_CODES.FRANCECONNECT_ERROR;
+  const errorCode: ErrorCode = Object.hasOwn(FC_ERROR_MAPPING, error)
+    ? FC_ERROR_MAPPING[error]
+    : ERROR_CODES.FRANCECONNECT_ERROR;
 
   // Récupérer le message correspondant
   const message = FC_ERROR_MESSAGES[errorCode] || FC_ERROR_MESSAGES[ERROR_CODES.FRANCECONNECT_ERROR];

@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
 import { adresseDepuisEnTetes } from "@/shared/utils/adresse-client.utils";
@@ -67,13 +68,21 @@ function assainir(valeur: string): string {
   return valeur.includes("@") ? "[masque]" : valeur.slice(0, LONGUEUR_MAX);
 }
 
+// Le typage ne vaut pas à l'exécution : un objet ou une fonction passés par erreur ne sont pas écrits.
 function assainirDetails(details: Record<string, ValeurDetail>): Record<string, string | number | boolean | null> {
   const propres: Record<string, string | number | boolean | null> = {};
   for (const [cle, valeur] of Object.entries(details)) {
-    if (valeur === undefined) continue;
-    propres[cle] = typeof valeur === "string" ? assainir(valeur) : valeur;
+    if (typeof valeur === "string") propres[cle] = assainir(valeur);
+    else if (valeur === null || typeof valeur === "number" || typeof valeur === "boolean") propres[cle] = valeur;
   }
   return propres;
+}
+
+function assainirActeur(acteur: ActeurSecurite): Record<string, string> {
+  const propre: Record<string, string> = { type: acteur.type };
+  if ("id" in acteur) propre.id = assainir(String(acteur.id));
+  if ("role" in acteur && acteur.role) propre.role = assainir(String(acteur.role));
+  return propre;
 }
 
 async function adresseCourante(): Promise<string> {
@@ -95,11 +104,11 @@ export async function journaliser(entree: EntreeJournal): Promise<void> {
       date: new Date().toISOString(),
       evenement: entree.evenement,
       resultat: entree.resultat ?? "succes",
-      acteur: entree.acteur,
+      acteur: assainirActeur(entree.acteur),
       ...(entree.cible ? { cible: { type: entree.cible.type, id: assainir(entree.cible.id) } } : {}),
       ...(entree.motif ? { motif: assainir(entree.motif) } : {}),
       ...(entree.details ? { details: assainirDetails(entree.details) } : {}),
-      ip,
+      ip: isIP(ip) ? ip : "inconnue",
     };
     console.log(JSON.stringify(ligne));
   } catch {

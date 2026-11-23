@@ -22,7 +22,7 @@ import { getProConnectConfig } from "./proconnect.config";
 import { createToken } from "../../utils/jwt.utils";
 import { agentsRepo } from "@/shared/database/repositories";
 import { JetonProConnectInvalideError, lireUserInfoProConnect, verifierIdTokenProConnect } from "./proconnect-oidc";
-import { generateAuthorizationUrl, handleProConnectCallback } from "./proconnect.service";
+import { generateAuthorizationUrl, handleProConnectCallback, handleProConnectError } from "./proconnect.service";
 import { COOKIE_NAMES } from "../../domain/value-objects";
 import { UserRole } from "@/shared/domain/value-objects";
 import { journaliser } from "@/shared/services/journal-securite/journal-securite";
@@ -234,4 +234,16 @@ describe("handleProConnectCallback — journal de sécurité", () => {
       expect.objectContaining({ resultat: "echec", motif: "erreur_technique" })
     );
   });
+});
+
+describe("handleProConnectError", () => {
+  // Le code part au journal de sécurité et dans l'adresse de redirection : il doit rester un de nos codes.
+  it.each(["constructor", "__proto__", "toString", "erreur_inconnue"])(
+    "« %s » n'est pas une erreur connue → code générique",
+    (erreur) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+
+      expect(handleProConnectError(erreur).code).toBe("PROCONNECT_ERROR");
+    }
+  );
 });

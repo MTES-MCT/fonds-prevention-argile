@@ -289,7 +289,9 @@ export function handleProConnectError(
   });
 
   // Mapper l'erreur PC
-  const errorCode: ErrorCode = (PC_ERROR_MAPPING[error] as ErrorCode) || ERROR_CODES.PROCONNECT_ERROR;
+  const errorCode: ErrorCode = Object.hasOwn(PC_ERROR_MAPPING, error)
+    ? (PC_ERROR_MAPPING[error] as ErrorCode)
+    : ERROR_CODES.PROCONNECT_ERROR;
 
   // Récupérer le message correspondant avec fallback
   const message =
