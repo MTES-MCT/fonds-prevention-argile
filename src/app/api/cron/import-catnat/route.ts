@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
 import { catnatService } from "@/features/seo/catnat/services/catnat.service";
+import { decisionsCatnatService } from "@/features/seo/catnat/services/decisions-catnat.service";
 import { bearerCorrespond } from "@/shared/utils/crypto.utils";
 
-// Endpoint CRON déclenché par GitHub Actions : 202 immédiat + import via after() (proxy Scalingo ~55s). Bilan dans les logs.
+// Endpoint CRON déclenché par GitHub Actions : 202 immédiat + imports via after() (proxy Scalingo ~55s). Bilans dans les logs.
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -29,6 +30,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       else console.log(ligne);
     } catch (error) {
       console.error("[CRON import-catnat] Erreur (background):", error);
+    }
+
+    // Source indépendante de Géorisques : l'une peut tomber sans priver le site de l'autre.
+    try {
+      const bilan = await decisionsCatnatService.importerCocon();
+      const ligne = `[CRON import-catnat] decisions lues=${bilan.lues} retenues=${bilan.retenues} ajoutees=${bilan.ajoutees} retirees=${bilan.retirees} ecartees=${bilan.ecartees}`;
+
+      if (bilan.ecartees > 0) console.error(ligne);
+      else console.log(ligne);
+    } catch (error) {
+      console.error("[CRON import-catnat] Erreur des décisions (background):", error);
     }
   });
 
