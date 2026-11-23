@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { catnatService } from "./catnat.service";
-import { catastrophesNaturellesRepository } from "@/shared/database/repositories";
+import { catastrophesNaturellesRepository, catnatDecisionsRepository } from "@/shared/database/repositories";
 import * as georisquesAdapter from "../adapters/georisques";
 import {
   mockApiCatnatRecent,
@@ -323,6 +323,32 @@ describe("catnatService", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].codeInsee).toBe("63113");
+    });
+  });
+
+  describe("getHistoriquePourCommune", () => {
+    it("réunit les arrêtés de Géorisques et les décisions du Journal officiel de la commune", async () => {
+      vi.mocked(catastrophesNaturellesRepository.findByCodeInsee).mockResolvedValue([mockDbCatnat]);
+      vi.mocked(catnatDecisionsRepository.findByCodeInsee).mockResolvedValue([
+        {
+          codeInsee: "63113",
+          libelleCommune: "Clermont-Ferrand",
+          dateArrete: "2026-05-11",
+          datePublicationJo: "2026-05-14",
+          dateDebutEvt: "2025-01-01",
+          dateFinEvt: "2025-12-31",
+          decision: "non_reconnue",
+          motif: "critère météorologique non satisfait",
+          source: "data.gouv",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
+      const lignes = await catnatService.getHistoriquePourCommune("63113");
+
+      expect(catnatDecisionsRepository.findByCodeInsee).toHaveBeenCalledWith("63113");
+      expect(lignes.map((ligne) => ligne.decision)).toEqual(["non_reconnue", "reconnue"]);
     });
   });
 

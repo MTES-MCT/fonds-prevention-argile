@@ -1,9 +1,9 @@
-import { catastrophesNaturellesRepository } from "@/shared/database/repositories";
+import { catastrophesNaturellesRepository, catnatDecisionsRepository } from "@/shared/database/repositories";
 import { parseFrenchDateToSql } from "@/shared/utils";
 import { delay } from "@/shared/utils";
 import { fetchCatnatByCodeInsee, fetchCatnatByCodesInsee, type ApiGeorisquesCatnat } from "../adapters/georisques";
 import type { NewCatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
-import { API_GEORISQUES, CATNAT_RGA_TYPES } from "../domain";
+import { API_GEORISQUES, CATNAT_RGA_TYPES, fusionnerHistorique, type LigneHistoriqueCatnat } from "../domain";
 import { getAllCommunes } from "../../services/territoires.service";
 
 /**
@@ -247,6 +247,18 @@ export const catnatService = {
    */
   async getForCommune(codeInsee: string) {
     return catastrophesNaturellesRepository.findByCodeInsee(codeInsee);
+  },
+
+  /**
+   * Historique d'une commune : reconnaissances et demandes non reconnues, de la plus récente à la plus ancienne
+   */
+  async getHistoriquePourCommune(codeInsee: string): Promise<LigneHistoriqueCatnat[]> {
+    const [arretes, decisions] = await Promise.all([
+      catastrophesNaturellesRepository.findByCodeInsee(codeInsee),
+      catnatDecisionsRepository.findByCodeInsee(codeInsee),
+    ]);
+
+    return fusionnerHistorique(arretes, decisions);
   },
 
   /**
