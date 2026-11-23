@@ -35,6 +35,9 @@ export function parserCsv(texte: string): string[][] {
     } else champ += caractere;
   }
 
+  // Un guillemet jamais refermé avale toute la suite du fichier dans un seul champ.
+  if (entreGuillemets) throw new Error("CSV mal formé : guillemet non refermé");
+
   if (champ !== "" || ligne.length > 0) {
     ligne.push(champ);
     lignes.push(ligne);
@@ -45,14 +48,24 @@ export function parserCsv(texte: string): string[][] {
 
 /**
  * Lit un CSV dont la première ligne nomme les colonnes : un objet par ligne, les lignes vides ignorées.
+ * Une ligne qui n'a pas autant de cellules que l'en-tête fait échouer la lecture.
  */
 export function parserCsvAvecEntetes(texte: string): { colonnes: string[]; lignes: Record<string, string>[] } {
   const [colonnes = [], ...donnees] = parserCsv(texte);
 
+  const remplies = donnees.filter((cellules) => cellules.some((cellule) => cellule !== ""));
+
+  const decalee = remplies.findIndex((cellules) => cellules.length !== colonnes.length);
+  if (decalee !== -1) {
+    throw new Error(
+      `CSV mal formé : ${remplies[decalee].length} cellules au lieu de ${colonnes.length} (ligne de données ${decalee + 1})`
+    );
+  }
+
   return {
     colonnes,
-    lignes: donnees
-      .filter((cellules) => cellules.some((cellule) => cellule !== ""))
-      .map((cellules) => Object.fromEntries(colonnes.map((colonne, index) => [colonne, cellules[index] ?? ""]))),
+    lignes: remplies.map((cellules) =>
+      Object.fromEntries(colonnes.map((colonne, index) => [colonne, cellules[index]]))
+    ),
   };
 }

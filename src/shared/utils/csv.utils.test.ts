@@ -23,6 +23,10 @@ describe("parserCsv", () => {
     ]);
   });
 
+  it("guillemet jamais refermé → erreur, plutôt qu'un champ qui avale la suite du fichier", () => {
+    expect(() => parserCsv('a,b\n1,"deux\n3,4\n')).toThrow("guillemet non refermé");
+  });
+
   it("garde un champ vide en fin de ligne", () => {
     expect(parserCsv("a,b,c\n1,,\n")).toEqual([
       ["a", "b", "c"],
@@ -42,7 +46,10 @@ describe("parserCsvAvecEntetes", () => {
     ]);
   });
 
-  it("une cellule manquante vaut une chaîne vide", () => {
-    expect(parserCsvAvecEntetes("code,commune\n36044").lignes).toEqual([{ code: "36044", commune: "" }]);
+  it.each([
+    ["une cellule en moins", "code,commune\n36044"],
+    ["une cellule en trop", "code,commune\n36044,Châteauroux,Indre"],
+  ])("%s que l'en-tête → erreur", (_cas, texte) => {
+    expect(() => parserCsvAvecEntetes(texte)).toThrow(/CSV mal formé : \d cellules au lieu de 2/);
   });
 });

@@ -18,7 +18,8 @@ async function main(): Promise<void> {
     console.log(`   • Retirées                    : ${bilan.retirees}`);
     console.log(`   • Lignes illisibles           : ${bilan.ecartees}`);
 
-    process.exit(0);
+    // Import partiel : les lignes lisibles sont écrites, mais l'appelant doit le voir.
+    process.exit(bilan.ecartees > 0 ? 1 : 0);
   } catch (error) {
     console.error("Erreur lors de l'import des décisions :", error);
     process.exit(1);

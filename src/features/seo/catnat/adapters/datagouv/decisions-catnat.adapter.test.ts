@@ -77,6 +77,15 @@ describe("lireDecisionsSecheresse", () => {
     expect(ecartees).toBe(1);
   });
 
+  it("guillemet non refermé dans un motif → erreur, les décisions suivantes ne passent pas pour disparues", () => {
+    const tronque = csv(
+      ligne({ motivation_officielle: '"motivation jamais refermée' }),
+      ligne({ code_insee: "54395" })
+    );
+
+    expect(() => lireDecisionsSecheresse(tronque)).toThrow(/CSV mal formé/);
+  });
+
   it("colonne absente du fichier → erreur, plutôt qu'un import vide", () => {
     expect(() => lireDecisionsSecheresse("date_arrete,commune\n2026-05-11,Châteauroux")).toThrow(/colonnes absentes/);
   });
