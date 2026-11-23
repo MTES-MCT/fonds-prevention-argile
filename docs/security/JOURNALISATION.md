@@ -48,17 +48,18 @@ désactivation reste en base). Un agent se retrouve par son identifiant dans `/a
 
 ### Accès
 
-| Évènement               | Quand                                                                 | Motifs de refus ou d'échec                                                                                                                                        |
-| ----------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `connexion_agent`       | Retour de ProConnect, réussi ou non                                   | `etat_invalide`, `double_authentification_absente`, `jeton_invalide`, `sujet_incoherent`, `donnees_incompletes`, `agent_inconnu_ou_desactive`, `erreur_technique` |
-| `connexion_demandeur`   | Retour de FranceConnect, réussi ou non                                | `etat_invalide`, `nonce_invalide`, `erreur_technique`                                                                                                             |
-| `deconnexion_agent`     | Déconnexion ProConnect                                                |                                                                                                                                                                   |
-| `deconnexion_demandeur` | Déconnexion FranceConnect                                             |                                                                                                                                                                   |
-| `acces_refuse`          | Appel du CRON ou du webhook Brevo sans le bon secret                  | `secret_invalide`                                                                                                                                                 |
-| `debit_depasse`         | Premier dépassement d'un plafond d'appels dans une fenêtre (ADR-0054) |                                                                                                                                                                   |
+| Évènement               | Quand                                                                 | Motifs de refus ou d'échec                                                                                                                                                                                      |
+| ----------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connexion_agent`       | Retour de ProConnect, réussi ou non                                   | `erreur_fournisseur`, `parametres_manquants`, `etat_invalide`, `double_authentification_absente`, `jeton_invalide`, `sujet_incoherent`, `donnees_incompletes`, `agent_inconnu_ou_desactive`, `erreur_technique` |
+| `connexion_demandeur`   | Retour de FranceConnect, réussi ou non                                | `erreur_fournisseur`, `parametres_manquants`, `etat_invalide`, `nonce_invalide`, `erreur_technique`                                                                                                             |
+| `deconnexion_agent`     | Déconnexion ProConnect                                                |                                                                                                                                                                                                                 |
+| `deconnexion_demandeur` | Déconnexion FranceConnect                                             |                                                                                                                                                                                                                 |
+| `acces_refuse`          | Appel du CRON ou du webhook Brevo sans le bon secret                  | `secret_invalide`                                                                                                                                                                                               |
+| `debit_depasse`         | Premier dépassement d'un plafond d'appels dans une fenêtre (ADR-0054) |                                                                                                                                                                                                                 |
 
 Une connexion d'agent réussie porte son niveau d'authentification (`acr`), une connexion de demandeur
-dit si le compte vient d'être créé.
+dit si le compte vient d'être créé. `erreur_fournisseur` (connexion annulée ou refusée chez ProConnect ou
+FranceConnect) porte notre code d'erreur interne, jamais le texte renvoyé par le fournisseur.
 
 ### Administration
 

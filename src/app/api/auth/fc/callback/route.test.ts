@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: () => ({ BASE_URL: "https://fonds.test" }) }));
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
 vi.mock("@/features/auth", () => ({
   DEFAULT_REDIRECTS: { particulier: "/mon-compte" },
   getAndClearRedirectUrl: vi.fn(async () => null),
@@ -11,6 +12,7 @@ vi.mock("@/features/auth", () => ({
 
 import { getAndClearRedirectUrl, handleFranceConnectCallback } from "@/features/auth";
 import { GET } from "./route";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 // Hôte étranger : aucune redirection ne doit en dépendre.
 const appeler = (query: string) => GET(new NextRequest(`https://hote-usurpe.example/api/auth/fc/callback${query}`));
@@ -27,6 +29,12 @@ describe("GET /api/auth/fc/callback", () => {
       expect(cible.origin).toBe("https://fonds.test");
       expect(cible.searchParams.get("error")).toBe("fc_missing_params");
       expect(handleFranceConnectCallback).not.toHaveBeenCalled();
+      expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+        evenement: "connexion_demandeur",
+        resultat: "refus",
+        acteur: { type: "anonyme" },
+        motif: "parametres_manquants",
+      });
     }
   );
 
@@ -36,6 +44,13 @@ describe("GET /api/auth/fc/callback", () => {
     expect(cible.pathname).toBe("/");
     expect(cible.searchParams.get("error")).toBe("fc_access_denied");
     expect(handleFranceConnectCallback).not.toHaveBeenCalled();
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "connexion_demandeur",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      motif: "erreur_fournisseur",
+      details: { code: "fc_access_denied" },
+    });
   });
 
   it("state ou nonce refusé → accueil, sans lire l'adresse de retour", async () => {

@@ -73,7 +73,7 @@ export async function getAgentWithPermissions(agentId: string): Promise<AgentWit
 }
 
 function validerDepartements(departements: string[] | undefined): void {
-  const invalidCodes = (departements ?? []).filter((code) => !DEPARTEMENTS[code]);
+  const invalidCodes = (departements ?? []).filter((code) => !Object.hasOwn(DEPARTEMENTS, code));
   if (invalidCodes.length > 0) {
     throw new Error(`Codes départements invalides : ${invalidCodes.join(", ")}`);
   }

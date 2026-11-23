@@ -3,6 +3,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 import { Step } from "@/shared/domain/value-objects/step.enum";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
 vi.mock("@/features/backoffice/shared/actions/agent.actions", () => ({ getCurrentAgent: vi.fn() }));
 vi.mock("@/shared/database/repositories", () => ({
   dsObservationsRepo: { listerOuvertes: vi.fn(), compterOuvertesParVerdict: vi.fn(), resoudre: vi.fn() },
@@ -27,6 +28,7 @@ import { inspecterDossierDn } from "@/features/parcours/dossiers-ds/services/ins
 import { getCurrentAgent } from "@/features/backoffice/shared/actions/agent.actions";
 import { dsObservationsRepo } from "@/shared/database/repositories";
 import { reconcilierDemarche } from "@/features/parcours/dossiers-ds/services/reconciliation.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 function mockAgent(role: UserRole) {
   vi.mocked(getCurrentAgent).mockResolvedValue({
@@ -42,7 +44,7 @@ describe("actions de réconciliation — contrôle d'accès", () => {
     vi.clearAllMocks();
     vi.mocked(dsObservationsRepo.listerOuvertes).mockResolvedValue([]);
     vi.mocked(dsObservationsRepo.compterOuvertesParVerdict).mockResolvedValue({});
-    vi.mocked(dsObservationsRepo.resoudre).mockResolvedValue(undefined);
+    vi.mocked(dsObservationsRepo.resoudre).mockResolvedValue(1);
   });
 
   it("refuse la lecture des files à un administrateur non super-admin", async () => {
@@ -69,7 +71,7 @@ describe("actions de réconciliation — contrôle d'accès", () => {
   it("autorise le super-admin et n'applique aucune écriture lors de l'analyse", async () => {
     mockAgent(UserRole.SUPER_ADMINISTRATEUR);
     vi.mocked(reconcilierDemarche).mockResolvedValue({
-      lignes: [],
+      lignes: [{}, {}],
       totaux: {},
       rattachementsAppliques: 0,
       scanComplet: true,
@@ -81,6 +83,46 @@ describe("actions de réconciliation — contrôle d'accès", () => {
 
     expect(result.success).toBe(true);
     expect(reconcilierDemarche).toHaveBeenCalledWith(expect.objectContaining({ apply: false }));
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "reconciliation_analysee",
+      acteur: { type: "agent", id: "agent-1", role: UserRole.SUPER_ADMINISTRATEUR },
+      details: { etape: Step.ELIGIBILITE, examines: 2 },
+    });
+  });
+
+  it("résolution par le super-admin → une ligne au journal, avec le numéro et la résolution", async () => {
+    mockAgent(UserRole.SUPER_ADMINISTRATEUR);
+
+    const result = await resoudreObservationAction("32052358", "arbitre");
+
+    expect(result.success).toBe(true);
+    expect(dsObservationsRepo.resoudre).toHaveBeenCalledWith("32052358", "arbitre", "agent-1");
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "observation_dn_resolue",
+      acteur: { type: "agent", id: "agent-1", role: UserRole.SUPER_ADMINISTRATEUR },
+      cible: { type: "dossier_dn", id: "32052358" },
+      details: { resolution: "arbitre" },
+    });
+  });
+
+  it("résolution avec un texte à la place du numéro → refusée, rien n'atteint la base ni le journal", async () => {
+    mockAgent(UserRole.SUPER_ADMINISTRATEUR);
+
+    const result = await resoudreObservationAction("Jean Dupont 0612345678", "arbitre");
+
+    expect(result.success).toBe(false);
+    expect(dsObservationsRepo.resoudre).not.toHaveBeenCalled();
+    expect(journaliser).not.toHaveBeenCalled();
+  });
+
+  it("résolution d'un numéro sans observation → échec, pas de succès au journal", async () => {
+    mockAgent(UserRole.SUPER_ADMINISTRATEUR);
+    vi.mocked(dsObservationsRepo.resoudre).mockResolvedValue(0);
+
+    const result = await resoudreObservationAction("99999999", "ecarte");
+
+    expect(result.success).toBe(false);
+    expect(journaliser).not.toHaveBeenCalled();
   });
 
   it("refuse une étape sans démarche à balayer", async () => {

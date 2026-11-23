@@ -6,6 +6,7 @@ vi.mock("@/features/auth/adapters/proconnect/proconnect.service", () => ({
   handleProConnectError: vi.fn(() => ({ code: "pc_error" })),
 }));
 vi.mock("@/features/auth", () => ({ getAndClearRedirectUrl: vi.fn(async () => null) }));
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
 vi.mock("@/shared/config/env.config", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/shared/config/env.config")>()),
   getServerEnv: () => ({ BASE_URL: "https://app.test" }),
@@ -14,6 +15,7 @@ vi.mock("@/shared/config/env.config", async (importOriginal) => ({
 import { GET } from "./route";
 import { handleProConnectCallback } from "@/features/auth/adapters/proconnect/proconnect.service";
 import { UserRole } from "@/shared/domain/value-objects";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 const requete = () => new NextRequest("https://app.test/api/auth/pc/callback?code=c&state=s");
 
@@ -26,6 +28,35 @@ function cookiesEffaces(response: Response): string[] {
 
 describe("GET /api/auth/pc/callback", () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it("erreur renvoyée par ProConnect → refus journalisé avec le code interne, aucun échange de jeton", async () => {
+    const response = await GET(
+      new NextRequest("https://app.test/api/auth/pc/callback?error=access_denied&error_description=Jean%20Dupont")
+    );
+
+    expect(response.headers.get("location")).toBe("https://app.test/connexion/agent?error=pc_error");
+    expect(handleProConnectCallback).not.toHaveBeenCalled();
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "connexion_agent",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      motif: "erreur_fournisseur",
+      details: { code: "pc_error" },
+    });
+  });
+
+  it.each(["", "?code=c", "?state=s"])("paramètres « %s » incomplets → refus journalisé", async (query) => {
+    const response = await GET(new NextRequest(`https://app.test/api/auth/pc/callback${query}`));
+
+    expect(response.headers.get("location")).toContain("error=pc_missing_params");
+    expect(handleProConnectCallback).not.toHaveBeenCalled();
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "connexion_agent",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      motif: "parametres_manquants",
+    });
+  });
 
   it("refus pour absence de 2FA → message dédié et session antérieure effacée", async () => {
     vi.mocked(handleProConnectCallback).mockResolvedValue({

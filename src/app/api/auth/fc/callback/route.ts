@@ -8,8 +8,19 @@ import { getServerEnv } from "@/shared/config/env.config";
 import { normalizePartnerSlug } from "@/shared/domain/partners";
 import { NextRequest, NextResponse } from "next/server";
 import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 const PARTNER_COOKIE_NAME = "partner_source";
+
+// Ces retours sortent avant le service : sans cette ligne, un refus du fournisseur ne laisserait aucune trace.
+const journaliserRetourRefuse = (motif: string, code?: string) =>
+  journaliser({
+    evenement: "connexion_demandeur",
+    resultat: "refus",
+    acteur: { type: "anonyme" },
+    motif,
+    ...(code ? { details: { code } } : {}),
+  });
 
 /**
  * GET /api/auth/fc/callback
@@ -37,6 +48,7 @@ export async function GET(request: NextRequest) {
     // Gestion des erreurs FranceConnect
     if (error) {
       const result = handleFranceConnectError(error, errorDescription || "");
+      await journaliserRetourRefuse("erreur_fournisseur", result.code);
 
       // Redirection vers accueil en cas d'erreur (comme demandé par FC)
       return redirectTo(`/?error=${result.code}&message=${encodeURIComponent(result.error)}`);
@@ -45,6 +57,7 @@ export async function GET(request: NextRequest) {
     // Vérification des paramètres requis
     if (!code || !state) {
       console.error("Paramètres manquants", { code: !!code, state: !!state });
+      await journaliserRetourRefuse("parametres_manquants");
       // Redirection vers accueil pour sécurité
       return redirectTo("/?error=fc_missing_params");
     }

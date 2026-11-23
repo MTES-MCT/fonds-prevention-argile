@@ -33,9 +33,14 @@ describe("POST /api/cron/sync-parcours", () => {
 
       expect(reponse.status).toBe(401);
       expect(after).not.toHaveBeenCalled();
-      expect(journaliser).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ evenement: "acces_refuse", resultat: "refus", motif: "secret_invalide" })
-      );
+      expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+        evenement: "acces_refuse",
+        resultat: "refus",
+        acteur: { type: "anonyme" },
+        cible: { type: "route", id: "api/cron/sync-parcours" },
+        motif: "secret_invalide",
+        ip: "inconnue",
+      });
     }
   );
 
@@ -44,8 +49,10 @@ describe("POST /api/cron/sync-parcours", () => {
 
     expect(reponse.status).toBe(202);
     expect(after).toHaveBeenCalledOnce();
-    expect(journaliser).toHaveBeenCalledExactlyOnceWith(
-      expect.objectContaining({ evenement: "synchronisation_lancee", acteur: { type: "systeme", id: "cron" } })
-    );
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "synchronisation_lancee",
+      acteur: { type: "systeme", id: "cron" },
+      ip: "inconnue",
+    });
   });
 });

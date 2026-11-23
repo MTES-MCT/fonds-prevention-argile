@@ -144,3 +144,6 @@ du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJE
   audit manuel.
 - Que le journal de sécurité est bien conservé et consultable chez l'hébergeur : le test du § 2 vérifie
   que l'évènement est écrit, pas ce qu'il devient.
+- Qu'une action d'administration journalise sur **tous** ses chemins d'écriture : le test du § 2 lit la
+  présence de l'appel dans le corps de l'action, pas la branche où il se trouve. Une lecture déclarée
+  qui se mettrait à écrire par son service passe aussi. Les tests de chaque action couvrent le reste.

@@ -383,6 +383,16 @@ Le journal de sécurité sort en lignes JSON sur la sortie standard depuis novem
 l'activation des journaux du routeur ; la confirmation de la durée par Scalingo ; pour les refus, une garde
 commune aux actions d'administration, chaque fichier ayant aujourd'hui la sienne.
 
+### Création et modification d'agent : une écriture en deux temps
+
+`createAgent` et `updateAgent` écrivent l'agent, puis ses départements, dans deux transactions. Si la
+seconde échoue, l'agent est créé ou son rôle changé, l'action répond par une erreur et rien n'entre au
+journal de sécurité. Le seul déclencheur connu (un département nommé `toString`) est fermé depuis
+novembre 2026 ; une panne de base entre les deux écritures laisse le même état.
+
+**Préalable** : faire accepter une transaction à `agentsRepository.create` et `update`, qui ouvrent
+chacun la leur, et à `agentPermissionsRepository`.
+
 ### Réduire ce que dit la sonde `/api/health`
 
 La route est publique et renvoie la version de l'application et le nom de l'environnement. Rien de

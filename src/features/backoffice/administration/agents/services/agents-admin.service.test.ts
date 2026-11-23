@@ -5,6 +5,8 @@ vi.mock("@/shared/database/repositories/agents.repository", () => ({
   agentsRepository: {
     countTraces: vi.fn(),
     delete: vi.fn(),
+    findByEmail: vi.fn(),
+    create: vi.fn(),
   },
 }));
 
@@ -14,7 +16,7 @@ vi.mock("@/shared/database", () => ({
   allersVersRepository: {},
 }));
 
-import { deleteAgent } from "./agents-admin.service";
+import { createAgent, deleteAgent } from "./agents-admin.service";
 import { agentsRepository } from "@/shared/database/repositories/agents.repository";
 
 function traces(override: Partial<AgentTracesCount> = {}): AgentTracesCount {
@@ -31,6 +33,24 @@ function traces(override: Partial<AgentTracesCount> = {}): AgentTracesCount {
     total: base.actions + base.qualifications + base.archivages + base.dossiersCrees + base.simulationsEditees,
   };
 }
+
+describe("createAgent", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each(["toString", "constructor", "999"])("refuse le département « %s » avant toute écriture", async (code) => {
+    vi.mocked(agentsRepository.findByEmail).mockResolvedValue(null);
+
+    await expect(
+      createAgent({
+        email: "agent@exemple.test",
+        givenName: "Test",
+        compte: { type: "plateforme", role: "analyste" },
+        departements: [code],
+      } as Parameters<typeof createAgent>[0])
+    ).rejects.toThrow(`Codes départements invalides : ${code}`);
+    expect(agentsRepository.create).not.toHaveBeenCalled();
+  });
+});
 
 describe("deleteAgent", () => {
   beforeEach(() => {
