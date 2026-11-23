@@ -37,6 +37,7 @@ import {
   reactiverAgentAction,
   getAgentTracesAction,
   getStructuresOptionsAction,
+  getAgentListesDiffusionAction,
 } from "./agents.actions";
 import { structuresRepository } from "@/shared/database/repositories/structures.repository";
 
@@ -57,6 +58,43 @@ describe("agents.actions", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  // RBAC-TEST-PLAN § 7 : la gestion des agents n'existe que pour le super-administrateur, demandeur compris.
+  describe("refus pour tout autre rôle que super-administrateur", () => {
+    const ACTIONS = [
+      ["getAgentsAction", () => getAgentsAction()],
+      ["getAgentByIdAction", () => getAgentByIdAction("agent-1")],
+      ["getStructuresOptionsAction", () => getStructuresOptionsAction()],
+      ["createAgentAction", () => createAgentAction({ email: "a@example.test" })],
+      ["updateAgentAction", () => updateAgentAction("agent-1", { email: "a@example.test" })],
+      ["getAgentTracesAction", () => getAgentTracesAction("agent-1")],
+      ["getAgentListesDiffusionAction", () => getAgentListesDiffusionAction("agent-1")],
+      ["desactiverAgentAction", () => desactiverAgentAction("agent-1", "départ")],
+      ["reactiverAgentAction", () => reactiverAgentAction("agent-1")],
+      ["deleteAgentAction", () => deleteAgentAction("agent-1")],
+    ] as const;
+
+    const ROLES_REFUSES = [
+      UserRole.PARTICULIER,
+      UserRole.AMO,
+      UserRole.ALLERS_VERS,
+      UserRole.AMO_ET_ALLERS_VERS,
+      UserRole.ANALYSTE,
+      UserRole.ADMINISTRATEUR,
+    ];
+
+    describe.each(ACTIONS)("%s", (_nom, appeler) => {
+      it.each(ROLES_REFUSES)("rôle %s → refus sans appeler le service", async (role) => {
+        connecter(role);
+
+        const resultat = await appeler();
+
+        expect(resultat.success).toBe(false);
+        for (const fn of Object.values(agentsAdminService)) expect(fn).not.toHaveBeenCalled();
+        expect(structuresRepository.findAllAvecHabilitations).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe("getStructuresOptionsAction", () => {

@@ -60,6 +60,8 @@ Ils tournent avec `pnpm test`, donc à chaque push. Chacun échoue en nommant le
 | Test                                                      | Ce qu'il refuse                                                                                        |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `auth/permissions/garde-server-actions.test.ts`           | Une server action sans garde, ou qui lit le rôle du JWT                                                |
+| `app/garde-routes.test.ts`                                | Une route d'API (`route.ts`) non déclarée au registre, ou qui n'appelle pas la garde annoncée          |
+| `app/(backoffice)/administration/garde-pages.test.ts`     | Une page d'administration sans niveau d'accès déclaré, ou sans le test de rôle de son niveau           |
 | `backoffice/espace-agent/garde-actions.test.ts`           | Une action de l'espace agent dont la garde n'est pas la première instruction                           |
 | `app/(backoffice)/espace-agent/garde-pages.test.ts`       | Une page ou un `generateMetadata` de l'espace agent sans garde                                         |
 | `shared/database/inventaire-donnees-personnelles.test.ts` | Une colonne absente de l'inventaire ou non traitée à la restauration d'un dump                         |
@@ -127,7 +129,6 @@ du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJE
 
 ## 5. Ce que la CI ne vérifie pas
 
-- La garde des routes d'API (`route.ts`).
 - Une politique de contenu complète : la CSP servie ne règle que l'encadrement (`frame-ancestors`),
   elle ne restreint ni les scripts ni les appels réseau.
 - Les failles dans le code lui-même : l'analyse en place (Code Quality) juge la maintenabilité, pas

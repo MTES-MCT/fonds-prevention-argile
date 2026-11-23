@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { verifyToken } from "../utils/jwt.utils";
+import { estCheminInterne } from "../utils/chemin-interne.utils";
 import { COOKIE_NAMES } from "../domain/value-objects/constants";
 import { estSessionConforme } from "../domain/value-objects/session-mfa";
 import { getCookieOptions, SESSION_DURATION } from "../domain/value-objects/configs/session.config";
@@ -106,7 +107,8 @@ export async function getAndClearRedirectUrl(): Promise<string | null> {
     cookieStore.delete(COOKIE_NAMES.REDIRECT_TO);
   }
 
-  return redirectTo;
+  // Le cookie n'est pas signé : une valeur qui sortirait du site est ignorée (redirection ouverte).
+  return estCheminInterne(redirectTo) ? redirectTo : null;
 }
 
 /**

@@ -293,6 +293,17 @@ describe("session.service", () => {
       expect(result).toBeNull();
       expect(mockCookieStore.delete).not.toHaveBeenCalled();
     });
+
+    // Cookie non signé, posable depuis un autre sous-domaine : il ne doit jamais faire sortir du site.
+    it.each(["https://site-pirate.example", "//site-pirate.example", "/\\site-pirate.example"])(
+      "ignore une destination hors du site (%s) et efface le cookie",
+      async (destination) => {
+        mockCookieStore.get.mockReturnValue({ value: destination });
+
+        expect(await getAndClearRedirectUrl()).toBeNull();
+        expect(mockCookieStore.delete).toHaveBeenCalledWith(COOKIE_NAMES.REDIRECT_TO);
+      }
+    );
   });
 
   describe("logout", () => {

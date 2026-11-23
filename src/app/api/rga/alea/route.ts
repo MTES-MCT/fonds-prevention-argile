@@ -1,13 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { getAleaByCoordinates } from "@/shared/services/rga";
 
+// Number() et non parseFloat : « 46.8;DROP » n'est pas un nombre. Les bornes écartent aussi l'infini.
+const Coordonnees = z.object({
+  lat: z.coerce.number().min(-90).max(90),
+  lon: z.coerce.number().min(-180).max(180),
+});
+
 /**
- * GET /api/rga/alea?lat=46.5&lon=1.8
- *
- * Retourne le niveau d'alea RGA pour des coordonnees donnees
- * via requete spatiale PostGIS sur les polygones RGA 2026 importes.
- *
- * Pas d'authentification requise (donnees geographiques publiques).
+ * GET /api/rga/alea?lat=46.5&lon=1.8 : niveau d'aléa RGA d'un point (polygones RGA 2026, PostGIS).
+ * Sans authentification : donnée géographique publique.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -18,14 +21,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Parametres lat et lon requis" }, { status: 400 });
   }
 
-  const lat = parseFloat(latStr);
-  const lon = parseFloat(lonStr);
-
-  if (isNaN(lat) || isNaN(lon)) {
+  const coordonnees = Coordonnees.safeParse({ lat: latStr, lon: lonStr });
+  if (!coordonnees.success) {
     return NextResponse.json({ error: "Parametres lat et lon invalides" }, { status: 400 });
   }
 
-  const alea = await getAleaByCoordinates(lat, lon);
+  const alea = await getAleaByCoordinates(coordonnees.data.lat, coordonnees.data.lon);
 
   return NextResponse.json({ alea });
 }
