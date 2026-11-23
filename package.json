@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.106.7",
+  "version": "1.107.1",
   "private": true,
   "packageManager": "pnpm@11.24.0",
   "engines": {
@@ -43,6 +43,7 @@
     "fix:codes-geo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/normaliser-codes-geo.ts",
     "fix:fusionner-invite": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/fusionner-dossier-invite.ts",
     "audit:parcours-ds": "tsx scripts/ops/audit/audit-parcours-ds-integrity.ts",
+    "audit:en-tetes": "tsx scripts/ops/audit/verifier-en-tetes.ts",
     "audit:dossiers-bloques": "tsx scripts/ops/audit/audit-dossiers-bloques.ts",
     "ds:check-permissions": "tsx scripts/ops/ds/check-ds-permissions.ts",
     "ds:fetch-pieces": "tsx scripts/ops/ds/fetch-pieces-justificatives.ts",
