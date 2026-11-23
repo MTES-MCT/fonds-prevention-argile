@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+import { adresseDepuisEnTetes } from "@/shared/utils/adresse-client.utils";
 
 // Limiteur en mémoire, par conteneur : il arrête une boucle d'appels, pas une attaque répartie (ADR-0054).
 
@@ -30,13 +32,8 @@ export const NOMBRE_MAX_COMPTEURS = 10_000;
 const etatGlobal = globalThis as typeof globalThis & { __compteursDebit?: Map<string, Compteur> };
 const compteurs = (etatGlobal.__compteursDebit ??= new Map<string, Compteur>());
 
-/** Adresse du visiteur vue par le routeur Scalingo, qui écrase X-Real-IP ; jamais journalisée ni stockée. */
 export function adresseClient(request: Request): string {
-  const reelle = request.headers.get("x-real-ip")?.trim();
-  if (reelle) return reelle;
-  // Dernière valeur : la seule posée par un intermédiaire de confiance, les premières viennent du client.
-  const transmises = request.headers.get("x-forwarded-for")?.split(",") ?? [];
-  return transmises.at(-1)?.trim() || "inconnue";
+  return adresseDepuisEnTetes(request.headers);
 }
 
 function faireDeLaPlace(maintenant: number): void {
@@ -65,6 +62,17 @@ export function limiterDebit(request: Request, nom: NomDebit): NextResponse | nu
 
   compteur.compte += 1;
   if (compteur.compte <= max) return null;
+
+  // Premier dépassement de la fenêtre seulement : une boucle d'appels ne doit pas remplir le journal.
+  if (compteur.compte === max + 1) {
+    void journaliser({
+      evenement: "debit_depasse",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      details: { regle: nom },
+      ip: adresseClient(request),
+    });
+  }
 
   const attente = Math.max(1, Math.ceil((compteur.debut + fenetreMs - maintenant) / 1000));
   return NextResponse.json(

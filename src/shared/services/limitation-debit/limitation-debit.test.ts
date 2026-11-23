@@ -8,6 +8,9 @@ import {
   reinitialiserDebits,
 } from "./limitation-debit";
 
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+
 const requete = (enTetes: Record<string, string> = {}) => new Request("https://fonds.test/api", { headers: enTetes });
 const depuis = (ip: string) => requete({ "x-real-ip": ip });
 
@@ -53,6 +56,21 @@ describe("limiterDebit", () => {
     appeler(DEBITS.lecture.max + 1, "203.0.113.1", "lecture");
 
     expect(limiterDebit(depuis("203.0.113.1"), "connexion")).toBeNull();
+  });
+
+  it("journalise le premier dépassement d'une fenêtre, pas les suivants", () => {
+    appeler(DEBITS.connexion.max, "203.0.113.1", "connexion");
+    expect(journaliser).not.toHaveBeenCalled();
+
+    appeler(50, "203.0.113.1", "connexion");
+
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "debit_depasse",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      details: { regle: "connexion" },
+      ip: "203.0.113.1",
+    });
   });
 
   // Chaque adresse nouvelle crée une entrée : sans borne, un balayage d'adresses remplirait la mémoire.
