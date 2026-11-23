@@ -5,13 +5,11 @@ import { checkAgentAccess } from "@/features/auth";
 import { isSuperAdminRole } from "@/shared/domain/value-objects/user-role.enum";
 import { syncRunRepo } from "@/shared/database/repositories";
 import type { ActionResult } from "@/shared/types";
-import {
-  runSyncBatch,
-  type SyncRunResult,
-} from "@/features/parcours/dossiers-ds/services/parcours-sync-batch.service";
+import { runSyncBatch, type SyncRunResult } from "@/features/parcours/dossiers-ds/services/parcours-sync-batch.service";
 import { SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import type { SyncRun } from "@/shared/database/schema/sync-runs";
 import type { SyncRunDetail } from "@/shared/database/repositories/sync-run.repository";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 /**
  * Server actions super-admin pour consulter et déclencher les synchros CRON.
@@ -25,7 +23,7 @@ interface ListSyncRunsResult {
   totalPages: number;
 }
 
-async function ensureSuperAdmin(): Promise<{ ok: true } | { ok: false; error: string }> {
+async function ensureSuperAdmin(): Promise<{ ok: true; agentId: string; role: string } | { ok: false; error: string }> {
   const access = await checkAgentAccess();
   if (!access.hasAccess || !access.user?.role) {
     return { ok: false, error: "Non authentifié" };
@@ -33,13 +31,10 @@ async function ensureSuperAdmin(): Promise<{ ok: true } | { ok: false; error: st
   if (!isSuperAdminRole(access.user.role)) {
     return { ok: false, error: "Accès réservé aux super-administrateurs" };
   }
-  return { ok: true };
+  return { ok: true, agentId: access.user.id, role: access.user.role };
 }
 
-export async function listSyncRunsAction(
-  page = 1,
-  pageSize = 20
-): Promise<ActionResult<ListSyncRunsResult>> {
+export async function listSyncRunsAction(page = 1, pageSize = 20): Promise<ActionResult<ListSyncRunsResult>> {
   const guard = await ensureSuperAdmin();
   if (!guard.ok) return { success: false, error: guard.error };
 
@@ -73,6 +68,11 @@ export async function triggerManualSyncAction(): Promise<ActionResult<SyncRunRes
   if (!guard.ok) return { success: false, error: guard.error };
 
   try {
+    // Avant le run : il dure plusieurs minutes, et la décision de le lancer doit être datée à son départ.
+    await journaliser({
+      evenement: "synchronisation_lancee",
+      acteur: { type: "agent", id: guard.agentId, role: guard.role },
+    });
     const result = await runSyncBatch(SyncRunTrigger.MANUAL);
     revalidatePath("/administration/synchronisations");
     return { success: true, data: result };

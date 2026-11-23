@@ -5,6 +5,7 @@ import { checkBackofficePermission } from "@/features/auth/permissions/services/
 import { BackofficePermission } from "@/features/auth/permissions/domain/value-objects/rbac-permissions";
 import type { ActionResult } from "@/shared/types";
 import { desactiverExpert, reactiverExpert, RefusOperationExpert } from "../services/experts-admin.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 const idSchema = z.string().uuid("Identifiant invalide");
 
@@ -23,7 +24,11 @@ export async function desactiverExpertAction(input: unknown): Promise<ActionResu
   if (!saisie.success) return { success: false, error: saisie.error.issues[0].message };
   try {
     await desactiverExpert(saisie.data.id, acces.user?.agentId ?? null, saisie.data.raison);
-    console.info(`[experts] Expert ${saisie.data.id} désactivé par l'agent ${acces.user?.agentId ?? "inconnu"}`);
+    await journaliser({
+      evenement: "expert_desactive",
+      acteur: { type: "agent", id: acces.user?.agentId ?? "inconnu", role: acces.user?.role },
+      cible: { type: "expert", id: saisie.data.id },
+    });
     return { success: true, data: undefined };
   } catch (error) {
     return erreur(error, "desactiverExpertAction");
@@ -37,7 +42,11 @@ export async function reactiverExpertAction(input: unknown): Promise<ActionResul
   if (!saisie.success) return { success: false, error: saisie.error.issues[0].message };
   try {
     await reactiverExpert(saisie.data.id);
-    console.info(`[experts] Expert ${saisie.data.id} réactivé par l'agent ${acces.user?.agentId ?? "inconnu"}`);
+    await journaliser({
+      evenement: "expert_reactive",
+      acteur: { type: "agent", id: acces.user?.agentId ?? "inconnu", role: acces.user?.role },
+      cible: { type: "expert", id: saisie.data.id },
+    });
     return { success: true, data: undefined };
   } catch (error) {
     return erreur(error, "reactiverExpertAction");

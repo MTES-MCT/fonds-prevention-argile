@@ -13,12 +13,13 @@ import {
   type DsEmailHit,
 } from "../services/diagnostics-detail.service";
 import type { DiagnosticsResult, DemarcheSante } from "../domain/diagnostics.types";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 /**
  * Server actions de la vue de diagnostic data (réservée SUPER_ADMINISTRATEUR).
  */
 
-async function ensureSuperAdmin(): Promise<{ ok: true } | { ok: false; error: string }> {
+async function ensureSuperAdmin(): Promise<{ ok: true; agentId: string; role: string } | { ok: false; error: string }> {
   const access = await checkAgentAccess();
   if (!access.hasAccess || !access.user?.role) {
     return { ok: false, error: "Non authentifié" };
@@ -26,7 +27,7 @@ async function ensureSuperAdmin(): Promise<{ ok: true } | { ok: false; error: st
   if (!isSuperAdminRole(access.user.role)) {
     return { ok: false, error: "Accès réservé aux super-administrateurs" };
   }
-  return { ok: true };
+  return { ok: true, agentId: access.user.id, role: access.user.role };
 }
 
 /** Classification EN BASE de tous les parcours actifs (aucun appel DN). */
@@ -81,6 +82,11 @@ export async function probeDnSyncErrorsAction(): Promise<ActionResult<{ probed: 
 
   try {
     const result = await probeDnForSyncErrors();
+    await journaliser({
+      evenement: "sondage_dn_lance",
+      acteur: { type: "agent", id: guard.agentId, role: guard.role },
+      details: { sondes: result.probed },
+    });
     return { success: true, data: result };
   } catch (error) {
     console.error("Erreur probeDnSyncErrorsAction:", error);

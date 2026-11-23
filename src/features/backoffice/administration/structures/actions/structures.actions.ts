@@ -29,6 +29,11 @@ import {
   retirerHabilitation,
   supprimerStructure,
 } from "../services/structures-admin.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+import type { AuthUser } from "@/features/auth/domain/entities";
+
+const auteur = (user: AuthUser) => ({ type: "agent" as const, id: user.id, role: user.role });
+const laStructure = (id: string) => ({ type: "structure" as const, id });
 
 const ROLES_ADMINISTRATION = [UserRole.SUPER_ADMINISTRATEUR, UserRole.ADMINISTRATEUR];
 const ACCES_REFUSE = "Accès non autorisé.";
@@ -125,6 +130,12 @@ export async function creerStructureAction(input: unknown): Promise<ActionResult
     }
 
     const id = await creerStructure(identite, premiere);
+    await journaliser({
+      evenement: "structure_creee",
+      acteur: auteur(acces.user),
+      cible: laStructure(id),
+      details: { habilitation: premiere.habilitation },
+    });
     rafraichirPagesPubliques();
     return { success: true, data: { id } };
   } catch (error) {
@@ -143,6 +154,11 @@ export async function modifierIdentiteAction(input: unknown): Promise<ActionResu
     if (!parsed.success) return { success: false, error: premiereErreur(parsed.error) };
 
     await modifierIdentite(parsed.data.structureId, parsed.data.identite);
+    await journaliser({
+      evenement: "structure_modifiee",
+      acteur: auteur(acces.user),
+      cible: laStructure(parsed.data.structureId),
+    });
     rafraichirPagesPubliques();
     return { success: true, data: undefined };
   } catch (error) {
@@ -164,6 +180,12 @@ export async function supprimerStructureAction(input: unknown): Promise<ActionRe
     if (!peutUne(role, requises)) return { success: false, error: PERMISSION_INSUFFISANTE };
 
     await supprimerStructure(parsed.data);
+    await journaliser({
+      evenement: "structure_supprimee",
+      acteur: auteur(acces.user),
+      cible: laStructure(parsed.data),
+      details: { type: fiche.type },
+    });
     rafraichirPagesPubliques();
     return { success: true, data: undefined };
   } catch (error) {
@@ -192,6 +214,12 @@ export async function ajouterHabilitationAction(input: unknown): Promise<ActionR
     }
 
     await ajouterHabilitation(structureId, demande);
+    await journaliser({
+      evenement: "habilitation_ajoutee",
+      acteur: auteur(acces.user),
+      cible: laStructure(structureId),
+      details: { habilitation: demande.habilitation },
+    });
     rafraichirPagesPubliques();
     return { success: true, data: undefined };
   } catch (error) {
@@ -212,6 +240,12 @@ export async function modifierHabilitationAction(input: unknown): Promise<Action
     }
 
     await modifierHabilitation(structureId, demande);
+    await journaliser({
+      evenement: "habilitation_modifiee",
+      acteur: auteur(acces.user),
+      cible: laStructure(structureId),
+      details: { habilitation: demande.habilitation },
+    });
     rafraichirPagesPubliques();
     return { success: true, data: undefined };
   } catch (error) {
@@ -236,6 +270,12 @@ export async function retirerHabilitationAction(input: unknown): Promise<ActionR
     }
 
     await retirerHabilitation(structureId, habilitation);
+    await journaliser({
+      evenement: "habilitation_retiree",
+      acteur: auteur(acces.user),
+      cible: laStructure(structureId),
+      details: { habilitation },
+    });
     rafraichirPagesPubliques();
     return { success: true, data: undefined };
   } catch (error) {

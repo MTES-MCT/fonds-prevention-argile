@@ -18,6 +18,13 @@ import { AgentWithPermissions } from "../domain/types";
 import type { AgentTracesCount } from "@/shared/database/repositories/agents.repository";
 import { structuresRepository } from "@/shared/database/repositories/structures.repository";
 import { findListesDiffusionAvecEmail, type ListeDiffusion } from "../services/listes-diffusion.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+
+const parSuperAdmin = (agentId: string) => ({
+  type: "agent" as const,
+  id: agentId,
+  role: UserRole.SUPER_ADMINISTRATEUR,
+});
 
 /** Effet d'une désactivation sur les listes de diffusion, par nom de structure. */
 export interface DesactivationSummary {
@@ -155,6 +162,15 @@ const agentSchema = z.object({
 
 const premiereErreur = (error: z.ZodError) => error.issues[0]?.message ?? "Données invalides";
 
+// Le compte fait le rôle : un rôle plateforme, ou la structure dont l'agent hérite les habilitations.
+const detailsCompte = (compte?: z.infer<typeof compteSchema>) =>
+  compte
+    ? {
+        compte: compte.type,
+        ...(compte.type === "plateforme" ? { role: compte.role } : { structureId: compte.structureId }),
+      }
+    : {};
+
 /**
  * Crée un nouvel agent (super admin uniquement)
  */
@@ -175,6 +191,12 @@ export async function createAgentAction(input: unknown): Promise<ActionResult<Ag
     }
 
     const agent = await createAgent(parsed.data);
+    await journaliser({
+      evenement: "agent_cree",
+      acteur: parSuperAdmin(garde.agentId),
+      cible: { type: "agent", id: agent.agent.id },
+      details: detailsCompte(parsed.data.compte),
+    });
 
     return {
       success: true,
@@ -216,6 +238,12 @@ export async function updateAgentAction(agentId: string, input: unknown): Promis
         error: "Agent non trouvé",
       };
     }
+    await journaliser({
+      evenement: "agent_modifie",
+      acteur: parSuperAdmin(garde.agentId),
+      cible: { type: "agent", id: agentId },
+      details: { champs: Object.keys(parsed.data).join(","), ...detailsCompte(parsed.data.compte) },
+    });
 
     return {
       success: true,
@@ -317,6 +345,11 @@ export async function desactiverAgentAction(
     }
 
     const resultat = await desactiverAgent(agentId, garde.agentId, raison);
+    await journaliser({
+      evenement: "agent_desactive",
+      acteur: parSuperAdmin(garde.agentId),
+      cible: { type: "agent", id: agentId },
+    });
 
     return {
       success: true,
@@ -349,6 +382,11 @@ export async function reactiverAgentAction(agentId: string): Promise<ActionResul
     }
 
     await reactiverAgent(agentId);
+    await journaliser({
+      evenement: "agent_reactive",
+      acteur: parSuperAdmin(garde.agentId),
+      cible: { type: "agent", id: agentId },
+    });
 
     return {
       success: true,
@@ -386,6 +424,11 @@ export async function deleteAgentAction(agentId: string): Promise<ActionResult<v
         error: "Agent non trouvé ou déjà supprimé",
       };
     }
+    await journaliser({
+      evenement: "agent_supprime",
+      acteur: parSuperAdmin(garde.agentId),
+      cible: { type: "agent", id: agentId },
+    });
 
     return {
       success: true,
