@@ -28,8 +28,8 @@ mémoire est déjà surveillée (`docs/ops/scalingo.md`). Le socle de sécurité
   entrer dans la clé : celui d'une route à jeton change à chaque appel, et donnerait un compteur neuf à
   chaque essai.
 - **L'adresse est celle de `X-Real-IP`**, que le routeur Scalingo écrase. À défaut, la dernière valeur
-  de `X-Forwarded-For`, jamais la première, que le client écrit lui-même. Elle n'est ni journalisée ni
-  stockée.
+  de `X-Forwarded-For`, jamais la première, que le client écrit lui-même. Elle n'est pas stockée ; depuis
+  l'ADR-0055, le premier dépassement d'une fenêtre l'écrit au journal de sécurité.
 - **La table des compteurs est bornée à 10 000 entrées** : chaque adresse nouvelle en crée une, et un
   balayage d'adresses ne doit pas remplir la mémoire.
 - **Chaque route déclare son plafond dans le registre**, ou la raison de ne pas en avoir.

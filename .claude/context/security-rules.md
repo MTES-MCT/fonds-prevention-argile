@@ -82,6 +82,21 @@ export async function getDossier(id: string) {
 - JAMAIS logger un secret, un token, un mot de passe ou un payload complet contenant
   des données personnelles.
 - En cas d'erreur, logger le contexte (id technique, étape) plutôt que les données brutes.
+- Une connexion, un refus ou une écriture depuis l'administration s'écrit au journal de sécurité par
+  `journaliser` (`@/shared/services/journal-securite/journal-securite`), avec des identifiants techniques
+  seulement. Registre des évènements : `docs/security/JOURNALISATION.md`.
+
+```ts
+// INTERDIT — identité dans un journal gardé un an
+console.info(`Agent ${agent.email} désactivé par ${admin.email}`);
+
+// CORRECT — évènement de la liste fermée, identifiants techniques
+await journaliser({
+  evenement: "agent_desactive",
+  acteur: { type: "agent", id: admin.id, role: admin.role },
+  cible: { type: "agent", id: agent.id },
+});
+```
 
 ## Dépendances
 
@@ -98,3 +113,4 @@ export async function getDossier(id: string) {
 - [ ] Accès DB via le query builder Drizzle, jamais de SQL brut
 - [ ] Réponses limitées aux champs nécessaires
 - [ ] Aucun secret ni donnée personnelle dans les logs
+- [ ] Écriture depuis l'administration tracée au journal de sécurité (`journaliser`)

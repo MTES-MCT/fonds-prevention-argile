@@ -15,6 +15,9 @@ Auditeur : Samir + Claude
 > 11.0.1 à tester : deux majors au-dessus de l'override). Tout le reste est corrigé à la source. Voir
 > [Refresh — novembre 2026 (socle CI)](#refresh--novembre-2026-branche-choreci-socle-securite).
 >
+> **Au 23 novembre 2026**, trois avis Moderate sur `next` <=15.5.28 attendent le passage en 15.5.29 : ils
+> ne sont pas acceptés, voir [le refresh du 23 novembre](#refresh--novembre-2026-branche-featjournal-securite).
+>
 > Depuis novembre 2026, l'audit tourne chaque lundi en CI et une PR qui introduit une faille High est
 > refusée : voir [CONTROLES-CI.md](CONTROLES-CI.md), qui dit aussi où déclarer une faille acceptée.
 
@@ -542,6 +545,18 @@ Première faille déclarée dans les listes d'exceptions de la CI : `auditConfig
 `picomatch` à relever, dès qu'un correctif est publié.
 
 `uuid` et `minimatch` restent acceptés, sans changement.
+
+## Refresh — novembre 2026 (branche `feat/journal-securite`)
+
+Branche sans changement de dépendance. `pnpm audit` du 23 novembre relève trois avis Moderate publiés sur
+`next` depuis le refresh précédent, déjà présents sur `main`. Aucun n'est accepté : le correctif existe,
+il part dans une PR de dépendances à part.
+
+| Dépendance vulnérable | Sévérité | Type    | Chemin                                   | Suite donnée                                                                                                                                                                                                               |
+| --------------------- | -------- | ------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next` <=15.5.28 (×3) | Moderate | runtime | `next`, `@socialgouv/matomo-next > next` | `GHSA-7qx7-33qx-rqx2` (SVG dans l'optimisation d'images), `GHSA-f3mh-rxg3-f5g2` (cookie HttpOnly sur les routes Edge), `GHSA-pc58-hwjq-p385` (réponse injectée entre clients). Correctif `15.5.29` : voir SUJETS-A-TRAITER |
+
+`picomatch`, `uuid` et `minimatch` restent acceptés, sans changement.
 
 ## Prochaine revue
 

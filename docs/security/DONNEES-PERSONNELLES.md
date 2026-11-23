@@ -263,6 +263,13 @@ Table anonyme par construction : aucun lien vers un compte, seul le département
 | ------------ | ------------- | ------------------------------------------------------------ |
 | `id`, `alea` | Non personnel | Conservées : référentiel public, la géométrie (`geom`) aussi |
 
+## Hors de la base : le journal de sécurité
+
+Le journal de sécurité ([JOURNALISATION.md](JOURNALISATION.md), ADR-0055) n'est pas en base : il sort sur
+la sortie standard et l'hébergeur le garde un an. Il contient deux données personnelles, l'identifiant
+technique d'un agent ou d'un demandeur et son adresse IP. Ni nom, ni email, ni texte saisi. Un dump n'en
+contient donc rien, et `anonymiser.sql` n'a rien à y traiter.
+
 ## Hors du schéma Drizzle
 
 Présentes dans un dump, sans donnée personnelle : `rga_zones_import` (table de travail de l'import

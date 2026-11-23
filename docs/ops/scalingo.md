@@ -63,6 +63,11 @@ scalingo --app fonds-argile --region osc-secnum-fr1 logs --lines 5000 \
   | grep -iE "error|erreur|failed|exception"
 ```
 
+```bash
+# Le journal de sécurité : connexions, refus, écritures de l'administration (docs/security/JOURNALISATION.md)
+scalingo --app fonds-argile --region osc-secnum-fr1 logs --lines 5000 | grep '"journal":"securite"'
+```
+
 Quand la sortie est trop longue pour être lue d'un bloc, passer par un fichier temporaire
 plutôt que de scroller :
 
