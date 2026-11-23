@@ -47,12 +47,12 @@ function mockSelectJoinOnce(rows: unknown[]) {
   } as any);
 }
 
-function mockUpdateCapturingSet(): { sets: Record<string, unknown>[] } {
+function mockUpdateCapturingSet(lignesModifiees = [{ id: "val-1" }]): { sets: Record<string, unknown>[] } {
   const sets: Record<string, unknown>[] = [];
   vi.mocked(db.update).mockReturnValue({
     set: (payload: Record<string, unknown>) => {
       sets.push(payload);
-      return { where: () => Promise.resolve(undefined) };
+      return { where: () => ({ returning: () => Promise.resolve(lignesModifiees) }) };
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
@@ -101,6 +101,18 @@ describe("rattacherAmo", () => {
     expect(listerAmosDuTerritoire).not.toHaveBeenCalled();
     // Le contact Brevo portait encore l'aller-vers comme conseiller.
     expect(emitBrevoEvent).toHaveBeenCalledWith("p1", "amo_defini", expect.anything());
+  });
+
+  it("rattachement concurrent : l'écriture ne touche aucune ligne → refus, aucun évènement Brevo", async () => {
+    mockSelectOnce([parcoursObligatoire]);
+    mockSelectOnce([validationDetachee]);
+    mockSelectJoinOnce([{ entrepriseAmoId: "e-origine" }]);
+    mockUpdateCapturingSet([]);
+
+    const result = await rattacherAmo({ parcoursId: "p1" });
+
+    expect(result).toEqual({ success: false, error: "Ce parcours a déjà une AMO rattachée" });
+    expect(emitBrevoEvent).not.toHaveBeenCalled();
   });
 
   it("retombe sur l'AMO du territoire quand aucune trace d'audit n'existe", async () => {

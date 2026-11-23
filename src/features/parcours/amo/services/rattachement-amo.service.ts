@@ -103,8 +103,8 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
 
   const attributionMode = regles.avCumuleAmo ? AttributionAmoMode.AUTO_AV_AMO : AttributionAmoMode.AUTO_OBLIGATOIRE;
 
-  // Conditionné sur `sans_amo` : protège d'un rattachement concurrent.
-  await db
+  // Conditionné sur `sans_amo` : un rattachement concurrent ne modifie rien et sort en refus.
+  const rattachees = await db
     .update(parcoursAmoValidations)
     .set({
       entrepriseAmoId: resolved.entrepriseAmoId,
@@ -114,7 +114,11 @@ export async function rattacherAmo(params: { parcoursId: string }): Promise<Acti
     })
     .where(
       and(eq(parcoursAmoValidations.id, validation.id), eq(parcoursAmoValidations.statut, StatutValidationAmo.SANS_AMO))
-    );
+    )
+    .returning({ id: parcoursAmoValidations.id });
+  if (rattachees.length === 0) {
+    return { success: false, error: "Ce parcours a déjà une AMO rattachée" };
+  }
 
   const [amo] = await db
     .select({ nom: entreprisesAmo.nom })
