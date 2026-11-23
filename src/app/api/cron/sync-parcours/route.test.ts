@@ -5,6 +5,7 @@ const SECRET = "secret-cron-de-plus-de-trente-deux-caracteres";
 
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: () => ({ CRON_SECRET: SECRET }) }));
 vi.mock("@/features/parcours/dossiers-ds/services/parcours-sync-batch.service", () => ({ runSyncBatch: vi.fn() }));
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
 // `after` n'existe que dans une requête servie par Next : ici on vérifie seulement s'il est armé.
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
@@ -13,6 +14,7 @@ vi.mock("next/server", async (importOriginal) => ({
 
 import { after } from "next/server";
 import { POST } from "./route";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 function requete(authorization?: string) {
   return new NextRequest("http://localhost/api/cron/sync-parcours", {
@@ -31,6 +33,9 @@ describe("POST /api/cron/sync-parcours", () => {
 
       expect(reponse.status).toBe(401);
       expect(after).not.toHaveBeenCalled();
+      expect(journaliser).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ evenement: "acces_refuse", resultat: "refus", motif: "secret_invalide" })
+      );
     }
   );
 
@@ -39,5 +44,8 @@ describe("POST /api/cron/sync-parcours", () => {
 
     expect(reponse.status).toBe(202);
     expect(after).toHaveBeenCalledOnce();
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ evenement: "synchronisation_lancee", acteur: { type: "systeme", id: "cron" } })
+    );
   });
 });

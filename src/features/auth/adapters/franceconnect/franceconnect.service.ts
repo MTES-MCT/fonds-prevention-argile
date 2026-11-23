@@ -18,6 +18,11 @@ import { generateSecureRandomString, parseJSONorJWT } from "../../utils/oauth.ut
 import { logSystemAction } from "@/features/backoffice/espace-agent/shared/services/action-audit.service";
 import { resumerErreur } from "@/shared/utils/erreur.utils";
 import { ACTION_TYPE_INVITATION_NON_RATTACHEE } from "@/features/backoffice/espace-agent/shared/domain/types/action.types";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+
+// Une connexion refusée n'a pas d'acteur : le demandeur n'est identifié qu'une fois les vérifications passées.
+const journaliserRefusConnexion = (motif: string, resultat: "refus" | "echec" = "refus") =>
+  journaliser({ evenement: "connexion_demandeur", resultat, acteur: { type: "anonyme" }, motif });
 
 /**
  * Génère l'URL d'autorisation FranceConnect
@@ -243,6 +248,7 @@ export async function handleFranceConnectCallback(
     // 1. Vérifier le state
     const isValidState = await verifyState(state);
     if (!isValidState) {
+      await journaliserRefusConnexion("etat_invalide");
       return {
         success: false,
         error: "État de sécurité invalide",
@@ -256,6 +262,7 @@ export async function handleFranceConnectCallback(
     // 3. Vérifier le nonce dans l'id_token
     const isValidNonce = await verifyNonce(tokens.id_token);
     if (!isValidNonce) {
+      await journaliserRefusConnexion("nonce_invalide");
       return {
         success: false,
         error: "Vérification de sécurité échouée (nonce)",
@@ -344,10 +351,16 @@ export async function handleFranceConnectCallback(
       userInfo.preferred_username || userInfo.family_name,
       userInfo.email
     );
+    await journaliser({
+      evenement: "connexion_demandeur",
+      acteur: { type: "demandeur", id: user.id },
+      details: { nouveauCompte: isNewAccount },
+    });
 
     return { success: true };
   } catch (error) {
     console.error("Erreur callback FranceConnect:", resumerErreur(error));
+    await journaliserRefusConnexion("erreur_technique", "echec");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",

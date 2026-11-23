@@ -6,6 +6,7 @@ vi.mock("../../utils/jwt.utils", () => ({ createToken: vi.fn(() => "jeton-sessio
 vi.mock("@/shared/database/repositories", () => ({
   agentsRepo: { authenticateFromProConnect: vi.fn() },
 }));
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
 vi.mock("./proconnect-oidc", async (importOriginal) => {
   const original = await importOriginal<typeof import("./proconnect-oidc")>();
   return {
@@ -24,6 +25,7 @@ import { JetonProConnectInvalideError, lireUserInfoProConnect, verifierIdTokenPr
 import { generateAuthorizationUrl, handleProConnectCallback } from "./proconnect.service";
 import { COOKIE_NAMES } from "../../domain/value-objects";
 import { UserRole } from "@/shared/domain/value-objects";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 const USER_INFO = { sub: "sub-agent", email: "agent@exemple.fr", given_name: "Alex" };
 const AGENT = { id: "agent-1", role: UserRole.AMO, givenName: "Alex", usualName: "Martin" };
@@ -170,5 +172,66 @@ describe("handleProConnectCallback — exigence de 2FA", () => {
 
     expect(resultat).toMatchObject({ success: false, shouldLogout: true });
     expect(createToken).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleProConnectCallback — journal de sécurité", () => {
+  it("connexion réussie → l'agent, son rôle et son niveau d'authentification, sans email ni nom", async () => {
+    stubFetch();
+
+    await handleProConnectCallback("code", "state-ok");
+
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "connexion_agent",
+      acteur: { type: "agent", id: "agent-1", role: UserRole.AMO },
+      details: { acr: "eidas1-mfa" },
+    });
+  });
+
+  it.each([
+    ["state falsifié", "etat_invalide", () => {}, "state-falsifie"],
+    [
+      "sans double authentification",
+      "double_authentification_absente",
+      () => vi.mocked(verifierIdTokenProConnect).mockResolvedValue({ sub: "sub-agent", acr: "eidas1", amr: [] }),
+      "state-ok",
+    ],
+    [
+      "id_token invalide",
+      "jeton_invalide",
+      () => vi.mocked(verifierIdTokenProConnect).mockRejectedValue(new JetonProConnectInvalideError("signature")),
+      "state-ok",
+    ],
+    [
+      "agent inconnu ou désactivé",
+      "agent_inconnu_ou_desactive",
+      () => vi.mocked(agentsRepo.authenticateFromProConnect).mockResolvedValue(null as never),
+      "state-ok",
+    ],
+  ])("%s → refus anonyme, motif %s", async (_cas, motif, preparer, state) => {
+    stubFetch();
+    preparer();
+
+    await handleProConnectCallback("code", state);
+
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "connexion_agent",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      motif,
+    });
+  });
+
+  it("panne du fournisseur d'identité → échec, pas refus", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ error: "server_error" }), { status: 500 }))
+    );
+
+    await handleProConnectCallback("code", "state-ok");
+
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ resultat: "echec", motif: "erreur_technique" })
+    );
   });
 });

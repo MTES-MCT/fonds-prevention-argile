@@ -3,6 +3,8 @@ import { getServerEnv } from "@/shared/config/env.config";
 import { runSyncBatch } from "@/features/parcours/dossiers-ds/services/parcours-sync-batch.service";
 import { SyncRunTrigger } from "@/shared/domain/value-objects/sync-run-status.enum";
 import { bearerCorrespond } from "@/shared/utils/crypto.utils";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+import { adresseDepuisEnTetes } from "@/shared/utils/adresse-client.utils";
 
 // Endpoint CRON déclenché par GitHub Actions : 202 immédiat + run via after() (proxy Scalingo ~55s). Suivi : /administration/synchronisations.
 
@@ -17,8 +19,21 @@ function verifyBearerToken(request: NextRequest): boolean {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!verifyBearerToken(request)) {
+    await journaliser({
+      evenement: "acces_refuse",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      cible: { type: "route", id: "api/cron/sync-parcours" },
+      motif: "secret_invalide",
+      ip: adresseDepuisEnTetes(request.headers),
+    });
     return NextResponse.json({ success: false, error: "Authentification invalide" }, { status: 401 });
   }
+  await journaliser({
+    evenement: "synchronisation_lancee",
+    acteur: { type: "systeme", id: "cron" },
+    ip: adresseDepuisEnTetes(request.headers),
+  });
 
   // Run en background : réponse part vite, traitement continue.
   after(async () => {

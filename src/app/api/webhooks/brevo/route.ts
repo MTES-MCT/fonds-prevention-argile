@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/shared/config/env.config";
 import { bearerCorrespond } from "@/shared/utils/crypto.utils";
 import { isValidBrevoPayload, processBrevoWebhook } from "@/features/parcours/amo/services/brevo-webhook.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+import { adresseDepuisEnTetes } from "@/shared/utils/adresse-client.utils";
+
+const journaliserSecretRefuse = (request: NextRequest) =>
+  journaliser({
+    evenement: "acces_refuse",
+    resultat: "refus",
+    acteur: { type: "anonyme" },
+    cible: { type: "route", id: "api/webhooks/brevo" },
+    motif: "secret_invalide",
+    ip: adresseDepuisEnTetes(request.headers),
+  });
 
 /**
  * Webhook Brevo pour le tracking des emails AMO
@@ -26,6 +38,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Vérifier l'authentification Bearer
     if (!verifyBearerToken(request)) {
       console.warn("[Brevo Webhook] Authentification invalide");
+      await journaliserSecretRefuse(request);
       // Retourner 200 pour éviter les retries Brevo (mais on ne traite pas)
       return NextResponse.json({ success: false, error: "Authentification invalide" });
     }
@@ -74,6 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!verifyBearerToken(request)) {
+    await journaliserSecretRefuse(request);
     return NextResponse.json({ status: "unauthorized" }, { status: 401 });
   }
 

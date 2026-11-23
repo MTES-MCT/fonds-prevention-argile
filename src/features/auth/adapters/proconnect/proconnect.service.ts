@@ -25,6 +25,11 @@ import {
   verifierIdTokenProConnect,
   type ContexteVerificationProConnect,
 } from "./proconnect-oidc";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+
+// Une connexion refusée n'a pas d'acteur : l'agent n'est identifié qu'une fois toutes les vérifications passées.
+const journaliserRefusConnexion = (motif: string, resultat: "refus" | "echec" = "refus") =>
+  journaliser({ evenement: "connexion_agent", resultat, acteur: { type: "anonyme" }, motif });
 
 /**
  * Génère l'URL d'autorisation ProConnect
@@ -172,6 +177,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     // 1. Vérifier le state
     const isValidState = await verifyState(state);
     if (!isValidState) {
+      await journaliserRefusConnexion("etat_invalide");
       return {
         success: false,
         error: "État de sécurité invalide",
@@ -190,6 +196,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     const acr = claims.acr;
     if (!estAcrMfa(acr)) {
       console.warn("[ProConnect] Connexion refusée sans double authentification", { acr: String(acr) });
+      await journaliserRefusConnexion("double_authentification_absente");
       return {
         success: false,
         error: "Double authentification requise",
@@ -201,6 +208,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
     // 4. Récupérer les infos utilisateur, rattachées au même sujet que l'id_token (OIDC Core 5.3.2)
     const userInfo = await getUserInfo(tokens.access_token, contexte);
     if (userInfo.sub !== claims.sub) {
+      await journaliserRefusConnexion("sujet_incoherent");
       return {
         success: false,
         error: "Vérification de sécurité échouée (sub)",
@@ -210,6 +218,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
 
     // 5. Valider les données obligatoires
     if (!validateProConnectUserInfo(userInfo)) {
+      await journaliserRefusConnexion("donnees_incompletes");
       return {
         success: false,
         error: "Données ProConnect incomplètes",
@@ -234,6 +243,7 @@ export async function handleProConnectCallback(code: string, state: string): Pro
 
     // 8. Vérifier que l'agent est autorisé
     if (!agent) {
+      await journaliserRefusConnexion("agent_inconnu_ou_desactive");
       return {
         success: false,
         error: "Accès non autorisé. Votre compte n'est pas enregistré dans le système.",
@@ -243,14 +253,21 @@ export async function handleProConnectCallback(code: string, state: string): Pro
 
     // 9. Créer la session avec l'agentId et son rôle
     await createProConnectSession(agent.id, agent.role, acr, tokens.id_token, agent.givenName, agent.usualName || "");
+    await journaliser({
+      evenement: "connexion_agent",
+      acteur: { type: "agent", id: agent.id, role: agent.role },
+      details: { acr },
+    });
 
     return { success: true, role: agent.role };
   } catch (error) {
     if (error instanceof JetonProConnectInvalideError) {
       console.error(error.message);
+      await journaliserRefusConnexion("jeton_invalide");
       return { success: false, error: "Vérification de sécurité échouée", shouldLogout: true };
     }
     console.error("[ProConnect] Erreur callback:", error);
+    await journaliserRefusConnexion("erreur_technique", "echec");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur inconnue",

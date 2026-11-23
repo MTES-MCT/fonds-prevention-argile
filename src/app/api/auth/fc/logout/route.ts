@@ -1,5 +1,6 @@
 import { AUTH_METHODS, clearSessionCookies, generateLogoutUrl, getSession } from "@/features/auth";
 import { NextResponse } from "next/server";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 export async function POST() {
   try {
@@ -11,6 +12,7 @@ export async function POST() {
 
       // Nettoyer la session locale
       await clearSessionCookies();
+      await journaliser({ evenement: "deconnexion_demandeur", acteur: { type: "demandeur", id: session.userId } });
 
       // Rediriger vers FranceConnect
       return NextResponse.json({
