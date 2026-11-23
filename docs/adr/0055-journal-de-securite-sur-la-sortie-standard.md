@@ -74,8 +74,10 @@ are kept for 1 year », documentation relue le 23 novembre 2026) : les lignes r�
   un service de recherche reste à arbitrer et se fait hors du dépôt.
 - **Douze mois sans marge**, et sur la foi de la documentation de l'hébergeur : à faire confirmer pour la
   région de production, et à porter au contrat.
-- **L'adresse IP et l'identifiant d'un agent sont des données personnelles** conservées un an hors de la
-  base : à inscrire au registre des traitements.
+- **Le journal est un traitement de données personnelles nouveau** : identifiant, adresse IP et date des
+  actions des agents et des demandeurs, conservés un an hors de la base. À inscrire au registre des
+  traitements, et à dire dans la politique de confidentialité, qui ne cite aujourd'hui ni adresse IP ni
+  donnée de connexion. Un an est le haut de la durée recommandée par la CNIL (six mois à un an).
 - **Les lectures ne sont pas journalisées**, y compris la consultation de la liste nominative des
   demandeurs, ni les refus d'accès aux pages et aux actions de l'administration.
 - Les requêtes HTTP elles-mêmes ne sont pas dans ce journal : c'est le rôle des journaux du routeur de

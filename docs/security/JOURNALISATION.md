@@ -39,8 +39,15 @@ Une ligne JSON par évènement, sur la sortie standard, écrite par `journaliser
 | `details`   | Codes, identifiants et compteurs                                                                 |
 | `ip`        | Adresse vue par le routeur de l'hébergeur (`X-Real-IP`), `inconnue` hors d'une requête           |
 
+Une valeur d'en-tête qui n'a pas la forme d'une adresse IP n'est pas reprise : le champ vaut `inconnue`.
+
 **Aucune identité n'entre au journal** : ni nom, ni email, ni téléphone, ni texte saisi (la raison d'une
 désactivation reste en base). Un agent se retrouve par son identifiant dans `/administration/agents`.
+
+**Le journal reste une donnée personnelle** : un identifiant, une adresse IP et la date d'une action
+désignent une personne, même sans son nom. Inventaire : [DONNEES-PERSONNELLES.md](DONNEES-PERSONNELLES.md).
+Il ne sert qu'à la sécurité (attribuer une connexion ou une écriture, reconstituer un incident), pas à
+mesurer l'activité d'un agent.
 
 ---
 
@@ -89,7 +96,8 @@ scalingo --app fonds-argile --region osc-secnum-fr1 logs-archives
 
 → les lignes au-delà de 50 Mio sont dans des archives à télécharger, à filtrer avec le même `grep`.
 
-Conservation : un an, par l'hébergeur. Ce que disent les autres journaux : l'historique d'un dossier est
+Conservation : un an, par l'hébergeur. La CNIL recommande de garder ces journaux entre six mois et un an
+(délibération n° 2021-122) : un collecteur ne doit pas les garder plus longtemps sans motif écrit. Ce que disent les autres journaux : l'historique d'un dossier est
 dans `parcours_actions` (ADR-0028), celui des synchronisations dans `sync_runs`.
 
 ---

@@ -369,7 +369,7 @@ la carte du simulateur.
 ### Journal de sécurité : indexation, conservation et angles morts
 
 Le journal de sécurité sort en lignes JSON sur la sortie standard depuis novembre 2026
-([ADR-0055](adr/0055-journal-de-securite-sur-la-sortie-standard.md)). Quatre points restent ouverts :
+([ADR-0055](adr/0055-journal-de-securite-sur-la-sortie-standard.md)). Six points restent ouverts :
 
 - **Indexation** : sans collecteur, on cherche par `grep` dans des archives. Le socle demande des journaux
   « centralisés et indexés ».
@@ -378,6 +378,13 @@ Le journal de sécurité sort en lignes JSON sur la sortie standard depuis novem
 - **Requêtes HTTP** : les journaux du routeur Scalingo sont désactivés par défaut.
 - **Angles morts** : ni les lectures (liste nominative des demandeurs comprise), ni les refus d'accès aux
   pages et aux actions de l'administration ne sont journalisés.
+- **Information des personnes** : la politique de confidentialité (`politique-confidentialite/content`)
+  ne cite ni adresse IP, ni donnée de connexion, ni journal de sécurité, et sa durée « un an après la
+  dernière connexion » ne décrit pas un journal gardé un an par évènement. Le traitement n'est pas au
+  registre. Texte à faire valider par le délégué à la protection des données avant publication.
+- **Diagnostics antérieurs au journal** : `handleProConnectError` et `handleFranceConnectError` écrivent
+  `error_description` dans les logs, un texte que l'appelant choisit. Et le numéro d'un dossier DN de
+  production sert d'exemple dans une dizaine de tests et deux documents.
 
 **Préalable** : l'arbitrage du RSSI sur le collecteur (`scalingo log-drains-add`, vers quel service) et sur
 l'activation des journaux du routeur ; la confirmation de la durée par Scalingo ; pour les refus, une garde
