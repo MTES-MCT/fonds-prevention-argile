@@ -397,6 +397,19 @@ monte : corriger le code désigné par les lignes `alloc`, ou traiter la mémoir
 préchargement des pages (`experimental.preloadEntriesOnStart: false`, 83 Mo de moins à froid) ne se
 décide qu'ensuite : il donne de la marge sans traiter la croissance.
 
+### Arrêtés de catastrophe naturelle : dates décalées d'un jour dans Géorisques
+
+Relevé le 23 novembre 2026 : pour les arrêtés publiés depuis février 2025, Géorisques renvoie les dates
+un jour trop tôt. La sécheresse 2025 y va du 31/12/2024 au 30/12/2025 au lieu du 01/01 au 31/12/2025, et
+le JO du 23/10/2026 y est daté du 22 ; la CCR et le jeu data.gouv des décisions donnent les bonnes
+dates. Onze arrêtés de la table sont concernés, et le tableau public des pages commune affiche
+« Début le 31/12/2024 ».
+
+**Préalable** : le signaler à Géorisques. En attendant, la PR qui importe les demandes non reconnues
+depuis data.gouv corrigera ces dates quand la commune et l'arrêté concordent (possible depuis juillet
+2025 seulement). L'import retire déjà l'ancienne période quand la source corrige une date
+([`import-catnat.md`](ops/import-catnat.md)).
+
 ### Cron de synchronisation : des créneaux servis avec cinq à huit heures de retard
 
 Relevé le 16 novembre 2026 sur les runs GitHub Actions : le créneau de 06:15 UTC part vers 14 h UTC,

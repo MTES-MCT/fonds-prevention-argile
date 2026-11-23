@@ -71,7 +71,7 @@ Sous-modules notables :
 | `(backoffice)`          | Espaces agents privés ProConnect (`espace-agent`, `administration`)                                                                                                                                 |
 | `(embed)`               | Pages embarquées pour partenaires (iframes) — voir `docs/partners/`                                                                                                                                 |
 | `api/auth`              | Callbacks et logout FranceConnect / ProConnect                                                                                                                                                      |
-| `api/cron`              | Jobs récurrents (sync parcours DS) — voir `docs/parcours/FLOW-AND-SYNC.md`                                                                                                                          |
+| `api/cron`              | Jobs récurrents : sync parcours DS (`docs/parcours/FLOW-AND-SYNC.md`), import des arrêtés catnat (`docs/ops/import-catnat.md`)                                                                      |
 | `api/webhooks`          | Webhooks entrants (DS, Brevo)                                                                                                                                                                       |
 | `api/rga`, `api/health` | Requêtes spatiales RGA, healthcheck                                                                                                                                                                 |
 
