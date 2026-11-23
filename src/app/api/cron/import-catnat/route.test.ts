@@ -1,0 +1,98 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+
+const SECRET = "secret-cron-de-plus-de-trente-deux-caracteres";
+
+vi.mock("@/shared/config/env.config", () => ({ getServerEnv: () => ({ CRON_SECRET: SECRET }) }));
+vi.mock("@/features/seo/catnat/services/catnat.service", () => ({ catnatService: { importerCocon: vi.fn() } }));
+// `after` n'existe que dans une requête servie par Next : on capture la tâche pour la dérouler à la main.
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: vi.fn(),
+}));
+
+import { after } from "next/server";
+import { catnatService } from "@/features/seo/catnat/services/catnat.service";
+import { POST } from "./route";
+
+function requete(authorization?: string) {
+  return new NextRequest("http://localhost/api/cron/import-catnat", {
+    method: "POST",
+    headers: authorization ? { authorization } : {},
+  });
+}
+
+const bilan = {
+  totalCommunes: 1650,
+  communesProcessed: 1650,
+  communesSuccess: 1650,
+  communesFailed: 0,
+  totalCatnat: 19129,
+  catnatImported: 7033,
+  catnatSkipped: 12096,
+  errors: [],
+  lignesAjoutees: 12,
+};
+
+async function derouterTacheArmee() {
+  const tache = vi.mocked(after).mock.calls[0][0] as () => Promise<void>;
+  await tache();
+}
+
+describe("POST /api/cron/import-catnat", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each([undefined, "Bearer mauvais-secret", `Basic ${SECRET}`, SECRET, "Bearer "])(
+    "en-tête Authorization %s → 401, aucun import armé",
+    async (authorization) => {
+      const reponse = await POST(requete(authorization));
+
+      expect(reponse.status).toBe(401);
+      expect(after).not.toHaveBeenCalled();
+      expect(catnatService.importerCocon).not.toHaveBeenCalled();
+    }
+  );
+
+  it("bon secret → 202 et import armé en arrière-plan", async () => {
+    const reponse = await POST(requete(`Bearer ${SECRET}`));
+
+    expect(reponse.status).toBe(202);
+    expect(after).toHaveBeenCalledOnce();
+  });
+
+  it("import sans échec → bilan en log simple", async () => {
+    vi.mocked(catnatService.importerCocon).mockResolvedValue(bilan);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const erreur = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await POST(requete(`Bearer ${SECRET}`));
+    await derouterTacheArmee();
+
+    expect(log).toHaveBeenCalledWith("[CRON import-catnat] communes=1650 echecs=0 lignes=7033 ajoutees=12");
+    expect(erreur).not.toHaveBeenCalled();
+  });
+
+  it("un lot en échec → bilan en erreur, avec la première cause", async () => {
+    vi.mocked(catnatService.importerCocon).mockResolvedValue({
+      ...bilan,
+      communesFailed: 10,
+      errors: [{ codeInsee: "36044", error: "Réponse Géorisques incomplète" }],
+    });
+    const erreur = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await POST(requete(`Bearer ${SECRET}`));
+    await derouterTacheArmee();
+
+    expect(erreur).toHaveBeenCalledWith(expect.stringContaining('echecs=10 lignes=7033 ajoutees=12 erreur="Réponse'));
+  });
+
+  it("import qui lève → erreur tracée, sans faire tomber la tâche", async () => {
+    vi.mocked(catnatService.importerCocon).mockRejectedValue(new Error("base injoignable"));
+    const erreur = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await POST(requete(`Bearer ${SECRET}`));
+    await expect(derouterTacheArmee()).resolves.toBeUndefined();
+
+    expect(erreur).toHaveBeenCalledWith("[CRON import-catnat] Erreur (background):", expect.any(Error));
+  });
+});

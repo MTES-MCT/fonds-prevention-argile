@@ -76,6 +76,12 @@ export const REGISTRE_ROUTES: Record<string, DeclarationRoute> = {
     justification:
       "Ferme la session ProConnect du visiteur, même antérieure à la 2FA ; sans session, efface les cookies et répond 400.",
   },
+  "api/cron/import-catnat › POST": {
+    protection: "secret",
+    debit: { aucun: "Refusée dès la première instruction sans le secret, comparé en temps constant." },
+    justification:
+      "Import hebdomadaire des arrêtés de catastrophe naturelle, lancé par GitHub Actions avec CRON_SECRET.",
+  },
   "api/cron/sync-parcours › POST": {
     protection: "secret",
     debit: { aucun: "Refusée dès la première instruction sans le secret, comparé en temps constant." },

@@ -1,0 +1,70 @@
+name: CRON import catnat
+
+# Importe depuis Géorisques les arrêtés de catastrophe naturelle (sécheresse) des communes du cocon SEO.
+# Doc : docs/ops/import-catnat.md.
+
+on:
+  schedule:
+    # Chaque lundi matin, en UTC (~06:40 hiver / 07:40 été FR). Les arrêtés paraissent environ
+    # une fois par mois et Géorisques les intègre avec quelques jours de retard.
+    - cron: "40 5 * * 1"
+  # Permet de déclencher manuellement depuis l'UI GitHub (Actions → Run workflow).
+  workflow_dispatch:
+
+# Deux imports simultanés ne se gênent pas (écritures idempotentes) : on n'annule rien.
+concurrency:
+  group: cron-import-catnat-${{ github.ref }}
+  cancel-in-progress: false
+
+# Le job n'appelle que l'endpoint HTTP : il n'a besoin d'aucun droit sur le dépôt.
+permissions: {}
+
+jobs:
+  trigger:
+    name: Import ${{ matrix.environment }}
+    strategy:
+      # fail-fast=false : un échec sur staging ne doit pas empêcher prod (et inversement).
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
+    # Le secret CRON_SECRET et la variable APP_URL sont scopés par GitHub Environment.
+    environment: ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger import endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${APP_URL:-}" ]; then
+            echo "::error::APP_URL non configuré dans l'environnement '${{ matrix.environment }}'"
+            exit 1
+          fi
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET non configuré dans l'environnement '${{ matrix.environment }}'"
+            exit 1
+          fi
+
+          echo "Trigger import sur ${APP_URL}/api/cron/import-catnat"
+
+          # 202 quasi-immédiat, import en arrière-plan. Bilan : logs de l'app, « [CRON import-catnat] ».
+          response=$(curl -fsS -X POST \
+            --max-time 30 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP_STATUS:%{http_code}" \
+            "${APP_URL}/api/cron/import-catnat")
+
+          status=$(echo "$response" | tail -n1 | sed 's/HTTP_STATUS://')
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP $status"
+          echo "$body"
+
+          if [ "$status" -ne 202 ]; then
+            echo "::error::Statut HTTP inattendu : $status"
+            exit 1
+          fi
