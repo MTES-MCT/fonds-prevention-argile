@@ -199,6 +199,31 @@ describe("catnatService", () => {
       expect(result.catnatSkipped).toBe(1); // 1 inondation ignorée
     });
 
+    it("lot sans ligne écartée → les périodes disparues de la source sont retirées", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]);
+
+      await catnatService.importForCommunes(["63113"]);
+
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).toHaveBeenCalledOnce();
+      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+    });
+
+    it("lot avec une ligne invalide → écriture seule, aucune période retirée", async () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([
+        mockApiCatnatRecent,
+        { ...mockApiCatnatSecheresse2, date_fin_evt: "" },
+      ]);
+
+      const result = await catnatService.importForCommunes(["63113", "07186"]);
+
+      expect(catastrophesNaturellesRepository.batchUpsert).toHaveBeenCalledOnce();
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).not.toHaveBeenCalled();
+      expect(result.catnatImported).toBe(1);
+      expect(result.catnatSkipped).toBe(1);
+    });
+
     it("should handle batching (> 10 communes)", async () => {
       const codesInsee = Array.from({ length: 25 }, (_, i) => `6311${i}`);
       vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement

@@ -44,6 +44,8 @@ leurs anciennes lignes et sont reprises à l'import suivant.
   table est l'arrêté, la commune et la date de début. Avant novembre 2026 elle s'arrêtait à la
   commune, et 377 périodes manquaient.
 - **Une date corrigée à la source remplace l'ancienne.** Pour chaque couple arrêté-commune reçu,
-  l'import retire les périodes que Géorisques ne donne plus. Il ne retire jamais un arrêté entier.
+  l'import retire les périodes que Géorisques ne donne plus, dans la même transaction que l'écriture.
+  Il ne retire jamais un arrêté entier, et rien du tout pour un lot dont une ligne a été écartée
+  comme invalide.
 - **Les dates des arrêtés publiés depuis 2025 sont décalées d'un jour** (période « 31/12/2024 –
   30/12/2025 » pour l'année 2025) : voir [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md).

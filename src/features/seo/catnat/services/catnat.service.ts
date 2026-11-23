@@ -165,7 +165,9 @@ export const catnatService = {
 
           // Insérer en BDD
           try {
-            await catastrophesNaturellesRepository.remplacerPeriodes(uniqueCatnats);
+            // Une ligne écartée ferait passer sa période pour disparue de la source : dans ce cas, on ne retire rien.
+            if (invalidCount > 0) await catastrophesNaturellesRepository.batchUpsert(uniqueCatnats);
+            else await catastrophesNaturellesRepository.remplacerPeriodes(uniqueCatnats);
             stats.catnatImported += uniqueCatnats.length;
           } catch (insertError) {
             console.error(`Erreur d'insertion pour le batch ${batchIndex + 1}/${batches.length}:`, insertError);

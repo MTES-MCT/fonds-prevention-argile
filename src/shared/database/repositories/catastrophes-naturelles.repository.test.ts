@@ -1,12 +1,24 @@
-import { describe, expect, it, vi } from "vitest";
-import { periodesARetirer } from "./catastrophes-naturelles.repository";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "../client";
+import { CatastrophesNaturellesRepository, periodesARetirer } from "./catastrophes-naturelles.repository";
+import type { NewCatastropheNaturelle } from "../schema/catastrophes-naturelles";
 
-vi.mock("../client", () => ({ db: {} }));
+// Le client n'expose que `transaction` : une écriture hors transaction ferait échouer le test.
+vi.mock("../client", () => ({ db: { transaction: vi.fn() } }));
 
 const periode = (codeNationalCatnat: string, codeInsee: string, dateDebutEvt: string) => ({
   codeNationalCatnat,
   codeInsee,
   dateDebutEvt,
+});
+
+const ligne = (codeNationalCatnat: string, codeInsee: string, dateDebutEvt: string): NewCatastropheNaturelle => ({
+  ...periode(codeNationalCatnat, codeInsee, dateDebutEvt),
+  dateFinEvt: "2025-12-31",
+  datePublicationArrete: "2026-05-10",
+  datePublicationJo: "2026-05-13",
+  libelleRisqueJo: "Sécheresse",
+  libelleCommune: "Châteauroux",
 });
 
 describe("periodesARetirer — la source fait foi pour les arrêtés qu'elle renvoie", () => {
@@ -35,5 +47,72 @@ describe("periodesARetirer — la source fait foi pour les arrêtés qu'elle ren
     const recues = [periode("INTE2612297A", "36044", "2025-01-01")];
 
     expect(periodesARetirer(enBase, recues)).toEqual([]);
+  });
+});
+
+describe("remplacerPeriodes — retrait et écriture dans une seule transaction", () => {
+  const ordre: string[] = [];
+  let enBase: ReturnType<typeof periode>[] = [];
+  let ecritureEchoue = false;
+
+  const tx = {
+    select: vi.fn(() => ({ from: () => ({ where: () => Promise.resolve(enBase) }) })),
+    delete: vi.fn(() => ({
+      where: vi.fn(() => {
+        ordre.push("retrait");
+        return Promise.resolve();
+      }),
+    })),
+    insert: vi.fn(() => ({
+      values: () => ({
+        onConflictDoUpdate: () => {
+          ordre.push("écriture");
+          return ecritureEchoue ? Promise.reject(new Error("écriture refusée")) : Promise.resolve();
+        },
+      }),
+    })),
+  };
+
+  const repo = new CatastrophesNaturellesRepository();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    ordre.length = 0;
+    enBase = [];
+    ecritureEchoue = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.transaction).mockImplementation(async (fn: any) => fn(tx));
+  });
+
+  it("retire l'ancienne période puis écrit la nouvelle, dans la même transaction", async () => {
+    enBase = [periode("INTE2612297A", "36044", "2024-12-31")];
+
+    await repo.remplacerPeriodes([ligne("INTE2612297A", "36044", "2025-01-01")]);
+
+    expect(db.transaction).toHaveBeenCalledOnce();
+    expect(ordre).toEqual(["retrait", "écriture"]);
+  });
+
+  it("rien à retirer → une écriture seule", async () => {
+    enBase = [periode("INTE2612297A", "36044", "2025-01-01")];
+
+    await repo.remplacerPeriodes([ligne("INTE2612297A", "36044", "2025-01-01")]);
+
+    expect(ordre).toEqual(["écriture"]);
+  });
+
+  it("écriture en échec → l'erreur sort de la transaction, qui annule le retrait", async () => {
+    enBase = [periode("INTE2612297A", "36044", "2024-12-31")];
+    ecritureEchoue = true;
+
+    await expect(repo.remplacerPeriodes([ligne("INTE2612297A", "36044", "2025-01-01")])).rejects.toThrow(
+      "écriture refusée"
+    );
+  });
+
+  it("aucune ligne → aucune transaction ouverte", async () => {
+    await repo.remplacerPeriodes([]);
+
+    expect(db.transaction).not.toHaveBeenCalled();
   });
 });
