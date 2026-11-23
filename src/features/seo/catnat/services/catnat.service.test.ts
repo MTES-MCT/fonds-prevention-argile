@@ -14,6 +14,9 @@ import * as utils from "@/shared/utils";
 // Mock des modules
 vi.mock("../adapters/georisques");
 vi.mock("@/shared/database/repositories");
+vi.mock("../../services/territoires.service", () => ({
+  getAllCommunes: () => [{ codeInsee: "63113" }, { codeInsee: "07186" }],
+}));
 vi.mock("@/shared/utils", async () => {
   const actual = await vi.importActual("@/shared/utils");
   return {
@@ -94,7 +97,7 @@ describe("catnatService", () => {
   describe("importForCommune", () => {
     it("should successfully import catastrophes for a commune", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatRecent]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommune("63113");
 
@@ -102,7 +105,7 @@ describe("catnatService", () => {
       expect(result.imported).toBe(1);
       expect(result.skipped).toBe(0);
       expect(georisquesAdapter.fetchCatnatByCodeInsee).toHaveBeenCalledWith("63113");
-      expect(catastrophesNaturellesRepository.batchUpsert).toHaveBeenCalledTimes(1);
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).toHaveBeenCalledTimes(1);
     });
 
     it("should import all RGA catastrophes regardless of age", async () => {
@@ -111,7 +114,7 @@ describe("catnatService", () => {
         mockApiCatnatOld, // Sécheresse vieille → importée aussi maintenant
         mockApiCatnatInondation, // Inondation → ignorée
       ]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommune("63113");
 
@@ -128,7 +131,7 @@ describe("catnatService", () => {
       expect(result.success).toBe(true);
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(0);
-      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).not.toHaveBeenCalled();
     });
 
     it("should handle commune with only non-RGA catastrophes", async () => {
@@ -139,7 +142,7 @@ describe("catnatService", () => {
       expect(result.success).toBe(true);
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(1);
-      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).not.toHaveBeenCalled();
     });
 
     it("should handle API errors", async () => {
@@ -154,7 +157,7 @@ describe("catnatService", () => {
 
     it("should handle database errors", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatRecent]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockRejectedValue(new Error("DB Error"));
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockRejectedValue(new Error("DB Error"));
 
       const result = await catnatService.importForCommune("63113");
 
@@ -170,7 +173,7 @@ describe("catnatService", () => {
         mockApiCatnatRecent,
         mockApiCatnatSecheresse2,
       ]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommunes(["63113", "07186"]);
 
@@ -187,7 +190,7 @@ describe("catnatService", () => {
         mockApiCatnatRecent, // Sécheresse → importée
         mockApiCatnatInondation, // Inondation → filtrée
       ]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommunes(["63113", "07186"]);
 
@@ -199,7 +202,7 @@ describe("catnatService", () => {
     it("should handle batching (> 10 communes)", async () => {
       const codesInsee = Array.from({ length: 25 }, (_, i) => `6311${i}`);
       vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       await catnatService.importForCommunes(codesInsee);
 
@@ -210,7 +213,7 @@ describe("catnatService", () => {
 
     it("should call progress callback", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const progressCallback = vi.fn();
       await catnatService.importForCommunes(["63113", "07186"], progressCallback);
@@ -238,6 +241,41 @@ describe("catnatService", () => {
 
       expect(result.totalCommunes).toBe(0);
       expect(georisquesAdapter.fetchCatnatByCodesInsee).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("importerCocon", () => {
+    it("importe toutes les communes du cocon et compte les lignes ajoutées en base", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]);
+      vi.mocked(catastrophesNaturellesRepository.count).mockResolvedValueOnce(7033).mockResolvedValueOnce(7045);
+
+      const bilan = await catnatService.importerCocon();
+
+      expect(georisquesAdapter.fetchCatnatByCodesInsee).toHaveBeenCalledWith(["63113", "07186"]);
+      expect(bilan.totalCommunes).toBe(2);
+      expect(bilan.lignesAjoutees).toBe(12);
+    });
+  });
+
+  describe("deduplicateCatnats", () => {
+    const periode = { ...mockDbCatnat, codeNationalCatnat: "IOME2316198A", codeInsee: "54395" };
+
+    it("garde les deux périodes d'un même arrêté pour la même commune", () => {
+      const result = catnatService.deduplicateCatnats([
+        { ...periode, dateDebutEvt: "2022-01-01" },
+        { ...periode, dateDebutEvt: "2022-07-01" },
+      ]);
+
+      expect(result.map((catnat) => catnat.dateDebutEvt)).toEqual(["2022-01-01", "2022-07-01"]);
+    });
+
+    it("ne garde qu'une ligne pour une période reçue deux fois", () => {
+      const result = catnatService.deduplicateCatnats([
+        { ...periode, dateDebutEvt: "2022-07-01" },
+        { ...periode, dateDebutEvt: "2022-07-01" },
+      ]);
+
+      expect(result).toHaveLength(1);
     });
   });
 

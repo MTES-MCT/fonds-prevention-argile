@@ -4,11 +4,30 @@ import { catastrophesNaturelles } from "../schema/catastrophes-naturelles";
 import type { CatastropheNaturelle, NewCatastropheNaturelle } from "../schema/catastrophes-naturelles";
 import { dateToSqlString } from "@/shared/utils";
 
+const CLE_PERIODE = [
+  catastrophesNaturelles.codeNationalCatnat,
+  catastrophesNaturelles.codeInsee,
+  catastrophesNaturelles.dateDebutEvt,
+];
+
+type Periode = Pick<CatastropheNaturelle, "codeNationalCatnat" | "codeInsee" | "dateDebutEvt">;
+
+const cleCouple = (ligne: Periode) => `${ligne.codeNationalCatnat}|${ligne.codeInsee}`;
+const clePeriode = (ligne: Periode) => `${cleCouple(ligne)}|${ligne.dateDebutEvt}`;
+
+/** Périodes en base que la source ne donne plus, pour les seuls couples arrêté-commune qu'elle vient de renvoyer. */
+export function periodesARetirer<T extends Periode>(existantes: T[], recues: Periode[]): T[] {
+  const couples = new Set(recues.map(cleCouple));
+  const periodes = new Set(recues.map(clePeriode));
+
+  return existantes.filter((ligne) => couples.has(cleCouple(ligne)) && !periodes.has(clePeriode(ligne)));
+}
+
 /**
  * Repository pour les catastrophes naturelles
  *
  * Note: Ce repository n'étend pas BaseRepository car la table utilise une clé composite
- * (codeNationalCatnat, codeInsee) au lieu d'un ID simple.
+ * (codeNationalCatnat, codeInsee, dateDebutEvt) au lieu d'un ID simple.
  */
 export class CatastrophesNaturellesRepository {
   /**
@@ -142,9 +161,8 @@ export class CatastrophesNaturellesRepository {
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [catastrophesNaturelles.codeNationalCatnat, catastrophesNaturelles.codeInsee],
+        target: CLE_PERIODE,
         set: {
-          dateDebutEvt: sql`excluded.date_debut_evt`,
           dateFinEvt: sql`excluded.date_fin_evt`,
           datePublicationArrete: sql`excluded.date_publication_arrete`,
           datePublicationJo: sql`excluded.date_publication_jo`,
@@ -179,9 +197,8 @@ export class CatastrophesNaturellesRepository {
             }))
           )
           .onConflictDoUpdate({
-            target: [catastrophesNaturelles.codeNationalCatnat, catastrophesNaturelles.codeInsee],
+            target: CLE_PERIODE,
             set: {
-              dateDebutEvt: sql`excluded.date_debut_evt`,
               dateFinEvt: sql`excluded.date_fin_evt`,
               datePublicationArrete: sql`excluded.date_publication_arrete`,
               datePublicationJo: sql`excluded.date_publication_jo`,
@@ -192,6 +209,37 @@ export class CatastrophesNaturellesRepository {
           });
       }
     });
+  }
+
+  /**
+   * Écrit les périodes reçues et retire celles que la source ne donne plus pour les mêmes arrêtés et communes
+   */
+  async remplacerPeriodes(dataList: NewCatastropheNaturelle[]): Promise<void> {
+    if (dataList.length === 0) return;
+
+    const existantes = await db
+      .select({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        codeInsee: catastrophesNaturelles.codeInsee,
+        dateDebutEvt: catastrophesNaturelles.dateDebutEvt,
+      })
+      .from(catastrophesNaturelles)
+      .where(inArray(catastrophesNaturelles.codeInsee, [...new Set(dataList.map((ligne) => ligne.codeInsee))]));
+
+    // Une date corrigée à la source change la clé : sans ce retrait, l'ancienne période resterait en double.
+    for (const ligne of periodesARetirer(existantes, dataList)) {
+      await db
+        .delete(catastrophesNaturelles)
+        .where(
+          and(
+            eq(catastrophesNaturelles.codeNationalCatnat, ligne.codeNationalCatnat),
+            eq(catastrophesNaturelles.codeInsee, ligne.codeInsee),
+            eq(catastrophesNaturelles.dateDebutEvt, ligne.dateDebutEvt)
+          )
+        );
+    }
+
+    await this.batchUpsert(dataList);
   }
 
   /**
