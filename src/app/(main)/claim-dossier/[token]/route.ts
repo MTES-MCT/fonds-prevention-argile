@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { userRepo } from "@/shared/database/repositories";
 import { COOKIE_NAMES, getCookieOptions } from "@/features/auth/domain/value-objects";
 import { getServerEnv } from "@/shared/config/env.config";
+import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
 
 /**
  * Point d'entrée du lien envoyé par email à un demandeur pour lequel un agent
@@ -22,7 +23,10 @@ import { getServerEnv } from "@/shared/config/env.config";
  */
 const CLAIM_COOKIE_TTL_SECONDS = 15 * 60;
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const refus = limiterDebit(request, "connexion");
+  if (refus) return refus;
+
   const { token } = await params;
 
   const stub = await userRepo.findByClaimToken(token);

@@ -74,6 +74,29 @@ describe("Routes d'API : chaque méthode exportée est déclarée et protégée 
     }
   );
 
+  const limitees = handlers.filter(({ cle }) => typeof REGISTRE_ROUTES[cle]?.debit === "string");
+  const nonLimitees = handlers.filter(({ cle }) => typeof REGISTRE_ROUTES[cle]?.debit === "object");
+
+  // En tête, avant toute lecture : un appel refusé ne doit rien coûter (ADR-0054).
+  it.each(limitees)("$cle plafonne le débit avant toute autre instruction", ({ cle, instructions }) => {
+    expect(instructions[0]).toBe(`const refus = limiterDebit(request, "${REGISTRE_ROUTES[cle].debit}");`);
+    expect(instructions[1]).toBe("if (refus) return refus;");
+  });
+
+  it.each(nonLimitees)("$cle n'a pas de plafond et dit pourquoi", ({ cle, corps }) => {
+    const { aucun } = REGISTRE_ROUTES[cle].debit as { aucun: string };
+    expect(aucun.length).toBeGreaterThan(30);
+    expect(corps).not.toMatch(/\blimiterDebit\(/);
+  });
+
+  it("une route publique est plafonnée, sauf raison écrite", () => {
+    const publiquesSansPlafond = handlers
+      .filter(({ cle }) => REGISTRE_ROUTES[cle]?.protection === "publique")
+      .filter(({ cle }) => typeof REGISTRE_ROUTES[cle].debit !== "string")
+      .map(({ cle }) => cle);
+    expect(publiquesSansPlafond.sort()).toEqual(["(main)/oidc-callback › GET", "api/health › GET"]);
+  });
+
   it("une route publique n'appelle aucune garde : elle changerait alors de protection", () => {
     const toutes = Object.values(GARDES).flat();
     const incoherentes = handlers
