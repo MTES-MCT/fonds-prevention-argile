@@ -13,17 +13,19 @@ un contrôle.
 
 ## 1. Chaîne d'intégration
 
-| Contrôle                   | Risque couvert                                                       | Où                                          | Quand                         | Bloque                   |
-| -------------------------- | -------------------------------------------------------------------- | ------------------------------------------- | ----------------------------- | ------------------------ |
-| Détection de secrets       | Clé, jeton ou mot de passe commité par erreur                        | `ci.yml`, job `Security Checks` (Talisman)  | Chaque push, chaque PR        | Oui                      |
-| Typage, lint, tests, build | Régression fonctionnelle, garde d'accès retirée (cf. § 2)            | `ci.yml`, job `Test, Lint & Build`          | Chaque push, chaque PR        | Oui                      |
-| Revue des dépendances      | PR qui introduit une dépendance vulnérable (High, Critical)          | `revue-dependances.yml`                     | Chaque PR                     | Oui                      |
-| Revue des licences         | PR qui introduit une licence absente de la liste                     | `revue-dependances.yml`                     | Chaque PR                     | Oui                      |
-| Audit des dépendances      | Faille publiée sur une dépendance déjà en place                      | `veille-dependances.yml`, job `audit`       | Chaque lundi, et à la demande | Ouvre une issue          |
-| Inventaire des composants  | Ne pas savoir si l'on est concerné par une faille annoncée           | `veille-dependances.yml`, job `sbom`        | Chaque évolution de `main`    | Non (artefact, 90 jours) |
-| Mises à jour proposées     | Dépendance ou action GitHub restée sur une version sans correctif    | `dependabot.yml` (npm et `github-actions`)  | Chaque semaine                | Non (ouvre des PR)       |
-| Délai avant adoption       | Version malveillante d'un paquet, retirée dans les jours qui suivent | `pnpm-workspace.yaml` (`minimumReleaseAge`) | Chaque installation           | Oui                      |
-| Scripts d'installation     | Code exécuté à l'installation d'une dépendance                       | `.npmrc` (`ignore-scripts`), `allowBuilds`  | Chaque installation           | Oui                      |
+| Contrôle                                     | Risque couvert                                                       | Où                                                         | Quand                         | Bloque                   |
+| -------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------- | ------------------------ |
+| Détection de secrets                         | Clé, jeton ou mot de passe commité par erreur                        | `ci.yml`, job `Security Checks` (Talisman)                 | Chaque push, chaque PR        | Oui                      |
+| Typage, lint, tests, build                   | Régression fonctionnelle, garde d'accès retirée (cf. § 2)            | `ci.yml`, job `Test, Lint & Build`                         | Chaque push, chaque PR        | Oui                      |
+| Revue des dépendances                        | PR qui introduit une dépendance vulnérable (High, Critical)          | `revue-dependances.yml`                                    | Chaque PR                     | Oui                      |
+| Revue des licences                           | PR qui introduit une licence absente de la liste                     | `revue-dependances.yml`                                    | Chaque PR                     | Oui                      |
+| Audit des dépendances                        | Faille publiée sur une dépendance déjà en place                      | `veille-dependances.yml`, job `audit`                      | Chaque lundi, et à la demande | Ouvre une issue          |
+| Inventaire des composants                    | Ne pas savoir si l'on est concerné par une faille annoncée           | `veille-dependances.yml`, job `sbom`                       | Chaque évolution de `main`    | Non (artefact, 90 jours) |
+| En-têtes servis par l'application construite | En-tête de sécurité retiré, ou écrasé par le middleware              | `ci.yml`, job `Test, Lint & Build` (`pnpm audit:en-tetes`) | Chaque push, chaque PR        | Oui                      |
+| En-têtes servis en production et sur staging | Réglage de l'hébergeur ou déploiement qui les fait sauter            | `verification-production.yml`                              | Chaque jour, et à la demande  | Ouvre une issue          |
+| Mises à jour proposées                       | Dépendance ou action GitHub restée sur une version sans correctif    | `dependabot.yml` (npm et `github-actions`)                 | Chaque semaine                | Non (ouvre des PR)       |
+| Délai avant adoption                         | Version malveillante d'un paquet, retirée dans les jours qui suivent | `pnpm-workspace.yaml` (`minimumReleaseAge`)                | Chaque installation           | Oui                      |
+| Scripts d'installation                       | Code exécuté à l'installation d'une dépendance                       | `.npmrc` (`ignore-scripts`), `allowBuilds`                 | Chaque installation           | Oui                      |
 
 « Bloque » suppose que les jobs sont requis pour fusionner : voir § 4.
 
@@ -64,8 +66,27 @@ Ils tournent avec `pnpm test`, donc à chaque push. Chacun échoue en nommant le
 | `app/(backoffice)/espace-agent/garde-pages.test.ts`       | Une page ou un `generateMetadata` de l'espace agent sans garde                                                                           |
 | `shared/database/inventaire-donnees-personnelles.test.ts` | Une colonne absente de l'inventaire ou non traitée à la restauration d'un dump                                                           |
 | `vulnerabilite-rga/garde-hors-production.test.ts`         | Une surface du simulateur de vulnérabilité ouverte en production                                                                         |
+| `shared/config/en-tetes-http.test.ts`                     | Une route servie sans le socle d'en-têtes, ou une page encadrable par un site tiers sans être déclarée                                   |
 
 Détail et limites : [RBAC-TEST-PLAN.md § 5](RBAC-TEST-PLAN.md).
+
+### En-têtes HTTP
+
+Définis en un seul endroit, `src/shared/config/en-tetes-http.ts`, que lisent `next.config.ts`, le
+test et le script de contrôle d'un site déployé.
+
+| En-tête                                                       | Valeur                                               | Ce qu'il empêche                                                            |
+| ------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| `Strict-Transport-Security`                                   | deux ans, sous-domaines compris                      | Un retour en HTTP, même sur un lien tapé à la main                          |
+| `X-Content-Type-Options`                                      | `nosniff`                                            | Un fichier interprété comme un script par le navigateur                     |
+| `Referrer-Policy`                                             | `strict-origin-when-cross-origin`                    | L'adresse complète de la page transmise à un site tiers                     |
+| `Permissions-Policy`                                          | caméra, micro, géolocalisation, paiement, USB coupés | L'accès à ces fonctions, pour l'app comme pour un script tiers              |
+| `X-Frame-Options`, `Content-Security-Policy: frame-ancestors` | même site seulement                                  | L'affichage d'une page dans l'iframe d'un autre site (détournement de clic) |
+| `X-Powered-By`                                                | retiré                                               | L'annonce de la pile technique                                              |
+
+Les pages du groupe `(embed)` ne reçoivent aucun des deux en-têtes d'encadrement : elles sont faites
+pour l'iframe d'un partenaire. Une page ajoutée à ce groupe se déclare dans `PAGES_EMBARQUEES`, sinon
+le test échoue ; toute autre page, même nommée `/embed…`, reste protégée.
 
 ---
 
@@ -108,7 +129,8 @@ du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJE
 
 ## 5. Ce que la CI ne vérifie pas
 
-- Les en-têtes HTTP servis.
+- Une politique de contenu complète : la CSP servie ne règle que l'encadrement (`frame-ancestors`),
+  elle ne restreint ni les scripts ni les appels réseau.
 - Les failles dans le code lui-même : l'analyse en place (Code Quality) juge la maintenabilité, pas
   la sécurité, et le code scanning CodeQL n'est pas configuré.
 - Le comportement de l'application déployée : aucun scan dynamique.
