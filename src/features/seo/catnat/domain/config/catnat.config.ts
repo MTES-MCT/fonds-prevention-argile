@@ -15,8 +15,8 @@ export const API_GEORISQUES = {
     maxCodesInsee: 10,
     /** Rayon de recherche maximum en mètres */
     maxRadiusMeters: 10000,
-    /** Taille de page par défaut */
-    defaultPageSize: 100,
+    /** Un lot de 10 communes tient en une page : la pagination de l'API perd des lignes. */
+    defaultPageSize: 1000,
   },
   /** Délai entre les appels API en ms (rate limiting) */
   delayBetweenCalls: 300,
