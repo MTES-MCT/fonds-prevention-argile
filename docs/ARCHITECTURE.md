@@ -106,6 +106,7 @@ agents ──N:1── structures             structures ──1:0..1── entr
 agent_permissions ──N:1── agents      allers_vers ──1:N── allers_vers_epci
 
 catastrophes_naturelles   (référentiel CATNAT par commune INSEE)
+catnat_decisions          (décisions de sécheresse par commune, refus compris — cf. ADR-0056)
 rga_zones                 (géométries PostGIS, aléa RGA par zone)
 ```
 
@@ -118,7 +119,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Agents            | `agents`, `agent_permissions`, `structures`                                                                                                                                                                       |
 | Allers-vers       | `allers_vers`, `allers_vers_departements`, `allers_vers_epci`, `prospect_qualifications`                                                                                                                          |
 | Experts           | `experts`, `experts_departements` (habilitation de structure sans rôle, cf. ADR-0052)                                                                                                                             |
-| Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                                                                                                                                  |
+| Référentiels géo  | `catastrophes_naturelles`, `catnat_decisions`, `rga_zones` (PostGIS)                                                                                                                                              |
 | Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                                                                                                                   |
 | Vulnérabilité RGA | `vulnerabilite_simulations` (table anonyme, sans FK `users` — cf. ADR-0031). Pointeur nullable `parcours_prevention.vulnerabilite_simulation_id` vers la dernière simulation connue d'un demandeur (cf. ADR-0032) |
 
