@@ -33,3 +33,18 @@ export const CATNAT_RGA_TYPES = {
    */
   keywords: ["sécheresse", "secheresse"] as const,
 } as const;
+
+/**
+ * Jeu de données data.gouv des décisions publiées au Journal officiel, refus compris (depuis juillet 2025)
+ * https://www.data.gouv.fr/datasets/decisions-de-catastrophe-naturelle-publiees-au-journal-officiel-communes-reconnues-et-refusees/
+ */
+export const DECISIONS_DATA_GOUV = {
+  /** Adresse stable de la ressource : data.gouv redirige vers le fichier du producteur. */
+  url: "https://www.data.gouv.fr/api/1/datasets/r/8d707f9b-1ec5-4acc-b58f-2e949ff0f347",
+  source: "data.gouv",
+  /** Début du libellé officiel du phénomène ; « Mouvements de terrains (hors sécheresse…) » en est un autre. */
+  phenomeneSecheresse: "Mouvements de terrain différentiels consécutifs à la sécheresse",
+  /** Les décisions antérieures ne sont pas dans le jeu de données. */
+  depuis: "juillet 2025",
+  delaiMaxMs: 30_000,
+} as const;

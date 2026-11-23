@@ -1,6 +1,6 @@
 {
   "name": "fonds-prevention-argile",
-  "version": "1.109.0",
+  "version": "1.110.0",
   "private": true,
   "packageManager": "pnpm@11.24.0",
   "engines": {
@@ -38,6 +38,7 @@
     "talisman:check": "talisman --scan",
     "seo:generate": "tsx src/features/seo/scripts/generate-seo-data.ts",
     "seo:import-catnat": "tsx src/features/seo/catnat/scripts/import-catnat.ts",
+    "seo:import-catnat-decisions": "tsx src/features/seo/catnat/scripts/import-decisions-catnat.ts",
     "seed:staging": "tsx scripts/seed/seed-staging.ts",
     "fix:epci": "tsx scripts/ops/fix/fix-missing-epci.ts",
     "fix:codes-geo": "tsx --tsconfig scripts/tsconfig.json scripts/ops/fix/normaliser-codes-geo.ts",
