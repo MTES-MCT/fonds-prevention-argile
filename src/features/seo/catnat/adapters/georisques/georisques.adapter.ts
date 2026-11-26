@@ -62,33 +62,41 @@ async function fetchGeorisquesApi<T>(endpoint: string, params?: Record<string, s
 }
 
 /**
- * Récupère les catastrophes naturelles pour un code INSEE
- * Gère automatiquement la pagination pour récupérer tous les résultats
+ * Récupère toutes les lignes d'une requête, et refuse un résultat incomplet.
  */
-export async function fetchCatnatByCodeInsee(codeInsee: string): Promise<ApiGeorisquesCatnat[]> {
-  const allCatnats: ApiGeorisquesCatnat[] = [];
-  let currentPage = 1;
-  let hasMorePages = true;
+async function fetchToutesLesPages(codeInsee: string): Promise<ApiGeorisquesCatnat[]> {
+  const lignes: ApiGeorisquesCatnat[] = [];
+  let annoncees = 0;
+  let totalPages = 1;
 
-  while (hasMorePages) {
-    const params: Record<string, string> = {
+  for (let page = 1; page <= totalPages; page++) {
+    const response = await fetchGeorisquesApi<ApiGeorisquesResponse>(API_GEORISQUES.endpoints.catnat, {
       code_insee: codeInsee,
-      page: currentPage.toString(),
+      page: page.toString(),
       page_size: API_GEORISQUES.limits.defaultPageSize.toString(),
-    };
+    });
 
-    const response = await fetchGeorisquesApi<ApiGeorisquesResponse>(API_GEORISQUES.endpoints.catnat, params);
+    lignes.push(...response.data);
+    annoncees = response.results;
+    totalPages = response.total_pages;
 
-    allCatnats.push(...response.data);
-
-    logger.log(`  └─ Page ${currentPage}/${response.total_pages}: ${response.data.length} catastrophes récupérées`);
-
-    // Vérifier s'il y a d'autres pages
-    hasMorePages = currentPage < response.total_pages;
-    currentPage++;
+    logger.log(`  └─ Page ${page}/${totalPages}: ${response.data.length} catastrophes récupérées`);
   }
 
-  return allCatnats;
+  // Géorisques pagine sans ordre stable : d'une page à l'autre, des doublons prennent la place de lignes.
+  const recues = totalPages > 1 ? new Set(lignes.map((ligne) => JSON.stringify(ligne))).size : lignes.length;
+  if (recues !== annoncees) {
+    throw new Error(`Réponse Géorisques incomplète : ${recues} lignes distinctes sur ${annoncees} annoncées`);
+  }
+
+  return lignes;
+}
+
+/**
+ * Récupère les catastrophes naturelles pour un code INSEE
+ */
+export async function fetchCatnatByCodeInsee(codeInsee: string): Promise<ApiGeorisquesCatnat[]> {
+  return fetchToutesLesPages(codeInsee);
 }
 
 /**
@@ -100,45 +108,11 @@ export async function fetchCatnatByCodesInsee(codesInsee: string[]): Promise<Api
 
   const allCatnats: ApiGeorisquesCatnat[] = [];
 
-  // Diviser en lots de 10 codes max
-  const batches: string[][] = [];
+  logger.progress(`Fetching CATNAT for ${codesInsee.length} communes`);
+
   for (let i = 0; i < codesInsee.length; i += API_GEORISQUES.limits.maxCodesInsee) {
-    batches.push(codesInsee.slice(i, i + API_GEORISQUES.limits.maxCodesInsee));
-  }
-
-  logger.progress(`Fetching CATNAT for ${codesInsee.length} communes in ${batches.length} batches`);
-
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-    const codeInseeBatch = batch.join(",");
-
-    logger.log(`  └─ Batch ${i + 1}/${batches.length}: ${batch.length} communes`);
-
-    // Compteur pour le batch actuel
-    const batchStartIndex = allCatnats.length;
-    let currentPage = 1;
-    let hasMorePages = true;
-
-    while (hasMorePages) {
-      const params: Record<string, string> = {
-        code_insee: codeInseeBatch,
-        page: currentPage.toString(),
-        page_size: API_GEORISQUES.limits.defaultPageSize.toString(),
-      };
-
-      const response = await fetchGeorisquesApi<ApiGeorisquesResponse>(API_GEORISQUES.endpoints.catnat, params);
-
-      allCatnats.push(...response.data);
-
-      logger.log(`      Page ${currentPage}/${response.total_pages}: ${response.data.length} catastrophes récupérées`);
-
-      // Vérifier s'il y a d'autres pages
-      hasMorePages = currentPage < response.total_pages;
-      currentPage++;
-    }
-
-    const batchCount = allCatnats.length - batchStartIndex;
-    logger.log(`      Total batch: ${batchCount} catastrophes (Total cumulé: ${allCatnats.length})`);
+    const batch = codesInsee.slice(i, i + API_GEORISQUES.limits.maxCodesInsee);
+    allCatnats.push(...(await fetchToutesLesPages(batch.join(","))));
   }
 
   return allCatnats;

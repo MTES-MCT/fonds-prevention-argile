@@ -152,6 +152,9 @@ qui appelle `POST /api/cron/sync-parcours` (3 fois par jour). Voir
 [`FLOW-AND-SYNC.md` §4.3](../parcours/FLOW-AND-SYNC.md). Un super-admin peut aussi déclencher
 une synchro depuis `/administration/synchronisations`.
 
+L'import des arrêtés de catastrophe naturelle suit le même montage, chaque lundi
+(`POST /api/cron/import-catnat`) : voir [`import-catnat.md`](./import-catnat.md).
+
 ## Variables d'environnement
 
 ```bash

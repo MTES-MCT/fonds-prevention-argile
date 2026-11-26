@@ -13,6 +13,7 @@ export { agentsRepository as agentsRepo } from "./agents.repository";
 export { agentPermissionsRepository } from "./agent-permissions.repository";
 export { allersVersRepository } from "./allers-vers.repository";
 export { catastrophesNaturellesRepository } from "./catastrophes-naturelles.repository";
+export { catnatDecisionsRepository } from "./catnat-decisions.repository";
 export { prospectQualificationsRepo } from "./prospect-qualifications.repository";
 export { rgaZonesRepository } from "./rga-zones.repository";
 export { syncRunRepository as syncRunRepo } from "./sync-run.repository";

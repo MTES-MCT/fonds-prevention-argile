@@ -1,16 +1,15 @@
 "use server";
 
-import { catastrophesNaturellesRepository } from "@/shared/database";
 import { getEpciBySiren } from "../../services";
 import { catnatService } from "../services/catnat.service";
-import type { CatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
+import type { LigneHistoriqueCatnat } from "../domain";
 
 /**
- * Récupère les catastrophes naturelles pour une commune
+ * Récupère l'historique des catastrophes naturelles d'une commune, demandes non reconnues comprises
  */
-export async function getCatnatForCommuneAction(codeInsee: string): Promise<CatastropheNaturelle[]> {
+export async function getCatnatForCommuneAction(codeInsee: string): Promise<LigneHistoriqueCatnat[]> {
   try {
-    return await catnatService.getForCommune(codeInsee);
+    return await catnatService.getHistoriquePourCommune(codeInsee);
   } catch (error) {
     console.error(`Error fetching CATNAT for commune ${codeInsee}:`, error);
     return [];
@@ -51,7 +50,7 @@ export async function getTotalCatnatForEpciAction(codeSiren: string): Promise<nu
     if (!epci) return 0;
 
     // Récupérer le total des catastrophes naturelles pour ces communes
-    return await catastrophesNaturellesRepository.getTotalByEpci(epci.codesCommunes);
+    return await catnatService.getTotalForCommunes(epci.codesCommunes);
   } catch (error) {
     console.error(`Error fetching CATNAT total for EPCI ${codeSiren}:`, error);
     return 0;

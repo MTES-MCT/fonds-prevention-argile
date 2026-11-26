@@ -4,8 +4,8 @@ import { pgTable, text, date, index, timestamp, primaryKey } from "drizzle-orm/p
  * Table des catastrophes naturelles (CATNAT)
  * Source: API Georisques - https://www.georisques.gouv.fr/doc-api
  *
- * Note: Une même catastrophe (même code_national_catnat) peut concerner plusieurs communes
- * La clé primaire est donc composite: (code_national_catnat, code_insee)
+ * Note: un même arrêté (code_national_catnat) concerne plusieurs communes, et peut reconnaître
+ * plusieurs périodes pour la même commune : la clé est (code_national_catnat, code_insee, date_debut_evt)
  */
 export const catastrophesNaturelles = pgTable(
   "catastrophes_naturelles",
@@ -34,7 +34,10 @@ export const catastrophesNaturelles = pgTable(
   },
   (table) => ({
     // Clé primaire composite
-    pk: primaryKey({ columns: [table.codeNationalCatnat, table.codeInsee] }),
+    pk: primaryKey({
+      name: "catastrophes_naturelles_pk",
+      columns: [table.codeNationalCatnat, table.codeInsee, table.dateDebutEvt],
+    }),
 
     // Index pour les requêtes par commune
     codeInseeIdx: index("catastrophes_naturelles_code_insee_idx").on(table.codeInsee),

@@ -397,6 +397,20 @@ monte : corriger le code désigné par les lignes `alloc`, ou traiter la mémoir
 préchargement des pages (`experimental.preloadEntriesOnStart: false`, 83 Mo de moins à froid) ne se
 décide qu'ensuite : il donne de la marge sans traiter la croissance.
 
+### Catastrophes naturelles : historique des refus avant juillet 2025, et signalements à Géorisques
+
+Les demandes non reconnues affichées sur les pages commune viennent d'un jeu data.gouv qui commence en
+juillet 2025 ([ADR-0056](adr/0056-sources-decisions-catastrophe-naturelle.md)). Le portail de la CCR les
+publie depuis au moins 2006, sans API ni conditions de réutilisation lues.
+
+**Préalable** : la réponse de la CCR, contactée le 23 novembre 2026 pour un export ou un accord. La table
+`catnat_decisions` a une colonne `source` pour accueillir cet historique sans migration.
+
+À signaler à Géorisques, sans attendre : sa pagination perd des lignes, et les arrêtés publiés depuis
+2025 y sont datés un jour trop tôt ([`import-catnat.md`](ops/import-catnat.md)). Les pages commune
+affichent la plus tardive des deux dates quand la reconnaissance est aussi dans le jeu data.gouv ; les
+arrêtés publiés entre février et juillet 2025 restent décalés.
+
 ### Cron de synchronisation : des créneaux servis avec cinq à huit heures de retard
 
 Relevé le 16 novembre 2026 sur les runs GitHub Actions : le créneau de 06:15 UTC part vers 14 h UTC,

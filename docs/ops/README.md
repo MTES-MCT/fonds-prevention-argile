@@ -17,6 +17,7 @@ d'architecture.
 | Savoir où en est un demandeur (support, QA)                                     | [`requetes-support.md`](./requetes-support.md)   |
 | Tester les webhooks Brevo                                                       | [`webhooks-brevo.md`](./webhooks-brevo.md)       |
 | Importer ou réimporter des structures, rôle par rôle (AMO, Aller-vers, experts) | [`import-structures.md`](./import-structures.md) |
+| Relancer l'import des arrêtés de catastrophe naturelle, lire son bilan          | [`import-catnat.md`](./import-catnat.md)         |
 
 ## Deux règles pour tout ce dossier
 
