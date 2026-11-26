@@ -8,6 +8,7 @@ import { getDefaultRedirect } from "@/features/auth/services/redirects.service";
 import { DEFAULT_REDIRECTS, ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
 import { getServerEnv } from "@/shared/config/env.config";
 import { COOKIE_NAMES } from "@/features/auth/domain/value-objects";
+import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
 
 // Un refus ne doit laisser derrière lui aucune session antérieure exploitable.
 function redirigerVersConnexion(errorCode: string, baseUrl: string): NextResponse {
@@ -19,6 +20,9 @@ function redirigerVersConnexion(errorCode: string, baseUrl: string): NextRespons
 }
 
 export async function GET(request: NextRequest) {
+  const refus = limiterDebit(request, "connexion");
+  if (refus) return refus;
+
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const state = searchParams.get("state");

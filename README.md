@@ -507,6 +507,23 @@ Configuration dans `.talismanrc` pour les exceptions et les fichiers à ignorer.
 
 > **Important** : Ne jamais contourner Talisman sans vérification. Si un fichier est bloqué, vérifiez qu'il ne contient pas de données sensibles avant de l'ajouter aux exceptions.
 
+### Contrôles de sécurité en CI
+
+Chaque PR passe la détection de secrets (Talisman, sur les commits de la PR), la revue des dépendances
+qu'elle introduit (failles High ou Critical, licences) et la suite de tests, qui contient les garde-fous
+d'accès. Chaque lundi, un audit complet des dépendances ouvre une issue s'il trouve une faille grave non
+traitée, et chaque évolution de `main` régénère l'inventaire des composants (SBOM).
+
+Les en-têtes HTTP de sécurité sont contrôlés sur l'application construite à chaque PR, puis chaque jour sur
+la production et staging. Pour les contrôler à la main sur un site déployé :
+
+```bash
+pnpm audit:en-tetes https://staging.fonds-prevention-argile.beta.gouv.fr
+```
+
+Le registre complet, la procédure pour accepter une vulnérabilité et les réglages attendus du dépôt sont
+dans [docs/security/CONTROLES-CI.md](docs/security/CONTROLES-CI.md).
+
 ## 🔐 Gestion des données RGA en mode embed
 
 ### Contexte

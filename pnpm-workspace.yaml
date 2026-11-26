@@ -28,6 +28,12 @@ minimumReleaseAgeExclude:
 
 trustPolicy: no-downgrade
 
+# Failles High acceptées, ignorées par la veille hebdomadaire. Chaque entrée est justifiée dans
+# docs/security/snyk-accepted-vulnerabilities.md et reprise dans revue-dependances.yml.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf # picomatch <=4.0.7, outillage de test, aucun correctif publié
+
 overrides:
   # Croissance mémoire non bornée + crash/prototype write sur query non fiable
   # (transitif via next > styled-jsx > @babel/core, au build)

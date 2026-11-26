@@ -93,6 +93,7 @@ export async function getDossier(id: string) {
 
 - [ ] Aucun secret en dur ni exposé via `NEXT_PUBLIC_*`
 - [ ] Entrées validées (Zod) dans chaque Server Action / Route Handler
+- [ ] Route Handler déclaré dans `src/app/registre-routes.ts`, avec sa protection et son plafond d'appels
 - [ ] Session ET autorisation sur la ressource vérifiées
 - [ ] Accès DB via le query builder Drizzle, jamais de SQL brut
 - [ ] Réponses limitées aux champs nécessaires

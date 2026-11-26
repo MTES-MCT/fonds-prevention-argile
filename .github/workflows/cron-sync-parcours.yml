@@ -20,6 +20,9 @@ concurrency:
   group: cron-sync-parcours-${{ github.ref }}
   cancel-in-progress: false
 
+# Le job n'appelle que l'endpoint HTTP : il n'a besoin d'aucun droit sur le dépôt.
+permissions: {}
+
 jobs:
   trigger:
     name: Sync ${{ matrix.environment }}

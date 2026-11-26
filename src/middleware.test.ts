@@ -95,6 +95,20 @@ describe("middleware — authentification & redirection (§7)", () => {
     expect(res.headers.get("location")).toContain("/espace-agent");
   });
 
+  it.each(["https://site-pirate.example/", "//site-pirate.example", "/\\site-pirate.example"])(
+    "redirectTo hors du site (%s) → redirection par défaut, jamais vers l'extérieur",
+    async (destination) => {
+      vi.mocked(isProtectedRoute).mockReturnValue(false);
+      vi.mocked(decodeToken).mockReturnValue(SESSION_AGENT_MFA as never);
+
+      const res = await middleware(
+        makeRequest("/connexion", { session: "tok", session_role: UserRole.AMO, redirect_to: destination })
+      );
+
+      expect(res.headers.get("location")).toBe("https://app.test/mon-compte");
+    }
+  );
+
   it("route publique sans session → laisse passer (pas de redirection)", async () => {
     vi.mocked(isProtectedRoute).mockReturnValue(false);
 

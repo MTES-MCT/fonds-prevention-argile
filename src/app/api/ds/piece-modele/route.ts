@@ -3,6 +3,7 @@ import {
   getConfiguredDemarcheNumbers,
   getFreshModeleUrl,
 } from "@/features/parcours/dossiers-ds/services/pieces-justificatives.service";
+import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
 
 // La cible est une URL temporaire DN régénérée à chaque appel : jamais de cache.
 export const dynamic = "force-dynamic";
@@ -19,6 +20,9 @@ export const dynamic = "force-dynamic";
  * Modèles publics (CERFA, attestations vierges) : pas d'authentification requise.
  */
 export async function GET(request: NextRequest) {
+  const refus = limiterDebit(request, "lecture");
+  if (refus) return refus;
+
   const { searchParams } = request.nextUrl;
   const demarcheStr = searchParams.get("demarche");
   const champId = searchParams.get("champ");

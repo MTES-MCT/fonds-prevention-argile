@@ -311,19 +311,6 @@ puis une recette des imports AMO et Aller-vers, déjà validés et donc à retes
 
 ## Sécurité et dépendances
 
-### Règle d'en-têtes des pages embarquées qui ne s'applique à aucune page
-
-- **Constat** : dans `next.config.ts`, la règle `source: "/embed/:path*"` (`frame-ancestors *`) ne
-  correspond à aucune route : les pages s'appellent `/embed-simulateur` et `/embed-vulnerabilite-rga`.
-  Elles s'affichent en iframe uniquement parce que l'expression de la règle par défaut exclut tout
-  chemin commençant par « embed », si bien qu'elles ne reçoivent aucun en-tête. Le résultat est le bon,
-  le commentaire est trompeur, et une nouvelle page `/embed…` serait encadrable sans le vouloir.
-- **Préalable** : choisir entre corriger le motif (une règle par page `/embed-*`) et figer le
-  comportement actuel par un test qui vérifie les en-têtes de chaque route. Toucher à ces en-têtes
-  change ce que les partenaires peuvent intégrer : à tester dans une iframe d'un autre site.
-- **Relevé** : correctif du renvoi vers le simulateur d'éligibilité depuis `/embed-vulnerabilite-rga`
-  (novembre 2026).
-
 ### Migration Next 16, ESLint 10, `@vitejs/plugin-react` 6, remplacement de `@react-email/components`
 
 - Détail dans la section « Prochaine revue » de
@@ -348,6 +335,50 @@ ordre de préférence. Vous êtes libre de faire appel à l'expert de votre choi
 l'équipe. Il est défini en un seul endroit, `MENTION_LIBRE_CHOIX` (`administration/experts/domain/regles-experts.ts`).
 
 **Préalable** : le retour de la DHUP sur le texte, et sur l'ordre alphabétique retenu.
+
+### Rendre la CI obligatoire et bloquer les secrets au push
+
+Relevé en mettant les contrôles de sécurité en CI (novembre 2026). Le ruleset `protection-default`
+n'exige aucun job : une PR peut être fusionnée avec une CI rouge, si bien que les contrôles de
+[CONTROLES-CI.md](security/CONTROLES-CI.md) informent sans bloquer. La push protection de GitHub, qui
+refuse un push contenant une clé reconnue, est désactivée.
+
+**Préalable** : les workflows fusionnés sur `main` (GitHub ne propose en « requis » que des jobs déjà
+exécutés), puis un accès administrateur au dépôt de l'organisation. Jobs à exiger : `Security Checks`,
+`Test, Lint & Build`, `Dependency Review`. Mettre à jour le § 4 du registre une fois fait.
+
+### Plafonner les server actions publiques, et arbitrer un pare-feu applicatif
+
+Les routes d'API publiques ont un plafond d'appels par adresse depuis novembre 2026
+([ADR-0054](adr/0054-limitation-de-debit-en-memoire.md)). Restent hors de ce plafond les server actions
+publiques (référentiels CATNAT et Aller-vers, chiffrement du simulateur en iframe), qui ne passent pas par
+un `route.ts`. Le plafond est tenu en mémoire d'un conteneur : il n'arrête pas une attaque répartie.
+
+**Préalable** : l'arbitrage du RSSI sur un pare-feu applicatif devant l'application ; et, si l'on passe à
+plusieurs conteneurs web, un compteur partagé (option B de l'ADR).
+
+### Réduire ce que dit la sonde `/api/health`
+
+La route est publique et renvoie la version de l'application et le nom de l'environnement. Rien de
+sensible, mais c'est de l'information donnée à qui la demande, comme l'était `X-Powered-By`.
+
+**Préalable** : vérifier ce que lit la supervision (Scalingo, DashLord) avant de retirer un champ.
+
+### Valider les entrées des actions de synchronisation
+
+`listSyncRunsAction(page, pageSize)` et `getSyncRunDetailAction(runId)` prennent leurs paramètres tels
+quels : une taille de page arbitraire et un identifiant non vérifié atteignent le dépôt. Réservées au
+super-administrateur, donc sans urgence.
+
+**Préalable** : aucun, un schéma Zod en tête des deux actions.
+
+### Donner une licence au dépôt
+
+Le dépôt est public et n'a ni fichier `LICENSE`, ni champ `license` dans `package.json` : en droit, le
+code n'est réutilisable par personne. Les licences des dépendances, elles, sont contrôlées à chaque PR
+depuis novembre 2026.
+
+**Préalable** : le choix de la licence par l'équipe et le ministère.
 
 ## Exploitation
 

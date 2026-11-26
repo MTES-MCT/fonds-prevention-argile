@@ -231,7 +231,7 @@ email) tout en livrant tout dans la boîte de test.
       **`accompagnement_arrete`**. Même sans Automation, l'évènement remet le contact à jour.
 - [ ] **Vérifier l'Automation branchée sur `amo_defini`** : l'évènement part désormais aussi
       quand un super-admin rattache une AMO à un dossier détaché à tort.
-- [ ] **Demander un avis après chaque étape** (ADR-0054) : six Automations, sans code. Le gabarit porte cinq
+- [ ] **Demander un avis après chaque étape** (ADR-0055) : six Automations, sans code. Le gabarit porte cinq
       liens, un par note : `<domaine>/avis?etape=<étape>&note=<1 à 5>&p={{ contact.PARCOURS_ID }}`. Le domaine
       diffère entre staging et production.
 

@@ -1,0 +1,73 @@
+name: Vérification de la production
+
+# Contrôle chaque jour les en-têtes de sécurité réellement servis : un réglage de l'hébergeur ou
+# un déploiement peut les faire sauter sans qu'aucune PR ne le montre.
+# Doc : docs/security/CONTROLES-CI.md.
+
+on:
+  schedule:
+    # Hors heure pile (GitHub retarde les crons lancés à :00).
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  en-tetes:
+    name: En-têtes HTTP (${{ matrix.environnement }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    strategy:
+      # Un écart sur staging ne doit pas masquer l'état de la production, et inversement.
+      fail-fast: false
+      matrix:
+        include:
+          - environnement: production
+            url: https://fonds-prevention-argile.beta.gouv.fr
+          - environnement: staging
+            url: https://staging.fonds-prevention-argile.beta.gouv.fr
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Contrôler les en-têtes servis
+        env:
+          URL_SITE: ${{ matrix.url }}
+        run: pnpm -s audit:en-tetes "$URL_SITE"
+
+      - name: Ouvrir ou relancer l'issue de suivi
+        # Toute panne compte, installation comprise : une surveillance muette vaut une surveillance absente.
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENVIRONNEMENT: ${{ matrix.environnement }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          titre="Vérification des en-têtes de sécurité en échec sur ${ENVIRONNEMENT}"
+          corps="La vérification quotidienne a échoué (écart, ou contrôle qui n'a pas pu tourner) : ${RUN_URL}
+
+          Les en-têtes attendus sont définis dans \`src/shared/config/en-tetes-http.ts\` (registre : \`docs/security/CONTROLES-CI.md\`)."
+
+          numero=$(gh issue list --state open --search "in:title \"${titre}\"" --json number --jq '.[0].number // empty')
+          if [ -n "$numero" ]; then
+            gh issue comment "$numero" --body "Toujours en échec : ${RUN_URL}"
+          else
+            gh issue create --title "$titre" --body "$corps"
+          fi

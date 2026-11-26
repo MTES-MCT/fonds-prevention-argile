@@ -1,7 +1,8 @@
 # Configuration Talisman pour fonds-prevention-argile
 fileignoreconfig:
+  # Un lockfile n'est fait que d'empreintes sha512 : pas d'empreinte à tenir à jour, Dependabot ne le peut pas.
   - filename: pnpm-lock.yaml
-    checksum: 41b1281cee13b1a1540989714ee571f1a6749f9ba30b697459782151ed0cd079
+    ignore_detectors: [filecontent]
   - filename: package-lock.json
     checksum: ignore
   - filename: .env.example
@@ -26,3 +27,6 @@ allowed_patterns:
   - "123456"
   # URL publique Notion du kit de communication (faux positif hex sur l'ID de page)
   - "35668d719691808f90c1ecd70172a3e7"
+  # Actions GitHub figées par empreinte de commit, et empreinte SHA-256 du binaire Talisman
+  - "uses: \\S+@[0-9a-f]{40}"
+  - "TALISMAN_SHA256: [0-9a-f]{64}"

@@ -170,7 +170,7 @@ Filtre période seul. Fenêtre propre à cette page (§ 1) ; le tunnel porte sur
 ## 7 bis. Back-office — Satisfaction (`/administration/satisfaction`)
 
 Aucun filtre : tous les avis depuis le début. Un avis par parcours et par étape (une nouvelle réponse remplace
-l'ancienne) ; les avis sur les simulateurs sont anonymes et non dédoublonnés (ADR-0054).
+l'ancienne) ; les avis sur les simulateurs sont anonymes et non dédoublonnés (ADR-0055).
 
 | Statistique          | Ce qu'elle compte                                                                                                                                        | Source     |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |

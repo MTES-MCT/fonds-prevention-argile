@@ -33,7 +33,7 @@ DDD-lite par feature.
 | `seo`                  | Données géographiques et SEO : catastrophes naturelles (catnat), allers-vers                                                                                                                                                                                                                                                        |
 | `backoffice`           | Espaces agents : `espace-agent` (suivi dossiers) et `administration`                                                                                                                                                                                                                                                                |
 | `public-stats`         | Chiffres clés publics depuis le lancement (`/stats`) : cartes + évolution mensuelle                                                                                                                                                                                                                                                 |
-| `avis`                 | Avis de satisfaction par étape et sur les deux simulateurs : note de 1 à 5 et commentaire, page `/avis` ouverte depuis les mails Brevo ([ADR-0054](adr/0054-avis-de-satisfaction-par-lien-commun.md))                                                                                                                               |
+| `avis`                 | Avis de satisfaction par étape et sur les deux simulateurs : note de 1 à 5 et commentaire, page `/avis` ouverte depuis les mails Brevo ([ADR-0055](adr/0055-avis-de-satisfaction-par-lien-commun.md))                                                                                                                               |
 
 Sous-modules notables :
 
@@ -96,7 +96,7 @@ users (1) ──1:1── parcours_prevention (1) ──1:N── dossiers_demar
                         ├──1:N── parcours_actions ──N:1── agents
                         ├──1:N── prospect_qualifications ──N:1── agents
                         ├──1:N── sync_run_entries ──N:1── sync_runs
-                        ├──1:N── avis (un par étape, cf. ADR-0054)
+                        ├──1:N── avis (un par étape, cf. ADR-0055)
                         └──N:1── vulnerabilite_simulations (pointeur nullable, cf. ADR-0032)
 
 agents ──N:1── structures             structures ──1:0..1── entreprises_amo (habilitation AMO)
@@ -123,7 +123,7 @@ rga_zones                 (géométries PostGIS, aléa RGA par zone)
 | Référentiels géo  | `catastrophes_naturelles`, `rga_zones` (PostGIS)                                                                                                                                                                  |
 | Synchronisation   | `sync_runs`, `sync_run_entries`                                                                                                                                                                                   |
 | Vulnérabilité RGA | `vulnerabilite_simulations` (table anonyme, sans FK `users` — cf. ADR-0031). Pointeur nullable `parcours_prevention.vulnerabilite_simulation_id` vers la dernière simulation connue d'un demandeur (cf. ADR-0032) |
-| Avis              | `avis` (rattaché au parcours pour une étape, anonyme pour un simulateur — cf. ADR-0054)                                                                                                                           |
+| Avis              | `avis` (rattaché au parcours pour une étape, anonyme pour un simulateur — cf. ADR-0055)                                                                                                                           |
 
 > `users` (demandeur FranceConnect) et `agents` (ProConnect) sont deux tables
 > distinctes : le citoyen et l'agent ne partagent pas la même identité.
