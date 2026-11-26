@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { enregistrerAvisAction } from "../actions/avis.actions";
 import {
+  AIDE_AVIS_EN_DIRECT,
   LONGUEUR_MAX_COMMENTAIRE,
   NOTES_AVIS,
   demandeUnCommentaire,
@@ -85,6 +86,8 @@ export function FormulaireAvis({ cible, origine, noteInitiale, onTermine }: Form
   }
 
   const envoiEnCours = etat === "envoi";
+  // Sous un résultat de simulateur, le questionnaire ne doit pas concurrencer le bouton principal de l'écran.
+  const enDirect = origine === "en_direct";
 
   return (
     <form onSubmit={soumettre}>
@@ -100,6 +103,7 @@ export function FormulaireAvis({ cible, origine, noteInitiale, onTermine }: Form
       <fieldset className="fr-fieldset" aria-labelledby={`${id}-legende`}>
         <legend className="fr-fieldset__legend fr-fieldset__legend--regular" id={`${id}-legende`}>
           {questionAvis(cible.sujet)}
+          {enDirect && <span className="fr-hint-text">{AIDE_AVIS_EN_DIRECT}</span>}
         </legend>
         {NOTES_AVIS.map((valeur) => (
           <div className="fr-fieldset__element" key={valeur}>
@@ -158,7 +162,10 @@ export function FormulaireAvis({ cible, origine, noteInitiale, onTermine }: Form
         </div>
       )}
 
-      <button type="submit" className="fr-btn" disabled={!note || envoiEnCours}>
+      <button
+        type="submit"
+        className={enDirect ? "fr-btn fr-btn--secondary" : "fr-btn"}
+        disabled={!note || envoiEnCours}>
         {noteEnregistree ? "Mettre à jour ma réponse" : "Envoyer ma réponse"}
       </button>
     </form>

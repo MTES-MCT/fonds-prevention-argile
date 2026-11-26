@@ -295,22 +295,24 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
       }
 
       if (checks) {
-        return (
-          <>
-            {isEligible ? (
-              <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} onBack={goBack} />
-            ) : (
-              <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} />
-            )}
-            {/* `onSave` marque un écran d'édition : l'avis ne concerne que la simulation publique. */}
-            {!onSave && (
-              <AvisEnDirect
-                sujet="simulateur"
-                simulationEligible={isEligible}
-                codeDepartement={answers.logement?.code_departement}
-              />
-            )}
-          </>
+        // `onSave` marque un écran d'édition : l'avis ne concerne que la simulation publique.
+        const avis = onSave ? null : (
+          <AvisEnDirect
+            sujet="simulateur"
+            simulationEligible={isEligible}
+            codeDepartement={answers.logement?.code_departement}
+          />
+        );
+        return isEligible ? (
+          <ResultEligible
+            checks={checks}
+            onContinue={handleContinueToFC}
+            onRestart={reset}
+            onBack={goBack}
+            avis={avis}
+          />
+        ) : (
+          <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} avis={avis} />
         );
       }
 

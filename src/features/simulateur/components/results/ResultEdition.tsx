@@ -171,7 +171,7 @@ export function ResultEdition({ checks, isEligible, onBack, onRestart }: ResultE
               </div>
 
               {/* Détails d'éligibilité (accordéon fermé par défaut) */}
-              <EligibilityChecksList checks={checks} isEligible={isEligible} defaultCollapsed />
+              <EligibilityChecksList checks={checks} isEligible={isEligible} />
 
               {/* Message d'erreur */}
               {error && (

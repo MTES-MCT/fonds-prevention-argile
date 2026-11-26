@@ -67,7 +67,7 @@ describe("FormulaireAvis", () => {
       <FormulaireAvis cible={{ sujet: "simulateur", simulationEligible: true }} origine="en_direct" noteInitiale={2} />
     );
 
-    expect(screen.getByText("Le simulateur était :")).toBeInTheDocument();
+    expect(screen.getByText("Ce simulateur a-t-il été facile ou difficile à utiliser ?")).toBeInTheDocument();
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
     await user.click(await screen.findByRole("button", { name: "Mettre à jour ma réponse" }));
 

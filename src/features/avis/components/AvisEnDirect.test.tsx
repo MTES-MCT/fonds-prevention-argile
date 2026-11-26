@@ -57,7 +57,14 @@ describe("AvisEnDirect", () => {
 
     render(<AvisEnDirect sujet="simulateur" simulationEligible />);
 
-    expect(screen.queryByText("Votre avis sur le simulateur")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ce simulateur a-t-il été facile ou difficile à utiliser ?")).not.toBeInTheDocument();
+  });
+
+  it("présente la question avec son aide et un bouton secondaire", async () => {
+    render(<AvisEnDirect sujet="simulateur" simulationEligible />);
+
+    expect(await screen.findByText("Cela nous permet d'améliorer notre service")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Envoyer ma réponse" })).toHaveClass("fr-btn--secondary");
   });
 
   it("ne s'affiche pas dans l'iframe d'un partenaire", () => {
@@ -65,14 +72,14 @@ describe("AvisEnDirect", () => {
 
     render(<AvisEnDirect sujet="simulateur" simulationEligible />);
 
-    expect(screen.queryByText("Votre avis sur le simulateur")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ce simulateur a-t-il été facile ou difficile à utiliser ?")).not.toBeInTheDocument();
   });
 
   it("demande l'avis sur le simulateur de vulnérabilité, sans résultat d'éligibilité", async () => {
     const user = userEvent.setup();
     render(<AvisEnDirect sujet="vulnerabilite" codeDepartement="36" />);
 
-    expect(await screen.findByText("Le simulateur de vulnérabilité était :")).toBeInTheDocument();
+    expect(await screen.findByText("Ce simulateur a-t-il été facile ou difficile à utiliser ?")).toBeInTheDocument();
     await user.click(screen.getByLabelText("Correct"));
     await user.click(screen.getByRole("button", { name: "Envoyer ma réponse" }));
 
@@ -85,6 +92,6 @@ describe("AvisEnDirect", () => {
 
     render(<AvisEnDirect sujet="vulnerabilite" />);
 
-    expect(await screen.findByText("Votre avis sur le simulateur de vulnérabilité")).toBeInTheDocument();
+    expect(await screen.findByText("Ce simulateur a-t-il été facile ou difficile à utiliser ?")).toBeInTheDocument();
   });
 });

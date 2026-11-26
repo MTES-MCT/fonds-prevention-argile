@@ -31,10 +31,8 @@ export const LIBELLES_ETAPE: Record<EtapeAvis, string> = {
   factures: "des travaux et du paiement",
 };
 
-const LIBELLES_SUJET_ANONYME: Record<SujetAnonyme, { nom: string; titre: string }> = {
-  simulateur: { nom: "Le simulateur", titre: "Votre avis sur le simulateur" },
-  vulnerabilite: { nom: "Le simulateur de vulnérabilité", titre: "Votre avis sur le simulateur de vulnérabilité" },
-};
+export const QUESTION_SIMULATEUR = "Ce simulateur a-t-il été facile ou difficile à utiliser ?";
+export const AIDE_AVIS_EN_DIRECT = "Cela nous permet d'améliorer notre service";
 
 // Libellés courts pour les tableaux de restitution.
 export const LIBELLES_SUJET: Record<SujetAvis, string> = {
@@ -73,13 +71,9 @@ export function libelleNote(note: NoteAvis, sujet: SujetAvis): string {
 }
 
 export function questionAvis(sujet: SujetAvis): string {
-  return estEtapeAvis(sujet)
-    ? `L'étape ${LIBELLES_ETAPE[sujet]} était :`
-    : `${LIBELLES_SUJET_ANONYME[sujet].nom} était :`;
+  return estEtapeAvis(sujet) ? `L'étape ${LIBELLES_ETAPE[sujet]} était :` : QUESTION_SIMULATEUR;
 }
 
-export function titreAvis(sujet: SujetAvis): string {
-  return estEtapeAvis(sujet)
-    ? `Comment s'est passée l'étape ${LIBELLES_ETAPE[sujet]} ?`
-    : LIBELLES_SUJET_ANONYME[sujet].titre;
+export function titreAvis(etape: EtapeAvis): string {
+  return `Comment s'est passée l'étape ${LIBELLES_ETAPE[etape]} ?`;
 }

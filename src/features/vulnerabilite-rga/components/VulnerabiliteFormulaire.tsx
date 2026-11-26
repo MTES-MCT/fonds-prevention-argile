@@ -246,10 +246,12 @@ function FormulaireInterne({ agent }: { agent?: ContexteAgentVulnerabilite }) {
         );
       }
       return (
-        <>
-          <ResultVulnerabilite answers={answers} result={result} onRestart={reset} />
-          <AvisEnDirect sujet="vulnerabilite" codeDepartement={answers.adresse?.codeDepartement} />
-        </>
+        <ResultVulnerabilite
+          answers={answers}
+          result={result}
+          onRestart={reset}
+          avis={<AvisEnDirect sujet="vulnerabilite" codeDepartement={answers.adresse?.codeDepartement} />}
+        />
       );
 
     default:

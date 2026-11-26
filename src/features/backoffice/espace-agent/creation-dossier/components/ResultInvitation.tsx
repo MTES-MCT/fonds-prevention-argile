@@ -169,7 +169,7 @@ export function ResultInvitation({ checks, isEligible, onBack, onRestart }: Resu
 
       <div className="fr-mt-4w fr-mb-2w" />
 
-      <EligibilityChecksList checks={checks} isEligible={isEligible} defaultCollapsed />
+      <EligibilityChecksList checks={checks} isEligible={isEligible} />
 
       <div className="fr-mt-4w flex flex-col-reverse md:flex-row md:justify-end gap-2">
         <button

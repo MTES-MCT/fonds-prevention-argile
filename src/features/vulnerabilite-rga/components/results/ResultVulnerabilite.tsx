@@ -39,6 +39,8 @@ interface ContenuResultatVulnerabiliteProps {
   actions: ReactNode;
   /** Message d'état au-dessus du titre (ex. enregistrement du test fait par un agent). */
   entete?: ReactNode;
+  /** Questionnaire de satisfaction, affiché sous le résultat et avant les recommandations. */
+  avis?: ReactNode;
 }
 
 /** Corps du résultat, partagé entre la fin du simulateur et la page de consultation du compte. */
@@ -48,6 +50,7 @@ export function ContenuResultatVulnerabilite({
   eligibleFonds,
   actions,
   entete,
+  avis,
 }: ContenuResultatVulnerabiliteProps) {
   const synthese = buildSyntheseResultat(aleaRga, compterPoints(points));
   const sections = getSectionsRecommandations(points);
@@ -63,6 +66,7 @@ export function ContenuResultatVulnerabilite({
 
               <SyntheseResultat synthese={synthese} />
               <CalloutExpertRga eligibleFonds={eligibleFonds} />
+              {avis}
               <ComprendreSourcesVulnerabilite />
               <RecommandationsList sections={sections} />
 
@@ -82,14 +86,16 @@ interface ResultVulnerabiliteProps {
   answers: PartialVulnerabiliteReponses;
   result: VulnerabiliteResultat;
   onRestart: () => void;
+  avis?: ReactNode;
 }
 
-export function ResultVulnerabilite({ answers, result, onRestart }: ResultVulnerabiliteProps) {
+export function ResultVulnerabilite({ answers, result, onRestart, avis }: ResultVulnerabiliteProps) {
   return (
     <ContenuResultatVulnerabilite
       aleaRga={answers.adresse?.aleaRga}
       points={result.points}
       eligibleFonds={remplitCriteresEligibiliteFonds(answers)}
+      avis={avis}
       actions={
         <button
           type="button"
