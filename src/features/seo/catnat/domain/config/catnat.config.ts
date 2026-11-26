@@ -48,3 +48,6 @@ export const DECISIONS_DATA_GOUV = {
   depuis: "juillet 2025",
   delaiMaxMs: 30_000,
 } as const;
+
+/** Au-delà, une source est en retard sur l'autre : l'import le signale en erreur. Les arrêtés paraissent environ chaque mois. */
+export const RETARD_SOURCE_ALERTE_JOURS = 15;

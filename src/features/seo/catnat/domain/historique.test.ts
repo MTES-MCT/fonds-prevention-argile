@@ -33,7 +33,7 @@ const decision = (champs: Partial<CatnatDecision> = {}): CatnatDecision => ({
 });
 
 describe("fusionnerHistorique", () => {
-  it("une reconnaissance connue des deux sources n'apparaît qu'une fois, avec le NOR et les dates du JO", () => {
+  it("publiée par les deux sources : une seule ligne, le NOR de Géorisques et la plus tardive de chaque date", () => {
     expect(fusionnerHistorique([arrete()], [decision()])).toEqual([
       {
         decision: "reconnue",
@@ -46,7 +46,41 @@ describe("fusionnerHistorique", () => {
     ]);
   });
 
-  it("un arrêté sans décision correspondante garde les dates de Géorisques", () => {
+  it("la date la plus tardive l'emporte aussi quand c'est celle de Géorisques", () => {
+    const [ligne] = fusionnerHistorique(
+      [arrete({ dateDebutEvt: "2025-01-02", dateFinEvt: "2025-12-31", datePublicationJo: "2026-05-15" })],
+      [decision()]
+    );
+
+    expect(ligne).toMatchObject({ dateDebut: "2025-01-02", dateFin: "2025-12-31", datePublicationJo: "2026-05-15" });
+  });
+
+  it("deux sources d'accord : la ligne est celle des deux", () => {
+    const lignes = fusionnerHistorique(
+      [
+        arrete({
+          dateDebutEvt: "2025-01-01",
+          dateFinEvt: "2025-12-31",
+          datePublicationArrete: "2026-05-11",
+          datePublicationJo: "2026-05-14",
+        }),
+      ],
+      [decision()]
+    );
+
+    expect(lignes).toEqual([
+      {
+        decision: "reconnue",
+        codeNor: "INTE2612297A",
+        dateDebut: "2025-01-01",
+        dateFin: "2025-12-31",
+        datePublicationJo: "2026-05-14",
+        motif: null,
+      },
+    ]);
+  });
+
+  it("publiée par Géorisques seulement : ses dates telles quelles", () => {
     const [ligne] = fusionnerHistorique(
       [arrete({ dateDebutEvt: "2018-07-01", datePublicationArrete: "2019-06-18" })],
       []
@@ -55,7 +89,7 @@ describe("fusionnerHistorique", () => {
     expect(ligne).toMatchObject({ decision: "reconnue", codeNor: "INTE2612297A", dateDebut: "2018-07-01" });
   });
 
-  it("une reconnaissance que Géorisques n'a pas encore s'affiche sans code NOR", () => {
+  it("publiée par data.gouv seulement : affichée sans attendre Géorisques, sans code NOR", () => {
     const lignes = fusionnerHistorique(
       [arrete()],
       [decision(), decision({ dateArrete: "2026-11-13", dateDebutEvt: "2026-01-01", dateFinEvt: "2026-12-31" })]
@@ -81,6 +115,12 @@ describe("fusionnerHistorique", () => {
       ["reconnue", "2026-05-14", null],
       ["non_reconnue", "2026-02-27", "critère météorologique non satisfait"],
     ]);
+  });
+
+  it("la décision d'une autre commune ne se rapproche pas", () => {
+    const lignes = fusionnerHistorique([arrete()], [decision({ codeInsee: "36211" })]);
+
+    expect(lignes.map((ligne) => ligne.codeNor)).toEqual([null, "INTE2612297A"]);
   });
 
   it("un écart de plus d'un jour n'est pas un rapprochement", () => {

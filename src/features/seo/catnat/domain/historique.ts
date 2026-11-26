@@ -1,10 +1,10 @@
-import type { CatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
-import type { CatnatDecision, DecisionCatnat } from "@/shared/database/schema/catnat-decisions";
+import type { DecisionCatnat } from "@/shared/database/schema/catnat-decisions";
+import { plusTardive, rapprocher, type ArreteGeorisques, type DecisionPubliee } from "./rapprochement";
 
 /** Une ligne du tableau « historique des catastrophes naturelles » d'une commune. */
 export interface LigneHistoriqueCatnat {
   decision: DecisionCatnat;
-  /** Absent d'une décision que Géorisques n'a pas (encore) publiée, et de tout refus. */
+  /** Absent d'une reconnaissance que Géorisques n'a pas (encore) publiée, et de tout refus. */
   codeNor: string | null;
   dateDebut: string;
   dateFin: string;
@@ -12,54 +12,45 @@ export interface LigneHistoriqueCatnat {
   motif: string | null;
 }
 
-const UN_JOUR_MS = 24 * 60 * 60 * 1000;
+const ligneDeGeorisques = (arrete: ArreteGeorisques): LigneHistoriqueCatnat => ({
+  decision: "reconnue",
+  codeNor: arrete.codeNationalCatnat,
+  dateDebut: arrete.dateDebutEvt,
+  dateFin: arrete.dateFinEvt,
+  datePublicationJo: arrete.datePublicationJo,
+  motif: null,
+});
 
-const aUnJourPres = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) <= UN_JOUR_MS;
-
-// Géorisques date certains arrêtés un jour trop tôt : même arrêté et même période, à un jour près.
-const estLaMemeReconnaissance = (arrete: CatastropheNaturelle, decision: CatnatDecision) =>
-  aUnJourPres(arrete.datePublicationArrete, decision.dateArrete) &&
-  aUnJourPres(arrete.dateDebutEvt, decision.dateDebutEvt);
+const ligneDeDecision = (decision: DecisionPubliee): LigneHistoriqueCatnat => ({
+  decision: decision.decision,
+  codeNor: null,
+  dateDebut: decision.dateDebutEvt,
+  dateFin: decision.dateFinEvt,
+  datePublicationJo: decision.datePublicationJo,
+  motif: decision.motif,
+});
 
 /**
- * Réunit les reconnaissances de Géorisques et les décisions publiées au Journal officiel, refus compris.
- * Une reconnaissance présente des deux côtés n'apparaît qu'une fois, avec son code NOR et les dates du JO.
+ * Réunit les deux sources : une reconnaissance s'affiche dès que l'une la publie, un refus dès qu'il est connu.
+ * Publiée par les deux, elle n'apparaît qu'une fois : code NOR de Géorisques, et la plus tardive de chaque date.
  */
 export function fusionnerHistorique(
-  arretes: CatastropheNaturelle[],
-  decisions: CatnatDecision[]
+  arretes: ArreteGeorisques[],
+  decisions: DecisionPubliee[]
 ): LigneHistoriqueCatnat[] {
-  const reconnues = decisions.filter((decision) => decision.decision === "reconnue");
-  const dejaRapprochees = new Set<CatnatDecision>();
+  const { communes, georisquesSeul, decisionsSeules } = rapprocher(arretes, decisions);
 
-  const lignes: LigneHistoriqueCatnat[] = arretes.map((arrete) => {
-    const decision = reconnues.find(
-      (candidate) => !dejaRapprochees.has(candidate) && estLaMemeReconnaissance(arrete, candidate)
-    );
-    if (decision) dejaRapprochees.add(decision);
-
-    return {
-      decision: "reconnue",
-      codeNor: arrete.codeNationalCatnat,
-      dateDebut: decision?.dateDebutEvt ?? arrete.dateDebutEvt,
-      dateFin: decision?.dateFinEvt ?? arrete.dateFinEvt,
-      datePublicationJo: decision?.datePublicationJo ?? arrete.datePublicationJo,
-      motif: null,
-    };
-  });
-
-  for (const decision of decisions) {
-    if (dejaRapprochees.has(decision)) continue;
-
-    lignes.push({
-      decision: decision.decision,
-      codeNor: null,
-      dateDebut: decision.dateDebutEvt,
-      dateFin: decision.dateFinEvt,
-      datePublicationJo: decision.datePublicationJo,
-      motif: decision.motif,
-    });
-  }
+  const lignes: LigneHistoriqueCatnat[] = [
+    ...communes.map(({ arrete, decision }) => ({
+      ...ligneDeGeorisques(arrete),
+      dateDebut: plusTardive(arrete.dateDebutEvt, decision.dateDebutEvt),
+      dateFin: plusTardive(arrete.dateFinEvt, decision.dateFinEvt),
+      datePublicationJo: plusTardive(arrete.datePublicationJo, decision.datePublicationJo),
+    })),
+    ...georisquesSeul.map(ligneDeGeorisques),
+    ...decisionsSeules.map(ligneDeDecision),
+    ...decisions.filter((decision) => decision.decision === "non_reconnue").map(ligneDeDecision),
+  ];
 
   return lignes.sort(
     (a, b) => b.dateDebut.localeCompare(a.dateDebut) || b.datePublicationJo.localeCompare(a.datePublicationJo)
