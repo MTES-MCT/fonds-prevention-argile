@@ -50,10 +50,10 @@ Un **partenaire** est un site tiers qui intègre notre simulateur d'éligibilit�
 
 ## Deux sources d'identification du partenaire
 
-| Source | Comportement | Couverture |
-|--------|--------------|------------|
-| `?partner=<slug>` dans l'URL d'embed | Prioritaire, validé contre la liste des partenaires connus | 100% si le partenaire a mis à jour son URL |
-| `document.referrer` | Fallback automatique (map `host → slug`) | ~90% (selon `Referrer-Policy` + extensions navigateur) |
+| Source                               | Comportement                                               | Couverture                                             |
+| ------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------ |
+| `?partner=<slug>` dans l'URL d'embed | Prioritaire, validé contre la liste des partenaires connus | 100% si le partenaire a mis à jour son URL             |
+| `document.referrer`                  | Fallback automatique (map `host → slug`)                   | ~90% (selon `Referrer-Policy` + extensions navigateur) |
 
 **Conséquence** : tracking automatique dès qu'un partenaire intègre l'iframe — même sans changer son URL. Le param URL est uniquement utile pour fiabiliser à 100%.
 
@@ -103,14 +103,16 @@ export const PARTNERS = {
     referrerHost: "auxalentours.maif.fr",
     label: "MAIF (auxalentours)",
   },
-  "partenaire-test": {                              // ← slug (kebab-case, ≤50 chars)
-    referrerHost: "test-partenaire.example.com",   // ← host du site partenaire
-    label: "Partenaire Test",                       // ← libellé affiché dans le filtre
+  "partenaire-test": {
+    // ← slug (kebab-case, ≤50 chars)
+    referrerHost: "test-partenaire.example.com", // ← host du site partenaire
+    label: "Partenaire Test", // ← libellé affiché dans le filtre
   },
 } as const satisfies Record<string, PartnerDefinition>;
 ```
 
 C'est tout. TypeScript dérive automatiquement :
+
 - Le type `PartnerKey` (union des slugs)
 - Les maps `PARTNER_REFERRERS`, `PARTNER_LABELS`, `PARTNER_OPTIONS`
 - Les helpers `isPartnerKey`, `normalizePartnerSlug`, `detectPartnerFromReferrer`, `resolvePartner`
@@ -163,18 +165,18 @@ Et le snippet d'intégration (identique à celui de `/documentation/integration-
 
 `/administration/acquisition` → filtre **"Partenaire Test"** :
 
-| Métrique | Source | Filtré ? |
-|---|---|---|
-| Visites totales | Matomo (`referrerName==test-partenaire.example.com`) | ✅ |
-| Visiteurs uniques | Matomo segmenté | ✅ |
-| Taux de rebond | Matomo segmenté | ✅ |
-| Simulations terminées (events) | Matomo events segmentés | ✅ |
-| Simulations éligibles / non éligibles | Matomo events segmentés | ✅ |
-| Top départements / communes | Matomo custom dimensions segmentées | ✅ |
-| Comptes créés | BDD : `EXISTS users.partner_source='partenaire-test'` | ✅ |
-| Demandes AMO / Dossiers DN / Archivées | BDD avec EXISTS partner_source | ✅ |
-| Taux de transformation | Calculé : comptes BDD / simulations Matomo | ✅ |
-| Funnel détaillé Matomo | _non disponible_ — l'API Funnels ne supporte pas les segments | ❌ |
+| Métrique                               | Source                                                        | Filtré ? |
+| -------------------------------------- | ------------------------------------------------------------- | -------- |
+| Visites totales                        | Matomo (`referrerName==test-partenaire.example.com`)          | ✅       |
+| Visiteurs uniques                      | Matomo segmenté                                               | ✅       |
+| Taux de rebond                         | Matomo segmenté                                               | ✅       |
+| Simulations terminées (events)         | Matomo events segmentés                                       | ✅       |
+| Simulations éligibles / non éligibles  | Matomo events segmentés                                       | ✅       |
+| Top départements / communes            | Matomo custom dimensions segmentées                           | ✅       |
+| Comptes créés                          | BDD : `EXISTS users.partner_source='partenaire-test'`         | ✅       |
+| Demandes AMO / Dossiers DN / Archivées | BDD avec EXISTS partner_source                                | ✅       |
+| Taux de transformation                 | Calculé : comptes BDD / simulations Matomo                    | ✅       |
+| Funnel détaillé Matomo                 | _non disponible_ — l'API Funnels ne supporte pas les segments | ❌       |
 
 ### 5. Vérification end-to-end
 
@@ -192,11 +194,11 @@ Une alternative envisagée était d'exposer le slug partenaire (`"maif"`) via un
 
 **Choix retenu : ne pas l'implémenter.** Justification :
 
-| Cas d'usage | Mécanisme actuel suffisant |
-|---|---|
-| Filtrer les visites Matomo par partenaire | `referrerName==<host>` natif Matomo (segments + rapports Acquisition) |
-| Filtrer les events simulateur par partenaire | Le segment Matomo fonctionne sur les events aussi |
-| Filtrer les comptes/parcours BDD par partenaire | `users.partner_source` (Phase B) |
+| Cas d'usage                                     | Mécanisme actuel suffisant                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------- |
+| Filtrer les visites Matomo par partenaire       | `referrerName==<host>` natif Matomo (segments + rapports Acquisition) |
+| Filtrer les events simulateur par partenaire    | Le segment Matomo fonctionne sur les events aussi                     |
+| Filtrer les comptes/parcours BDD par partenaire | `users.partner_source` (Phase B)                                      |
 
 La custom dimension serait **redondante** avec `referrerName` pour la couche Matomo, et n'apporterait rien pour la couche BDD.
 
@@ -206,6 +208,7 @@ La custom dimension serait **redondante** avec `referrerName` pour la couche Mat
 - Plusieurs hosts du même partenaire à agréger sous un slug unique. Solution intermédiaire : étendre la map `PARTNER_REFERRER_HOSTS` côté client + `PARTNER_REFERRERS` côté server avec tous les hosts pointant vers le même slug. La custom dimension ne serait nécessaire que si l'agrégation devient ingérable en map statique.
 
 Si le besoin émerge, l'ajout est straightforward (~30 min) :
+
 1. Créer une dimension "Partner" (scope Visit) dans l'admin Matomo
 2. Ajouter `NEXT_PUBLIC_MATOMO_DIMENSION_PARTNER_ID` dans `env.config.ts`
 3. Push `["setCustomDimension", id, partner]` dans `SimulateurFormulaire` avant chaque `trackEvent`
@@ -217,12 +220,18 @@ Si le besoin émerge, l'ajout est straightforward (~30 min) :
 - **Funnels Matomo non segmentables** : limitation de l'API Matomo, hors de notre contrôle. Workaround : utiliser les events `SIMULATEUR_STEP_*` qui sont segmentables.
 - **Cookie tiers en cas d'iframe sans navigation** : si un user ne clique jamais "Continuer" (reste dans l'iframe), aucun cookie n'est posé sur notre domaine — ce qui est conforme aux attentes (pas de compte créé = rien à attribuer).
 
-## Du simulateur de vulnérabilité au simulateur d'éligibilité
+## D'un simulateur à l'autre dans la même iframe
 
 `/embed-vulnerabilite-rga` (inactif en production) renvoie, en fin de parcours, vers `/embed-simulateur`
 et non vers `/simulateur` : seules les pages `/embed-*` s'affichent dans l'iframe d'un site tiers, les
-autres répondent `X-Frame-Options: SAMEORIGIN` (`next.config.ts`). Il transmet `?partner=` quand il
-le reçoit et que le slug est connu ; sinon le simulateur d'éligibilité retombe sur le referrer.
+autres répondent `X-Frame-Options: SAMEORIGIN` (`src/shared/config/en-tetes-http.ts`). Il transmet
+`?partner=` quand il le reçoit et que le slug est connu ; sinon le simulateur d'éligibilité retombe sur
+le referrer.
+
+Dans l'autre sens, l'écran « non éligible » de `/embed-simulateur` propose le simulateur de vulnérabilité
+vers `/embed-vulnerabilite-rga` (`urlVulnerabiliteEmbarquee`), avec le même `?partner=`. L'intégrateur
+retire cette proposition avec `?vulnerabilite=0` ; elle n'existe pas non plus tant que le simulateur de
+vulnérabilité est inactif.
 
 ## Adresse transmise par le partenaire
 

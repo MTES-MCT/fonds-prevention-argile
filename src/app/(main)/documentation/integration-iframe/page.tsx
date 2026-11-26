@@ -227,6 +227,13 @@ iframe.src =
             vérifier son éligibilité : le simulateur d&apos;éligibilité prend alors la suite dans la même iframe, sans
             autre intégration de votre part.
           </p>
+          <p>
+            Le renvoi existe aussi dans l&apos;autre sens : quand une maison n&apos;est pas éligible, le simulateur
+            d&apos;éligibilité propose à son propriétaire de tester sa vulnérabilité, toujours dans la même iframe. Le
+            résultat de vulnérabilité est plus long que celui d&apos;éligibilité : avec une hauteur fixe, il défile à
+            l&apos;intérieur du cadre. Pour ne pas proposer ce renvoi, ajoutez <code>?vulnerabilite=0</code> à
+            l&apos;adresse de <code>/embed-simulateur</code>.
+          </p>
 
           <h3 className="fr-mt-4w fr-h6">Démonstration</h3>
           <div className="fr-mt-2w">

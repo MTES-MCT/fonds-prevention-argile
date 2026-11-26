@@ -9,11 +9,11 @@ Auditeur : Samir + Claude
 > comme « acceptée » une vulnérabilité corrigée depuis. Les entrées périmées portent un
 > encart le signalant.
 >
-> **État courant (18 novembre 2026) — trois vulnérabilités acceptées** : `picomatch` <=4.0.7 (High,
+> **État courant (26 novembre 2026) — trois vulnérabilités acceptées** : `picomatch` <=4.0.7 (High,
 > outillage de test seulement, aucun correctif publié), `uuid` <11.1.1 (Moderate, runtime, transitif
 > via `exceljs`) et `minimatch` <11.0.1 (Moderate, transitif via `exceljs` et l'outillage, correctif
 > 11.0.1 à tester : deux majors au-dessus de l'override). Tout le reste est corrigé à la source. Voir
-> [Refresh — novembre 2026 (socle CI)](#refresh--novembre-2026-branche-choreci-socle-securite).
+> [Refresh — novembre 2026 (next 15.5.29)](#refresh--novembre-2026-branche-chorebump-next-15529).
 >
 > Depuis novembre 2026, l'audit tourne chaque lundi en CI et une PR qui introduit une faille High est
 > refusée : voir [CONTROLES-CI.md](CONTROLES-CI.md), qui dit aussi où déclarer une faille acceptée.
@@ -542,6 +542,24 @@ Première faille déclarée dans les listes d'exceptions de la CI : `auditConfig
 `picomatch` à relever, dès qu'un correctif est publié.
 
 `uuid` et `minimatch` restent acceptés, sans changement.
+
+## Refresh — novembre 2026 (branche `chore/bump-next-15.5.29`)
+
+`pnpm audit` du 26 novembre relevait trois avis Moderate sur `next` <=15.5.28, en production. Ils sont
+corrigés à la source : `pnpm audit` et `pnpm audit --prod` retombent à 2 Moderate (`uuid`, `minimatch`).
+Vérification : `pnpm validate` et `pnpm build` en Next 15.5.29.
+
+| Paquet          | Avant     | Après     | Avis éliminés                                                                                                                                                                                                      |
+| --------------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `next` (direct) | `15.5.28` | `15.5.29` | 3 Moderate : `GHSA-7qx7-33qx-rqx2` (SVG accepté par l'optimisation d'images), `GHSA-f3mh-rxg3-f5g2` (cookie HttpOnly exposé par un en-tête interne), `GHSA-pc58-hwjq-p385` (réponse d'un client servie à un autre) |
+
+> **Aucune PR Dependabot n'a proposé ce correctif.** La seule ouverte sur `next` vise la 16 (#468),
+> alors que les alertes existent et que les mises à jour de sécurité sont actives sur le dépôt (cause
+> non établie) : la 15.5.29, publiée le 3 novembre, est restée trois semaines sans être vue. L'audit du
+> lundi ne la signale pas non plus, il n'échoue que sur une High. Tant que la migration Next 16 n'est
+> pas faite, les correctifs de `next` se relèvent à la main avec `pnpm audit`.
+
+`picomatch`, `uuid` et `minimatch` restent acceptés, sans changement.
 
 ## Prochaine revue
 
