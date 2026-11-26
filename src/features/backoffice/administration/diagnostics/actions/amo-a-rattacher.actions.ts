@@ -11,6 +11,7 @@ import {
   type DossierARattacher,
 } from "@/features/backoffice/administration/diagnostics/services/amo-a-rattacher.service";
 import type { ActionResult } from "@/shared/types";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 /**
  * File « AMO à rattacher » de la page diagnostics : des parcours sans accompagnateur dans un
@@ -55,6 +56,13 @@ export async function rattacherAmoAction(parcoursId: string): Promise<ActionResu
       author: { agent: garde.agent },
       actionType: ACTION_TYPE_AMO_RATTACHEE,
       message: `${result.data.amoNom} rattachée (source : ${result.data.origine === "audit" ? "AMO d'origine" : "territoire"}). La demande repasse en attente de validation.`,
+    });
+
+    await journaliser({
+      evenement: "amo_rattachee",
+      acteur: { type: "agent", id: garde.agent.id, role: garde.agent.role ?? undefined },
+      cible: { type: "parcours", id: parcoursId },
+      details: { origine: result.data.origine },
     });
 
     revalidatePath("/administration/diagnostics");

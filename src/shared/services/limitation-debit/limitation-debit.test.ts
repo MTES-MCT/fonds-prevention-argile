@@ -8,6 +8,9 @@ import {
   reinitialiserDebits,
 } from "./limitation-debit";
 
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+
 const requete = (enTetes: Record<string, string> = {}) => new Request("https://fonds.test/api", { headers: enTetes });
 const depuis = (ip: string) => requete({ "x-real-ip": ip });
 
@@ -55,6 +58,21 @@ describe("limiterDebit", () => {
     expect(limiterDebit(depuis("203.0.113.1"), "connexion")).toBeNull();
   });
 
+  it("journalise le premier dépassement d'une fenêtre, pas les suivants", () => {
+    appeler(DEBITS.connexion.max, "203.0.113.1", "connexion");
+    expect(journaliser).not.toHaveBeenCalled();
+
+    appeler(50, "203.0.113.1", "connexion");
+
+    expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+      evenement: "debit_depasse",
+      resultat: "refus",
+      acteur: { type: "anonyme" },
+      details: { regle: "connexion" },
+      ip: "203.0.113.1",
+    });
+  });
+
   // Chaque adresse nouvelle crée une entrée : sans borne, un balayage d'adresses remplirait la mémoire.
   it("ne garde jamais plus de compteurs que la borne", () => {
     for (let i = 0; i < NOMBRE_MAX_COMPTEURS + 500; i++) limiterDebit(depuis(`adresse-${i}`), "lecture");
@@ -77,5 +95,14 @@ describe("adresseClient", () => {
 
   it("sans aucun en-tête (local) → un seul compteur commun", () => {
     expect(adresseClient(requete())).toBe("inconnue");
+  });
+
+  it.each([
+    [{ "x-real-ip": "Jean Dupont jean@example.org" }, "inconnue"],
+    [{ "x-real-ip": "0612345678", "x-forwarded-for": "198.51.100.9" }, "198.51.100.9"],
+    [{ "x-forwarded-for": "198.51.100.9, Jean Dupont 0612345678" }, "inconnue"],
+    [{ "x-real-ip": "2001:db8::7" }, "2001:db8::7"],
+  ])("ne reprend qu'une valeur qui a la forme d'une adresse (%j)", (enTetes, attendue) => {
+    expect(adresseClient(requete(enTetes))).toBe(attendue);
   });
 });

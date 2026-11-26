@@ -137,6 +137,9 @@ Le projet suit une architecture orientée domaine (DDD-lite):
   CI, sinon l'audit du lundi et la revue des PR échouent : `docs/security/CONTROLES-CI.md` § 3.
 - **Tout contrôle de sécurité ajouté, modifié ou retiré** (workflow, test méta, réglage du dépôt)
   met à jour `docs/security/CONTROLES-CI.md` dans la même PR.
+- **Toute action d'administration qui écrit** appelle `journaliser` et entre au registre de
+  `docs/security/JOURNALISATION.md` ; une lecture se déclare dans `administration/journal-actions.test.ts`,
+  qui échoue sinon. Jamais d'identité dans le journal, des identifiants techniques seulement (ADR-0055).
 
 ### Tests E2E / UI à chaque PR
 
@@ -562,5 +565,6 @@ Guides de référence détaillés, chargés en contexte via les références ci-
 - [docs/stats/STATISTIQUES.md](docs/stats/STATISTIQUES.md) — Ce que compte chaque statistique, publique et interne (à lire avant de toucher une stat)
 - [docs/security/CONTROLES-CI.md](docs/security/CONTROLES-CI.md) — Contrôles de sécurité automatisés (CI, tests méta, réglages du dépôt) et procédure pour accepter une vulnérabilité
 - [docs/security/DONNEES-PERSONNELLES.md](docs/security/DONNEES-PERSONNELLES.md) — Données personnelles colonne par colonne, et leur traitement à la restauration d'un dump
+- [docs/security/JOURNALISATION.md](docs/security/JOURNALISATION.md) — Journal de sécurité : évènements tracés, forme d'une ligne, où le lire
 
 Décisions d'architecture : voir `docs/adr/` (créer un ADR avec la skill `/adr`).

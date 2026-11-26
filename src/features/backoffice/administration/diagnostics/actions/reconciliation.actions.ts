@@ -15,6 +15,14 @@ import {
   VERDICTS_A_ARBITRER,
 } from "@/features/backoffice/administration/diagnostics/domain/diagnostics.types";
 import type { ActionResult } from "@/shared/types";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
+import { UserRole } from "@/shared/domain/value-objects";
+
+const parSuperAdmin = (agentId: string | null) => ({
+  type: "agent" as const,
+  id: agentId ?? "inconnu",
+  role: UserRole.SUPER_ADMINISTRATEUR,
+});
 
 /**
  * Files de travail issues de la réconciliation (ADR-0027). Réservées au super-admin, comme le
@@ -84,6 +92,11 @@ export async function analyserReconciliationAction(step: Step): Promise<ActionRe
       apply: false,
     });
 
+    await journaliser({
+      evenement: "reconciliation_analysee",
+      acteur: parSuperAdmin(guard.agentId),
+      details: { etape: step, examines: rapport.lignes.length },
+    });
     revalidatePath("/administration/diagnostics");
 
     return {
@@ -134,6 +147,11 @@ export async function resoudreObservationAction(
   const guard = await ensureSuperAdmin();
   if (!guard.ok) return { success: false, error: guard.error };
 
+  // Le numéro part au journal de sécurité : un texte libre y porterait une identité.
+  if (!/^\d+$/.test(dsNumber)) {
+    return { success: false, error: "Numéro de dossier invalide" };
+  }
+
   // `auto` est réservé aux balayages : un humain arbitre ou écarte, il ne « referme » pas.
   const resolutionsManuelles: ResolutionObservation[] = [
     RESOLUTION_OBSERVATION.ARBITRE,
@@ -145,7 +163,16 @@ export async function resoudreObservationAction(
   }
 
   try {
-    await dsObservationsRepo.resoudre(dsNumber, resolution, guard.agentId);
+    const refermees = await dsObservationsRepo.resoudre(dsNumber, resolution, guard.agentId);
+    if (refermees === 0) {
+      return { success: false, error: "Aucune observation pour ce dossier" };
+    }
+    await journaliser({
+      evenement: "observation_dn_resolue",
+      acteur: parSuperAdmin(guard.agentId),
+      cible: { type: "dossier_dn", id: dsNumber },
+      details: { resolution },
+    });
     revalidatePath("/administration/diagnostics");
     return { success: true, data: undefined };
   } catch (error) {

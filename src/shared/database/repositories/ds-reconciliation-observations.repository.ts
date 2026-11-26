@@ -119,10 +119,13 @@ export const dsReconciliationObservationsRepository = {
   },
 
   /** Referme un cas : rattaché, arbitré ou écarté. */
-  async resoudre(dsNumber: string, resolution: ResolutionObservation, agentId: string | null): Promise<void> {
-    await db
+  async resoudre(dsNumber: string, resolution: ResolutionObservation, agentId: string | null): Promise<number> {
+    const refermees = await db
       .update(dsReconciliationObservations)
       .set({ resolvedAt: new Date(), resolvedBy: agentId, resolution })
-      .where(eq(dsReconciliationObservations.dsNumber, dsNumber));
+      .where(eq(dsReconciliationObservations.dsNumber, dsNumber))
+      .returning({ id: dsReconciliationObservations.id });
+
+    return refermees.length;
   },
 };

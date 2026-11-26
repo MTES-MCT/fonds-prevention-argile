@@ -9,6 +9,7 @@ import { DEFAULT_REDIRECTS, ROUTES } from "@/features/auth/domain/value-objects/
 import { getServerEnv } from "@/shared/config/env.config";
 import { COOKIE_NAMES } from "@/features/auth/domain/value-objects";
 import { limiterDebit } from "@/shared/services/limitation-debit/limitation-debit";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 // Un refus ne doit laisser derrière lui aucune session antérieure exploitable.
 function redirigerVersConnexion(errorCode: string, baseUrl: string): NextResponse {
@@ -18,6 +19,16 @@ function redirigerVersConnexion(errorCode: string, baseUrl: string): NextRespons
   response.cookies.delete(COOKIE_NAMES.SESSION_AUTH);
   return response;
 }
+
+// Ces retours sortent avant le service : sans cette ligne, un refus du fournisseur ne laisserait aucune trace.
+const journaliserRetourRefuse = (motif: string, code?: string) =>
+  journaliser({
+    evenement: "connexion_agent",
+    resultat: "refus",
+    acteur: { type: "anonyme" },
+    motif,
+    ...(code ? { details: { code } } : {}),
+  });
 
 export async function GET(request: NextRequest) {
   const refus = limiterDebit(request, "connexion");
@@ -35,11 +46,13 @@ export async function GET(request: NextRequest) {
   // Gestion des erreurs ProConnect (user cancellation, etc.)
   if (error) {
     const { code: errorCode } = handleProConnectError(error, errorDescription || undefined);
+    await journaliserRetourRefuse("erreur_fournisseur", errorCode);
     return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=${errorCode}`, baseUrl));
   }
 
   // Vérification des paramètres requis
   if (!code || !state) {
+    await journaliserRetourRefuse("parametres_manquants");
     return NextResponse.redirect(new URL(`${ROUTES.connexion.agent}?error=pc_missing_params`, baseUrl));
   }
 

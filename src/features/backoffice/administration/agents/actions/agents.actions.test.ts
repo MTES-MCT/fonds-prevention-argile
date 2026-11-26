@@ -19,6 +19,8 @@ vi.mock("../services/agents-admin.service", () => ({
   getAgentTraces: vi.fn(),
 }));
 
+vi.mock("@/shared/services/journal-securite/journal-securite", () => ({ journaliser: vi.fn() }));
+
 // Mock de l'environnement serveur
 vi.mock("@/shared/config/env.config", () => createEnvConfigMock());
 
@@ -44,6 +46,7 @@ import { structuresRepository } from "@/shared/database/repositories/structures.
 // Import des mocks
 import { getCurrentUser } from "@/features/auth/services/user.service";
 import * as agentsAdminService from "../services/agents-admin.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 function connecter(role: UserRole) {
   const utilisateur = createMockAuthUser(role);
@@ -256,6 +259,30 @@ describe("agents.actions", () => {
       if (result.success) {
         expect(result.data).toEqual(mockCreatedAgent);
       }
+    });
+
+    it("journalise la création : auteur, agent créé et rôle donné, sans email ni nom", async () => {
+      const superAdmin = connecter(UserRole.SUPER_ADMINISTRATEUR);
+      const cree = createMockAgentWithPermissions();
+      vi.mocked(agentsAdminService.createAgent).mockResolvedValue(cree);
+
+      await createAgentAction(validAgentData);
+
+      expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+        evenement: "agent_cree",
+        acteur: { type: "agent", id: superAdmin.id, role: UserRole.SUPER_ADMINISTRATEUR },
+        cible: { type: "agent", id: cree.agent.id },
+        details: { compte: "plateforme", role: UserRole.ADMINISTRATEUR },
+      });
+    });
+
+    it("ne journalise rien quand la création est refusée ou invalide", async () => {
+      connecter(UserRole.ADMINISTRATEUR);
+      await createAgentAction(validAgentData);
+      connecter(UserRole.SUPER_ADMINISTRATEUR);
+      await createAgentAction({ ...validAgentData, email: "pas-un-email" });
+
+      expect(journaliser).not.toHaveBeenCalled();
     });
 
     it("devrait refuser la création pour ADMINISTRATEUR", async () => {
@@ -478,6 +505,12 @@ describe("agents.actions", () => {
         superAdmin.id,
         "A quitté ses fonctions"
       );
+      // La raison est un texte libre : elle reste en base, elle n'entre pas au journal.
+      expect(journaliser).toHaveBeenCalledExactlyOnceWith({
+        evenement: "agent_desactive",
+        acteur: { type: "agent", id: superAdmin.id, role: UserRole.SUPER_ADMINISTRATEUR },
+        cible: { type: "agent", id: "agent-123" },
+      });
     });
 
     it("devrait refuser la désactivation pour ADMINISTRATEUR", async () => {

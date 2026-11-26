@@ -1,6 +1,7 @@
 import { AUTH_METHODS, clearSessionCookies, lireSessionSignee } from "@/features/auth";
 import { generateLogoutUrl } from "@/features/auth/adapters/proconnect/proconnect.service";
 import { NextResponse } from "next/server";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 export async function POST() {
   try {
@@ -10,6 +11,7 @@ export async function POST() {
     if (session?.authMethod === AUTH_METHODS.PROCONNECT && session?.idToken) {
       const logoutUrl = generateLogoutUrl(session.idToken);
       await clearSessionCookies();
+      await journaliser({ evenement: "deconnexion_agent", acteur: { type: "agent", id: session.userId } });
 
       return NextResponse.json({
         success: true,

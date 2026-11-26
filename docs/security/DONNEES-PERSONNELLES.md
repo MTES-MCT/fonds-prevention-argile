@@ -263,6 +263,29 @@ Table anonyme par construction : aucun lien vers un compte, seul le département
 | ------------ | ------------- | ------------------------------------------------------------ |
 | `id`, `alea` | Non personnel | Conservées : référentiel public, la géométrie (`geom`) aussi |
 
+## Hors de la base : le journal de sécurité
+
+Le journal de sécurité ([JOURNALISATION.md](JOURNALISATION.md), ADR-0055) n'est pas en base : il sort sur
+la sortie standard et l'hébergeur le garde un an. Un dump n'en contient donc rien, et `anonymiser.sql`
+n'a rien à y traiter.
+
+Chaque ligne est une donnée personnelle dès qu'elle porte un identifiant : elle rattache à une personne
+la date et la nature de ce qu'elle a fait.
+
+| Donnée                                                    | Personnes concernées |
+| --------------------------------------------------------- | -------------------- |
+| Identifiant technique (`acteur.id`) et rôle               | Agents               |
+| Identifiant technique (`acteur.id`)                       | Demandeurs           |
+| Adresse IP                                                | Agents, demandeurs   |
+| Date, évènement et résultat (connexion, écriture, refus)  | Agents, demandeurs   |
+| Cible : identifiant d'agent, de structure, d'expert       | Agents               |
+| Cible : identifiant de parcours, numéro de dossier DN     | Demandeurs           |
+| Niveau d'authentification (`acr`), compte tout juste créé | Agents, demandeurs   |
+
+Ni nom, ni email, ni téléphone, ni texte saisi. Sans la base, une ligne distingue une personne sans la
+nommer ; avec la base, l'identifiant mène à son nom. Lecteurs : les collaborateurs de l'application chez
+l'hébergeur, et tout collecteur de journaux qu'on y brancherait.
+
 ## Hors du schéma Drizzle
 
 Présentes dans un dump, sans donnée personnelle : `rga_zones_import` (table de travail de l'import

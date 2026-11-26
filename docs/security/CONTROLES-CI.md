@@ -67,6 +67,7 @@ Ils tournent avec `pnpm test`, donc à chaque push. Chacun échoue en nommant le
 | `shared/database/inventaire-donnees-personnelles.test.ts` | Une colonne absente de l'inventaire ou non traitée à la restauration d'un dump                                                           |
 | `vulnerabilite-rga/garde-hors-production.test.ts`         | Une surface du simulateur de vulnérabilité ouverte en production                                                                         |
 | `shared/config/en-tetes-http.test.ts`                     | Une route servie sans le socle d'en-têtes, ou une page encadrable par un site tiers sans être déclarée                                   |
+| `backoffice/administration/journal-actions.test.ts`       | Une action d'administration qui écrit sans journaliser un évènement connu, ou une lecture déclarée qui n'existe plus (ADR-0055)          |
 
 Détail et limites : [RBAC-TEST-PLAN.md § 5](RBAC-TEST-PLAN.md).
 
@@ -87,6 +88,11 @@ test et le script de contrôle d'un site déployé.
 Les pages du groupe `(embed)` ne reçoivent aucun des deux en-têtes d'encadrement : elles sont faites
 pour l'iframe d'un partenaire. Une page ajoutée à ce groupe se déclare dans `PAGES_EMBARQUEES`, sinon
 le test échoue ; toute autre page, même nommée `/embed…`, reste protégée.
+
+### Journal de sécurité
+
+Connexions, refus et écritures de l'administration sortent en lignes JSON sur la sortie standard, gardées
+un an par l'hébergeur. Registre des évènements et lecture : [JOURNALISATION.md](JOURNALISATION.md).
 
 ---
 
@@ -136,3 +142,8 @@ du § 1 informent, ils ne bloquent pas. Suivi dans [SUJETS-A-TRAITER.md](../SUJE
 - Le comportement de l'application déployée : aucun scan dynamique.
 - La logique métier et le cloisonnement entre rôles au-delà des tests du § 2 : c'est l'objet d'un
   audit manuel.
+- Que le journal de sécurité est bien conservé et consultable chez l'hébergeur : le test du § 2 vérifie
+  que l'évènement est écrit, pas ce qu'il devient.
+- Qu'une action d'administration journalise sur **tous** ses chemins d'écriture : le test du § 2 lit la
+  présence de l'appel dans le corps de l'action, pas la branche où il se trouve. Une lecture déclarée
+  qui se mettrait à écrire par son service passe aussi. Les tests de chaque action couvrent le reste.

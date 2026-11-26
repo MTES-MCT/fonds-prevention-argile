@@ -9,6 +9,7 @@ import { UserRole } from "@/shared/domain/value-objects";
 import type { ActionResult } from "@/shared/types";
 import type { BilanImportStructures } from "../domain/import-structures";
 import { importerStructures } from "../services/import-structures.service";
+import { journaliser } from "@/shared/services/journal-securite/journal-securite";
 
 const TAILLE_MAX_IMPORT = 2 * 1024 * 1024;
 
@@ -52,9 +53,17 @@ export async function importerStructuresAction(formData: FormData): Promise<Acti
       remplacer: options.data.remplacer === "oui",
     });
     if ("erreur" in bilan) return { success: false, error: bilan.erreur };
-    console.info(
-      `[structures] Import ${options.data.role} par l'agent ${acces.user.agentId ?? "inconnu"} : ${bilan.structuresCreees} créées, ${bilan.structuresMisesAJour} existantes, ${bilan.lignesRefusees.length} lignes refusées`
-    );
+    await journaliser({
+      evenement: "structures_importees",
+      acteur: { type: "agent", id: acces.user.id, role },
+      details: {
+        habilitation: options.data.role,
+        remplacer: options.data.remplacer === "oui",
+        creees: bilan.structuresCreees,
+        existantes: bilan.structuresMisesAJour,
+        lignesRefusees: bilan.lignesRefusees.length,
+      },
+    });
     revalidatePath("/rga", "layout");
     return { success: true, data: bilan };
   } catch (error) {

@@ -357,6 +357,49 @@ un `route.ts`. Le plafond est tenu en mémoire d'un conteneur : il n'arrête pas
 **Préalable** : l'arbitrage du RSSI sur un pare-feu applicatif devant l'application ; et, si l'on passe à
 plusieurs conteneurs web, un compteur partagé (option B de l'ADR).
 
+### Passer `next` en 15.5.29
+
+`pnpm audit` du 23 novembre 2026 relève trois avis Moderate sur `next` <=15.5.28, tous corrigés en 15.5.29
+(détail dans [snyk-accepted-vulnerabilities.md](security/snyk-accepted-vulnerabilities.md)). Aucun ne
+bloque la CI, qui ne refuse que les High.
+
+**Préalable** : aucun, un bump de correctif dans une PR de dépendances, avec `pnpm build` et l'ouverture de
+la carte du simulateur.
+
+### Journal de sécurité : indexation, conservation et angles morts
+
+Le journal de sécurité sort en lignes JSON sur la sortie standard depuis novembre 2026
+([ADR-0055](adr/0055-journal-de-securite-sur-la-sortie-standard.md)). Six points restent ouverts :
+
+- **Indexation** : sans collecteur, on cherche par `grep` dans des archives. Le socle demande des journaux
+  « centralisés et indexés ».
+- **Conservation** : un an d'après la documentation de Scalingo, soit le minimum demandé, sans marge et
+  sans engagement écrit pour la région de production.
+- **Requêtes HTTP** : les journaux du routeur Scalingo sont désactivés par défaut.
+- **Angles morts** : ni les lectures (liste nominative des demandeurs comprise), ni les refus d'accès aux
+  pages et aux actions de l'administration ne sont journalisés.
+- **Information des personnes** : la politique de confidentialité (`politique-confidentialite/content`)
+  ne cite ni adresse IP, ni donnée de connexion, ni journal de sécurité, et sa durée « un an après la
+  dernière connexion » ne décrit pas un journal gardé un an par évènement. Le traitement n'est pas au
+  registre. Texte à faire valider par le délégué à la protection des données avant publication.
+- **Diagnostics antérieurs au journal** : `handleProConnectError` et `handleFranceConnectError` écrivent
+  `error_description` dans les logs, un texte que l'appelant choisit. Et le numéro d'un dossier DN de
+  production sert d'exemple dans une dizaine de tests et deux documents.
+
+**Préalable** : l'arbitrage du RSSI sur le collecteur (`scalingo log-drains-add`, vers quel service) et sur
+l'activation des journaux du routeur ; la confirmation de la durée par Scalingo ; pour les refus, une garde
+commune aux actions d'administration, chaque fichier ayant aujourd'hui la sienne.
+
+### Création et modification d'agent : une écriture en deux temps
+
+`createAgent` et `updateAgent` écrivent l'agent, puis ses départements, dans deux transactions. Si la
+seconde échoue, l'agent est créé ou son rôle changé, l'action répond par une erreur et rien n'entre au
+journal de sécurité. Le seul déclencheur connu (un département nommé `toString`) est fermé depuis
+novembre 2026 ; une panne de base entre les deux écritures laisse le même état.
+
+**Préalable** : faire accepter une transaction à `agentsRepository.create` et `update`, qui ouvrent
+chacun la leur, et à `agentPermissionsRepository`.
+
 ### Réduire ce que dit la sonde `/api/health`
 
 La route est publique et renvoie la version de l'application et le nom de l'environnement. Rien de
