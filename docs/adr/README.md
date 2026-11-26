@@ -83,6 +83,7 @@ purement cosmétique.
 | 0052 | [Annuaire des experts RGA, habilitation de structure et ordre neutre](0052-annuaire-des-experts-ordre-neutre.md) | Accepté |
 | 0053 | [Identité et type portés par la structure, une fiche par structure](0053-identite-portee-par-la-structure.md) | Accepté |
 | 0054 | [Limitation de débit des routes publiques, en mémoire et par conteneur](0054-limitation-de-debit-en-memoire.md) | Accepté |
+| 0055 | [Avis de satisfaction, formulaire interne et lien commun](0055-avis-de-satisfaction-par-lien-commun.md) | Accepté |
 | 0056 | [Deux sources comparées pour l'historique des catastrophes naturelles, la plus à jour retenue](0056-sources-decisions-catastrophe-naturelle.md) | Accepté |
 
 <!-- Ajouter chaque nouvel ADR ici -->

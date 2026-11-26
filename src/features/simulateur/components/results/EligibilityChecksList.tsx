@@ -41,20 +41,12 @@ const CHECK_ORDER: (keyof EligibilityChecks)[] = [
 interface EligibilityChecksListProps {
   checks: EligibilityChecks;
   isEligible?: boolean;
-  /** Si true, l'accordéon est fermé par défaut */
-  defaultCollapsed?: boolean;
 }
 
 /**
- * Affiche la liste des critères d'éligibilité avec OUI/NON/—
+ * Affiche la liste des critères d'éligibilité avec OUI/NON/—, dans un accordéon replié à l'arrivée.
  */
-export function EligibilityChecksList({
-  checks,
-  isEligible = true,
-  defaultCollapsed = false,
-}: EligibilityChecksListProps) {
-  const isExpanded = !defaultCollapsed;
-
+export function EligibilityChecksList({ checks, isEligible = true }: EligibilityChecksListProps) {
   return (
     <div className="fr-accordions-group">
       <section className="fr-accordion">
@@ -62,14 +54,12 @@ export function EligibilityChecksList({
           <button
             type="button"
             className="fr-accordion__btn"
-            aria-expanded={isExpanded ? "true" : "false"}
+            aria-expanded="false"
             aria-controls="accordion-eligibility-checks">
             Détails de {isEligible ? "l\u2019\u00e9ligibilit\u00e9" : "la non-\u00e9ligibilit\u00e9"}
           </button>
         </h3>
-        <div
-          className={`fr-collapse${isExpanded ? " fr-collapse--expanded" : ""} px-4`}
-          id="accordion-eligibility-checks">
+        <div className="fr-collapse px-4" id="accordion-eligibility-checks">
           <div className="fr-accordion__content ">
             <ol className="fr-pl-3w">
               {CHECK_ORDER.map((key) => {

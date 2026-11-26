@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { EligibilityChecks } from "../../domain/entities/eligibility-result.entity";
 import { EligibilityChecksList } from "./EligibilityChecksList";
 import { LienAideResultat } from "./LienAideResultat";
@@ -9,12 +10,14 @@ interface ResultEligibleProps {
   onContinue: () => void;
   onRestart: () => void;
   onBack: () => void;
+  /** Questionnaire de satisfaction, affiché entre le résultat et le détail des critères. */
+  avis?: ReactNode;
 }
 
 /**
  * Page de résultat : éligible
  */
-export function ResultEligible({ checks, onContinue, onRestart, onBack }: ResultEligibleProps) {
+export function ResultEligible({ checks, onContinue, onRestart, onBack, avis }: ResultEligibleProps) {
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
       <div className="fr-container fr-mb-8w">
@@ -35,6 +38,8 @@ export function ResultEligible({ checks, onContinue, onRestart, onBack }: Result
                   Faire la demande d'aides
                 </button>
               </div>
+
+              {avis}
 
               <EligibilityChecksList checks={checks} />
 

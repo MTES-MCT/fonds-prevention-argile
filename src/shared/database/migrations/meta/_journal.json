@@ -470,6 +470,13 @@
       "when": 1795451324909,
       "tag": "0066_catnat_decisions",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795701732832,
+      "tag": "0067_avis",
+      "breakpoints": true
     }
   ]
 }

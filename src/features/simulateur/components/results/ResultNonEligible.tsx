@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/client";
 import { ROUTES } from "@/features/auth/domain/value-objects/configs/routes.config";
@@ -17,12 +18,14 @@ interface ResultNonEligibleProps {
   checks: EligibilityChecks;
   onRestart: () => void;
   onBack: () => void;
+  /** Questionnaire de satisfaction, affiché entre le résultat et le détail des critères. */
+  avis?: ReactNode;
 }
 
 /**
  * Page de résultat : non éligible
  */
-export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligibleProps) {
+export function ResultNonEligible({ checks, onRestart, onBack, avis }: ResultNonEligibleProps) {
   const { isAuthenticated } = useAuth();
   const { trackEvent } = useMatomo();
   const { urlVulnerabilite = VULNERABILITE_RGA_URL } = useSimulateurContext();
@@ -68,7 +71,9 @@ export function ResultNonEligible({ checks, onRestart, onBack }: ResultNonEligib
                 )}
               </div>
 
-              <EligibilityChecksList checks={checks} isEligible={false} defaultCollapsed={proposeVulnerabilite} />
+              {avis}
+
+              <EligibilityChecksList checks={checks} isEligible={false} />
 
               <div className="fr-mt-4w flex flex-col-reverse md:flex-row md:justify-end gap-2">
                 <button

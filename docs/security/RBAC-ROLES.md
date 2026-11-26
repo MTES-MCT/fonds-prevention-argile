@@ -243,6 +243,9 @@ page / Server Actions.
   la rangée 1 reste celui de `ADMIN_NAV_TABS.minRoles` : les AMO/AV n'y voient que les
   quatre onglets stats (Tableau de bord, Acquisition, Demandeurs, Activité, ouvert comme
   Acquisition depuis #315), les onglets sensibles restant masqués.
+- **Satisfaction** (`/administration/satisfaction`, ADR-0055) est ouverte à tout agent (`checkAgentAccess`) pour ses
+  agrégats : réponses et notes par sujet. Les **commentaires** des demandeurs, texte libre, ne sont chargés et
+  rendus que pour l'`ADMINISTRATEUR` et le `SUPER_ADMINISTRATEUR` ; la page est rendue côté serveur, sans action.
 - Un onglet peut en outre être masqué par **disponibilité de la feature**
   (`ADMIN_NAV_TABS.estDisponible`), indépendamment du rôle. Seul cas aujourd'hui :
   **Vulnérabilité** (`/administration/vulnerabilite`, agrégats anonymes, ouvert à tous les

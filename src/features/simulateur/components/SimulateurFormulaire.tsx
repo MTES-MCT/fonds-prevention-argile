@@ -26,6 +26,7 @@ import {
 
 // Results
 import { ResultEdition, ResultEligible, ResultNonEligible } from "./results";
+import { AvisEnDirect } from "@/features/avis/components/AvisEnDirect";
 import { MATOMO_EVENTS } from "@/shared/constants";
 import { SIMULATEUR_STEP_EVENTS } from "../domain";
 import { useSimulateurStore, selectEditMode } from "../stores/simulateur.store";
@@ -293,12 +294,26 @@ export function SimulateurFormulaire({ partner: partnerProp = null }: Simulateur
         return <ResultEdition checks={checks} isEligible={isEligible} onBack={goBack} onRestart={reset} />;
       }
 
-      if (isEligible && checks) {
-        return <ResultEligible checks={checks} onContinue={handleContinueToFC} onRestart={reset} onBack={goBack} />;
-      }
-
-      if (!isEligible && checks) {
-        return <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} />;
+      if (checks) {
+        // `onSave` marque un écran d'édition : l'avis ne concerne que la simulation publique.
+        const avis = onSave ? null : (
+          <AvisEnDirect
+            sujet="simulateur"
+            simulationEligible={isEligible}
+            codeDepartement={answers.logement?.code_departement}
+          />
+        );
+        return isEligible ? (
+          <ResultEligible
+            checks={checks}
+            onContinue={handleContinueToFC}
+            onRestart={reset}
+            onBack={goBack}
+            avis={avis}
+          />
+        ) : (
+          <ResultNonEligible checks={checks} onRestart={reset} onBack={goBack} avis={avis} />
+        );
       }
 
       console.error("[SimulateurFormulaire] État incohérent à l'étape RESULTAT", {

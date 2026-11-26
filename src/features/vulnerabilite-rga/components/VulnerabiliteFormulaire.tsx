@@ -27,6 +27,7 @@ import {
   StepEnsoleillement,
 } from "./steps";
 import { ResultVulnerabilite, ContenuResultatVulnerabilite } from "./results";
+import { AvisEnDirect } from "@/features/avis/components/AvisEnDirect";
 import { VulnerabiliteProvider, type ContexteAgentVulnerabilite } from "./shared/VulnerabiliteContext";
 import { remplitCriteresEligibiliteFonds } from "../domain/services/eligibilite-fonds.service";
 import { Alert } from "@/shared/components";
@@ -244,7 +245,14 @@ function FormulaireInterne({ agent }: { agent?: ContexteAgentVulnerabilite }) {
           />
         );
       }
-      return <ResultVulnerabilite answers={answers} result={result} onRestart={reset} />;
+      return (
+        <ResultVulnerabilite
+          answers={answers}
+          result={result}
+          onRestart={reset}
+          avis={<AvisEnDirect sujet="vulnerabilite" codeDepartement={answers.adresse?.codeDepartement} />}
+        />
+      );
 
     default:
       return (

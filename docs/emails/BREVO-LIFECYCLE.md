@@ -231,6 +231,21 @@ email) tout en livrant tout dans la boîte de test.
       **`accompagnement_arrete`**. Même sans Automation, l'évènement remet le contact à jour.
 - [ ] **Vérifier l'Automation branchée sur `amo_defini`** : l'évènement part désormais aussi
       quand un super-admin rattache une AMO à un dossier détaché à tort.
+- [ ] **Demander un avis après chaque étape** (ADR-0055) : six Automations, sans code. Le gabarit porte cinq
+      liens, un par note : `<domaine>/avis?etape=<étape>&note=<1 à 5>&p={{ contact.PARCOURS_ID }}`. Le domaine
+      diffère entre staging et production.
+
+      | `etape`       | Évènement déclencheur                                              |
+      | ------------- | ------------------------------------------------------------------ |
+      | `compte`      | `demandeur_cree`                                                   |
+      | `choix_amo`   | `amo_reponse` avec `decision = eligible`                           |
+      | `eligibilite` | `dn_update` avec `step = eligibilite`, `new_ds_status = en_construction` |
+      | `diagnostic`  | idem avec `step = diagnostic`, hors `EST_MANDATAIRE = true` (l'AMO dépose) |
+      | `devis`       | idem avec `step = devis`                                           |
+      | `factures`    | idem avec `step = factures`                                        |
+
+      Vérifier que le désabonnement ne coupe que ce type de mail, pas ceux du suivi du parcours.
+
 - [ ] **Prévenir le demandeur que son AMO a initié la demande de paiement** : brancher une
       Automation sur **`demande_paiement_initiee_par_amo`** (ADR-0044), personnalisable avec
       `amo_nom`. Le demandeur n'a aucune action à faire et ne peut pas ouvrir ce dossier DN.
