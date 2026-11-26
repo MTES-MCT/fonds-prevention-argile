@@ -1,4 +1,5 @@
 import { avisRepo } from "@/shared/database/repositories";
+import { isAdminRole } from "@/shared/domain/value-objects";
 import { LIBELLES_SUJET, SUJETS_AVIS, estSujetAvis } from "@/features/avis/domain/value-objects/avis";
 import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { calculerStatsSatisfaction, type CommentaireAvis, type StatSujet } from "../domain/satisfaction";
@@ -11,10 +12,11 @@ export interface Satisfaction {
   commentaires: CommentaireAvis[] | null;
 }
 
-export async function getSatisfaction({ avecCommentaires }: { avecCommentaires: boolean }): Promise<Satisfaction> {
+// Un commentaire est un texte libre qui peut nommer une personne : réservé aux administrateurs.
+export async function getSatisfaction({ role }: { role: string }): Promise<Satisfaction> {
   const sujets = SUJETS_AVIS.filter((sujet) => sujet !== "vulnerabilite" || isVulnerabiliteRgaActive());
   const stats = calculerStatsSatisfaction(await avisRepo.findNotes(), sujets);
-  if (!avecCommentaires) return { stats, commentaires: null };
+  if (!isAdminRole(role)) return { stats, commentaires: null };
 
   const lignes = await avisRepo.findCommentaires(LIMITE_COMMENTAIRES);
   const commentaires = lignes.flatMap((ligne) =>

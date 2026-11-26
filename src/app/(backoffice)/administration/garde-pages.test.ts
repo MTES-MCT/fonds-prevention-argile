@@ -19,6 +19,7 @@ const NIVEAUX: Record<string, Niveau> = {
   "acquisition/page.tsx": "agent",
   "activite/page.tsx": "agent",
   "demandeurs/page.tsx": "agent",
+  "satisfaction/page.tsx": "agent",
   "vulnerabilite/page.tsx": "agent",
   "commentaires/page.tsx": "admin",
   "structures/page.tsx": "admin",

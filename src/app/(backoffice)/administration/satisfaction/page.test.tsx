@@ -55,7 +55,7 @@ describe("SatisfactionPage", () => {
 
       render(await SatisfactionPage());
 
-      expect(service).toHaveBeenCalledWith({ avecCommentaires: false });
+      expect(service).toHaveBeenCalledWith({ role });
       expect(screen.queryByRole("heading", { name: "Commentaires" })).not.toBeInTheDocument();
     }
   );
@@ -73,7 +73,7 @@ describe("SatisfactionPage", () => {
 
       render(await SatisfactionPage());
 
-      expect(service).toHaveBeenCalledWith({ avecCommentaires: true });
+      expect(service).toHaveBeenCalledWith({ role });
       expect(screen.getByText("Trop long")).toBeInTheDocument();
       expect(screen.getByRole("cell", { name: "Très difficile" })).toBeInTheDocument();
     }

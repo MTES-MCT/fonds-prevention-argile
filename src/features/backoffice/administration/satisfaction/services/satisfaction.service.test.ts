@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { avisRepo } from "@/shared/database/repositories";
+import { UserRole } from "@/shared/domain/value-objects";
 import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
 import { getSatisfaction } from "./satisfaction.service";
 
@@ -23,26 +24,32 @@ describe("getSatisfaction", () => {
     ]);
   });
 
-  it("ne charge pas les commentaires pour qui n'a pas le droit de les lire", async () => {
-    const resultat = await getSatisfaction({ avecCommentaires: false });
+  it.each([UserRole.AMO, UserRole.ALLERS_VERS, UserRole.AMO_ET_ALLERS_VERS, UserRole.ANALYSTE])(
+    "ne charge pas les commentaires pour le rôle %s",
+    async (role) => {
+      const resultat = await getSatisfaction({ role });
 
-    expect(resultat.commentaires).toBeNull();
-    expect(findCommentaires).not.toHaveBeenCalled();
-    expect(resultat.stats.find((s) => s.sujet === "diagnostic")?.reponses).toBe(1);
-  });
+      expect(resultat.commentaires).toBeNull();
+      expect(findCommentaires).not.toHaveBeenCalled();
+      expect(resultat.stats.find((s) => s.sujet === "diagnostic")?.reponses).toBe(1);
+    }
+  );
 
-  it("renvoie les commentaires avec le libellé du sujet", async () => {
-    const resultat = await getSatisfaction({ avecCommentaires: true });
+  it.each([UserRole.ADMINISTRATEUR, UserRole.SUPER_ADMINISTRATEUR])(
+    "renvoie au rôle %s les commentaires avec le libellé du sujet",
+    async (role) => {
+      const resultat = await getSatisfaction({ role });
 
-    expect(resultat.commentaires).toEqual([
-      { id: "a1", libelle: "Diagnostic", note: 1, commentaire: "Trop long", date: "2026-11-10T09:00:00.000Z" },
-    ]);
-  });
+      expect(resultat.commentaires).toEqual([
+        { id: "a1", libelle: "Diagnostic", note: 1, commentaire: "Trop long", date: "2026-11-10T09:00:00.000Z" },
+      ]);
+    }
+  );
 
   it("masque le simulateur de vulnérabilité là où il n'est pas servi", async () => {
     vi.mocked(isVulnerabiliteRgaActive).mockReturnValue(false);
 
-    const { stats } = await getSatisfaction({ avecCommentaires: false });
+    const { stats } = await getSatisfaction({ role: UserRole.ANALYSTE });
 
     expect(stats.map((s) => s.sujet)).not.toContain("vulnerabilite");
     expect(stats).toHaveLength(7);

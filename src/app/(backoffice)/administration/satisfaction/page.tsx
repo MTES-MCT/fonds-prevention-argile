@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { checkAgentAccess, ROUTES } from "@/features/auth";
 import { AccesNonAutoriseAdmin } from "@/shared/components";
-import { isAdminRole } from "@/shared/domain/value-objects";
 import { LIBELLES_NOTE, NOTES_AVIS, estNoteAvis } from "@/features/avis/domain/value-objects/avis";
 import { getSatisfaction } from "@/features/backoffice/administration/satisfaction/services/satisfaction.service";
 import { AdminBreadcrumb } from "../shared/components/AdminBreadcrumb";
@@ -22,8 +21,7 @@ export default async function SatisfactionPage() {
     return <AccesNonAutoriseAdmin />;
   }
 
-  // Un commentaire est un texte libre qui peut nommer une personne : réservé aux administrateurs.
-  const { stats, commentaires } = await getSatisfaction({ avecCommentaires: isAdminRole(access.user.role) });
+  const { stats, commentaires } = await getSatisfaction({ role: access.user.role });
 
   return (
     <>
