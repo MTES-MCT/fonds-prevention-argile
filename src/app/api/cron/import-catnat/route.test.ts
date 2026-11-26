@@ -4,7 +4,9 @@ import { NextRequest } from "next/server";
 const SECRET = "secret-cron-de-plus-de-trente-deux-caracteres";
 
 vi.mock("@/shared/config/env.config", () => ({ getServerEnv: () => ({ CRON_SECRET: SECRET }) }));
-vi.mock("@/features/seo/catnat/services/catnat.service", () => ({ catnatService: { importerCocon: vi.fn() } }));
+vi.mock("@/features/seo/catnat/services/catnat.service", () => ({
+  catnatService: { importerCocon: vi.fn(), comparerSources: vi.fn() },
+}));
 vi.mock("@/features/seo/catnat/services/decisions-catnat.service", () => ({
   decisionsCatnatService: { importerCocon: vi.fn() },
 }));
@@ -40,6 +42,17 @@ const bilan = {
 
 const bilanDecisions = { lues: 4451, retenues: 704, nonReconnues: 497, ecartees: 0, ajoutees: 3, retirees: 0 };
 
+const comparaison = {
+  identiques: 95,
+  ecartUnJour: 111,
+  georisquesSeul: 1,
+  datagouvSeul: 1,
+  dernierJoGeorisques: "2026-11-21",
+  dernierJoDatagouv: "2026-11-21",
+  sourceEnRetard: null,
+  retardJours: 0,
+};
+
 async function derouterTacheArmee() {
   const tache = vi.mocked(after).mock.calls[0][0] as () => Promise<void>;
   await tache();
@@ -50,6 +63,7 @@ describe("POST /api/cron/import-catnat", () => {
     vi.clearAllMocks();
     vi.mocked(catnatService.importerCocon).mockResolvedValue(bilan);
     vi.mocked(decisionsCatnatService.importerCocon).mockResolvedValue(bilanDecisions);
+    vi.mocked(catnatService.comparerSources).mockResolvedValue(comparaison);
   });
 
   it.each([undefined, "Bearer mauvais-secret", `Basic ${SECRET}`, SECRET, "Bearer "])(
@@ -84,6 +98,43 @@ describe("POST /api/cron/import-catnat", () => {
       "[CRON import-catnat] decisions lues=4451 retenues=704 ajoutees=3 retirees=0 ecartees=0"
     );
     expect(erreur).not.toHaveBeenCalled();
+  });
+
+  it("après les deux imports, trace où en est chaque source", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await POST(requete(`Bearer ${SECRET}`));
+    await derouterTacheArmee();
+
+    expect(log).toHaveBeenLastCalledWith(
+      "[CRON import-catnat] comparaison identiques=95 ecart_un_jour=111 georisques_seul=1 datagouv_seul=1 dernier_jo_georisques=2026-11-21 dernier_jo_datagouv=2026-11-21"
+    );
+  });
+
+  it("une source à plus de 15 jours derrière l'autre → comparaison en erreur", async () => {
+    vi.mocked(catnatService.comparerSources).mockResolvedValue({
+      ...comparaison,
+      dernierJoGeorisques: "2026-10-23",
+      sourceEnRetard: "georisques",
+      retardJours: 29,
+    });
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const erreur = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await POST(requete(`Bearer ${SECRET}`));
+    await derouterTacheArmee();
+
+    expect(erreur).toHaveBeenCalledWith(expect.stringContaining("en_retard=georisques retard_jours=29"));
+  });
+
+  it("jeu data.gouv encore vide → aucune ligne de comparaison", async () => {
+    vi.mocked(catnatService.comparerSources).mockResolvedValue(null);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await POST(requete(`Bearer ${SECRET}`));
+    await derouterTacheArmee();
+
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining("comparaison"));
   });
 
   it("Géorisques en panne → les décisions data.gouv sont importées quand même", async () => {

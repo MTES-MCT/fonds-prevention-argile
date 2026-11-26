@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { db } from "../client";
 import { catnatDecisions, type CatnatDecision, type NewCatnatDecision } from "../schema/catnat-decisions";
 
@@ -20,6 +20,36 @@ export interface BilanRemplacement {
 export class CatnatDecisionsRepository {
   async findByCodeInsee(codeInsee: string): Promise<CatnatDecision[]> {
     return db.select().from(catnatDecisions).where(eq(catnatDecisions.codeInsee, codeInsee));
+  }
+
+  async findAll(): Promise<CatnatDecision[]> {
+    return db.select().from(catnatDecisions);
+  }
+
+  /**
+   * Dates des arrêtés qui reconnaissent au moins une commune du département
+   */
+  async findDatesArretesReconnusByDepartement(codeDepartement: string): Promise<string[]> {
+    const lignes = await db
+      .selectDistinct({ dateArrete: catnatDecisions.dateArrete })
+      .from(catnatDecisions)
+      .where(and(eq(catnatDecisions.decision, "reconnue"), like(catnatDecisions.codeInsee, `${codeDepartement}%`)));
+
+    return lignes.map((ligne) => ligne.dateArrete);
+  }
+
+  /**
+   * Dates des arrêtés qui reconnaissent au moins une des communes données (un EPCI)
+   */
+  async findDatesArretesReconnusByCodesInsee(codesInsee: string[]): Promise<string[]> {
+    if (codesInsee.length === 0) return [];
+
+    const lignes = await db
+      .selectDistinct({ dateArrete: catnatDecisions.dateArrete })
+      .from(catnatDecisions)
+      .where(and(eq(catnatDecisions.decision, "reconnue"), inArray(catnatDecisions.codeInsee, codesInsee)));
+
+    return lignes.map((ligne) => ligne.dateArrete);
   }
 
   /**

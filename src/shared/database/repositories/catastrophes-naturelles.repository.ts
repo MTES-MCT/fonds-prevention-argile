@@ -1,4 +1,4 @@
-import { eq, and, gte, desc, sql, inArray, SQL } from "drizzle-orm";
+import { eq, and, gte, desc, like, sql, inArray, SQL } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { catastrophesNaturelles } from "../schema/catastrophes-naturelles";
@@ -282,18 +282,18 @@ export class CatastrophesNaturellesRepository {
   }
 
   /**
-   * Compte le total de catastrophes naturelles uniques pour un département
-   * (dédupliquées par codeNationalCatnat)
+   * Arrêtés distincts touchant un département, avec leur date : de quoi compter ses épisodes
    */
-  async getTotalByDepartement(codeDepartement: string): Promise<number> {
-    const result = await db
-      .select({
-        count: sql<number>`cast(count(DISTINCT ${catastrophesNaturelles.codeNationalCatnat}) as integer)`,
+  async findArretesByDepartement(
+    codeDepartement: string
+  ): Promise<Pick<CatastropheNaturelle, "codeNationalCatnat" | "datePublicationArrete">[]> {
+    return db
+      .selectDistinct({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        datePublicationArrete: catastrophesNaturelles.datePublicationArrete,
       })
       .from(catastrophesNaturelles)
-      .where(sql`${catastrophesNaturelles.codeInsee} LIKE ${codeDepartement + "%"}`);
-
-    return result[0]?.count ?? 0;
+      .where(like(catastrophesNaturelles.codeInsee, `${codeDepartement}%`));
   }
 
   /**
@@ -327,20 +327,30 @@ export class CatastrophesNaturellesRepository {
   }
 
   /**
-   * Compte le total de catastrophes naturelles uniques pour un EPCI
-   * (dédupliquées par codeNationalCatnat)
+   * Arrêtés distincts touchant un ensemble de communes (un EPCI), avec leur date
    */
-  async getTotalByEpci(codesInseeEpci: string[]): Promise<number> {
-    if (codesInseeEpci.length === 0) return 0;
+  async findArretesByCodesInsee(
+    codesInsee: string[]
+  ): Promise<Pick<CatastropheNaturelle, "codeNationalCatnat" | "datePublicationArrete">[]> {
+    if (codesInsee.length === 0) return [];
 
-    const result = await db
-      .select({
-        count: sql<number>`cast(count(DISTINCT ${catastrophesNaturelles.codeNationalCatnat}) as integer)`,
+    return db
+      .selectDistinct({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        datePublicationArrete: catastrophesNaturelles.datePublicationArrete,
       })
       .from(catastrophesNaturelles)
-      .where(inArray(catastrophesNaturelles.codeInsee, codesInseeEpci));
+      .where(inArray(catastrophesNaturelles.codeInsee, codesInsee));
+  }
 
-    return result[0]?.count ?? 0;
+  /**
+   * Reconnaissances publiées au Journal officiel depuis une date
+   */
+  async findPubliesDepuis(datePublicationJo: string): Promise<CatastropheNaturelle[]> {
+    return db
+      .select()
+      .from(catastrophesNaturelles)
+      .where(gte(catastrophesNaturelles.datePublicationJo, datePublicationJo));
   }
 
   /**

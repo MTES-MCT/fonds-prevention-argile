@@ -42,6 +42,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } catch (error) {
       console.error("[CRON import-catnat] Erreur des décisions (background):", error);
     }
+
+    // Le site retient la source la plus à jour : ce bilan dit laquelle, et alerte si l'autre décroche.
+    try {
+      const comparaison = await catnatService.comparerSources();
+      if (comparaison) {
+        const ligne = `[CRON import-catnat] comparaison identiques=${comparaison.identiques} ecart_un_jour=${comparaison.ecartUnJour} georisques_seul=${comparaison.georisquesSeul} datagouv_seul=${comparaison.datagouvSeul} dernier_jo_georisques=${comparaison.dernierJoGeorisques} dernier_jo_datagouv=${comparaison.dernierJoDatagouv}`;
+
+        if (comparaison.sourceEnRetard) {
+          console.error(`${ligne} en_retard=${comparaison.sourceEnRetard} retard_jours=${comparaison.retardJours}`);
+        } else console.log(ligne);
+      }
+    } catch (error) {
+      console.error("[CRON import-catnat] Erreur de la comparaison (background):", error);
+    }
   });
 
   return NextResponse.json(

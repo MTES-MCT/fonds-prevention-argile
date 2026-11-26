@@ -353,13 +353,63 @@ describe("catnatService", () => {
   });
 
   describe("getTotalForDepartement", () => {
-    it("should get total catastrophes for a department", async () => {
-      vi.mocked(catastrophesNaturellesRepository.getTotalByDepartement).mockResolvedValue(42);
+    it("compte les arrêtés de Géorisques et ceux que seul le jeu data.gouv connaît", async () => {
+      vi.mocked(catastrophesNaturellesRepository.findArretesByDepartement).mockResolvedValue([
+        { codeNationalCatnat: "INTE2612297A", datePublicationArrete: "2026-05-10" },
+      ]);
+      vi.mocked(catnatDecisionsRepository.findDatesArretesReconnusByDepartement).mockResolvedValue([
+        "2026-05-11",
+        "2026-11-13",
+      ]);
 
-      const result = await catnatService.getTotalForDepartement("63");
+      const result = await catnatService.getTotalForDepartement("36");
 
-      expect(result).toBe(42);
-      expect(catastrophesNaturellesRepository.getTotalByDepartement).toHaveBeenCalledWith("63");
+      expect(result).toBe(2);
+      expect(catastrophesNaturellesRepository.findArretesByDepartement).toHaveBeenCalledWith("36");
+      expect(catnatDecisionsRepository.findDatesArretesReconnusByDepartement).toHaveBeenCalledWith("36");
+    });
+  });
+
+  describe("getTotalForCommunes", () => {
+    it("compte de la même façon sur les communes d'un EPCI", async () => {
+      vi.mocked(catastrophesNaturellesRepository.findArretesByCodesInsee).mockResolvedValue([]);
+      vi.mocked(catnatDecisionsRepository.findDatesArretesReconnusByCodesInsee).mockResolvedValue(["2026-11-13"]);
+
+      expect(await catnatService.getTotalForCommunes(["36044", "36063"])).toBe(1);
+      expect(catastrophesNaturellesRepository.findArretesByCodesInsee).toHaveBeenCalledWith(["36044", "36063"]);
+    });
+  });
+
+  describe("comparerSources", () => {
+    const decisionReconnue = {
+      codeInsee: "63113",
+      libelleCommune: "Clermont-Ferrand",
+      dateArrete: "2024-07-15",
+      datePublicationJo: "2024-07-20",
+      dateDebutEvt: "2024-06-01",
+      dateFinEvt: "2024-06-30",
+      decision: "reconnue" as const,
+      motif: null,
+      source: "data.gouv",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it("ne lit de Géorisques que la période couverte par le jeu data.gouv", async () => {
+      vi.mocked(catnatDecisionsRepository.findAll).mockResolvedValue([decisionReconnue]);
+      vi.mocked(catastrophesNaturellesRepository.findPubliesDepuis).mockResolvedValue([mockDbCatnat]);
+
+      const comparaison = await catnatService.comparerSources();
+
+      expect(catastrophesNaturellesRepository.findPubliesDepuis).toHaveBeenCalledWith("2024-07-19");
+      expect(comparaison).toMatchObject({ identiques: 1, georisquesSeul: 0, datagouvSeul: 0 });
+    });
+
+    it("jeu data.gouv pas encore importé → rien à comparer, Géorisques n'est pas lu", async () => {
+      vi.mocked(catnatDecisionsRepository.findAll).mockResolvedValue([]);
+
+      expect(await catnatService.comparerSources()).toBeNull();
+      expect(catastrophesNaturellesRepository.findPubliesDepuis).not.toHaveBeenCalled();
     });
   });
 

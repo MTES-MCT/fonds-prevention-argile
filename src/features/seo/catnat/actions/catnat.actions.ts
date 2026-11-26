@@ -1,6 +1,5 @@
 "use server";
 
-import { catastrophesNaturellesRepository } from "@/shared/database";
 import { getEpciBySiren } from "../../services";
 import { catnatService } from "../services/catnat.service";
 import type { LigneHistoriqueCatnat } from "../domain";
@@ -51,7 +50,7 @@ export async function getTotalCatnatForEpciAction(codeSiren: string): Promise<nu
     if (!epci) return 0;
 
     // Récupérer le total des catastrophes naturelles pour ces communes
-    return await catastrophesNaturellesRepository.getTotalByEpci(epci.codesCommunes);
+    return await catnatService.getTotalForCommunes(epci.codesCommunes);
   } catch (error) {
     console.error(`Error fetching CATNAT total for EPCI ${codeSiren}:`, error);
     return 0;

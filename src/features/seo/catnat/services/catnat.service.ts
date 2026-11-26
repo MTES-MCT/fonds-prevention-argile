@@ -3,7 +3,16 @@ import { parseFrenchDateToSql } from "@/shared/utils";
 import { delay } from "@/shared/utils";
 import { fetchCatnatByCodeInsee, fetchCatnatByCodesInsee, type ApiGeorisquesCatnat } from "../adapters/georisques";
 import type { NewCatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
-import { API_GEORISQUES, CATNAT_RGA_TYPES, fusionnerHistorique, type LigneHistoriqueCatnat } from "../domain";
+import {
+  API_GEORISQUES,
+  CATNAT_RGA_TYPES,
+  comparerSources,
+  compterEpisodesReconnus,
+  debutComparaison,
+  fusionnerHistorique,
+  type ComparaisonSources,
+  type LigneHistoriqueCatnat,
+} from "../domain";
 import { getAllCommunes } from "../../services/territoires.service";
 
 /**
@@ -262,10 +271,38 @@ export const catnatService = {
   },
 
   /**
-   * Compte le total de catastrophes naturelles pour un département
+   * Compte les épisodes de sécheresse reconnus dans un département, toutes sources confondues
    */
   async getTotalForDepartement(codeDepartement: string): Promise<number> {
-    return catastrophesNaturellesRepository.getTotalByDepartement(codeDepartement);
+    const [arretes, datesArretes] = await Promise.all([
+      catastrophesNaturellesRepository.findArretesByDepartement(codeDepartement),
+      catnatDecisionsRepository.findDatesArretesReconnusByDepartement(codeDepartement),
+    ]);
+
+    return compterEpisodesReconnus(arretes, datesArretes);
+  },
+
+  /**
+   * Compte les épisodes de sécheresse reconnus dans les communes d'un EPCI, toutes sources confondues
+   */
+  async getTotalForCommunes(codesInsee: string[]): Promise<number> {
+    const [arretes, datesArretes] = await Promise.all([
+      catastrophesNaturellesRepository.findArretesByCodesInsee(codesInsee),
+      catnatDecisionsRepository.findDatesArretesReconnusByCodesInsee(codesInsee),
+    ]);
+
+    return compterEpisodesReconnus(arretes, datesArretes);
+  },
+
+  /**
+   * Compare les deux sources sur la période que le jeu data.gouv couvre ; rien à comparer tant qu'il est vide
+   */
+  async comparerSources(): Promise<ComparaisonSources | null> {
+    const decisions = await catnatDecisionsRepository.findAll();
+    const depuis = debutComparaison(decisions);
+    if (!depuis) return null;
+
+    return comparerSources(await catastrophesNaturellesRepository.findPubliesDepuis(depuis), decisions);
   },
 
   /**
