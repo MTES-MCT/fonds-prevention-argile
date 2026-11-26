@@ -1,5 +1,5 @@
 {
-  "id": "89fad2d0-dbda-4c12-ba04-606da28fc090",
+  "id": "160230c0-bcef-4bdf-ae53-74bc2e404613",
   "prevId": "357f0ebe-48ba-4b3d-832c-61f55c8f1dcb",
   "version": "7",
   "dialect": "postgresql",
@@ -541,148 +541,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.avis": {
-      "name": "avis",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "sujet": {
-          "name": "sujet",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "note": {
-          "name": "note",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "commentaire": {
-          "name": "commentaire",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "origine": {
-          "name": "origine",
-          "type": "varchar(16)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parcours_id": {
-          "name": "parcours_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "simulation_eligible": {
-          "name": "simulation_eligible",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "code_departement": {
-          "name": "code_departement",
-          "type": "varchar(3)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "avis_parcours_sujet_idx": {
-          "name": "avis_parcours_sujet_idx",
-          "columns": [
-            {
-              "expression": "parcours_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "sujet",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "avis_sujet_idx": {
-          "name": "avis_sujet_idx",
-          "columns": [
-            {
-              "expression": "sujet",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "avis_created_at_idx": {
-          "name": "avis_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "avis_parcours_id_parcours_prevention_id_fk": {
-          "name": "avis_parcours_id_parcours_prevention_id_fk",
-          "tableFrom": "avis",
-          "tableTo": "parcours_prevention",
-          "columnsFrom": [
-            "parcours_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.catastrophes_naturelles": {
       "name": "catastrophes_naturelles",
       "schema": "",
@@ -835,11 +693,12 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "catastrophes_naturelles_code_national_catnat_code_insee_pk": {
-          "name": "catastrophes_naturelles_code_national_catnat_code_insee_pk",
+        "catastrophes_naturelles_pk": {
+          "name": "catastrophes_naturelles_pk",
           "columns": [
             "code_national_catnat",
-            "code_insee"
+            "code_insee",
+            "date_debut_evt"
           ]
         }
       },

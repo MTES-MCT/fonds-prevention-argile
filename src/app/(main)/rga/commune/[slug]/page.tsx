@@ -151,7 +151,7 @@ export default async function CommunePage({ params }: PageProps) {
       <RgaMapSection title={commune.nom} centre={commune.centre} zoomLevel="commune" />
 
       {/* Historique des catastrophes naturelles */}
-      <CatnatTableCommune catnats={catnats} nomCommune={commune.nom} codeDepartement={departement.code} />
+      <CatnatTableCommune lignes={catnats} nomCommune={commune.nom} codeDepartement={departement.code} />
 
       {/* Dégâts visibles */}
       <SectionDegats />

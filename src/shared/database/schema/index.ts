@@ -30,6 +30,7 @@ export * from "./allers-vers-departements";
 export * from "./allers-vers-epci";
 export * from "./experts";
 export * from "./catastrophes-naturelles";
+export * from "./catnat-decisions";
 export * from "./prospect-qualifications";
 export * from "./rga-zones";
 export * from "./sync-runs";

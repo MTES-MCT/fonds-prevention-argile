@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { catnatService } from "./catnat.service";
-import { catastrophesNaturellesRepository } from "@/shared/database/repositories";
+import { catastrophesNaturellesRepository, catnatDecisionsRepository } from "@/shared/database/repositories";
 import * as georisquesAdapter from "../adapters/georisques";
 import {
   mockApiCatnatRecent,
@@ -14,6 +14,9 @@ import * as utils from "@/shared/utils";
 // Mock des modules
 vi.mock("../adapters/georisques");
 vi.mock("@/shared/database/repositories");
+vi.mock("../../services/territoires.service", () => ({
+  getAllCommunes: () => [{ codeInsee: "63113" }, { codeInsee: "07186" }],
+}));
 vi.mock("@/shared/utils", async () => {
   const actual = await vi.importActual("@/shared/utils");
   return {
@@ -94,7 +97,7 @@ describe("catnatService", () => {
   describe("importForCommune", () => {
     it("should successfully import catastrophes for a commune", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatRecent]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommune("63113");
 
@@ -102,7 +105,7 @@ describe("catnatService", () => {
       expect(result.imported).toBe(1);
       expect(result.skipped).toBe(0);
       expect(georisquesAdapter.fetchCatnatByCodeInsee).toHaveBeenCalledWith("63113");
-      expect(catastrophesNaturellesRepository.batchUpsert).toHaveBeenCalledTimes(1);
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).toHaveBeenCalledTimes(1);
     });
 
     it("should import all RGA catastrophes regardless of age", async () => {
@@ -111,7 +114,7 @@ describe("catnatService", () => {
         mockApiCatnatOld, // Sécheresse vieille → importée aussi maintenant
         mockApiCatnatInondation, // Inondation → ignorée
       ]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommune("63113");
 
@@ -128,7 +131,7 @@ describe("catnatService", () => {
       expect(result.success).toBe(true);
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(0);
-      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).not.toHaveBeenCalled();
     });
 
     it("should handle commune with only non-RGA catastrophes", async () => {
@@ -139,7 +142,7 @@ describe("catnatService", () => {
       expect(result.success).toBe(true);
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(1);
-      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).not.toHaveBeenCalled();
     });
 
     it("should handle API errors", async () => {
@@ -154,7 +157,7 @@ describe("catnatService", () => {
 
     it("should handle database errors", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodeInsee).mockResolvedValue([mockApiCatnatRecent]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockRejectedValue(new Error("DB Error"));
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockRejectedValue(new Error("DB Error"));
 
       const result = await catnatService.importForCommune("63113");
 
@@ -170,7 +173,7 @@ describe("catnatService", () => {
         mockApiCatnatRecent,
         mockApiCatnatSecheresse2,
       ]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommunes(["63113", "07186"]);
 
@@ -187,7 +190,7 @@ describe("catnatService", () => {
         mockApiCatnatRecent, // Sécheresse → importée
         mockApiCatnatInondation, // Inondation → filtrée
       ]);
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const result = await catnatService.importForCommunes(["63113", "07186"]);
 
@@ -196,10 +199,35 @@ describe("catnatService", () => {
       expect(result.catnatSkipped).toBe(1); // 1 inondation ignorée
     });
 
+    it("lot sans ligne écartée → les périodes disparues de la source sont retirées", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]);
+
+      await catnatService.importForCommunes(["63113"]);
+
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).toHaveBeenCalledOnce();
+      expect(catastrophesNaturellesRepository.batchUpsert).not.toHaveBeenCalled();
+    });
+
+    it("lot avec une ligne invalide → écriture seule, aucune période retirée", async () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([
+        mockApiCatnatRecent,
+        { ...mockApiCatnatSecheresse2, date_fin_evt: "" },
+      ]);
+
+      const result = await catnatService.importForCommunes(["63113", "07186"]);
+
+      expect(catastrophesNaturellesRepository.batchUpsert).toHaveBeenCalledOnce();
+      expect(catastrophesNaturellesRepository.remplacerPeriodes).not.toHaveBeenCalled();
+      expect(result.catnatImported).toBe(1);
+      expect(result.catnatSkipped).toBe(1);
+    });
+
     it("should handle batching (> 10 communes)", async () => {
       const codesInsee = Array.from({ length: 25 }, (_, i) => `6311${i}`);
       vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       await catnatService.importForCommunes(codesInsee);
 
@@ -210,7 +238,7 @@ describe("catnatService", () => {
 
     it("should call progress callback", async () => {
       vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]); // Sécheresse uniquement
-      vi.mocked(catastrophesNaturellesRepository.batchUpsert).mockResolvedValue(undefined);
+      vi.mocked(catastrophesNaturellesRepository.remplacerPeriodes).mockResolvedValue(undefined);
 
       const progressCallback = vi.fn();
       await catnatService.importForCommunes(["63113", "07186"], progressCallback);
@@ -241,6 +269,41 @@ describe("catnatService", () => {
     });
   });
 
+  describe("importerCocon", () => {
+    it("importe toutes les communes du cocon et compte les lignes ajoutées en base", async () => {
+      vi.mocked(georisquesAdapter.fetchCatnatByCodesInsee).mockResolvedValue([mockApiCatnatRecent]);
+      vi.mocked(catastrophesNaturellesRepository.count).mockResolvedValueOnce(7033).mockResolvedValueOnce(7045);
+
+      const bilan = await catnatService.importerCocon();
+
+      expect(georisquesAdapter.fetchCatnatByCodesInsee).toHaveBeenCalledWith(["63113", "07186"]);
+      expect(bilan.totalCommunes).toBe(2);
+      expect(bilan.lignesAjoutees).toBe(12);
+    });
+  });
+
+  describe("deduplicateCatnats", () => {
+    const periode = { ...mockDbCatnat, codeNationalCatnat: "IOME2316198A", codeInsee: "54395" };
+
+    it("garde les deux périodes d'un même arrêté pour la même commune", () => {
+      const result = catnatService.deduplicateCatnats([
+        { ...periode, dateDebutEvt: "2022-01-01" },
+        { ...periode, dateDebutEvt: "2022-07-01" },
+      ]);
+
+      expect(result.map((catnat) => catnat.dateDebutEvt)).toEqual(["2022-01-01", "2022-07-01"]);
+    });
+
+    it("ne garde qu'une ligne pour une période reçue deux fois", () => {
+      const result = catnatService.deduplicateCatnats([
+        { ...periode, dateDebutEvt: "2022-07-01" },
+        { ...periode, dateDebutEvt: "2022-07-01" },
+      ]);
+
+      expect(result).toHaveLength(1);
+    });
+  });
+
   describe("countForCommune", () => {
     it("should count catastrophes for a commune", async () => {
       vi.mocked(catastrophesNaturellesRepository.findByCodeInsee).mockResolvedValue([mockDbCatnat, mockDbCatnat]);
@@ -263,14 +326,90 @@ describe("catnatService", () => {
     });
   });
 
+  describe("getHistoriquePourCommune", () => {
+    it("réunit les arrêtés de Géorisques et les décisions du Journal officiel de la commune", async () => {
+      vi.mocked(catastrophesNaturellesRepository.findByCodeInsee).mockResolvedValue([mockDbCatnat]);
+      vi.mocked(catnatDecisionsRepository.findByCodeInsee).mockResolvedValue([
+        {
+          codeInsee: "63113",
+          libelleCommune: "Clermont-Ferrand",
+          dateArrete: "2026-05-11",
+          datePublicationJo: "2026-05-14",
+          dateDebutEvt: "2025-01-01",
+          dateFinEvt: "2025-12-31",
+          decision: "non_reconnue",
+          motif: "critère météorologique non satisfait",
+          source: "data.gouv",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
+      const lignes = await catnatService.getHistoriquePourCommune("63113");
+
+      expect(catnatDecisionsRepository.findByCodeInsee).toHaveBeenCalledWith("63113");
+      expect(lignes.map((ligne) => ligne.decision)).toEqual(["non_reconnue", "reconnue"]);
+    });
+  });
+
   describe("getTotalForDepartement", () => {
-    it("should get total catastrophes for a department", async () => {
-      vi.mocked(catastrophesNaturellesRepository.getTotalByDepartement).mockResolvedValue(42);
+    it("compte les arrêtés de Géorisques et ceux que seul le jeu data.gouv connaît", async () => {
+      vi.mocked(catastrophesNaturellesRepository.findArretesByDepartement).mockResolvedValue([
+        { codeNationalCatnat: "INTE2612297A", datePublicationArrete: "2026-05-10" },
+      ]);
+      vi.mocked(catnatDecisionsRepository.findDatesArretesReconnusByDepartement).mockResolvedValue([
+        "2026-05-11",
+        "2026-11-13",
+      ]);
 
-      const result = await catnatService.getTotalForDepartement("63");
+      const result = await catnatService.getTotalForDepartement("36");
 
-      expect(result).toBe(42);
-      expect(catastrophesNaturellesRepository.getTotalByDepartement).toHaveBeenCalledWith("63");
+      expect(result).toBe(2);
+      expect(catastrophesNaturellesRepository.findArretesByDepartement).toHaveBeenCalledWith("36");
+      expect(catnatDecisionsRepository.findDatesArretesReconnusByDepartement).toHaveBeenCalledWith("36");
+    });
+  });
+
+  describe("getTotalForCommunes", () => {
+    it("compte de la même façon sur les communes d'un EPCI", async () => {
+      vi.mocked(catastrophesNaturellesRepository.findArretesByCodesInsee).mockResolvedValue([]);
+      vi.mocked(catnatDecisionsRepository.findDatesArretesReconnusByCodesInsee).mockResolvedValue(["2026-11-13"]);
+
+      expect(await catnatService.getTotalForCommunes(["36044", "36063"])).toBe(1);
+      expect(catastrophesNaturellesRepository.findArretesByCodesInsee).toHaveBeenCalledWith(["36044", "36063"]);
+    });
+  });
+
+  describe("comparerSources", () => {
+    const decisionReconnue = {
+      codeInsee: "63113",
+      libelleCommune: "Clermont-Ferrand",
+      dateArrete: "2024-07-15",
+      datePublicationJo: "2024-07-20",
+      dateDebutEvt: "2024-06-01",
+      dateFinEvt: "2024-06-30",
+      decision: "reconnue" as const,
+      motif: null,
+      source: "data.gouv",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it("ne lit de Géorisques que la période couverte par le jeu data.gouv", async () => {
+      vi.mocked(catnatDecisionsRepository.findAll).mockResolvedValue([decisionReconnue]);
+      vi.mocked(catastrophesNaturellesRepository.findPubliesDepuis).mockResolvedValue([mockDbCatnat]);
+
+      const comparaison = await catnatService.comparerSources();
+
+      expect(catastrophesNaturellesRepository.findPubliesDepuis).toHaveBeenCalledWith("2024-07-19");
+      expect(comparaison).toMatchObject({ identiques: 1, georisquesSeul: 0, datagouvSeul: 0 });
+    });
+
+    it("jeu data.gouv pas encore importé → rien à comparer, Géorisques n'est pas lu", async () => {
+      vi.mocked(catnatDecisionsRepository.findAll).mockResolvedValue([]);
+
+      expect(await catnatService.comparerSources()).toBeNull();
+      expect(catastrophesNaturellesRepository.findPubliesDepuis).not.toHaveBeenCalled();
     });
   });
 

@@ -28,8 +28,9 @@ interface ResultNonEligibleProps {
 export function ResultNonEligible({ checks, onRestart, onBack, avis }: ResultNonEligibleProps) {
   const { isAuthenticated } = useAuth();
   const { trackEvent } = useMatomo();
-  const { proposerVulnerabilite = true } = useSimulateurContext();
-  const proposeVulnerabilite = proposerVulnerabilite && isVulnerabiliteRgaActive() && peutProposerVulnerabilite(checks);
+  const { urlVulnerabilite = VULNERABILITE_RGA_URL } = useSimulateurContext();
+  const cibleVulnerabilite = isVulnerabiliteRgaActive() && peutProposerVulnerabilite(checks) ? urlVulnerabilite : null;
+  const proposeVulnerabilite = cibleVulnerabilite !== null;
 
   return (
     <div className="bg-[var(--background-alt-grey)] min-h-screen md:min-h-0 md:bg-transparent">
@@ -41,7 +42,7 @@ export function ResultNonEligible({ checks, onRestart, onBack, avis }: ResultNon
               <h5 className="fr-mb-4w">Simulateur d'éligibilité au Fonds Prévention Argile</h5>
 
               <div className="fr-callout fr-icon-warning-line fr-callout--pink-macaron">
-                {proposeVulnerabilite ? (
+                {cibleVulnerabilite ? (
                   <>
                     <h2 className="fr-callout__title">Vous n&apos;êtes pas éligible, mais vous pouvez agir.</h2>
                     <p>
@@ -50,7 +51,7 @@ export function ResultNonEligible({ checks, onRestart, onBack, avis }: ResultNon
                       vous donne des pistes pour réduire les risques liés au retrait-gonflement des argiles.
                     </p>
                     <Link
-                      href={VULNERABILITE_RGA_URL}
+                      href={cibleVulnerabilite}
                       className="fr-btn fr-mt-2w"
                       onClick={() => trackEvent(MATOMO_EVENTS.VULNERABILITE_CTA_NON_ELIGIBLE)}>
                       Tester ma vulnérabilité (5 min)

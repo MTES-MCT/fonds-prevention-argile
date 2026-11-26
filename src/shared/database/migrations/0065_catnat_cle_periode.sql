@@ -1,0 +1,2 @@
+ALTER TABLE "catastrophes_naturelles" DROP CONSTRAINT "catastrophes_naturelles_code_national_catnat_code_insee_pk";--> statement-breakpoint
+ALTER TABLE "catastrophes_naturelles" ADD CONSTRAINT "catastrophes_naturelles_pk" PRIMARY KEY("code_national_catnat","code_insee","date_debut_evt");

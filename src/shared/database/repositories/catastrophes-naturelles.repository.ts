@@ -1,14 +1,37 @@
-import { eq, and, gte, desc, sql, inArray, SQL } from "drizzle-orm";
+import { eq, and, gte, desc, like, sql, inArray, SQL } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { catastrophesNaturelles } from "../schema/catastrophes-naturelles";
 import type { CatastropheNaturelle, NewCatastropheNaturelle } from "../schema/catastrophes-naturelles";
 import { dateToSqlString } from "@/shared/utils";
 
+const CLE_PERIODE = [
+  catastrophesNaturelles.codeNationalCatnat,
+  catastrophesNaturelles.codeInsee,
+  catastrophesNaturelles.dateDebutEvt,
+];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Executor = typeof db | PgTransaction<any, any, any>;
+
+type Periode = Pick<CatastropheNaturelle, "codeNationalCatnat" | "codeInsee" | "dateDebutEvt">;
+
+const cleCouple = (ligne: Periode) => `${ligne.codeNationalCatnat}|${ligne.codeInsee}`;
+const clePeriode = (ligne: Periode) => `${cleCouple(ligne)}|${ligne.dateDebutEvt}`;
+
+/** Périodes en base que la source ne donne plus, pour les seuls couples arrêté-commune qu'elle vient de renvoyer. */
+export function periodesARetirer<T extends Periode>(existantes: T[], recues: Periode[]): T[] {
+  const couples = new Set(recues.map(cleCouple));
+  const periodes = new Set(recues.map(clePeriode));
+
+  return existantes.filter((ligne) => couples.has(cleCouple(ligne)) && !periodes.has(clePeriode(ligne)));
+}
+
 /**
  * Repository pour les catastrophes naturelles
  *
  * Note: Ce repository n'étend pas BaseRepository car la table utilise une clé composite
- * (codeNationalCatnat, codeInsee) au lieu d'un ID simple.
+ * (codeNationalCatnat, codeInsee, dateDebutEvt) au lieu d'un ID simple.
  */
 export class CatastrophesNaturellesRepository {
   /**
@@ -120,13 +143,6 @@ export class CatastrophesNaturellesRepository {
     return result?.count || 0;
   }
 
-  /**
-   * Exécute une transaction
-   */
-  protected async transaction<R>(callback: (tx: typeof db) => Promise<R>): Promise<R> {
-    return await callback(db);
-  }
-
   // ========================================================================
   // Méthodes spécifiques au métier
   // ========================================================================
@@ -142,9 +158,8 @@ export class CatastrophesNaturellesRepository {
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [catastrophesNaturelles.codeNationalCatnat, catastrophesNaturelles.codeInsee],
+        target: CLE_PERIODE,
         set: {
-          dateDebutEvt: sql`excluded.date_debut_evt`,
           dateFinEvt: sql`excluded.date_fin_evt`,
           datePublicationArrete: sql`excluded.date_publication_arrete`,
           datePublicationJo: sql`excluded.date_publication_jo`,
@@ -159,38 +174,73 @@ export class CatastrophesNaturellesRepository {
   }
 
   /**
-   * Insère plusieurs catastrophes naturelles en une seule transaction
+   * Insère plusieurs catastrophes naturelles (ou les met à jour si elles existent déjà)
    */
   async batchUpsert(dataList: NewCatastropheNaturelle[]): Promise<void> {
     if (dataList.length === 0) return;
 
-    await this.transaction(async (tx) => {
-      const BATCH_SIZE = 100;
+    await this.ecrirePeriodes(db, dataList);
+  }
 
-      for (let i = 0; i < dataList.length; i += BATCH_SIZE) {
-        const batch = dataList.slice(i, i + BATCH_SIZE);
+  private async ecrirePeriodes(executor: Executor, dataList: NewCatastropheNaturelle[]): Promise<void> {
+    const BATCH_SIZE = 100;
 
+    for (let i = 0; i < dataList.length; i += BATCH_SIZE) {
+      const batch = dataList.slice(i, i + BATCH_SIZE);
+
+      await executor
+        .insert(catastrophesNaturelles)
+        .values(
+          batch.map((data) => ({
+            ...data,
+            updatedAt: new Date(),
+          }))
+        )
+        .onConflictDoUpdate({
+          target: CLE_PERIODE,
+          set: {
+            dateFinEvt: sql`excluded.date_fin_evt`,
+            datePublicationArrete: sql`excluded.date_publication_arrete`,
+            datePublicationJo: sql`excluded.date_publication_jo`,
+            libelleRisqueJo: sql`excluded.libelle_risque_jo`,
+            libelleCommune: sql`excluded.libelle_commune`,
+            updatedAt: new Date(),
+          },
+        });
+    }
+  }
+
+  /**
+   * Écrit les périodes reçues et retire celles que la source ne donne plus pour les mêmes arrêtés et communes
+   */
+  async remplacerPeriodes(dataList: NewCatastropheNaturelle[]): Promise<void> {
+    if (dataList.length === 0) return;
+
+    // Retrait et écriture d'un seul tenant : un échec entre les deux ferait disparaître une période des pages.
+    await db.transaction(async (tx) => {
+      const existantes = await tx
+        .select({
+          codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+          codeInsee: catastrophesNaturelles.codeInsee,
+          dateDebutEvt: catastrophesNaturelles.dateDebutEvt,
+        })
+        .from(catastrophesNaturelles)
+        .where(inArray(catastrophesNaturelles.codeInsee, [...new Set(dataList.map((ligne) => ligne.codeInsee))]));
+
+      // Une date corrigée à la source change la clé : sans ce retrait, l'ancienne période resterait en double.
+      for (const ligne of periodesARetirer(existantes, dataList)) {
         await tx
-          .insert(catastrophesNaturelles)
-          .values(
-            batch.map((data) => ({
-              ...data,
-              updatedAt: new Date(),
-            }))
-          )
-          .onConflictDoUpdate({
-            target: [catastrophesNaturelles.codeNationalCatnat, catastrophesNaturelles.codeInsee],
-            set: {
-              dateDebutEvt: sql`excluded.date_debut_evt`,
-              dateFinEvt: sql`excluded.date_fin_evt`,
-              datePublicationArrete: sql`excluded.date_publication_arrete`,
-              datePublicationJo: sql`excluded.date_publication_jo`,
-              libelleRisqueJo: sql`excluded.libelle_risque_jo`,
-              libelleCommune: sql`excluded.libelle_commune`,
-              updatedAt: new Date(),
-            },
-          });
+          .delete(catastrophesNaturelles)
+          .where(
+            and(
+              eq(catastrophesNaturelles.codeNationalCatnat, ligne.codeNationalCatnat),
+              eq(catastrophesNaturelles.codeInsee, ligne.codeInsee),
+              eq(catastrophesNaturelles.dateDebutEvt, ligne.dateDebutEvt)
+            )
+          );
       }
+
+      await this.ecrirePeriodes(tx, dataList);
     });
   }
 
@@ -232,18 +282,18 @@ export class CatastrophesNaturellesRepository {
   }
 
   /**
-   * Compte le total de catastrophes naturelles uniques pour un département
-   * (dédupliquées par codeNationalCatnat)
+   * Arrêtés distincts touchant un département, avec leur date : de quoi compter ses épisodes
    */
-  async getTotalByDepartement(codeDepartement: string): Promise<number> {
-    const result = await db
-      .select({
-        count: sql<number>`cast(count(DISTINCT ${catastrophesNaturelles.codeNationalCatnat}) as integer)`,
+  async findArretesByDepartement(
+    codeDepartement: string
+  ): Promise<Pick<CatastropheNaturelle, "codeNationalCatnat" | "datePublicationArrete">[]> {
+    return db
+      .selectDistinct({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        datePublicationArrete: catastrophesNaturelles.datePublicationArrete,
       })
       .from(catastrophesNaturelles)
-      .where(sql`${catastrophesNaturelles.codeInsee} LIKE ${codeDepartement + "%"}`);
-
-    return result[0]?.count ?? 0;
+      .where(like(catastrophesNaturelles.codeInsee, `${codeDepartement}%`));
   }
 
   /**
@@ -277,20 +327,30 @@ export class CatastrophesNaturellesRepository {
   }
 
   /**
-   * Compte le total de catastrophes naturelles uniques pour un EPCI
-   * (dédupliquées par codeNationalCatnat)
+   * Arrêtés distincts touchant un ensemble de communes (un EPCI), avec leur date
    */
-  async getTotalByEpci(codesInseeEpci: string[]): Promise<number> {
-    if (codesInseeEpci.length === 0) return 0;
+  async findArretesByCodesInsee(
+    codesInsee: string[]
+  ): Promise<Pick<CatastropheNaturelle, "codeNationalCatnat" | "datePublicationArrete">[]> {
+    if (codesInsee.length === 0) return [];
 
-    const result = await db
-      .select({
-        count: sql<number>`cast(count(DISTINCT ${catastrophesNaturelles.codeNationalCatnat}) as integer)`,
+    return db
+      .selectDistinct({
+        codeNationalCatnat: catastrophesNaturelles.codeNationalCatnat,
+        datePublicationArrete: catastrophesNaturelles.datePublicationArrete,
       })
       .from(catastrophesNaturelles)
-      .where(inArray(catastrophesNaturelles.codeInsee, codesInseeEpci));
+      .where(inArray(catastrophesNaturelles.codeInsee, codesInsee));
+  }
 
-    return result[0]?.count ?? 0;
+  /**
+   * Reconnaissances publiées au Journal officiel depuis une date
+   */
+  async findPubliesDepuis(datePublicationJo: string): Promise<CatastropheNaturelle[]> {
+    return db
+      .select()
+      .from(catastrophesNaturelles)
+      .where(gte(catastrophesNaturelles.datePublicationJo, datePublicationJo));
   }
 
   /**

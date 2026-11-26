@@ -267,6 +267,12 @@ libre saisi par le demandeur.
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------- |
 | `code_national_catnat`, `date_debut_evt`, `date_fin_evt`, `date_publication_arrete`, `date_publication_jo`, `libelle_risque_jo`, `code_insee`, `libelle_commune`, `created_at`, `updated_at` | Non personnel | Conservées : référentiel public |
 
+### `catnat_decisions`
+
+| Colonnes                                                                                                                                                           | Nature        | À la restauration                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- | -------------------------------------------------------------- |
+| `code_insee`, `libelle_commune`, `date_arrete`, `date_publication_jo`, `date_debut_evt`, `date_fin_evt`, `decision`, `motif`, `source`, `created_at`, `updated_at` | Non personnel | Conservées : décisions publiées au Journal officiel (ADR-0056) |
+
 ### `rga_zones`
 
 | Colonnes     | Nature        | À la restauration                                            |

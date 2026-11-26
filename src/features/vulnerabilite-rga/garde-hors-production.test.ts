@@ -11,6 +11,7 @@ const GARDE = "isVulnerabiliteRgaActive";
 // Ce qui trahit un lien vers le simulateur ou ses pages : l'URL, les routes, le contenu de la home qui le promeut.
 const MARQUEURS = [
   "VULNERABILITE_RGA_URL",
+  "urlVulnerabiliteEmbarquee",
   "particulier.maVulnerabilite",
   "espaceAgent.testVulnerabilite",
   "cta_vulnerabilite_url",

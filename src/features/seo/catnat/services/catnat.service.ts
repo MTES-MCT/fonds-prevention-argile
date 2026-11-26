@@ -1,10 +1,19 @@
-import { catastrophesNaturellesRepository } from "@/shared/database/repositories";
+import { catastrophesNaturellesRepository, catnatDecisionsRepository } from "@/shared/database/repositories";
 import { parseFrenchDateToSql } from "@/shared/utils";
 import { delay } from "@/shared/utils";
-import { API_GEORISQUES } from "../../domain/config/seo.config";
 import { fetchCatnatByCodeInsee, fetchCatnatByCodesInsee, type ApiGeorisquesCatnat } from "../adapters/georisques";
 import type { NewCatastropheNaturelle } from "@/shared/database/schema/catastrophes-naturelles";
-import { CATNAT_RGA_TYPES } from "../domain";
+import {
+  API_GEORISQUES,
+  CATNAT_RGA_TYPES,
+  comparerSources,
+  compterEpisodesReconnus,
+  debutComparaison,
+  fusionnerHistorique,
+  type ComparaisonSources,
+  type LigneHistoriqueCatnat,
+} from "../domain";
+import { getAllCommunes } from "../../services/territoires.service";
 
 /**
  * Statistiques d'import des catastrophes naturelles
@@ -82,7 +91,7 @@ export const catnatService = {
 
       // Transformer et insérer en BDD
       const dbCatnats = rgaCatnats.map((catnat) => this.transformApiToDb(catnat));
-      await catastrophesNaturellesRepository.batchUpsert(dbCatnats);
+      await catastrophesNaturellesRepository.remplacerPeriodes(dbCatnats);
 
       return {
         success: true,
@@ -165,7 +174,9 @@ export const catnatService = {
 
           // Insérer en BDD
           try {
-            await catastrophesNaturellesRepository.batchUpsert(uniqueCatnats);
+            // Une ligne écartée ferait passer sa période pour disparue de la source : dans ce cas, on ne retire rien.
+            if (invalidCount > 0) await catastrophesNaturellesRepository.batchUpsert(uniqueCatnats);
+            else await catastrophesNaturellesRepository.remplacerPeriodes(uniqueCatnats);
             stats.catnatImported += uniqueCatnats.length;
           } catch (insertError) {
             console.error(`Erreur d'insertion pour le batch ${batchIndex + 1}/${batches.length}:`, insertError);
@@ -220,6 +231,19 @@ export const catnatService = {
   },
 
   /**
+   * Importe les catastrophes naturelles de toutes les communes du cocon SEO
+   */
+  async importerCocon(onProgress?: CatnatProgressCallback): Promise<CatnatImportStats & { lignesAjoutees: number }> {
+    const avant = await catastrophesNaturellesRepository.count();
+    const stats = await this.importForCommunes(
+      getAllCommunes().map((commune) => commune.codeInsee),
+      onProgress
+    );
+
+    return { ...stats, lignesAjoutees: (await catastrophesNaturellesRepository.count()) - avant };
+  },
+
+  /**
    * Compte le nombre de catastrophes naturelles pour une commune
    */
   async countForCommune(codeInsee: string): Promise<number> {
@@ -235,10 +259,50 @@ export const catnatService = {
   },
 
   /**
-   * Compte le total de catastrophes naturelles pour un département
+   * Historique d'une commune : reconnaissances et demandes non reconnues, de la plus récente à la plus ancienne
+   */
+  async getHistoriquePourCommune(codeInsee: string): Promise<LigneHistoriqueCatnat[]> {
+    const [arretes, decisions] = await Promise.all([
+      catastrophesNaturellesRepository.findByCodeInsee(codeInsee),
+      catnatDecisionsRepository.findByCodeInsee(codeInsee),
+    ]);
+
+    return fusionnerHistorique(arretes, decisions);
+  },
+
+  /**
+   * Compte les épisodes de sécheresse reconnus dans un département, toutes sources confondues
    */
   async getTotalForDepartement(codeDepartement: string): Promise<number> {
-    return catastrophesNaturellesRepository.getTotalByDepartement(codeDepartement);
+    const [arretes, datesArretes] = await Promise.all([
+      catastrophesNaturellesRepository.findArretesByDepartement(codeDepartement),
+      catnatDecisionsRepository.findDatesArretesReconnusByDepartement(codeDepartement),
+    ]);
+
+    return compterEpisodesReconnus(arretes, datesArretes);
+  },
+
+  /**
+   * Compte les épisodes de sécheresse reconnus dans les communes d'un EPCI, toutes sources confondues
+   */
+  async getTotalForCommunes(codesInsee: string[]): Promise<number> {
+    const [arretes, datesArretes] = await Promise.all([
+      catastrophesNaturellesRepository.findArretesByCodesInsee(codesInsee),
+      catnatDecisionsRepository.findDatesArretesReconnusByCodesInsee(codesInsee),
+    ]);
+
+    return compterEpisodesReconnus(arretes, datesArretes);
+  },
+
+  /**
+   * Compare les deux sources sur la période que le jeu data.gouv couvre ; rien à comparer tant qu'il est vide
+   */
+  async comparerSources(): Promise<ComparaisonSources | null> {
+    const decisions = await catnatDecisionsRepository.findAll();
+    const depuis = debutComparaison(decisions);
+    if (!depuis) return null;
+
+    return comparerSources(await catastrophesNaturellesRepository.findPubliesDepuis(depuis), decisions);
   },
 
   /**
@@ -249,14 +313,14 @@ export const catnatService = {
   },
 
   /**
-   * Déduplique les catastrophes par clé composite (codeNationalCatnat + codeInsee)
+   * Déduplique les catastrophes par clé composite (codeNationalCatnat + codeInsee + dateDebutEvt)
    * Garde la dernière occurrence en cas de doublon
    */
   deduplicateCatnats(catnats: NewCatastropheNaturelle[]): NewCatastropheNaturelle[] {
     const map = new Map<string, NewCatastropheNaturelle>();
 
     for (const catnat of catnats) {
-      const key = `${catnat.codeNationalCatnat}|${catnat.codeInsee}`;
+      const key = `${catnat.codeNationalCatnat}|${catnat.codeInsee}|${catnat.dateDebutEvt}`;
       map.set(key, catnat); // Écrase les doublons avec la dernière occurrence
     }
 
