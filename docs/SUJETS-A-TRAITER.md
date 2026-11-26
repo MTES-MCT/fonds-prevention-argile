@@ -408,8 +408,8 @@ publie depuis au moins 2006, sans API ni conditions de réutilisation lues.
 
 À signaler à Géorisques, sans attendre : sa pagination perd des lignes, et les arrêtés publiés depuis
 2025 y sont datés un jour trop tôt ([`import-catnat.md`](ops/import-catnat.md)). Les pages commune
-corrigent ces dates à l'affichage quand la décision est dans le jeu data.gouv ; les arrêtés publiés entre
-février et juillet 2025 restent décalés.
+affichent la plus tardive des deux dates quand la reconnaissance est aussi dans le jeu data.gouv ; les
+arrêtés publiés entre février et juillet 2025 restent décalés.
 
 ### Cron de synchronisation : des créneaux servis avec cinq à huit heures de retard
 

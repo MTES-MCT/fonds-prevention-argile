@@ -2,7 +2,8 @@
 
 Les pages `/rga/commune/…`, `/rga/epci/…` et `/rga/departement/…` affichent les sécheresses reconnues
 en catastrophe naturelle, et les pages commune les demandes non reconnues. Deux sources, deux tables,
-pour les 1 650 communes du cocon SEO ([ADR-0056](../adr/0056-sources-decisions-catastrophe-naturelle.md)) :
+pour les 1 650 communes du cocon SEO. Le site les compare et affiche la plus à jour
+([ADR-0056](../adr/0056-sources-decisions-catastrophe-naturelle.md)) :
 
 | Table                     | Source                                     | Contenu                                       |
 | ------------------------- | ------------------------------------------ | --------------------------------------------- |
@@ -46,10 +47,29 @@ leurs anciennes lignes et sont reprises à l'import suivant.
 de nos communes, `ecartees` les lignes illisibles du fichier. Un `ecartees` non nul sort en erreur, et
 plus aucune décision n'est retirée tant qu'il dure.
 
+→ `comparaison identiques=95 ecart_un_jour=111 georisques_seul=1 datagouv_seul=1
+dernier_jo_georisques=2026-11-21 dernier_jo_datagouv=2026-11-21` : où en est chaque source, sur les
+reconnaissances parues depuis le début du jeu data.gouv. Une source dont le dernier Journal officiel a
+plus de 15 jours de retard sur l'autre sort en erreur, avec `en_retard=` et `retard_jours=`.
+
+## Comment les deux sources sont réunies
+
+| Cas                                            | Ce que le site affiche                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
+| Reconnaissance publiée par les deux, identique | une ligne, avec le code NOR                                      |
+| Publiée par les deux, à un jour d'écart        | une ligne, avec le code NOR et la plus tardive de chaque date    |
+| Publiée par Géorisques seulement               | sa ligne, telle quelle                                           |
+| Publiée par le jeu data.gouv seulement         | sa ligne, sans code NOR, en attendant que Géorisques la publie   |
+| Demande non reconnue                           | sa ligne, avec le motif : seul le jeu data.gouv publie les refus |
+
+Deux lignes sont la même reconnaissance quand la commune, la date de l'arrêté et le début de la période
+concordent à un jour près. Rien n'est réécrit en base : la règle s'applique à la lecture, et les
+compteurs des pages département et EPCI la suivent aussi.
+
 ## Ce qu'il faut savoir de Géorisques
 
-- **Un arrêté n'y arrive pas le jour de sa parution.** Le 23 novembre 2026, l'arrêté du 16 octobre y
-  figurait, celui paru le week-end du 21 novembre pas encore pour nos communes.
+- **Un arrêté n'y arrive pas le jour de sa parution.** Celui paru le 21 novembre 2026 n'y était pas
+  le 23, et y figurait le 26.
 - **Sa pagination perd des lignes.** D'une page à l'autre, des doublons prennent la place de lignes
   manquantes, sans que le total annoncé change : 9 lots sur 12 étaient incomplets le 23 novembre 2026.
   L'import demande donc chaque lot de 10 communes en une seule page (`page_size=1000`), et refuse une
@@ -61,17 +81,20 @@ plus aucune décision n'est retirée tant qu'il dure.
   l'import retire les périodes que Géorisques ne donne plus, dans la même transaction que l'écriture.
   Il ne retire jamais un arrêté entier, et rien du tout pour un lot dont une ligne a été écartée
   comme invalide.
-- **Les dates des arrêtés publiés depuis 2025 sont décalées d'un jour** (période « 31/12/2024 –
-  30/12/2025 » pour l'année 2025) : voir [SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md).
+- **Une partie des dates y est décalée d'un jour** : 111 reconnaissances parues entre 2025 et
+  septembre 2026 donnent « 31/12/2024 – 30/12/2025 » pour l'année 2025, et le Journal officiel de la
+  veille. Celles de l'arrêté du 13 novembre 2026 sont justes. Le site affiche la plus tardive des deux
+  dates quand le jeu data.gouv a la même reconnaissance ; à signaler à Géorisques
+  ([SUJETS-A-TRAITER](../SUJETS-A-TRAITER.md)).
 
 ## Ce qu'il faut savoir du jeu data.gouv
 
 - **Il est produit par un acteur privé** (ClimaScore), sous licence ouverte, à partir des annexes des
   arrêtés. Il commence au 15 juillet 2025 : les refus antérieurs ne sont pas affichés.
-- **Il devance Géorisques.** L'arrêté paru le 21 novembre 2026 y figurait le 23. Une reconnaissance
-  que Géorisques n'a pas encore s'affiche sans code NOR, puis le prend quand Géorisques la publie.
-- **Ses dates remplacent celles de Géorisques à l'affichage**, quand la commune, l'arrêté et le début
-  de période concordent à un jour près. Rien n'est réécrit dans `catastrophes_naturelles`.
+- **Le fichier est servi par son producteur, pas par data.gouv**, qui ne fait que rediriger vers lui.
+  La date de la fiche data.gouv et son aperçu sont ceux de sa dernière analyse, pas du fichier : le
+  23 novembre 2026, la fiche disait 29 octobre et le fichier contenait l'arrêté paru le 21.
+- **Il a devancé Géorisques de quelques jours** sur cet arrêté.
 - **Seule la sécheresse est importée** : le libellé « Mouvements de terrain différentiels consécutifs à
   la sécheresse… ». « Mouvements de terrains (hors sécheresse géotechnique) » est un autre phénomène.
 - **Un fichier vide ou d'un autre format fait échouer l'import** sans rien effacer.
