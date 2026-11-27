@@ -158,12 +158,6 @@
     ]
   },
   "agir": {
-    "title": "Vous souhaitez connaître la vulnérabilité de votre maison et agir avant qu'il ne soit trop tard ?",
-    "aides": {
-      "text": "Faites réaliser un diagnostic de vulnérabilité, et obtenez des aides (sous conditions).",
-      "cta_label": "Vérifier mon éligibilité aux aides",
-      "cta_url": "/simulateur"
-    }
-  },
-  "avertissement": "Ces informations sont générales et indicatives. Elles ne remplacent pas un diagnostic de vulnérabilité réalisé par un professionnel."
+    "title": "Vous souhaitez connaître la vulnérabilité de votre maison et agir avant qu'il ne soit trop tard ?"
+  }
 }

@@ -41,15 +41,6 @@ describe("page « Ma maison est-elle vulnérable au RGA ? »", () => {
     liens.forEach((lien) => expect(lien).toHaveAttribute("href", "/vulnerabilite-rga"));
   });
 
-  it("renvoie vers le simulateur d'éligibilité pour les aides", () => {
-    render(<ComprendreLeRgaPage />);
-
-    expect(screen.getByRole("link", { name: "Vérifier mon éligibilité aux aides" })).toHaveAttribute(
-      "href",
-      "/simulateur"
-    );
-  });
-
   it("répond 404 quand le simulateur de vulnérabilité est désactivé, comme en production", () => {
     active.mockReturnValue(false);
 

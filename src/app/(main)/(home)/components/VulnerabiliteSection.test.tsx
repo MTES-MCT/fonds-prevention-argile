@@ -23,16 +23,11 @@ describe("VulnerabiliteSection", () => {
     );
   });
 
-  it("accepte un autre titre, sans badge, et un contenu sous le bouton", () => {
-    render(
-      <VulnerabiliteSection titre="Agir avant qu'il ne soit trop tard" avecBadge={false}>
-        <p>Des aides existent.</p>
-      </VulnerabiliteSection>
-    );
+  it("accepte un autre titre, sans badge", () => {
+    render(<VulnerabiliteSection titre="Agir avant qu'il ne soit trop tard" avecBadge={false} />);
 
     expect(screen.getByRole("heading", { name: "Agir avant qu'il ne soit trop tard" })).toBeInTheDocument();
     expect(screen.queryByText("Nouveau")).not.toBeInTheDocument();
-    expect(screen.getByText("Des aides existent.")).toBeInTheDocument();
   });
 
   it("garde le bouton quand il passe sous les deux colonnes", () => {

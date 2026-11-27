@@ -129,18 +129,7 @@ export default function ComprendreLeRgaPage() {
         </div>
       </EtapeInfographie>
 
-      <VulnerabiliteSection titre={agir.title} avecBadge={false} boutonPleineLargeur>
-        <p className="fr-mt-4w fr-mb-0">
-          {agir.aides.text}{" "}
-          <Link className="fr-link" href={agir.aides.cta_url}>
-            {agir.aides.cta_label}
-          </Link>
-        </p>
-      </VulnerabiliteSection>
-
-      <div className="fr-container fr-py-4w">
-        <p className="fr-text--sm fr-mb-0 text-(--text-mention-grey)">{content.avertissement}</p>
-      </div>
+      <VulnerabiliteSection titre={agir.title} avecBadge={false} boutonPleineLargeur />
     </>
   );
 }

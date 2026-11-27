@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import content from "../content/content.json";
 import type { CategorieAffichee } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
 import { CATEGORIES_AFFICHAGE } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
@@ -19,8 +18,6 @@ interface Props {
   className?: string;
   /** Bouton et mention centrés sous les deux colonnes, au lieu du pied de la première. */
   boutonPleineLargeur?: boolean;
-  /** Rendu sous la mention du bouton. */
-  children?: ReactNode;
 }
 
 export default function VulnerabiliteSection({
@@ -28,7 +25,6 @@ export default function VulnerabiliteSection({
   avecBadge = true,
   className = "",
   boutonPleineLargeur = false,
-  children,
 }: Props) {
   // Feature hors production tant que la grille n'est pas validée (ADR-0030).
   if (!isVulnerabiliteRgaActive()) return null;
@@ -41,7 +37,6 @@ export default function VulnerabiliteSection({
         {section.cta_label}
       </Link>
       <p className="fr-text--sm fr-mt-1w fr-mb-0">{section.mention}</p>
-      {children}
     </>
   );
 
