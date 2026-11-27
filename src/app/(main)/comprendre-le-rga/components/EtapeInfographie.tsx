@@ -57,19 +57,9 @@ export default function EtapeInfographie({
 
           <div className={`fr-col-12 fr-col-md-6 ${imageADroite ? "" : "md:order-first"}`}>
             <figure className="relative m-0">
-              {legendes && (
-                <figcaption className="grid grid-cols-2 gap-8 fr-pb-2w">
-                  {legendes.map((legende) => (
-                    <p key={legende.text} className="fr-text--sm fr-mb-0">
-                      <span className={`${legende.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />
-                      {legende.text}
-                    </p>
-                  ))}
-                </figcaption>
-              )}
               <Image
                 alt={image.alt}
-                className="w-full h-auto"
+                className="block w-full h-auto"
                 height={image.height}
                 priority={imagePrioritaire}
                 quality={85}
@@ -78,10 +68,20 @@ export default function EtapeInfographie({
                 width={image.width}
               />
               {legendes && (
-                <span
-                  className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-(--border-action-high-blue-france)"
-                  aria-hidden="true"
-                />
+                <>
+                  <figcaption className="grid grid-cols-2 bg-(--background-default-grey)">
+                    {legendes.map((legende) => (
+                      <p key={legende.text} className="fr-text--sm fr-mb-0 fr-p-2w">
+                        <span className={`${legende.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />
+                        {legende.text}
+                      </p>
+                    ))}
+                  </figcaption>
+                  <span
+                    className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-(--border-action-high-blue-france)"
+                    aria-hidden="true"
+                  />
+                </>
               )}
             </figure>
           </div>
