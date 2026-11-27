@@ -80,8 +80,8 @@ export default function ComprendreLeRgaPage() {
             </div>
           </nav>
 
-          <div className="fr-grid-row">
-            <div className="fr-col-12 fr-col-lg-9">
+          <div className="fr-grid-row fr-grid-row--center">
+            <div className="fr-col-12 fr-col-lg-9 text-center">
               <h1>{hero.title}</h1>
               <p className="fr-text--lead">
                 {hero.subtitle.avant}{" "}
