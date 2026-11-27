@@ -52,14 +52,16 @@
       "height": 700
     },
     "paragraph": "Profondeur des fondations, présence d'un sous-sol partiel, d'un garage ou d'une véranda : la structure de cette maison la rend particulièrement vulnérable au retrait-gonflement des argiles.",
-    "points": [
+    "legendes": [
       {
-        "title": "Le sous-sol partiel",
-        "text": "Il repose sur des fondations plus profondes et de l'argile a priori plus stable."
+        "titre": "Le sous-sol partiel",
+        "text": "Il repose sur des fondations plus profondes et de l'argile a priori plus stable.",
+        "fleche": "M 170 690 C 110 620, 150 520, 262 488"
       },
       {
-        "title": "L'extension",
-        "text": "Ses fondations sont peu profondes : elles risquent de réagir plus fortement au retrait-gonflement des argiles que le reste de la maison, et provoquer des dégâts."
+        "titre": "L'extension",
+        "text": "Ses fondations sont peu profondes : elles risquent de réagir plus fortement au retrait-gonflement des argiles que le reste de la maison, et provoquer des dégâts.",
+        "fleche": "M 1200 690 C 1260 600, 1180 500, 1050 468"
       }
     ]
   },

@@ -120,23 +120,21 @@ export default function ComprendreLeRgaPage() {
         chapeau={sol.lead}
         image={sol.image}
         legendes={sol.legendes}
+        separateur
         className="bg-(--background-alt-blue-france)">
         {sol.paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
       </EtapeInfographie>
 
-      <EtapeInfographie numero={2} titre={maison.title} chapeau={maison.lead} image={maison.image} imageADroite>
+      <EtapeInfographie
+        numero={2}
+        titre={maison.title}
+        chapeau={maison.lead}
+        image={maison.image}
+        legendes={maison.legendes}
+        imageADroite>
         <p>{maison.paragraph}</p>
-        <ul className="fr-raw-list">
-          {maison.points.map((point) => (
-            <li key={point.title} className="fr-mb-2w">
-              <span className="fr-text--bold">{point.title}</span>
-              <br />
-              {point.text}
-            </li>
-          ))}
-        </ul>
       </EtapeInfographie>
 
       <EtapeInfographie
