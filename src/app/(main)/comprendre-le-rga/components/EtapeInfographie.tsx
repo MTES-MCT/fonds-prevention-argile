@@ -15,8 +15,6 @@ interface Props {
   legendes?: Legende[];
   className?: string;
   imageADroite?: boolean;
-  /** Première image visible de la page : chargée sans attendre. */
-  imagePrioritaire?: boolean;
   children: ReactNode;
   /** Contenu pleine largeur, sous la ligne image + texte. */
   complement?: ReactNode;
@@ -30,36 +28,36 @@ export default function EtapeInfographie({
   legendes,
   className = "",
   imageADroite = false,
-  imagePrioritaire = false,
   children,
   complement,
 }: Props) {
   return (
     <section className={`fr-container-fluid fr-py-8w ${className}`}>
       <div className="fr-container">
-        <div className="fr-grid-row fr-grid-row--center fr-mb-4w">
-          <div className="fr-col-12 fr-col-lg-8 flex flex-col items-center text-center">
-            <span
-              className="flex items-center justify-center w-10 h-10 rounded-full fr-text--lg fr-text--bold fr-mb-1w bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)"
-              aria-hidden="true">
-              {numero}
-            </span>
+        <div className="fr-grid-row fr-grid-row--gutters items-center">
+          {/* Texte d'abord dans le DOM : le titre précède l'image au lecteur d'écran et sur mobile. */}
+          <div className="fr-col-12 fr-col-md-6 text-center">
+            <div className="flex justify-center fr-mb-1w">
+              <span
+                className="flex items-center justify-center w-10 h-10 rounded-full fr-text--lg fr-text--bold fr-mb-0 bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)"
+                aria-hidden="true">
+                {numero}
+              </span>
+            </div>
             <h2 className="fr-mb-1w">
               <span className="fr-sr-only">{numero}. </span>
               {titre}
             </h2>
-            <p className="fr-text--lead fr-mb-0">{chapeau}</p>
+            <p className="fr-text--lead">{chapeau}</p>
+            {children}
           </div>
-        </div>
 
-        <div className="fr-grid-row fr-grid-row--gutters items-center">
-          <div className={`fr-col-12 fr-col-md-6 ${imageADroite ? "md:order-last" : ""}`}>
+          <div className={`fr-col-12 fr-col-md-6 ${imageADroite ? "" : "md:order-first"}`}>
             <figure className="relative m-0">
               <Image
                 alt={image.alt}
                 className="block w-full h-auto"
                 height={image.height}
-                priority={imagePrioritaire}
                 quality={85}
                 sizes="(max-width: 768px) 100vw, 50vw"
                 src={image.src}
@@ -83,8 +81,6 @@ export default function EtapeInfographie({
               )}
             </figure>
           </div>
-
-          <div className="fr-col-12 fr-col-md-6 text-center">{children}</div>
         </div>
 
         {complement}

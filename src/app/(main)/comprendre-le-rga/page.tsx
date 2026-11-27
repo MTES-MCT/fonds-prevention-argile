@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -80,8 +81,8 @@ export default function ComprendreLeRgaPage() {
             </div>
           </nav>
 
-          <div className="fr-grid-row fr-grid-row--center">
-            <div className="fr-col-12 fr-col-lg-9 text-center">
+          <div className="fr-grid-row fr-grid-row--gutters items-center">
+            <div className="fr-col-12 fr-col-md-6 text-center">
               <h1>{hero.title}</h1>
               <p className="fr-text--lead">
                 {hero.subtitle.avant}{" "}
@@ -97,6 +98,18 @@ export default function ComprendreLeRgaPage() {
               </Link>
               <p className="fr-text--sm fr-mt-1w fr-mb-0">{hero.mention}</p>
             </div>
+            <div className="fr-col-12 fr-col-md-6">
+              <Image
+                alt=""
+                className="block w-full h-auto"
+                height={hero.image.height}
+                priority
+                quality={85}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                src={hero.image.src}
+                width={hero.image.width}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -107,8 +120,7 @@ export default function ComprendreLeRgaPage() {
         chapeau={sol.lead}
         image={sol.image}
         legendes={sol.legendes}
-        className="bg-(--background-alt-blue-france)"
-        imagePrioritaire>
+        className="bg-(--background-alt-blue-france)">
         {sol.paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}

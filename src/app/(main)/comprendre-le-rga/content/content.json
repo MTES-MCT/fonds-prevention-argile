@@ -11,7 +11,12 @@
       "apres": "pourquoi de plus en plus de maisons sont exposées au retrait-gonflement des argiles."
     },
     "cta_label": "Estimer la vulnérabilité de mon logement",
-    "mention": "Résultat en 5 minutes - Sans inscription"
+    "mention": "Résultat en 5 minutes - Sans inscription",
+    "image": {
+      "src": "/images/comprendre-le-rga/hero.webp",
+      "width": 1000,
+      "height": 800
+    }
   },
   "sol": {
     "title": "Le sol",
