@@ -23,6 +23,18 @@ describe("VulnerabiliteSection", () => {
     );
   });
 
+  it("accepte un autre titre, sans badge, et un contenu sous le bouton", () => {
+    render(
+      <VulnerabiliteSection titre="Agir avant qu'il ne soit trop tard" avecBadge={false}>
+        <p>Des aides existent.</p>
+      </VulnerabiliteSection>
+    );
+
+    expect(screen.getByRole("heading", { name: "Agir avant qu'il ne soit trop tard" })).toBeInTheDocument();
+    expect(screen.queryByText("Nouveau")).not.toBeInTheDocument();
+    expect(screen.getByText("Des aides existent.")).toBeInTheDocument();
+  });
+
   it("ne rend rien quand il est désactivé, comme en production", () => {
     active.mockReturnValue(false);
     const { container } = render(<VulnerabiliteSection />);

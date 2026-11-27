@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import content from "../content/content.json";
 import type { CategorieAffichee } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
 import { CATEGORIES_AFFICHAGE } from "@/features/vulnerabilite-rga/domain/value-objects/grille-categorisation";
@@ -12,17 +13,30 @@ function libelleDecompte(categorie: CategorieAffichee, nombre: number): string {
   return `${nombre} ${(nombre > 1 ? pluriel : label).toLowerCase()}`;
 }
 
-export default function VulnerabiliteSection() {
+interface Props {
+  titre?: string;
+  avecBadge?: boolean;
+  className?: string;
+  /** Rendu sous la mention du bouton. */
+  children?: ReactNode;
+}
+
+export default function VulnerabiliteSection({
+  titre = section.title,
+  avecBadge = true,
+  className = "",
+  children,
+}: Props) {
   // Feature hors production tant que la grille n'est pas validée (ADR-0030).
   if (!isVulnerabiliteRgaActive()) return null;
 
   return (
-    <section id="vulnerabilite" className="fr-container-fluid fr-py-10w section-anchor">
+    <section id="vulnerabilite" className={`fr-container-fluid fr-py-10w section-anchor ${className}`}>
       <div className="fr-container">
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-6">
-            <p className="fr-badge fr-badge--new fr-mb-2w">{section.badge}</p>
-            <h2>{section.title}</h2>
+            {avecBadge && <p className="fr-badge fr-badge--new fr-mb-2w">{section.badge}</p>}
+            <h2>{titre}</h2>
             <p className="fr-text--lg">{section.description}</p>
 
             <ol className="fr-raw-list fr-mt-4w fr-mb-4w">
@@ -44,6 +58,7 @@ export default function VulnerabiliteSection() {
               {section.cta_label}
             </Link>
             <p className="fr-text--sm fr-mt-1w fr-mb-0">{section.mention}</p>
+            {children}
           </div>
 
           <div className="fr-col-12 fr-col-md-6">
