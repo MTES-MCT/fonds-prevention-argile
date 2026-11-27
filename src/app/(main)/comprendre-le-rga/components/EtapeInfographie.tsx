@@ -37,25 +37,23 @@ export default function EtapeInfographie({
   return (
     <section className={`fr-container-fluid fr-py-8w ${className}`}>
       <div className="fr-container">
-        <div className="fr-grid-row fr-grid-row--gutters items-center">
-          {/* Texte d'abord dans le DOM : le titre précède l'image au lecteur d'écran et sur mobile. */}
-          <div className="fr-col-12 fr-col-md-6">
-            <div className="flex items-center gap-3 fr-mb-2w">
-              <span
-                className="flex shrink-0 items-center justify-center w-10 h-10 rounded-full fr-text--lg fr-text--bold fr-mb-0 bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)"
-                aria-hidden="true">
-                {numero}
-              </span>
-              <h2 className="fr-mb-0">
-                <span className="fr-sr-only">{numero}. </span>
-                {titre}
-              </h2>
-            </div>
-            <p className="fr-text--lead">{chapeau}</p>
-            {children}
+        <div className="fr-grid-row fr-grid-row--center fr-mb-4w">
+          <div className="fr-col-12 fr-col-lg-8 flex flex-col items-center text-center">
+            <span
+              className="flex items-center justify-center w-10 h-10 rounded-full fr-text--lg fr-text--bold fr-mb-1w bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)"
+              aria-hidden="true">
+              {numero}
+            </span>
+            <h2 className="fr-mb-1w">
+              <span className="fr-sr-only">{numero}. </span>
+              {titre}
+            </h2>
+            <p className="fr-text--lead fr-mb-0">{chapeau}</p>
           </div>
+        </div>
 
-          <div className={`fr-col-12 fr-col-md-6 ${imageADroite ? "" : "md:order-first"}`}>
+        <div className="fr-grid-row fr-grid-row--gutters items-center">
+          <div className={`fr-col-12 fr-col-md-6 ${imageADroite ? "md:order-last" : ""}`}>
             <figure className="relative m-0">
               <Image
                 alt={image.alt}
@@ -85,6 +83,8 @@ export default function EtapeInfographie({
               )}
             </figure>
           </div>
+
+          <div className="fr-col-12 fr-col-md-6 text-center">{children}</div>
         </div>
 
         {complement}

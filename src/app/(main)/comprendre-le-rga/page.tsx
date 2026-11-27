@@ -118,9 +118,7 @@ export default function ComprendreLeRgaPage() {
         <p>{maison.paragraph}</p>
         <ul className="fr-raw-list">
           {maison.points.map((point) => (
-            <li
-              key={point.title}
-              className="fr-mb-2w fr-pl-2w border-l-4 border-solid border-(--border-default-blue-france)">
+            <li key={point.title} className="fr-mb-2w">
               <span className="fr-text--bold">{point.title}</span>
               <br />
               {point.text}
