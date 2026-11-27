@@ -25,29 +25,6 @@ export const metadata: Metadata = {
   },
 };
 
-interface ListeProps {
-  titre: string;
-  items: string[];
-  icon: string;
-  couleur: string;
-}
-
-function ListeEnvironnement({ titre, items, icon, couleur }: ListeProps) {
-  return (
-    <div className="fr-col-12 fr-col-md-6">
-      <h3 className="fr-h5">{titre}</h3>
-      <ul className="fr-raw-list">
-        {items.map((item) => (
-          <li key={item} className="flex items-start gap-3 fr-mb-2w">
-            <span className={`${icon} shrink-0 ${couleur}`} aria-hidden="true" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export default function ComprendreLeRgaPage() {
   // Toute la page mène au simulateur de vulnérabilité, hors production (ADR-0030).
   if (!isVulnerabiliteRgaActive()) notFound();
@@ -133,6 +110,7 @@ export default function ComprendreLeRgaPage() {
         chapeau={maison.lead}
         image={maison.image}
         legendes={maison.legendes}
+        fleches={maison.fleches}
         imageADroite>
         <p>{maison.paragraph}</p>
       </EtapeInfographie>
@@ -142,28 +120,16 @@ export default function ComprendreLeRgaPage() {
         titre={environnement.title}
         chapeau={environnement.lead}
         image={environnement.image}
-        complement={
-          <div className="fr-grid-row fr-grid-row--gutters fr-mt-4w">
-            <ListeEnvironnement
-              titre={environnement.fragilise.title}
-              items={environnement.fragilise.items}
-              icon="fr-icon-error-warning-line"
-              couleur="text-(--text-default-warning)"
-            />
-            <ListeEnvironnement
-              titre={environnement.bonnes_pratiques.title}
-              items={environnement.bonnes_pratiques.items}
-              icon="fr-icon-checkbox-circle-line"
-              couleur="text-(--text-default-success)"
-            />
-          </div>
-        }>
+        legendes={environnement.legendes}
+        fleches={environnement.fleches}
+        separateur
+        className="bg-(--background-alt-blue-france)">
         <div className="fr-callout fr-icon-focus-3-line fr-mb-0">
           <p className="fr-callout__text">{richTextParser(environnement.objectif)}</p>
         </div>
       </EtapeInfographie>
 
-      <VulnerabiliteSection titre={agir.title} avecBadge={false} className="bg-(--background-alt-blue-france)">
+      <VulnerabiliteSection titre={agir.title} avecBadge={false}>
         <p className="fr-mt-4w fr-mb-0">
           {agir.aides.text}{" "}
           <Link className="fr-link" href={agir.aides.cta_url}>

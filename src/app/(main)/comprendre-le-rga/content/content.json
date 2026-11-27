@@ -55,13 +55,25 @@
     "legendes": [
       {
         "titre": "Le sous-sol partiel",
-        "text": "Il repose sur des fondations plus profondes et de l'argile a priori plus stable.",
-        "fleche": "M 170 690 C 110 620, 150 520, 262 488"
+        "text": "Il repose sur des fondations plus profondes et de l'argile a priori plus stable."
       },
       {
         "titre": "L'extension",
-        "text": "Ses fondations sont peu profondes : elles risquent de réagir plus fortement au retrait-gonflement des argiles que le reste de la maison, et provoquer des dégâts.",
-        "fleche": "M 1200 690 C 1260 600, 1180 500, 1050 468"
+        "text": "Ses fondations sont peu profondes : elles risquent de réagir plus fortement au retrait-gonflement des argiles que le reste de la maison, et provoquer des dégâts."
+      }
+    ],
+    "fleches": [
+      {
+        "de": [170, 690],
+        "c1": [110, 620],
+        "c2": [150, 520],
+        "vers": [262, 488]
+      },
+      {
+        "de": [1200, 690],
+        "c1": [1260, 600],
+        "c2": [1180, 500],
+        "vers": [1050, 468]
       }
     ]
   },
@@ -75,21 +87,75 @@
       "height": 734
     },
     "objectif": "L'objectif face au RGA est de <strong>limiter les variations d'humidité du sol, sous et autour de la maison</strong>, pour réduire les mouvements différentiels du sol.",
-    "fragilise": {
-      "title": "Ce qui peut fragiliser votre maison",
-      "items": [
-        "Une mauvaise gestion des eaux pluviales.",
-        "Les arbres, qui modifient l'humidité du sol en pompant l'eau du sol sous la maison. Le sol sous la maison est un endroit plus humide, car mieux protégé de l'évaporation."
-      ]
-    },
-    "bonnes_pratiques": {
-      "title": "Les bonnes pratiques pour la protéger",
-      "items": [
-        "Éviter l'évaporation de l'eau à proximité immédiate des fondations en protégeant le sol.",
-        "Vérifier l'absence de fuites des réseaux d'eaux enterrés et la bonne évacuation des eaux à au moins 1,5 m des fondations.",
-        "Empêcher les racines d'aller puiser l'eau contenue au niveau des fondations de la maison : éloigner les arbres de la maison, installer un écran anti-racines, tailler et débroussailler régulièrement."
-      ]
-    }
+    "legendes": [
+      {
+        "titre": "Ce qui peut fragiliser votre maison",
+        "items": [
+          {
+            "repere": "A",
+            "text": "Une mauvaise gestion des eaux pluviales."
+          },
+          {
+            "repere": "B",
+            "text": "Les arbres, qui modifient l'humidité du sol en pompant l'eau du sol sous la maison. Le sol sous la maison est un endroit plus humide, car mieux protégé de l'évaporation."
+          }
+        ]
+      },
+      {
+        "titre": "Les bonnes pratiques pour la protéger",
+        "items": [
+          {
+            "repere": "C",
+            "text": "Vérifier l'absence de fuites des réseaux d'eaux enterrés et la bonne évacuation des eaux à au moins 1,5 m des fondations."
+          },
+          {
+            "repere": "D",
+            "text": "Éviter l'évaporation de l'eau à proximité immédiate des fondations en protégeant le sol."
+          },
+          {
+            "repere": "E",
+            "text": "Empêcher les racines d'aller puiser l'eau contenue au niveau des fondations de la maison : éloigner les arbres de la maison, installer un écran anti-racines, tailler et débroussailler régulièrement."
+          }
+        ]
+      }
+    ],
+    "fleches": [
+      {
+        "repere": "A",
+        "de": [120, 690],
+        "c1": [80, 560],
+        "c2": [110, 470],
+        "vers": [196, 432]
+      },
+      {
+        "repere": "B",
+        "de": [330, 690],
+        "c1": [430, 715],
+        "c2": [520, 690],
+        "vers": [548, 640]
+      },
+      {
+        "repere": "C",
+        "de": [800, 690],
+        "c1": [800, 620],
+        "c2": [850, 580],
+        "vers": [893, 562]
+      },
+      {
+        "repere": "D",
+        "de": [980, 690],
+        "c1": [1010, 590],
+        "c2": [990, 500],
+        "vers": [925, 462]
+      },
+      {
+        "repere": "E",
+        "de": [1240, 690],
+        "c1": [1160, 690],
+        "c2": [1100, 660],
+        "vers": [1075, 612]
+      }
+    ]
   },
   "agir": {
     "title": "Vous souhaitez connaître la vulnérabilité de votre maison et agir avant qu'il ne soit trop tard ?",

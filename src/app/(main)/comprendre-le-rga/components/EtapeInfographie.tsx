@@ -4,9 +4,18 @@ import type { ReactNode } from "react";
 interface Legende {
   icon?: string;
   titre?: string;
-  text: string;
-  /** Tracé SVG, en pixels de l'image, d'une flèche qui part du bas de l'image vers ce que la légende décrit. */
-  fleche?: string;
+  text?: string;
+  items?: { repere: string; text: string }[];
+}
+
+/** Courbe de Bézier en pixels de l'image, du bas de l'image vers ce qu'une légende décrit. */
+interface Fleche {
+  de: number[];
+  c1: number[];
+  c2: number[];
+  vers: number[];
+  /** Lettre reprise devant la légende quand une colonne en compte plusieurs. */
+  repere?: string;
 }
 
 interface Props {
@@ -16,13 +25,23 @@ interface Props {
   image: { src: string; alt: string; width: number; height: number };
   /** Légendes posées sous l'image, dans l'ordre de ses moitiés gauche puis droite. */
   legendes?: Legende[];
+  fleches?: Fleche[];
   /** Barre verticale qui partage l'image et ses légendes en deux. */
   separateur?: boolean;
   className?: string;
   imageADroite?: boolean;
   children: ReactNode;
-  /** Contenu pleine largeur, sous la ligne image + texte. */
-  complement?: ReactNode;
+}
+
+const PASTILLE = "bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)";
+
+function Repere({ lettre }: { lettre: string }) {
+  return (
+    <span
+      className={`flex shrink-0 items-center justify-center w-5 h-5 rounded-full fr-text--xs fr-text--bold fr-mb-0 ${PASTILLE}`}>
+      {lettre}
+    </span>
+  );
 }
 
 export default function EtapeInfographie({
@@ -31,13 +50,12 @@ export default function EtapeInfographie({
   chapeau,
   image,
   legendes,
+  fleches = [],
   separateur = false,
   className = "",
   imageADroite = false,
   children,
-  complement,
 }: Props) {
-  const fleches = legendes?.flatMap((legende) => (legende.fleche ? [legende.fleche] : [])) ?? [];
   const pointeId = `pointe-fleche-${numero}`;
 
   return (
@@ -48,7 +66,7 @@ export default function EtapeInfographie({
           <div className="fr-col-12 fr-col-md-6 text-center">
             <div className="flex items-center justify-center gap-3 fr-mb-2w">
               <span
-                className="flex shrink-0 items-center justify-center w-10 h-10 rounded-full fr-text--lg fr-text--bold fr-mb-0 bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)"
+                className={`flex shrink-0 items-center justify-center w-10 h-10 rounded-full fr-text--lg fr-text--bold fr-mb-0 ${PASTILLE}`}
                 aria-hidden="true">
                 {numero}
               </span>
@@ -83,10 +101,10 @@ export default function EtapeInfographie({
                         <path d="M0 0 L5 2.5 L0 5 Z" fill="currentColor" />
                       </marker>
                     </defs>
-                    {fleches.map((trace) => (
+                    {fleches.map(({ de, c1, c2, vers }) => (
                       <path
-                        key={trace}
-                        d={trace}
+                        key={`${de.join(" ")}-${vers.join(" ")}`}
+                        d={`M ${de.join(" ")} C ${c1.join(" ")}, ${c2.join(" ")}, ${vers.join(" ")}`}
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="6"
@@ -96,20 +114,40 @@ export default function EtapeInfographie({
                     ))}
                   </svg>
                 )}
+                {fleches.map(
+                  ({ repere, de }) =>
+                    repere && (
+                      <span
+                        key={repere}
+                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                        style={{ left: `${(de[0] / image.width) * 100}%`, top: `${(de[1] / image.height) * 100}%` }}
+                        aria-hidden="true">
+                        <Repere lettre={repere} />
+                      </span>
+                    )
+                )}
               </div>
               {legendes && (
                 <figcaption className="grid grid-cols-2 border border-t-0 border-solid border-(--border-default-grey) bg-(--background-default-grey)">
                   {legendes.map((legende) => (
-                    <p key={legende.text} className="fr-text--sm fr-mb-0 fr-p-2w text-left">
-                      {legende.icon && <span className={`${legende.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />}
-                      {legende.titre && (
-                        <>
-                          <span className="fr-text--bold">{legende.titre}</span>
-                          <br />
-                        </>
+                    <div key={legende.titre ?? legende.text} className="fr-p-2w text-left">
+                      <p className="fr-text--sm fr-mb-0">
+                        {legende.icon && <span className={`${legende.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />}
+                        {legende.titre && <span className="fr-text--bold">{legende.titre}</span>}
+                        {legende.titre && legende.text && <br />}
+                        {legende.text}
+                      </p>
+                      {legende.items && (
+                        <ul className="fr-raw-list fr-mt-1w">
+                          {legende.items.map((item) => (
+                            <li key={item.repere} className="flex items-start gap-2 fr-text--sm fr-mb-1w">
+                              <Repere lettre={item.repere} />
+                              <span>{item.text}</span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
-                      {legende.text}
-                    </p>
+                    </div>
                   ))}
                 </figcaption>
               )}
@@ -122,8 +160,6 @@ export default function EtapeInfographie({
             </figure>
           </div>
         </div>
-
-        {complement}
       </div>
     </section>
   );
