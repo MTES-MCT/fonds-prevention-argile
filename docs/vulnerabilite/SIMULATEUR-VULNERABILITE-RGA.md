@@ -94,13 +94,14 @@ actif en `local`, `docker` et `staging`, **inactif en `production`** — sauf in
 
 Tous derrière la même bascule : hors des environnements actifs, aucun ne s'affiche, pour ne pas mener à un 404.
 
-| Entrée                 | Où                                                                                                      | Condition d'affichage                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Bloc de la home        | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État »                                | bascule active ; l'aperçu de résultat est illustratif, sans score                            |
-| Écran « non éligible » | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton                                       | bascule active, maison, propriétaire ; en iframe, sauf `?vulnerabilite=0`                    |
-| « Ma liste » du compte | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top                                   | bascule active, à toutes les étapes du parcours                                              |
-| Dossier côté agent     | `VulnerabiliteDossier` sur les pages dossier, demande et prospect : « Faire le test avec le demandeur » | bascule active ; AMO, Aller-vers et hybride (ni super-admin, ni analyste, ni administrateur) |
-| Résultat du compte     | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base                                         | bascule active, test rattaché au compte, sinon renvoi vers le simulateur                     |
+| Entrée                  | Où                                                                                                                                                                | Condition d'affichage                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Bloc de la home         | `VulnerabiliteSection`, après « Comment bénéficier de l'aide de l'État »                                                                                          | bascule active ; l'aperçu de résultat est illustratif, sans score                            |
+| Page de sensibilisation | `/comprendre-le-rga` : l'infographie « Ma maison est-elle vulnérable au phénomène RGA ? » en trois temps, bouton en haut de page et `VulnerabiliteSection` en bas | bascule active, sinon 404 ; absente du sitemap tant qu'elle l'est                            |
+| Écran « non éligible »  | `ResultNonEligible` : callout « mais vous pouvez agir » et bouton                                                                                                 | bascule active, maison, propriétaire ; en iframe, sauf `?vulnerabilite=0`                    |
+| « Ma liste » du compte  | `VulnerabiliteMaListe`, trois cas : à faire, points à traiter, au top                                                                                             | bascule active, à toutes les étapes du parcours                                              |
+| Dossier côté agent      | `VulnerabiliteDossier` sur les pages dossier, demande et prospect : « Faire le test avec le demandeur »                                                           | bascule active ; AMO, Aller-vers et hybride (ni super-admin, ni analyste, ni administrateur) |
+| Résultat du compte      | `/mon-compte/vulnerabilite`, lecture seule, relu depuis la base                                                                                                   | bascule active, test rattaché au compte, sinon renvoi vers le simulateur                     |
 
 > La documentation partenaire (`/documentation/integration-iframe`) ne donne l'URL de l'iframe
 > `/embed-vulnerabilite-rga` que derrière la même bascule : hors des environnements actifs, la section disparaît.
