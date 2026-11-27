@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -56,7 +55,7 @@ export default function ComprendreLeRgaPage() {
 
   return (
     <>
-      <section className="fr-container-fluid fr-pb-8w bg-(--background-alt-blue-france)">
+      <section className="fr-container-fluid fr-pb-4w">
         <div className="fr-container">
           <nav role="navigation" className="fr-breadcrumb" aria-label="vous êtes ici :">
             <button
@@ -81,10 +80,16 @@ export default function ComprendreLeRgaPage() {
             </div>
           </nav>
 
-          <div className="fr-grid-row fr-grid-row--gutters items-center">
-            <div className="fr-col-12 fr-col-md-7">
+          <div className="fr-grid-row">
+            <div className="fr-col-12 fr-col-lg-9">
               <h1>{hero.title}</h1>
-              <p className="fr-text--lead">{hero.subtitle}</p>
+              <p className="fr-text--lead">
+                {hero.subtitle.avant}{" "}
+                <span className="fr-px-1w font-bold italic whitespace-nowrap bg-(--background-action-high-blue-france) text-(--text-inverted-blue-france)">
+                  {hero.subtitle.accent}
+                </span>{" "}
+                {hero.subtitle.apres}
+              </p>
               <Link
                 className="fr-btn fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
                 href={VULNERABILITE_RGA_URL}>
@@ -92,23 +97,17 @@ export default function ComprendreLeRgaPage() {
               </Link>
               <p className="fr-text--sm fr-mt-1w fr-mb-0">{hero.mention}</p>
             </div>
-            <div className="fr-col-12 fr-col-md-5">
-              <Image
-                alt=""
-                className="w-full h-auto"
-                height={800}
-                priority
-                quality={85}
-                sizes="(max-width: 768px) 100vw, 40vw"
-                src={hero.image.src}
-                width={1000}
-              />
-            </div>
           </div>
         </div>
       </section>
 
-      <EtapeInfographie numero={1} titre={sol.title} chapeau={sol.lead} image={sol.image} legendes={sol.legendes}>
+      <EtapeInfographie
+        numero={1}
+        titre={sol.title}
+        chapeau={sol.lead}
+        image={sol.image}
+        legendes={sol.legendes}
+        imagePrioritaire>
         {sol.paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}

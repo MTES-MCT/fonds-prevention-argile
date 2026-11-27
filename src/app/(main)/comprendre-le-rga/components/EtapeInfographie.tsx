@@ -14,6 +14,8 @@ interface Props {
   /** Légendes posées sous l'image, dans l'ordre de ses moitiés gauche puis droite. */
   legendes?: Legende[];
   imageADroite?: boolean;
+  /** Première image visible de la page : chargée sans attendre. */
+  imagePrioritaire?: boolean;
   children: ReactNode;
   /** Contenu pleine largeur, sous la ligne image + texte. */
   complement?: ReactNode;
@@ -26,6 +28,7 @@ export default function EtapeInfographie({
   image,
   legendes,
   imageADroite = false,
+  imagePrioritaire = false,
   children,
   complement,
 }: Props) {
@@ -56,6 +59,7 @@ export default function EtapeInfographie({
                 alt={image.alt}
                 className="w-full h-auto"
                 height={image.height}
+                priority={imagePrioritaire}
                 quality={85}
                 sizes="(max-width: 768px) 100vw, 50vw"
                 src={image.src}

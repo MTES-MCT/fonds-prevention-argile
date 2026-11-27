@@ -5,12 +5,13 @@
   },
   "hero": {
     "title": "Ma maison est-elle vulnérable au phénomène RGA ?",
-    "subtitle": "Comprendre en 3 temps pourquoi de plus en plus de maisons sont exposées au retrait-gonflement des argiles.",
+    "subtitle": {
+      "avant": "Comprendre en",
+      "accent": "3 temps",
+      "apres": "pourquoi de plus en plus de maisons sont exposées au retrait-gonflement des argiles."
+    },
     "cta_label": "Estimer la vulnérabilité de mon logement",
-    "mention": "Résultat en 5 minutes - Sans inscription",
-    "image": {
-      "src": "/images/comprendre-le-rga/hero.webp"
-    }
+    "mention": "Résultat en 5 minutes - Sans inscription"
   },
   "sol": {
     "title": "Le sol",
