@@ -129,7 +129,7 @@ export default function ComprendreLeRgaPage() {
         </div>
       </EtapeInfographie>
 
-      <VulnerabiliteSection titre={agir.title} avecBadge={false}>
+      <VulnerabiliteSection titre={agir.title} avecBadge={false} boutonPleineLargeur>
         <p className="fr-mt-4w fr-mb-0">
           {agir.aides.text}{" "}
           <Link className="fr-link" href={agir.aides.cta_url}>

@@ -17,6 +17,8 @@ interface Props {
   titre?: string;
   avecBadge?: boolean;
   className?: string;
+  /** Bouton et mention centrés sous les deux colonnes, au lieu du pied de la première. */
+  boutonPleineLargeur?: boolean;
   /** Rendu sous la mention du bouton. */
   children?: ReactNode;
 }
@@ -25,10 +27,23 @@ export default function VulnerabiliteSection({
   titre = section.title,
   avecBadge = true,
   className = "",
+  boutonPleineLargeur = false,
   children,
 }: Props) {
   // Feature hors production tant que la grille n'est pas validée (ADR-0030).
   if (!isVulnerabiliteRgaActive()) return null;
+
+  const bouton = (
+    <>
+      <Link
+        className="fr-btn fr-btn--secondary fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
+        href={section.cta_url}>
+        {section.cta_label}
+      </Link>
+      <p className="fr-text--sm fr-mt-1w fr-mb-0">{section.mention}</p>
+      {children}
+    </>
+  );
 
   return (
     <section id="vulnerabilite" className={`fr-container-fluid fr-py-10w section-anchor ${className}`}>
@@ -39,7 +54,7 @@ export default function VulnerabiliteSection({
             <h2>{titre}</h2>
             <p className="fr-text--lg">{section.description}</p>
 
-            <ol className="fr-raw-list fr-mt-4w fr-mb-4w">
+            <ol className={`fr-raw-list fr-mt-4w ${boutonPleineLargeur ? "fr-mb-0" : "fr-mb-4w"}`}>
               {section.etapes.map((etape, index) => (
                 <li key={etape} className="flex items-start gap-3 fr-mb-2w">
                   <span
@@ -52,13 +67,7 @@ export default function VulnerabiliteSection({
               ))}
             </ol>
 
-            <Link
-              className="fr-btn fr-btn--secondary fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href={section.cta_url}>
-              {section.cta_label}
-            </Link>
-            <p className="fr-text--sm fr-mt-1w fr-mb-0">{section.mention}</p>
-            {children}
+            {!boutonPleineLargeur && bouton}
           </div>
 
           <div className="fr-col-12 fr-col-md-6">
@@ -88,6 +97,8 @@ export default function VulnerabiliteSection({
               </ul>
             </div>
           </div>
+
+          {boutonPleineLargeur && <div className="fr-col-12 fr-mt-2w text-center">{bouton}</div>}
         </div>
       </div>
     </section>

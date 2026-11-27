@@ -35,6 +35,12 @@ describe("VulnerabiliteSection", () => {
     expect(screen.getByText("Des aides existent.")).toBeInTheDocument();
   });
 
+  it("garde le bouton quand il passe sous les deux colonnes", () => {
+    render(<VulnerabiliteSection boutonPleineLargeur />);
+
+    expect(screen.getAllByRole("link", { name: /Estimer la vulnérabilité de mon logement/ })).toHaveLength(1);
+  });
+
   it("ne rend rien quand il est désactivé, comme en production", () => {
     active.mockReturnValue(false);
     const { container } = render(<VulnerabiliteSection />);
