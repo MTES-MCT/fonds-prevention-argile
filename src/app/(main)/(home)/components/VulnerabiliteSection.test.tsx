@@ -23,6 +23,19 @@ describe("VulnerabiliteSection", () => {
     );
   });
 
+  it("accepte un autre titre, sans badge", () => {
+    render(<VulnerabiliteSection titre="Agir avant qu'il ne soit trop tard" avecBadge={false} />);
+
+    expect(screen.getByRole("heading", { name: "Agir avant qu'il ne soit trop tard" })).toBeInTheDocument();
+    expect(screen.queryByText("Nouveau")).not.toBeInTheDocument();
+  });
+
+  it("garde le bouton quand il passe sous les deux colonnes", () => {
+    render(<VulnerabiliteSection boutonPleineLargeur />);
+
+    expect(screen.getAllByRole("link", { name: /Estimer la vulnérabilité de mon logement/ })).toHaveLength(1);
+  });
+
   it("ne rend rien quand il est désactivé, comme en production", () => {
     active.mockReturnValue(false);
     const { container } = render(<VulnerabiliteSection />);

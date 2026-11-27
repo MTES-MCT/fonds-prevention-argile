@@ -2,6 +2,8 @@ import type { PartnerKey } from "@/shared/domain/partners";
 
 export const VULNERABILITE_RGA_URL = "/vulnerabilite-rga";
 export const VULNERABILITE_RGA_EMBARQUEE_URL = "/embed-vulnerabilite-rga";
+// Page de sensibilisation qui mène au simulateur : en ligne et hors ligne avec lui.
+export const COMPRENDRE_RGA_URL = "/comprendre-le-rga";
 
 // Miroir d'urlSimulateurEmbarque : /vulnerabilite-rga est refusé dans l'iframe d'un partenaire (X-Frame-Options).
 export function urlVulnerabiliteEmbarquee(partner: PartnerKey | null): string {

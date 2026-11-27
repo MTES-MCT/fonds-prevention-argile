@@ -12,20 +12,44 @@ function libelleDecompte(categorie: CategorieAffichee, nombre: number): string {
   return `${nombre} ${(nombre > 1 ? pluriel : label).toLowerCase()}`;
 }
 
-export default function VulnerabiliteSection() {
+interface Props {
+  titre?: string;
+  avecBadge?: boolean;
+  className?: string;
+  /** Bouton et mention centrés sous les deux colonnes, au lieu du pied de la première. */
+  boutonPleineLargeur?: boolean;
+}
+
+export default function VulnerabiliteSection({
+  titre = section.title,
+  avecBadge = true,
+  className = "",
+  boutonPleineLargeur = false,
+}: Props) {
   // Feature hors production tant que la grille n'est pas validée (ADR-0030).
   if (!isVulnerabiliteRgaActive()) return null;
 
+  const bouton = (
+    <>
+      <Link
+        className="fr-btn fr-btn--secondary fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
+        href={section.cta_url}>
+        {section.cta_label}
+      </Link>
+      <p className="fr-text--sm fr-mt-1w fr-mb-0">{section.mention}</p>
+    </>
+  );
+
   return (
-    <section id="vulnerabilite" className="fr-container-fluid fr-py-10w section-anchor">
+    <section id="vulnerabilite" className={`fr-container-fluid fr-py-10w section-anchor ${className}`}>
       <div className="fr-container">
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-6">
-            <p className="fr-badge fr-badge--new fr-mb-2w">{section.badge}</p>
-            <h2>{section.title}</h2>
+            {avecBadge && <p className="fr-badge fr-badge--new fr-mb-2w">{section.badge}</p>}
+            <h2>{titre}</h2>
             <p className="fr-text--lg">{section.description}</p>
 
-            <ol className="fr-raw-list fr-mt-4w fr-mb-4w">
+            <ol className={`fr-raw-list fr-mt-4w ${boutonPleineLargeur ? "fr-mb-0" : "fr-mb-4w"}`}>
               {section.etapes.map((etape, index) => (
                 <li key={etape} className="flex items-start gap-3 fr-mb-2w">
                   <span
@@ -38,12 +62,7 @@ export default function VulnerabiliteSection() {
               ))}
             </ol>
 
-            <Link
-              className="fr-btn fr-btn--secondary fr-btn--lg fr-icon-arrow-right-line fr-btn--icon-right"
-              href={section.cta_url}>
-              {section.cta_label}
-            </Link>
-            <p className="fr-text--sm fr-mt-1w fr-mb-0">{section.mention}</p>
+            {!boutonPleineLargeur && bouton}
           </div>
 
           <div className="fr-col-12 fr-col-md-6">
@@ -73,6 +92,8 @@ export default function VulnerabiliteSection() {
               </ul>
             </div>
           </div>
+
+          {boutonPleineLargeur && <div className="fr-col-12 fr-mt-2w text-center">{bouton}</div>}
         </div>
       </div>
     </section>

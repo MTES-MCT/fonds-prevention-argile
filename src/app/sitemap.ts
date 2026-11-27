@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
 import { getAllDepartements, getAllEpcis, getAllCommunes } from "@/features/seo";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
+import { COMPRENDRE_RGA_URL } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-routes";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://fonds-prevention-argile.beta.gouv.fr";
 
@@ -57,6 +59,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.4,
     },
+    // Page 404 tant que le simulateur de vulnérabilité est hors production (ADR-0030).
+    ...(isVulnerabiliteRgaActive()
+      ? [
+          {
+            url: `${BASE_URL}${COMPRENDRE_RGA_URL}`,
+            lastModified: now,
+            changeFrequency: "monthly" as const,
+            priority: 0.7,
+          },
+        ]
+      : []),
   ];
 
   // Pages travaux-eligibles

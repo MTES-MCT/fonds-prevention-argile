@@ -1,8 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import content from "../content/content.json";
 import { richTextParser } from "@/shared/utils";
 import { Feature } from "@/shared/components";
+import { isVulnerabiliteRgaActive } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-disponibilite";
+import { COMPRENDRE_RGA_URL } from "@/features/vulnerabilite-rga/domain/value-objects/vulnerabilite-routes";
 
 export default function QuestCeQueLeRgaSection() {
   return (
@@ -37,6 +40,14 @@ export default function QuestCeQueLeRgaSection() {
             </div>
             <p>{richTextParser(content.what_is_rga_section.subtitle)}</p>
             <p>{richTextParser(content.what_is_rga_section.subtitle2)}</p>
+            {/* La page répond 404 tant que le simulateur de vulnérabilité est hors production (ADR-0030). */}
+            {isVulnerabiliteRgaActive() && (
+              <p className="fr-mb-0">
+                <Link className="fr-link fr-icon-arrow-right-line fr-link--icon-right" href={COMPRENDRE_RGA_URL}>
+                  {content.what_is_rga_section.cta_comprendre_label}
+                </Link>
+              </p>
+            )}
           </div>
         </div>
 

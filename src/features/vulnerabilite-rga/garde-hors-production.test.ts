@@ -11,6 +11,7 @@ const GARDE = "isVulnerabiliteRgaActive";
 // Ce qui trahit un lien vers le simulateur ou ses pages : l'URL, les routes, le contenu de la home qui le promeut.
 const MARQUEURS = [
   "VULNERABILITE_RGA_URL",
+  "COMPRENDRE_RGA_URL",
   "urlVulnerabiliteEmbarquee",
   "particulier.maVulnerabilite",
   "espaceAgent.testVulnerabilite",
@@ -29,6 +30,8 @@ const EXCEPTIONS: Record<string, string> = {
 const PORTEURS_DE_GARDE = [
   "src/app/(main)/(home)/components/VulnerabiliteSection.tsx",
   "src/app/(main)/(home)/components/LogementConcerneRgaSection.tsx",
+  "src/app/(main)/(home)/components/QuestCeQueLeRgaSection.tsx",
+  "src/app/(main)/comprendre-le-rga/page.tsx",
   "src/features/simulateur/components/results/ResultNonEligible.tsx",
   "src/features/parcours/core/components/common/VulnerabiliteMaListe.tsx",
   "src/features/parcours/core/actions/ma-vulnerabilite.actions.ts",
