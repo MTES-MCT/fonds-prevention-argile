@@ -11,8 +11,9 @@ interface Props {
   titre: string;
   chapeau: string;
   image: { src: string; alt: string; width: number; height: number };
-  /** Légendes posées sous l'image, dans l'ordre de ses moitiés gauche puis droite. */
+  /** Légendes des moitiés gauche puis droite de l'image, qu'une barre sépare alors en deux. */
   legendes?: Legende[];
+  className?: string;
   imageADroite?: boolean;
   /** Première image visible de la page : chargée sans attendre. */
   imagePrioritaire?: boolean;
@@ -27,13 +28,14 @@ export default function EtapeInfographie({
   chapeau,
   image,
   legendes,
+  className = "",
   imageADroite = false,
   imagePrioritaire = false,
   children,
   complement,
 }: Props) {
   return (
-    <section className="fr-container-fluid fr-py-8w">
+    <section className={`fr-container-fluid fr-py-8w ${className}`}>
       <div className="fr-container">
         <div className="fr-grid-row fr-grid-row--gutters items-center">
           {/* Texte d'abord dans le DOM : le titre précède l'image au lecteur d'écran et sur mobile. */}
@@ -54,7 +56,17 @@ export default function EtapeInfographie({
           </div>
 
           <div className={`fr-col-12 fr-col-md-6 ${imageADroite ? "" : "md:order-first"}`}>
-            <figure className="m-0">
+            <figure className="relative m-0">
+              {legendes && (
+                <figcaption className="grid grid-cols-2 gap-8 fr-pb-2w">
+                  {legendes.map((legende) => (
+                    <p key={legende.text} className="fr-text--sm fr-mb-0">
+                      <span className={`${legende.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />
+                      {legende.text}
+                    </p>
+                  ))}
+                </figcaption>
+              )}
               <Image
                 alt={image.alt}
                 className="w-full h-auto"
@@ -66,14 +78,10 @@ export default function EtapeInfographie({
                 width={image.width}
               />
               {legendes && (
-                <figcaption className="grid grid-cols-2 gap-4 fr-mt-2w">
-                  {legendes.map((legende, index) => (
-                    <p key={legende.text} className={`fr-text--sm fr-mb-0 ${index % 2 === 1 ? "text-right" : ""}`}>
-                      <span className={`${legende.icon} fr-icon--sm fr-mr-1v`} aria-hidden="true" />
-                      {legende.text}
-                    </p>
-                  ))}
-                </figcaption>
+                <span
+                  className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-(--border-action-high-blue-france)"
+                  aria-hidden="true"
+                />
               )}
             </figure>
           </div>

@@ -107,6 +107,7 @@ export default function ComprendreLeRgaPage() {
         chapeau={sol.lead}
         image={sol.image}
         legendes={sol.legendes}
+        className="bg-(--background-alt-blue-france)"
         imagePrioritaire>
         {sol.paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
